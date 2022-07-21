@@ -1,0 +1,37 @@
+package dto
+
+import "order_service/internal/entity"
+
+type Deposite struct {
+	Id         int64 `gorm:"primary_key"`
+	OrderId    int64
+	UserId     int64
+	Exchange   string
+	Volume     string
+	Fullfilled bool
+	Address    string
+}
+
+func DToDto(d *entity.Deposite) *Deposite {
+	return &Deposite{
+		Id:         d.Id,
+		UserId:     d.UserId,
+		OrderId:    d.OrderId,
+		Exchange:   d.Exchange,
+		Volume:     d.Volume,
+		Fullfilled: d.Fullfilled,
+		Address:    d.Address,
+	}
+}
+
+func (d *Deposite) ToEntity() *entity.Deposite {
+	return &entity.Deposite{
+		Id:         d.Id,
+		UserId:     d.UserId,
+		OrderId:    d.OrderId,
+		Exchange:   d.Exchange,
+		Volume:     d.Volume,
+		Fullfilled: d.Fullfilled,
+		Address:    d.Address,
+	}
+}
