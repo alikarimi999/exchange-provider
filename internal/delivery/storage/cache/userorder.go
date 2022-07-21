@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"order_service/internal/delivery/storage/cache/dto"
 	"order_service/internal/entity"
+	"time"
 
 	"order_service/pkg/errors"
 
@@ -29,7 +30,7 @@ func (c *OrderCache) Add(order *entity.UserOrder) error {
 
 	o := dto.ToDTO(order)
 	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
-	if err := c.c.Set(c.ctx, key, o, 0).Err(); err != nil {
+	if err := c.c.Set(c.ctx, key, o, time.Duration(24*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil

@@ -31,7 +31,7 @@ func (c *withdrawalCache) recordWithdrawal(w *dto.Withdrawal) error {
 	const op = errors.Op("Kucoin.WithdrawalCache.recordWithdrawal")
 
 	key := fmt.Sprintf("kucoin:withdrawals:%s", w.Id)
-	if err := c.r.Set(c.ctx, key, w, time.Duration(0)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, key, w, time.Duration(24*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
