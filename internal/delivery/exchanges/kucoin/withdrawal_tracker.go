@@ -49,6 +49,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 					f.w.Status = entity.WithdrawalSucceed
 					f.w.ExchangeFee = wd.Fee
 					f.w.Executed = wd.Amount
+					f.w.TxId = wd.FixTxId()
 					f.done <- struct{}{}
 				case "FAILURE":
 					f.w.Status = entity.WithdrawalFailed

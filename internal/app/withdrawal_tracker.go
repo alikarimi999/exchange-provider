@@ -72,6 +72,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 						o.Withdrawal.Status = entity.WithdrawalSucceed
 						o.Withdrawal.ExchangeFee = w.ExchangeFee
 						o.Withdrawal.Executed = w.Executed
+						o.Withdrawal.TxId = w.TxId
 
 						if err := t.repo.Add(o); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())

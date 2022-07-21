@@ -21,6 +21,10 @@ import (
 )
 
 func main() {
+	test()
+}
+
+func production() {
 
 	agent := "main"
 
@@ -81,6 +85,73 @@ func main() {
 	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
 
 	http.NewRouter(ou, l).Run(":8000")
+
+	wg.Wait()
+
+}
+
+func test() {
+
+	agent := "main"
+
+	l := logger.NewLogger("./order_service.json", true)
+
+	r := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_ADDR")})
+
+	if err := r.Ping(context.Background()).Err(); err != nil {
+		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
+	}
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		"root", "123", "localhost:3306", "order_service")
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
+	}
+	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
+	s := storage.NewStorage(db, r, l)
+
+	ss := services.WrapServices(&services.Config{
+		DepositeServiceURL: "http://localhost:8080/deposites",
+		FeeServiceURL:      "http://localhost:8083/fee",
+	})
+
+	kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
+		ApiKey:        "62bc3b693ff6b60001b19442",
+		ApiSecret:     "c5a12b89-aae2-4028-8810-8332fbf30d72",
+		ApiPassphrase: "77103121",
+		ApiVersion:    "2",
+		ApiUrl:        "https://api.kucoin.com",
+	}, r, l)
+
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go kucoin.Run(wg)
+
+	exs := make(map[string]entity.Exchange)
+	exs["kucoin"] = kucoin
+
+	ou := app.NewOrderUseCase(s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, exs, l)
+	wg.Add(1)
+	go ou.Run(wg)
+
+	//
+	sub := queue.NewSubscriber(fmt.Sprintf("amqp://%s:%s@%s/", "user_0",
+		"user_0a3l3b3qmqnb83rj", "localhost:5672"), "order_service",
+		[]*queue.Topic{
+			{Exchange: "deposites", RoutingKey: "deposite.confirmed"},
+		})
+
+	wg.Add(1)
+	go sub.Run(wg)
+
+	wg.Add(1)
+	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
+
+	http.NewRouter(ou, l).Run(":8081")
 
 	wg.Wait()
 

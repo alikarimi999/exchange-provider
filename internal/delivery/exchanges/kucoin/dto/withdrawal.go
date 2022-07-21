@@ -3,7 +3,6 @@ package dto
 import (
 	"encoding/json"
 	"fmt"
-	"order_service/internal/entity"
 	"strings"
 )
 
@@ -20,23 +19,16 @@ type Withdrawal struct {
 	UpdatedAt  int64  `json:"updatedAt"`
 }
 
-func (w *Withdrawal) ToEntity() *entity.Withdrawal {
-	ew := &entity.Withdrawal{
-		Id:       w.Id,
-		Exchange: "kucoin",
-		TxId:     strings.Split(w.WalletTxId, "@")[0],
+func (w *Withdrawal) FixTxId() string {
+	if w.WalletTxId == "" {
+		return ""
 	}
 
-	switch w.Status {
-	case "SUCCESS":
-		ew.Status = entity.WithdrawalSucceed
-	case "FAILURE":
-		ew.Status = entity.WithdrawalFailed
-	default:
-		ew.Status = entity.WithdrawalPending
+	if strings.Contains(w.WalletTxId, "@") {
+		return strings.Split(w.WalletTxId, "@")[0]
 	}
 
-	return ew
+	return w.WalletTxId
 }
 
 func (w *Withdrawal) MarshalBinary() (data []byte, err error) {

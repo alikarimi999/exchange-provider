@@ -33,6 +33,12 @@ func Coin(sym, chain string) (entity.Coin, error) {
 			Chain:  entity.ChainBCH,
 		}, nil
 
+	case "LTC":
+		return entity.Coin{
+			Symbol: sym,
+			Chain:  entity.ChainLTC,
+		}, nil
+
 	case "TRX", "":
 		return entity.Coin{
 			Symbol: sym,
