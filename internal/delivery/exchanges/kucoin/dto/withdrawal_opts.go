@@ -9,7 +9,7 @@ func Options(coin entity.Coin) (map[string]string, error) {
 	opts := make(map[string]string)
 
 	switch coin.Symbol {
-	case "BTC", "ETH", "TRX", "BTT":
+	case "BTC", "ADA", "SOL", "BCH", "LTC", "TRX", "BTT":
 		opts["chain"] = ""
 		return opts, nil
 

@@ -15,6 +15,24 @@ func Coin(sym, chain string) (entity.Coin, error) {
 			Chain:  entity.ChainBTC,
 		}, nil
 
+	case "ADA":
+		return entity.Coin{
+			Symbol: sym,
+			Chain:  entity.ChainADA,
+		}, nil
+
+	case "SOL":
+		return entity.Coin{
+			Symbol: sym,
+			Chain:  entity.ChainSOL,
+		}, nil
+
+	case "BCH":
+		return entity.Coin{
+			Symbol: sym,
+			Chain:  entity.ChainBCH,
+		}, nil
+
 	case "TRX", "":
 		return entity.Coin{
 			Symbol: sym,

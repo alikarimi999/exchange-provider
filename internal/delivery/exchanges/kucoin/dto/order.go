@@ -26,7 +26,51 @@ func CreateOrderRequest(from, to entity.Coin, vol string) (*CreateOrderRequestMo
 			o.Side = "sell"
 			o.Size = vol
 		default:
-			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s by exchange: kucoin", from.Symbol, to.Symbol))
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s", from.Symbol, to.Symbol))
+		}
+
+	case "ADA":
+		switch to.Symbol {
+		case "USDT":
+			o.Symbol = "ADA-USDT"
+			o.Type = "market"
+			o.Side = "sell"
+			o.Size = vol
+		default:
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s ", from.Symbol, to.Symbol))
+		}
+
+	case "SOL":
+		switch to.Symbol {
+		case "USDT":
+			o.Symbol = "SOL-USDT"
+			o.Type = "market"
+			o.Side = "sell"
+			o.Size = vol
+		default:
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s ", from.Symbol, to.Symbol))
+		}
+
+	case "BCH":
+		switch to.Symbol {
+		case "USDT":
+			o.Symbol = "BCH-USDT"
+			o.Type = "market"
+			o.Side = "sell"
+			o.Size = vol
+		default:
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s ", from.Symbol, to.Symbol))
+		}
+
+	case "LTC":
+		switch to.Symbol {
+		case "USDT":
+			o.Symbol = "LTC-USDT"
+			o.Type = "market"
+			o.Side = "sell"
+			o.Size = vol
+		default:
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s ", from.Symbol, to.Symbol))
 		}
 
 	case "TRX":
@@ -37,7 +81,7 @@ func CreateOrderRequest(from, to entity.Coin, vol string) (*CreateOrderRequestMo
 			o.Side = "sell"
 			o.Size = vol
 		default:
-			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s by exchange: kucoin", from.Symbol, to.Symbol))
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s", from.Symbol, to.Symbol))
 		}
 
 	case "BTT":
@@ -48,13 +92,37 @@ func CreateOrderRequest(from, to entity.Coin, vol string) (*CreateOrderRequestMo
 			o.Side = "sell"
 			o.Size = vol
 		default:
-			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s by exchange: kucoin", from.Symbol, to.Symbol))
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s", from.Symbol, to.Symbol))
 		}
 
 	case "USDT":
 		switch to.Symbol {
 		case "BTC":
 			o.Symbol = "BTC-USDT"
+			o.Type = "market"
+			o.Side = "buy"
+			o.Funds = vol
+
+		case "ADA":
+			o.Symbol = "ADA-USDT"
+			o.Type = "market"
+			o.Side = "buy"
+			o.Funds = vol
+
+		case "SOL":
+			o.Symbol = "SOL-USDT"
+			o.Type = "market"
+			o.Side = "buy"
+			o.Funds = vol
+
+		case "BCH":
+			o.Symbol = "BCH-USDT"
+			o.Type = "market"
+			o.Side = "buy"
+			o.Funds = vol
+
+		case "LTC":
+			o.Symbol = "LTC-USDT"
 			o.Type = "market"
 			o.Side = "buy"
 			o.Funds = vol
@@ -72,12 +140,12 @@ func CreateOrderRequest(from, to entity.Coin, vol string) (*CreateOrderRequestMo
 			o.Funds = vol
 
 		default:
-			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s by exchange: kucoin", from.Symbol, to.Symbol))
+			return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s", from.Symbol, to.Symbol))
 
 		}
 
 	default:
-		return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s by exchange: kucoin", from.Symbol, to.Symbol))
+		return nil, errors.New(fmt.Sprintf("unsupported coin pair: %s-%s", from.Symbol, to.Symbol))
 	}
 	return o.fixVolPrecision(), nil
 }
@@ -87,18 +155,51 @@ func CreateOrderRequest(from, to entity.Coin, vol string) (*CreateOrderRequestMo
 func (o *CreateOrderRequestModel) fixVolPrecision() *CreateOrderRequestModel {
 
 	switch o.Symbol {
-	case "BTT-USDT", "TRX-USDT":
+
+	case "BTC-USDT": // limit  8 precision
 		if o.Side == "sell" {
-			ss := strings.Split(o.Size, ".")
-			if len(ss) == 2 {
-				o.Size = ss[0] + "." + ss[1][:4]
-			} else {
-				o.Size = ss[0] + ".0"
-			}
+			o.Size = trim(o.Size, 8)
+		} else {
+			o.Funds = trim(o.Funds, 6)
+		}
+
+	case "LTC-USDT": // limit 6 precision
+		if o.Side == "sell" {
+			o.Size = trim(o.Size, 6)
+		} else {
+			o.Funds = trim(o.Funds, 6)
+		}
+
+	case "ADA-USDT", "SOL-USDT", "BCH-USDT", "BTT-USDT", "TRX-USDT": // limit 4 precision
+		if o.Side == "sell" {
+			o.Size = trim(o.Size, 4)
+		} else {
+			o.Funds = trim(o.Funds, 6)
 		}
 	}
 
 	return o
+}
+
+func trim(s string, l int) string {
+	if s == "" || l == 0 {
+		return s
+	}
+
+	ss := strings.Split(s, ".")
+	var result string
+
+	if len(ss) == 2 {
+		if len(ss[1]) > l {
+			result = ss[0] + "." + ss[1][:l]
+		} else {
+			result = s
+		}
+
+	} else {
+		result = ss[0] + ".0"
+	}
+	return result
 }
 
 type OrderRecord struct {

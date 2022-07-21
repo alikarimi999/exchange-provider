@@ -32,16 +32,53 @@ func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
 		windowsSize: time.Minute * 10,
 		l:           l,
 	}
-	tron := &chainTicker{
-		chain:       entity.ChainTRC20,
+
+	ada := &chainTicker{
+		chain:       entity.ChainADA,
 		cache:       wc,
-		ticker:      time.NewTicker(time.Second * 60),
+		ticker:      time.NewTicker(time.Second * 15),
+		tracker:     w.tracker,
+		windowsSize: time.Minute * 5,
+		l:           l,
+	}
+
+	sol := &chainTicker{
+		chain:       entity.ChainSOL,
+		cache:       wc,
+		ticker:      time.NewTicker(time.Second * 15),
+		tracker:     w.tracker,
+		windowsSize: time.Minute * 5,
+		l:           l,
+	}
+
+	bch := &chainTicker{
+		chain:       entity.ChainBCH,
+		cache:       wc,
+		ticker:      time.NewTicker(time.Minute * 10),
 		tracker:     w.tracker,
 		windowsSize: time.Minute * 10,
 		l:           l,
 	}
 
-	w.tickers = []*chainTicker{btc, tron}
+	ltc := &chainTicker{
+		chain:       entity.ChainLTC,
+		cache:       wc,
+		ticker:      time.NewTicker(time.Minute * 10),
+		tracker:     w.tracker,
+		windowsSize: time.Minute * 10,
+		l:           l,
+	}
+
+	trc20 := &chainTicker{
+		chain:       entity.ChainTRC20,
+		cache:       wc,
+		ticker:      time.NewTicker(time.Second * 60),
+		tracker:     w.tracker,
+		windowsSize: time.Minute * 5,
+		l:           l,
+	}
+
+	w.tickers = []*chainTicker{btc, ada, sol, bch, ltc, trc20}
 
 	return w
 }
