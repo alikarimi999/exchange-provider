@@ -21,7 +21,7 @@ func NewFeeService() entity.FeeService {
 func (f *feeService) ApplyFee(userId int64, total string) (remainder, fee string, err error) {
 	const op = errors.Op("FeeService.ApplyFee")
 
-	rate, _ := f.FeeRate(userId)
+	rate, _ := f.feeRate(userId)
 	t, err := strconv.ParseFloat(total, 64)
 	if err != nil {
 		return "", "", errors.Wrap(op, err, errors.ErrInternal)
@@ -32,6 +32,6 @@ func (f *feeService) ApplyFee(userId int64, total string) (remainder, fee string
 	return strconv.FormatFloat(re, 'f', 6, 64), strconv.FormatFloat(ff, 'f', 6, 64), nil
 }
 
-func (f *feeService) FeeRate(userId int64) (rate float64, err error) {
-	return 0.05, nil
+func (f *feeService) feeRate(userId int64) (rate float64, err error) {
+	return 0.001, nil
 }
