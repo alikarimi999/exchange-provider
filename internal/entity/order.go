@@ -6,11 +6,6 @@ import (
 	"time"
 )
 
-type Coin struct {
-	Symbol string
-	Chain  Chain
-}
-
 type OrderStatus string
 
 const (
@@ -37,34 +32,37 @@ type UserOrder struct {
 	Deposite      *Deposite
 	Exchange      string
 	Withdrawal    *Withdrawal
-	RequestCoin   Coin
-	ProvideCoin   Coin
+	RequestCoin   *Coin
+	ProvideCoin   *Coin
 	ExchangeOrder *ExchangeOrder
 	Broken        bool
 	BrokeReason   string
 }
 
-func NewOrder(userId int64, address string, rCoin, pCoin Coin) *UserOrder {
+func NewOrder(userId int64, address string, rCoin, pCoin *Coin, exchange string) *UserOrder {
 	w := &UserOrder{
-		Id:        genOrderId(9),
-		UserId:    userId,
-		CreatedAt: time.Now().Unix(),
-		Status:    OrderStatusOpen,
-
+		Id:          genOrderId(9),
+		UserId:      userId,
+		CreatedAt:   time.Now().Unix(),
+		Status:      OrderStatusOpen,
+		Exchange:    exchange,
 		RequestCoin: rCoin,
 		ProvideCoin: pCoin,
 		Deposite: &Deposite{
-			UserId: userId,
+			UserId:   userId,
+			Exchange: exchange,
 		},
 		ExchangeOrder: &ExchangeOrder{
-			UserId: userId,
-			Status: "",
+			UserId:   userId,
+			Status:   "",
+			Exchange: exchange,
 		},
 		Withdrawal: &Withdrawal{
-			UserId:  userId,
-			Address: address,
-			Status:  "",
-			Coin:    rCoin,
+			UserId:   userId,
+			Address:  address,
+			Exchange: exchange,
+			Status:   "",
+			Coin:     rCoin,
 		},
 	}
 
@@ -80,9 +78,6 @@ func genOrderId(l int) int64 {
 
 func (o *UserOrder) AddDeposite(d *Deposite) {
 	o.Deposite = d
-	o.Exchange = d.Exchange
-	o.Withdrawal.Exchange = d.Exchange
-	o.ExchangeOrder.Exchange = d.Exchange
 	return
 }
 

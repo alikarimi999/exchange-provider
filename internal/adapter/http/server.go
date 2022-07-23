@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
+	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"strconv"
 
@@ -27,27 +28,30 @@ func (s *Server) NewUserOrder(ctx Context) {
 
 	req := dto.CreateOrderRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, "invalid request"))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
 		return
 	}
 
-	if !req.Validate() {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, fmt.Sprintf("invalid request %+v", req)))
-		return
-	}
-
-	r, err := dto.Coin(req.RCoin, req.RChain)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-	p, err := dto.Coin(req.PCoin, req.PChain)
-	if err != nil {
+	if err := req.Validate(); err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	o, err := s.app.NewUserOrder(req.UserId, req.Address, r, p)
+	if ok := s.app.Supported(req.RCoin, req.RChain); !ok {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest,
+			errors.NewMesssage(fmt.Sprintf("unsupported coin: %s for chain: %s", req.RCoin, req.RChain))))
+		return
+	}
+
+	if ok := s.app.Supported(req.PCoin, req.PChain); !ok {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest,
+			errors.NewMesssage(fmt.Sprintf("unsupported coin: %s for chain: %s", req.PCoin, req.PChain))))
+		return
+	}
+
+	o, err := s.app.NewUserOrder(req.UserId, req.Address, &entity.Coin{Id: req.RCoin, Chain: &entity.Chain{Id: req.RChain}},
+		&entity.Coin{Id: req.PCoin, Chain: &entity.Chain{Id: req.PChain}})
+
 	if err != nil {
 		handlerErr(ctx, err)
 		return
@@ -64,12 +68,12 @@ func (s *Server) NewUserOrder(ctx Context) {
 func (s *Server) GetUserOrder(ctx Context) {
 	userId, err := strconv.Atoi(ctx.Param("userId"))
 	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, "invalid user id"))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
 		return
 	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, "invalid order id"))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid order id")))
 		return
 	}
 	o, err := s.app.GetUserOrder(int64(userId), int64(id))
@@ -85,7 +89,7 @@ func (s *Server) GetUserOrder(ctx Context) {
 func (s *Server) GetAllUserOrders(ctx Context) {
 	userId, err := strconv.Atoi(ctx.Param("userId"))
 	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, "invalid user id"))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
 		return
 	}
 

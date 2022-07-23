@@ -32,10 +32,10 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		Deposite:      DToDto(uo.Deposite),
 		Exchange:      uo.Exchange,
 		Withdrawal:    WToDto(uo.Withdrawal),
-		RequestCoin:   uo.RequestCoin.Symbol,
-		RequestChain:  string(uo.RequestCoin.Chain),
-		ProvideCoin:   uo.ProvideCoin.Symbol,
-		ProvideChain:  string(uo.ProvideCoin.Chain),
+		RequestCoin:   uo.RequestCoin.Id,
+		RequestChain:  uo.RequestCoin.Chain.Id,
+		ProvideCoin:   uo.ProvideCoin.Id,
+		ProvideChain:  uo.ProvideCoin.Chain.Id,
 		ExchangeOrder: EToDto(uo.ExchangeOrder),
 	}
 }
@@ -49,8 +49,8 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		Deposite:      o.Deposite.ToEntity(),
 		Exchange:      o.Exchange,
 		Withdrawal:    o.Withdrawal.ToEntity(),
-		RequestCoin:   entity.Coin{Symbol: o.RequestCoin, Chain: entity.Chain(o.RequestChain)},
-		ProvideCoin:   entity.Coin{Symbol: o.ProvideCoin, Chain: entity.Chain(o.ProvideChain)},
+		RequestCoin:   &entity.Coin{Id: o.RequestCoin, Chain: &entity.Chain{Id: o.RequestChain}},
+		ProvideCoin:   &entity.Coin{Id: o.ProvideCoin, Chain: &entity.Chain{Id: o.ProvideChain}},
 		ExchangeOrder: o.ExchangeOrder.ToEntity(),
 	}
 }

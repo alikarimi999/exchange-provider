@@ -11,5 +11,5 @@ type Deposite struct {
 }
 
 type DepositeService interface {
-	New(userId, orderId int64, coin Coin) (*Deposite, error)
+	New(userId, orderId int64, coin *Coin, exchange string) (*Deposite, error)
 }

@@ -1,84 +1,38 @@
 package app
 
 import (
-	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
-	"time"
 )
 
+type tickerList struct {
+	mu   sync.Mutex
+	list map[string]*chainTicker
+}
+
 type withdrawalHandler struct {
-	tickers []*chainTicker
-	tracker *withdrawalTracker
-	wg      *sync.WaitGroup
-	l       logger.Logger
+	tList    *tickerList
+	tickerCh chan *chainTicker
+	tracker  *withdrawalTracker
+	wg       *sync.WaitGroup
+	l        logger.Logger
 }
 
 func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
 	wc entity.WithdrawalCache, exs map[string]entity.Exchange, l logger.Logger) *withdrawalHandler {
 
 	w := &withdrawalHandler{
-		wg:      &sync.WaitGroup{},
-		tracker: newWithdrawalTracker(repo, oc, wc, exs, l),
-		l:       l,
-	}
+		tList: &tickerList{
+			mu:   sync.Mutex{},
+			list: map[string]*chainTicker{},
+		},
+		tickerCh: make(chan *chainTicker),
+		tracker:  newWithdrawalTracker(repo, oc, wc, exs, l),
+		wg:       &sync.WaitGroup{},
 
-	btc := &chainTicker{
-		chain:       entity.ChainBTC,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Minute * 10),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 10,
-		l:           l,
+		l: l,
 	}
-
-	ada := &chainTicker{
-		chain:       entity.ChainADA,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Second * 15),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 5,
-		l:           l,
-	}
-
-	sol := &chainTicker{
-		chain:       entity.ChainSOL,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Second * 15),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 5,
-		l:           l,
-	}
-
-	bch := &chainTicker{
-		chain:       entity.ChainBCH,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Minute * 10),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 10,
-		l:           l,
-	}
-
-	ltc := &chainTicker{
-		chain:       entity.ChainLTC,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Minute * 10),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 10,
-		l:           l,
-	}
-
-	trc20 := &chainTicker{
-		chain:       entity.ChainTRC20,
-		cache:       wc,
-		ticker:      time.NewTicker(time.Second * 60),
-		tracker:     w.tracker,
-		windowsSize: time.Minute * 5,
-		l:           l,
-	}
-
-	w.tickers = []*chainTicker{btc, ada, sol, bch, ltc, trc20}
 
 	return w
 }
@@ -91,11 +45,37 @@ func (h *withdrawalHandler) run(wg *sync.WaitGroup) {
 	h.wg.Add(1)
 	go h.tracker.run(h.wg)
 
-	for _, ti := range h.tickers {
+	for ti := range h.tickerCh {
 		h.wg.Add(1)
 		go ti.tick(h.wg)
-		h.l.Debug(agent, fmt.Sprintf("Started ticker for chain: '%s'", ti.chain))
 	}
 
 	h.wg.Wait()
+}
+
+func (h *withdrawalHandler) addChainTickers(chains []*entity.Chain) {
+	// check if chain exists
+	h.tList.mu.Lock()
+	defer h.tList.mu.Unlock()
+
+	for _, chain := range chains {
+		if _, ok := h.tList.list[chain.Id]; !ok {
+			ti := h.newChainTicker(chain)
+			h.tList.list[chain.Id] = ti
+			h.tickerCh <- ti
+		}
+
+	}
+
+}
+
+func (h *withdrawalHandler) removeTicker(chainId string) {
+	ti := h.tList.list[chainId]
+	ti.stop()
+	delete(h.tList.list, chainId)
+}
+
+func (h *withdrawalHandler) isTickerRunning(chainId string) bool {
+	_, ok := h.tList.list[chainId]
+	return ok
 }

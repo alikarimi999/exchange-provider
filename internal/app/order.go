@@ -18,6 +18,8 @@ type OrderUseCase struct {
 	wh    *withdrawalHandler
 
 	l logger.Logger
+
+	supportedCoins *supportedCoins
 }
 
 func NewOrderUseCase(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
@@ -31,6 +33,8 @@ func NewOrderUseCase(repo entity.OrderRepo, oc entity.OrderCache, wc entity.With
 		oh:    newOrderHandler(repo, oc, wc, fee, exs, l),
 		wh:    newWithdrawalHandler(repo, oc, wc, exs, l),
 		l:     l,
+
+		supportedCoins: newSupportedCoins(),
 	}
 	return o
 }
@@ -56,10 +60,16 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 // 2. send a request to the deposite service to create a deposite
 // 3. get the deposite id as response and add it to the order
 // 4. add the order to the cache
-func (u *OrderUseCase) NewUserOrder(userId int64, address string, rCoin, pCoin entity.Coin) (*entity.UserOrder, error) {
+func (u *OrderUseCase) NewUserOrder(userId int64, address string, rCoin, pCoin *entity.Coin) (*entity.UserOrder, error) {
 	const op = errors.Op("Order-Usecase.NewUserOrder")
-	o := entity.NewOrder(userId, address, rCoin, pCoin)
-	d, err := u.ds.New(userId, o.Id, pCoin)
+
+	ex, err := u.selectExchange(rCoin, pCoin)
+	if err != nil {
+		return nil, errors.Wrap(err, op, &ErrMsg{msg: "select exchange failed"})
+	}
+
+	o := entity.NewOrder(userId, address, rCoin, pCoin, ex)
+	d, err := u.ds.New(userId, o.Id, pCoin, ex)
 	if err != nil {
 		err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',rCoin: %+v , pCoin: %+v ", userId, rCoin, pCoin),
 			&ErrMsg{msg: "create deposite failed, internal error"})
@@ -80,6 +90,7 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, rCoin, pCoin e
 		u.l.Error(string(op), err.Error())
 		return nil, err
 	}
+	u.l.Debug(string(op), fmt.Sprintf("userId: '%d', orderId: '%d'. depositeId: '%d' created", o.UserId, o.Id, o.Deposite.Id))
 	return o, nil
 }
 
