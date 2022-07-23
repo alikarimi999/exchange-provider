@@ -21,8 +21,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -120,11 +120,11 @@ func test() {
 	})
 
 	kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
-		ApiKey:        "62bc3b693ff6b60001b19442",
-		ApiSecret:     "c5a12b89-aae2-4028-8810-8332fbf30d72",
+		ApiKey:        "62b9e1232b968a0001539730",
+		ApiSecret:     "dfcbb3c0-c417-498f-a139-c5961e912426",
 		ApiPassphrase: "77103121",
 		ApiVersion:    "2",
-		ApiUrl:        "https://api.kucoin.com",
+		ApiUrl:        "https://openapi-sandbox.kucoin.com",
 	}, r, l)
 
 	wg := &sync.WaitGroup{}

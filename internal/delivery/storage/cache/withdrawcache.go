@@ -39,7 +39,7 @@ func (c *WithdrawalCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
 	return nil
 }
 
-func (c *WithdrawalCache) GetPendingWithdrawals(chain entity.Chain, end time.Time) ([]*entity.Withdrawal, error) {
+func (c *WithdrawalCache) GetPendingWithdrawals(chain string, end time.Time) ([]*entity.Withdrawal, error) {
 	const op = errors.Op("WithdrawalCache.GetPendingWithdrawals")
 
 	key := fmt.Sprintf("pending_withdrawals:%s", string(chain))
@@ -66,7 +66,7 @@ func (c *WithdrawalCache) GetPendingWithdrawals(chain entity.Chain, end time.Tim
 func (c *WithdrawalCache) DelPendingWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("WithdrawalCache.DelPendingWithdrawal")
 
-	key := fmt.Sprintf("pending_withdrawals:%s", string(w.Coin.Chain))
+	key := fmt.Sprintf("pending_withdrawals:%s", w.Coin.Chain.Id)
 	if err := c.r.ZRem(c.ctx, key, dto.WToDTO(w)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}

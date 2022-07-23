@@ -1,78 +1,71 @@
 package dto
 
-import (
-	"fmt"
-	"order_service/internal/entity"
+// func Coin(sym, chain string) (entity.Coin, error) {
+// 	switch sym {
+// 	case "BTC":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainBTC,
+// 		}, nil
 
-	"order_service/pkg/errors"
-)
+// 	case "ADA":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainADA,
+// 		}, nil
 
-func Coin(sym, chain string) (entity.Coin, error) {
-	switch sym {
-	case "BTC":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainBTC,
-		}, nil
+// 	case "SOL":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainSOL,
+// 		}, nil
 
-	case "ADA":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainADA,
-		}, nil
+// 	case "BCH":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainBCH,
+// 		}, nil
 
-	case "SOL":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainSOL,
-		}, nil
+// 	case "LTC":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainLTC,
+// 		}, nil
 
-	case "BCH":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainBCH,
-		}, nil
+// 	case "TRX", "":
+// 		return entity.Coin{
+// 			Symbol: sym,
+// 			Chain:  entity.ChainTRC20,
+// 		}, nil
 
-	case "LTC":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainLTC,
-		}, nil
+// 	case "USDT":
+// 		switch chain {
+// 		case "TRC20":
+// 			return entity.Coin{
+// 				Symbol: sym,
+// 				Chain:  entity.ChainTRC20,
+// 			}, nil
+// 		case "ERC20":
+// 			return entity.Coin{
+// 				Symbol: sym,
+// 				Chain:  entity.ChainERC20,
+// 			}, nil
+// 		default:
+// 			return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported chain: %s for coin: %s", chain, sym)))
+// 		}
 
-	case "TRX", "":
-		return entity.Coin{
-			Symbol: sym,
-			Chain:  entity.ChainTRC20,
-		}, nil
+// 	case "BTT":
+// 		switch chain {
+// 		case "TRC20":
+// 			return entity.Coin{
+// 				Symbol: sym,
+// 				Chain:  entity.ChainTRC20,
+// 			}, nil
+// 		default:
+// 			return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported chain: %s for coin: %s", chain, sym)))
+// 		}
+// 	default:
+// 		return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported coin: %s", sym)))
 
-	case "USDT":
-		switch chain {
-		case "TRC20":
-			return entity.Coin{
-				Symbol: sym,
-				Chain:  entity.ChainTRC20,
-			}, nil
-		case "ERC20":
-			return entity.Coin{
-				Symbol: sym,
-				Chain:  entity.ChainERC20,
-			}, nil
-		default:
-			return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported chain: %s for coin: %s", chain, sym)))
-		}
-
-	case "BTT":
-		switch chain {
-		case "TRC20":
-			return entity.Coin{
-				Symbol: sym,
-				Chain:  entity.ChainTRC20,
-			}, nil
-		default:
-			return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported chain: %s for coin: %s", chain, sym)))
-		}
-	default:
-		return entity.Coin{}, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported coin: %s", sym)))
-
-	}
-}
+// 	}
+// }

@@ -12,6 +12,7 @@ type CreateDopsiteRequest struct {
 	OrderId  int64  `json:"orderId"`
 	Currency string `json:"currency"`
 	Chain    string `json:"chain"`
+	Exchange string `json:"exchange"`
 }
 
 // return io.Reader for the request body

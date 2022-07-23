@@ -30,8 +30,8 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 		OrderId:     w.OrderId,
 		UserId:      w.UserId,
 		Address:     w.Address,
-		Coin:        w.Coin.Symbol,
-		Chain:       string(w.Coin.Chain),
+		Coin:        w.Coin.Id,
+		Chain:       w.Coin.Chain.Id,
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -48,7 +48,7 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 		OrderId:     w.OrderId,
 		UserId:      w.UserId,
 		Address:     w.Address,
-		Coin:        entity.Coin{Symbol: w.Coin, Chain: entity.Chain(w.Chain)},
+		Coin:        &entity.Coin{Id: w.Coin, Chain: &entity.Chain{Id: w.Chain}},
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -81,8 +81,8 @@ func WToDTO(w *entity.Withdrawal) *PendingWithdrawal {
 		Id:       w.Id,
 		OrderId:  w.OrderId,
 		UserId:   w.UserId,
-		Coin:     w.Coin.Symbol,
-		Chain:    string(w.Coin.Chain),
+		Coin:     w.Coin.Id,
+		Chain:    w.Coin.Chain.Id,
 		Exchange: w.Exchange,
 	}
 }
@@ -92,7 +92,7 @@ func (w *PendingWithdrawal) ToEntity() *entity.Withdrawal {
 		Id:       w.Id,
 		OrderId:  w.OrderId,
 		UserId:   w.UserId,
-		Coin:     entity.Coin{Symbol: w.Coin, Chain: entity.Chain(w.Chain)},
+		Coin:     &entity.Coin{Id: w.Coin, Chain: &entity.Chain{Id: w.Chain}},
 		Exchange: w.Exchange,
 	}
 }

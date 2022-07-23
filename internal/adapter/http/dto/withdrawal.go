@@ -28,8 +28,8 @@ func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 		UserId:  w.UserId,
 		Address: w.Address,
 
-		Coin:     w.Coin.Symbol,
-		Chain:    string(w.Coin.Chain),
+		Coin:     w.Coin.Id,
+		Chain:    w.Coin.Chain.Id,
 		Exchange: w.Exchange,
 
 		Total:       w.Total,

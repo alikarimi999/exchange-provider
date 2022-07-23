@@ -1,6 +1,8 @@
 package entity
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type WithdrawalStatus string
 
@@ -16,7 +18,7 @@ type Withdrawal struct {
 	UserId  int64
 	Address string
 
-	Coin     Coin
+	Coin     *Coin
 	Exchange string
 
 	Total       string

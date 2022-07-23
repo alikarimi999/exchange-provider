@@ -1,6 +1,8 @@
 package dto
 
-import "order_service/internal/entity"
+import (
+	"order_service/internal/entity"
+)
 
 type Withdrawal struct {
 	Id      string `gorm:"primary_key"`
@@ -28,8 +30,8 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 		OrderId: w.OrderId,
 		Address: w.Address,
 
-		Coin:     w.Coin.Symbol,
-		Chain:    string(w.Coin.Chain),
+		Coin:     w.Coin.Id,
+		Chain:    w.Coin.Chain.Id,
 		Exchange: w.Exchange,
 
 		Total:       w.Total,
@@ -49,9 +51,9 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 		OrderId: w.OrderId,
 		Address: w.Address,
 
-		Coin: entity.Coin{
-			Symbol: w.Coin,
-			Chain:  entity.Chain(w.Chain),
+		Coin: &entity.Coin{
+			Id:    w.Coin,
+			Chain: &entity.Chain{Id: w.Chain},
 		},
 		Exchange: w.Exchange,
 

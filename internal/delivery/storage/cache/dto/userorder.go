@@ -14,9 +14,9 @@ type UserOrder struct {
 	Exchange      string
 	Withdrawal    *Withdrawal
 	RequestCoin   string
-	RequestNet    string
+	RequestChain  string
 	ProvideCoin   string
-	ProvideNet    string
+	ProvideChain  string
 	ExchangeOrder *exchangeOrder
 	Broken        bool
 	BrokeReason   string
@@ -31,10 +31,10 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 		Deposite:      dToDto(u.Deposite),
 		Exchange:      u.Exchange,
 		Withdrawal:    OWToDTO(u.Withdrawal),
-		RequestCoin:   u.RequestCoin.Symbol,
-		RequestNet:    string(u.RequestCoin.Chain),
-		ProvideCoin:   u.ProvideCoin.Symbol,
-		ProvideNet:    string(u.ProvideCoin.Chain),
+		RequestCoin:   u.RequestCoin.Id,
+		RequestChain:  u.RequestCoin.Chain.Id,
+		ProvideCoin:   u.ProvideCoin.Id,
+		ProvideChain:  u.ProvideCoin.Chain.Id,
 		ExchangeOrder: eoToDto(u.ExchangeOrder),
 		Broken:        u.Broken,
 		BrokeReason:   u.BrokeReason,
@@ -50,14 +50,14 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 		Deposite:   u.Deposite.ToEntity(),
 		Exchange:   u.Exchange,
 		Withdrawal: u.Withdrawal.ToEntity(),
-		RequestCoin: entity.Coin{
-			Symbol: u.RequestCoin,
-			Chain:  entity.Chain(u.RequestNet),
+		RequestCoin: &entity.Coin{
+			Id:    u.RequestCoin,
+			Chain: &entity.Chain{Id: u.RequestChain},
 		},
 
-		ProvideCoin: entity.Coin{
-			Symbol: u.ProvideCoin,
-			Chain:  entity.Chain(u.ProvideNet),
+		ProvideCoin: &entity.Coin{
+			Id:    u.ProvideCoin,
+			Chain: &entity.Chain{Id: u.ProvideChain},
 		},
 
 		ExchangeOrder: u.ExchangeOrder.ToEntity(),

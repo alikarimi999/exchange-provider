@@ -1,6 +1,9 @@
 package dto
 
-import "order_service/internal/entity"
+import (
+	"order_service/internal/entity"
+	"order_service/pkg/errors"
+)
 
 type UserOrder struct {
 	Id            int64
@@ -28,10 +31,10 @@ func UoFromEntity(o *entity.UserOrder) *UserOrder {
 		Deposite:      DFromEntity(o.Deposite),
 		Exchange:      o.Exchange,
 		Withdrawal:    WFromEntity(o.Withdrawal),
-		RequestCoin:   o.RequestCoin.Symbol,
-		RequestChain:  string(o.RequestCoin.Chain),
-		ProvideCoin:   o.ProvideCoin.Symbol,
-		ProvideChain:  string(o.ProvideCoin.Chain),
+		RequestCoin:   o.RequestCoin.Id,
+		RequestChain:  o.RequestCoin.Chain.Id,
+		ProvideCoin:   o.ProvideCoin.Id,
+		ProvideChain:  o.ProvideCoin.Chain.Id,
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
 		Broken:        o.Broken,
 		BrokeReason:   o.BrokeReason,
@@ -48,21 +51,28 @@ type CreateOrderRequest struct {
 	PChain string `json:"p_chain"`
 }
 
-func (r *CreateOrderRequest) Validate() bool {
+func (r *CreateOrderRequest) Validate() error {
 	if r.UserId == 0 {
-		return false
+		return errors.Wrap(errors.NewMesssage("user_id is required"))
 	}
 	if r.Address == "" {
-		return false
+		return errors.Wrap(errors.NewMesssage("address is required"))
 	}
 	if r.RCoin == "" {
-		return false
+		return errors.Wrap(errors.NewMesssage("r_coin is required"))
 	}
-	if r.PCoin == "" {
-		return false
+	if r.RChain == "" {
+		return errors.Wrap(errors.NewMesssage("r_chain is required"))
 	}
 
-	return true
+	if r.PCoin == "" {
+		return errors.Wrap(errors.NewMesssage("p_coin is required"))
+	}
+	if r.PChain == "" {
+		return errors.Wrap(errors.NewMesssage("p_chain is required"))
+	}
+
+	return nil
 }
 
 type CreateOrderResponse struct {

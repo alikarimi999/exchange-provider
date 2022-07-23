@@ -17,13 +17,14 @@ func NewDepositeService(url string) entity.DepositeService {
 	return &depositeService{url: url}
 }
 
-func (d *depositeService) New(userId, orderId int64, coin entity.Coin) (*entity.Deposite, error) {
+func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange string) (*entity.Deposite, error) {
 	const op = errors.Op("DepositeService.New")
 	c := &CreateDopsiteRequest{
 		UserId:   userId,
 		OrderId:  orderId,
-		Currency: coin.Symbol,
-		Chain:    string(coin.Chain),
+		Currency: coin.Id,
+		Chain:    coin.Chain.Id,
+		Exchange: exchange,
 	}
 
 	req, _ := http.NewRequest(http.MethodPost, d.url, c.reader())
@@ -36,6 +37,7 @@ func (d *depositeService) New(userId, orderId int64, coin entity.Coin) (*entity.
 	}
 
 	defer resp.Body.Close()
+
 	bod, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
