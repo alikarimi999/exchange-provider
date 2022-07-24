@@ -24,7 +24,7 @@ func (k *kucoinExchange) Exchange(from, to *entity.Coin, vol string) (string, er
 	k.l.Debug(string(op), fmt.Sprintf("kucoin opening order request: %+v", oDTO))
 	res, err := k.api.CreateOrder((*kucoin.CreateOrderModel)(oDTO))
 	if err != nil || res.Code != "200000" {
-		return "", errors.Wrap(errors.New(fmt.Sprintf("ApplyWithdrawal   %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
+		return "", errors.Wrap(errors.New(fmt.Sprintf("CreateOrder  %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
 	}
 
 	resp := &kucoin.CreateOrderResultModel{}
