@@ -42,6 +42,11 @@ func (r *AddPairsRequest) Validate() error {
 		if p.QuoteC.Id == "" || p.QuoteC.Chain == "" || p.QuoteC.BlockTime == "" {
 			return errors.Wrap(errors.ErrBadRequest, "quote coin must have id, chain and block time")
 		}
+
+		if len(p.ExsC) == 0 {
+			return errors.Wrap(errors.ErrBadRequest, "exchanges config must be set")
+		}
+
 		for ex, conf := range p.ExsC {
 			if conf.BaseC.Precision == 0 {
 				return errors.Wrap(errors.ErrBadRequest,

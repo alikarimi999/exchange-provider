@@ -83,7 +83,7 @@ start:
 }
 
 func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) ([]*dto.Withdrawal, error) {
-
+	const op = errors.Op("Kucoin.WithdrawalAggregator.aggregate")
 	wa.params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
 	wa.params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
 	wa.params["status"] = status
@@ -94,13 +94,13 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 	}
 	for {
 
-		resp, err := wa.api.Withdrawals(wa.params, paginate)
-		if err != nil || resp.Code != "200000" {
-			return nil, err
+		res, err := wa.api.Withdrawals(wa.params, paginate)
+		if err != nil || res.Code != "200000" {
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("ApplyWithdrawal   %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
 		}
 
 		withdrawals := []*dto.Withdrawal{}
-		pa, err := resp.ReadPaginationData(&withdrawals)
+		pa, err := res.ReadPaginationData(&withdrawals)
 		if err != nil {
 			return nil, err
 		}
