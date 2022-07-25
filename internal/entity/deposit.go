@@ -1,6 +1,6 @@
 package entity
 
-type Deposite struct {
+type Deposit struct {
 	Id         int64
 	UserId     int64
 	OrderId    int64
@@ -11,5 +11,5 @@ type Deposite struct {
 }
 
 type DepositeService interface {
-	New(userId, orderId int64, coin *Coin, exchange string) (*Deposite, error)
+	New(userId, orderId int64, coin *Coin, exchange string) (*Deposit, error)
 }

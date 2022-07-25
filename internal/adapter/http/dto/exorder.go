@@ -3,17 +3,17 @@ package dto
 import "order_service/internal/entity"
 
 type ExchangeOrder struct {
-	Id          string
-	UserId      int64
-	OrderId     int64
-	Symbol      string
-	Exchange    string
-	Side        string
-	Funds       string
-	Size        string
-	Fee         string
-	FeeCurrency string
-	Status      string
+	Id          string `json:"id"`
+	UserId      int64  `json:"user_id"`
+	OrderId     int64  `json:"order_id"`
+	Symbol      string `json:"symbol"`
+	Exchange    string `json:"exchange"`
+	Side        string `json:"side"`
+	Funds       string `json:"funds"`
+	Size        string `json:"size"`
+	Fee         string `json:"fee"`
+	FeeCurrency string `json:"fee_currency"`
+	Status      string `json:"status"`
 }
 
 func EoFromEntity(e *entity.ExchangeOrder) *ExchangeOrder {

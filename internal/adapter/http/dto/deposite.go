@@ -2,18 +2,18 @@ package dto
 
 import "order_service/internal/entity"
 
-type Deposite struct {
-	Id         int64
-	UserId     int64
-	OrderId    int64
-	Exchange   string
-	Volume     string
-	Fullfilled bool
-	Address    string
+type Deposit struct {
+	Id         int64  `json:"deposit_id"`
+	UserId     int64  `json:"user_id"`
+	OrderId    int64  `json:"order_id"`
+	Exchange   string `json:"exchange"`
+	Volume     string `json:"volume"`
+	Fullfilled bool   `json:"fullfilled"`
+	Address    string `json:"address"`
 }
 
-func DFromEntity(d *entity.Deposite) *Deposite {
-	return &Deposite{
+func DFromEntity(d *entity.Deposit) *Deposit {
+	return &Deposit{
 		Id:         d.Id,
 		UserId:     d.UserId,
 		OrderId:    d.OrderId,

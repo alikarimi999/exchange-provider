@@ -17,13 +17,13 @@ func NewDepositeService(url string) entity.DepositeService {
 	return &depositeService{url: url}
 }
 
-func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange string) (*entity.Deposite, error) {
+func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange string) (*entity.Deposit, error) {
 	const op = errors.Op("DepositeService.New")
 	c := &CreateDopsiteRequest{
 		UserId:   userId,
 		OrderId:  orderId,
-		Currency: coin.Id,
-		Chain:    coin.Chain.Id,
+		CoinId:   coin.Id,
+		ChainId:  coin.Chain.Id,
 		Exchange: exchange,
 	}
 

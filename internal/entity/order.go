@@ -29,7 +29,7 @@ type UserOrder struct {
 	UserId        int64
 	CreatedAt     int64
 	Status        OrderStatus
-	Deposite      *Deposite
+	Deposite      *Deposit
 	Exchange      string
 	Withdrawal    *Withdrawal
 	RequestCoin   *Coin
@@ -48,7 +48,7 @@ func NewOrder(userId int64, address string, rCoin, pCoin *Coin, exchange string)
 		Exchange:    exchange,
 		RequestCoin: rCoin,
 		ProvideCoin: pCoin,
-		Deposite: &Deposite{
+		Deposite: &Deposit{
 			UserId:   userId,
 			Exchange: exchange,
 		},
@@ -76,7 +76,7 @@ func genOrderId(l int) int64 {
 	return utils.RandInt64(l)
 }
 
-func (o *UserOrder) AddDeposite(d *Deposite) {
+func (o *UserOrder) AddDeposite(d *Deposit) {
 	o.Deposite = d
 	return
 }

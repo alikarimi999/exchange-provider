@@ -8,8 +8,8 @@ import (
 )
 
 type coin struct {
-	Id        string `json:"id"`
-	Chain     string `json:"chain"`
+	CoinId    string `json:"coin_id"`
+	ChainId   string `json:"chain_id"`
 	BlockTime string `json:"block_time"`
 }
 type coinConfig struct {
@@ -36,10 +36,10 @@ type AddPairsRequest struct {
 // if there was return an error that the value must set
 func (r *AddPairsRequest) Validate() error {
 	for _, p := range r.Pairs {
-		if p.BaseC.Id == "" || p.BaseC.Chain == "" || p.BaseC.BlockTime == "" {
+		if p.BaseC.CoinId == "" || p.BaseC.ChainId == "" || p.BaseC.BlockTime == "" {
 			return errors.Wrap(errors.ErrBadRequest, "base coin must have id, chain and block time")
 		}
-		if p.QuoteC.Id == "" || p.QuoteC.Chain == "" || p.QuoteC.BlockTime == "" {
+		if p.QuoteC.CoinId == "" || p.QuoteC.ChainId == "" || p.QuoteC.BlockTime == "" {
 			return errors.Wrap(errors.ErrBadRequest, "quote coin must have id, chain and block time")
 		}
 
@@ -63,9 +63,9 @@ func (r *AddPairsRequest) Validate() error {
 
 func (r *pair) BaseCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.BaseC.Id,
+		Id: r.BaseC.CoinId,
 		Chain: &entity.Chain{
-			Id: r.BaseC.Chain,
+			Id: r.BaseC.ChainId,
 		},
 	}
 
@@ -79,9 +79,9 @@ func (r *pair) BaseCoin() (*entity.Coin, error) {
 
 func (r *pair) QuoteCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.QuoteC.Id,
+		Id: r.QuoteC.CoinId,
 		Chain: &entity.Chain{
-			Id: r.QuoteC.Chain,
+			Id: r.QuoteC.ChainId,
 		},
 	}
 

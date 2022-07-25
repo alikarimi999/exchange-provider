@@ -6,20 +6,20 @@ import (
 )
 
 type UserOrder struct {
-	Id            int64
-	UserId        int64
-	CreatedAt     int64
-	Status        string
-	Deposite      *Deposite
-	Exchange      string
-	Withdrawal    *Withdrawal
-	RequestCoin   string
-	RequestChain  string
-	ProvideCoin   string
-	ProvideChain  string
-	ExchangeOrder *ExchangeOrder
-	Broken        bool
-	BrokeReason   string
+	Id            int64          `json:"order_id"`
+	UserId        int64          `json:"user_id"`
+	CreatedAt     int64          `json:"created_at"`
+	Status        string         `json:"status"`
+	Deposit       *Deposit       `json:"deposit"`
+	Exchange      string         `json:"exchange"`
+	Withdrawal    *Withdrawal    `json:"withdrawal"`
+	RequestCoin   string         `json:"request_coin"`
+	RequestChain  string         `json:"request_chain"`
+	ProvideCoin   string         `json:"provide_coin"`
+	ProvideChain  string         `json:"provide_chain"`
+	ExchangeOrder *ExchangeOrder `json:"exchange_order"`
+	Broken        bool           `json:"broken"`
+	BrokeReason   string         `json:"broke_reason"`
 }
 
 func UoFromEntity(o *entity.UserOrder) *UserOrder {
@@ -28,7 +28,7 @@ func UoFromEntity(o *entity.UserOrder) *UserOrder {
 		UserId:        o.UserId,
 		CreatedAt:     o.CreatedAt,
 		Status:        string(o.Status),
-		Deposite:      DFromEntity(o.Deposite),
+		Deposit:       DFromEntity(o.Deposite),
 		Exchange:      o.Exchange,
 		Withdrawal:    WFromEntity(o.Withdrawal),
 		RequestCoin:   o.RequestCoin.Id,

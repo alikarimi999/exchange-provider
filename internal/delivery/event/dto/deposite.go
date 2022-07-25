@@ -2,12 +2,12 @@ package dto
 
 import "fmt"
 
-type Deposite struct {
+type Deposit struct {
 	Id         int64  `json:"id"`
-	UserID     int64  `json:"userId"`
-	OrderId    int64  `json:"orderId"`
-	DepositeId int64  `json:"depositeId"`
-	TxId       string `json:"txId"`
+	UserID     int64  `json:"user_id"`
+	OrderId    int64  `json:"order_id"`
+	DepositeId int64  `json:"deposit_id"`
+	TxId       string `json:"tx_id"`
 	Currency   string `json:"currency"`
 	Chain      string `json:"chain"`
 	Volume     string `json:"volume"`
@@ -15,6 +15,6 @@ type Deposite struct {
 	Exchange   string `json:"exchange"`
 }
 
-func (d *Deposite) String() string {
+func (d *Deposit) String() string {
 	return fmt.Sprintf("%+v", *d)
 }

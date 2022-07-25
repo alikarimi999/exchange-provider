@@ -76,7 +76,7 @@ func (s *Consumer) parser(wg *sync.WaitGroup) {
 			switch msg.Topic() {
 			case "deposite.confirmed":
 				go func(m queue.Message) {
-					d := &dto.Deposite{}
+					d := &dto.Deposit{}
 					if err := json.Unmarshal(m.Data(), d); err != nil {
 						s.l.Error(string(op), errors.Wrap(err, op).Error())
 						s.ackMsg(m)
@@ -110,7 +110,7 @@ func (s *Consumer) handleError(err error) {
 	s.l.Error("event.Consumer", err.Error())
 }
 
-func (s *Consumer) handleConfirmedDeposite(d *dto.Deposite) error {
+func (s *Consumer) handleConfirmedDeposite(d *dto.Deposit) error {
 	if err := s.app.SetDepositeVolume(d.UserID, d.OrderId, d.DepositeId, d.Volume); err != nil {
 		return err
 	}

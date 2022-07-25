@@ -8,10 +8,10 @@ import (
 )
 
 type CreateDopsiteRequest struct {
-	UserId   int64  `json:"userId"`
-	OrderId  int64  `json:"orderId"`
-	Currency string `json:"currency"`
-	Chain    string `json:"chain"`
+	UserId   int64  `json:"user_id"`
+	OrderId  int64  `json:"order_id"`
+	CoinId   string `json:"coin_id"`
+	ChainId  string `json:"chain_id"`
 	Exchange string `json:"exchange"`
 }
 
@@ -23,14 +23,14 @@ func (r *CreateDopsiteRequest) reader() io.Reader {
 
 type CreateDepositeResp struct {
 	Id       int64  `json:"id"`
-	UserId   int64  `json:"userId"`
-	OrderId  int64  `json:"orderId"`
+	UserId   int64  `json:"user_id"`
+	OrderId  int64  `json:"order_id"`
 	Exchange string `json:"exchange"`
 	Address  string `json:"address"`
 }
 
-func (c *CreateDepositeResp) MapToEntity() *entity.Deposite {
-	return &entity.Deposite{
+func (c *CreateDepositeResp) MapToEntity() *entity.Deposit {
+	return &entity.Deposit{
 		Id:         c.Id,
 		UserId:     c.UserId,
 		OrderId:    c.OrderId,

@@ -13,7 +13,7 @@ type deposite struct {
 	Address    string
 }
 
-func dToDto(d *entity.Deposite) *deposite {
+func dToDto(d *entity.Deposit) *deposite {
 	return &deposite{
 		Id:         d.Id,
 		Exchange:   d.Exchange,
@@ -23,8 +23,8 @@ func dToDto(d *entity.Deposite) *deposite {
 	}
 }
 
-func (d *deposite) ToEntity() *entity.Deposite {
-	return &entity.Deposite{
+func (d *deposite) ToEntity() *entity.Deposit {
+	return &entity.Deposit{
 		Id:         d.Id,
 		Exchange:   d.Exchange,
 		Volume:     d.Volume,
