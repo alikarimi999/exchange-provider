@@ -23,8 +23,8 @@ func (k *kucoinExchange) Exchange(from, to *entity.Coin, vol string) (string, er
 
 	k.l.Debug(string(op), fmt.Sprintf("kucoin opening order request: %+v", oDTO))
 	res, err := k.api.CreateOrder((*kucoin.CreateOrderModel)(oDTO))
-	if err != nil || res.Code != "200000" {
-		return "", errors.Wrap(errors.New(fmt.Sprintf("CreateOrder  %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
+	if err = handleSDKErr(err, res); err != nil {
+		return "", errors.Wrap(err, op)
 	}
 
 	resp := &kucoin.CreateOrderResultModel{}
@@ -46,14 +46,15 @@ func (k *kucoinExchange) Withdrawal(coin *entity.Coin, addr, vol string) (string
 
 	// first transfer from trade account to main account
 	res, err := k.api.InnerTransferV2(uuid.New().String(), coin.Id, "trade", "main", vol)
-	if err != nil || res.Code != "200000" {
-		return "", errors.Wrap(errors.New(fmt.Sprintf("InnerTransfer   %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
+	if err = handleSDKErr(err, res); err != nil {
+		return "", errors.Wrap(err, op)
 	}
 
 	res, err = k.api.ApplyWithdrawal(coin.Id, addr, vol, opts)
-	if err != nil || res.Code != "200000" {
-		return "", errors.Wrap(errors.New(fmt.Sprintf("ApplyWithdrawal   %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
+	if err = handleSDKErr(err, res); err != nil {
+		return "", errors.Wrap(err, op)
 	}
+
 	w := &kucoin.ApplyWithdrawalResultModel{}
 	if err = res.ReadData(w); err != nil {
 		return "", errors.Wrap(err, op, errors.ErrInternal)
@@ -89,11 +90,11 @@ func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struc
 }
 
 func (k *kucoinExchange) ping() error {
-	const op = errors.Op("Kucoin.Ping")
+	const op = errors.Op("Kucoin.ping")
 
 	resp, err := k.api.Accounts("", "")
-	if err != nil || resp.Code != "200000" {
-		return errors.Wrap(errors.New(fmt.Sprintf("%s:%s:%s", resp.Message, resp.Code, err)), op, errors.ErrInternal)
+	if err = handleSDKErr(err, resp); err != nil {
+		return errors.Wrap(err, op)
 	}
 
 	return nil
