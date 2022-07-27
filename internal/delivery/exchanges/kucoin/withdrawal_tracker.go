@@ -33,6 +33,7 @@ func newWithdrawalTracker(r *redis.Client, l logger.Logger) *withdrawalTracker {
 
 func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	const op = errors.Op("Kucoin.WithdrawalTracker.run")
+	t.l.Debug(string(op), "started")
 
 	defer wg.Done()
 	for {

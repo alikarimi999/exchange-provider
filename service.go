@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"order_service/internal/app"
 	"order_service/internal/delivery/event"
-	"order_service/internal/delivery/exchanges/kucoin"
 	"order_service/internal/delivery/http"
 	"order_service/internal/delivery/services"
 	"order_service/internal/delivery/storage"
-	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"order_service/pkg/queue"
 	"os"
@@ -31,10 +29,10 @@ func production() {
 
 	l := logger.NewLogger("./order_service.json", true)
 
-	r := redis.NewClient(&redis.Options{
+	rc := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR")})
 
-	if err := r.Ping(context.Background()).Err(); err != nil {
+	if err := rc.Ping(context.Background()).Err(); err != nil {
 		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
 	}
 
@@ -46,30 +44,30 @@ func production() {
 		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
 	}
 	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
-	s := storage.NewStorage(db, r, l)
+	s := storage.NewStorage(db, rc, l)
 
 	ss := services.WrapServices(&services.Config{
 		DepositeServiceURL: os.Getenv("DEPOSITE_SERVICE_URL"),
 		FeeServiceURL:      "http://localhost:8083/fee",
 	})
 
-	kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
-		ApiKey:        os.Getenv("KUCOIN_API_KEY"),
-		ApiSecret:     os.Getenv("KUCOIN_API_SECRET"),
-		ApiPassphrase: os.Getenv("KUCOIN_API_PASSPHRASE"),
-		ApiVersion:    "2",
-		ApiUrl:        "https://api.kucoin.com",
-	}, r, l)
+	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
+	// 	ApiKey:        os.Getenv("KUCOIN_API_KEY"),
+	// 	ApiSecret:     os.Getenv("KUCOIN_API_SECRET"),
+	// 	ApiPassphrase: os.Getenv("KUCOIN_API_PASSPHRASE"),
+	// 	ApiVersion:    "2",
+	// 	ApiUrl:        "https://api.kucoin.com",
+	// }, r, l)
 
 	wg := &sync.WaitGroup{}
 
-	wg.Add(1)
-	go kucoin.Run(wg)
+	// wg.Add(1)
+	// go kucoin.Run(wg)
 
-	exs := make(map[string]entity.Exchange)
-	exs["kucoin"] = kucoin
+	// exs := make(map[string]entity.Exchange)
+	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, exs, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -97,10 +95,10 @@ func test() {
 
 	l := logger.NewLogger("./order_service.json", true)
 
-	r := redis.NewClient(&redis.Options{
+	rc := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR")})
 
-	if err := r.Ping(context.Background()).Err(); err != nil {
+	if err := rc.Ping(context.Background()).Err(); err != nil {
 		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
 	}
 
@@ -112,30 +110,30 @@ func test() {
 		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
 	}
 	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
-	s := storage.NewStorage(db, r, l)
+	s := storage.NewStorage(db, rc, l)
 
 	ss := services.WrapServices(&services.Config{
 		DepositeServiceURL: "http://localhost:8080/deposites",
 		FeeServiceURL:      "http://localhost:8083/fee",
 	})
 
-	kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
-		ApiKey:        "62b9e1232b968a0001539730",
-		ApiSecret:     "dfcbb3c0-c417-498f-a139-c5961e912426",
-		ApiPassphrase: "77103121",
-		ApiVersion:    "2",
-		ApiUrl:        "https://openapi-sandbox.kucoin.com",
-	}, r, l)
+	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
+	// 	ApiKey:        "62b9e1232b968a0001539730",
+	// 	ApiSecret:     "dfcbb3c0-c417-498f-a139-c5961e912426",
+	// 	ApiPassphrase: "77103121",
+	// 	ApiVersion:    "2",
+	// 	ApiUrl:        "https://openapi-sandbox.kucoin.com",
+	// }, r, l)
 
 	wg := &sync.WaitGroup{}
 
-	wg.Add(1)
-	go kucoin.Run(wg)
+	// wg.Add(1)
+	// go kucoin.Run(wg)
 
-	exs := make(map[string]entity.Exchange)
-	exs["kucoin"] = kucoin
+	// exs := make(map[string]entity.Exchange)
+	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, exs, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 

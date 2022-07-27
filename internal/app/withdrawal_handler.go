@@ -20,7 +20,7 @@ type withdrawalHandler struct {
 }
 
 func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
-	wc entity.WithdrawalCache, exs map[string]entity.Exchange, l logger.Logger) *withdrawalHandler {
+	wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalHandler {
 
 	w := &withdrawalHandler{
 		tList: &tickerList{

@@ -14,19 +14,19 @@ type withdrawalTracker struct {
 	repo entity.OrderRepo
 	oc   entity.OrderCache
 	wc   entity.WithdrawalCache
-	exs  map[string]entity.Exchange
+	*exStore
 
 	l logger.Logger
 }
 
-func newWithdrawalTracker(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, exs map[string]entity.Exchange, l logger.Logger) *withdrawalTracker {
+func newWithdrawalTracker(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalTracker {
 	w := &withdrawalTracker{
-		wCh:  make(chan *entity.Withdrawal, 1024),
-		repo: repo,
-		oc:   oc,
-		wc:   wc,
-		exs:  exs,
-		l:    l,
+		wCh:     make(chan *entity.Withdrawal, 1024),
+		repo:    repo,
+		oc:      oc,
+		wc:      wc,
+		exStore: exs,
+		l:       l,
 	}
 	return w
 }

@@ -1,6 +1,7 @@
 package kucoin
 
 import (
+	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
 
@@ -17,9 +18,9 @@ type kucoinAdress struct {
 }
 
 type Configs struct {
-	ApiKey        string
-	ApiSecret     string
-	ApiPassphrase string
+	ApiKey        string `json:"api_key"`
+	ApiSecret     string `json:"api_secret"`
+	ApiPassphrase string `json:"api_passphrase"`
 	ApiVersion    string
 	ApiUrl        string
 	// WsTopics      []string
@@ -39,9 +40,19 @@ type kucoinExchange struct {
 	withdrawalCoins *withdrawalCoins
 }
 
-func NewKucoinExchange(cfg *Configs, rc *redis.Client, l logger.Logger) *kucoinExchange {
-	const op = errors.Op("Kucoin-Exchange-Service.NewKucoinExchange")
-	k := &kucoinExchange{
+func NewKucoinExchange() *kucoinExchange {
+	return &kucoinExchange{}
+}
+
+func (k *kucoinExchange) Setup(cfgi interface{}, rc *redis.Client, l logger.Logger) (entity.Exchange, error) {
+	const op = errors.Op("Kucoin-Exchange.Setup")
+
+	cfg, err := validateConfigs(cfgi)
+	if err != nil {
+		return nil, errors.Wrap(string(op), err)
+	}
+
+	k = &kucoinExchange{
 		cfg:             cfg,
 		l:               l,
 		exchangePairs:   newExchangePairs(),
@@ -54,19 +65,18 @@ func NewKucoinExchange(cfg *Configs, rc *redis.Client, l logger.Logger) *kucoinE
 		kucoin.ApiPassPhraseOption(cfg.ApiPassphrase),
 		kucoin.ApiKeyVersionOption(cfg.ApiVersion),
 	)
-
-	l.Debug(string(op), "kucoin: ping...")
 	if err := k.ping(); err != nil {
-		l.Fatal(string(op), errors.Wrap(err, op).Error())
+		return nil, err
 	}
-	l.Debug(string(op), "kucoin: ping ok")
+
+	k.l.Debug(string(op), "ping was successful")
 
 	k.ot = newOrderTracker(k.api, l)
 	k.wt = newWithdrawalTracker(rc, l)
 	k.wa = newWithdrawalAggregator(k.api, l, rc)
 	// k.setupWebSocket(rc)
 
-	return k
+	return k, nil
 }
 
 func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
@@ -78,5 +88,7 @@ func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
 	go k.wt.run(w)
 	w.Add(1)
 	go k.wa.run(w)
+
+	k.l.Debug("Kucoin-Exchange.Run", "started")
 	w.Wait()
 }

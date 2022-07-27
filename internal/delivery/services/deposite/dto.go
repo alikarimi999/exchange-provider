@@ -7,6 +7,11 @@ import (
 	"order_service/internal/entity"
 )
 
+type Coin struct {
+	CoinId  string `json:"coin_id"`
+	ChainId string `json:"chain_id"`
+}
+
 type CreateDopsiteRequest struct {
 	UserId   int64  `json:"user_id"`
 	OrderId  int64  `json:"order_id"`
@@ -38,4 +43,33 @@ func (c *CreateDepositeResp) MapToEntity() *entity.Deposit {
 		Fullfilled: false,
 		Address:    c.Address,
 	}
+}
+
+type SupportedRequest struct {
+	Exchange string  `json:"exchange"`
+	Coins    []*Coin `json:"coins"`
+}
+
+// return io.Reader for the request body
+func (r *SupportedRequest) reader() io.Reader {
+	b, _ := json.Marshal(r)
+	return bytes.NewReader(b)
+}
+
+type supportCoin struct {
+	*Coin
+	Supported bool `json:"supported"`
+}
+
+func (c *supportCoin) MapToEntity() *entity.Coin {
+	return &entity.Coin{
+		Id: c.CoinId,
+		Chain: &entity.Chain{
+			Id: c.ChainId,
+		},
+	}
+}
+
+type SupportedRespons struct {
+	Coins []*supportCoin `json:"coins"`
 }

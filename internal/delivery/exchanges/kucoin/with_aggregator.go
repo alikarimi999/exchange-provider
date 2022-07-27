@@ -36,6 +36,8 @@ func newWithdrawalAggregator(api *kucoin.ApiService, l logger.Logger, r *redis.C
 
 func (wa *withdrawalAggregator) run(wg *sync.WaitGroup) {
 	const op = errors.Op("Kucoin.WithdrawalAggregator.run")
+	wa.l.Debug(string(op), "started")
+
 	defer wg.Done()
 start:
 	for {

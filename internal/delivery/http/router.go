@@ -47,16 +47,25 @@ func (o *Router) orderSrvGrpV0() {
 
 	}
 
-	admin := v0.Group("/admin")
+	a := o.gin.Group("/admin")
 
 	{
-		admin.POST("/add_pairs", func(ctx *gin.Context) {
-			o.srv.AddPairs(newContext(ctx))
-		})
+		ps := a.Group("/pairs")
+		{
+			ps.POST("/add", func(ctx *gin.Context) {
+				o.srv.AddPairs(newContext(ctx))
+			})
 
-		admin.POST("/get_pairs", func(ctx *gin.Context) {
-			o.srv.GetExchangesPairs(newContext(ctx))
-		})
+			ps.POST("/get", func(ctx *gin.Context) {
+				o.srv.GetExchangesPairs(newContext(ctx))
+			})
+		}
+
+		es := a.Group("/exchanges")
+		{
+			es.POST("/add_account/:id", func(ctx *gin.Context) { o.srv.AddExchange(newContext(ctx)) })
+			es.POST("/change_account/:id", func(ctx *gin.Context) { o.srv.ChangeExchangeAccount(newContext(ctx)) })
+		}
 	}
 
 }

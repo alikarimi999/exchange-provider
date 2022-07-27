@@ -1,5 +1,12 @@
 package entity
 
+import (
+	"order_service/pkg/logger"
+	"sync"
+
+	"github.com/go-redis/redis/v9"
+)
+
 type ExOrderStatus string
 
 const (
@@ -45,6 +52,11 @@ type Exchange interface {
 }
 
 type ExchangeManager interface {
+	ChangeAccount(cfgi interface{}) error
+	Setup(cfg interface{}, rc *redis.Client, l logger.Logger) (Exchange, error)
+
+	Run(wg *sync.WaitGroup)
+	Configs() interface{}
 
 	// add pairs to the exchange, if pair exist ignore it
 	AddPairs(pairs []*ExchangePair)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"order_service/internal/app"
+
 	"order_service/internal/delivery/event/dto"
 	"order_service/pkg/logger"
 	"order_service/pkg/queue"

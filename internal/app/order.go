@@ -7,35 +7,41 @@ import (
 	"sync"
 
 	"order_service/pkg/errors"
+
+	"github.com/go-redis/redis/v9"
 )
 
 type OrderUseCase struct {
 	repo  entity.OrderRepo
 	cache entity.OrderCache
+	rc    *redis.Client
 	ds    entity.DepositeService
-	exs   map[string]entity.Exchange
 	oh    *orderHandler
 	wh    *withdrawalHandler
 
+	*exStore
 	l logger.Logger
 
 	supportedCoins *supportedCoins
 }
 
-func NewOrderUseCase(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
-	depo entity.DepositeService, fee entity.FeeService, exs map[string]entity.Exchange, l logger.Logger) *OrderUseCase {
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
+	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
-		repo:  repo,
-		cache: oc,
-		ds:    depo,
-		exs:   exs,
-		oh:    newOrderHandler(repo, oc, wc, fee, exs, l),
-		wh:    newWithdrawalHandler(repo, oc, wc, exs, l),
-		l:     l,
+		repo:    repo,
+		cache:   oc,
+		rc:      rc,
+		ds:      depo,
+		exStore: newExStore(l),
+
+		l: l,
 
 		supportedCoins: newSupportedCoins(),
 	}
+
+	o.oh = newOrderHandler(repo, oc, wc, fee, o.exStore, l)
+	o.wh = newWithdrawalHandler(repo, oc, wc, o.exStore, l)
 	return o
 }
 
@@ -47,6 +53,9 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 	go o.oh.run(w)
 	w.Add(1)
 	go o.wh.run(w)
+
+	wg.Add(1)
+	go o.exStore.start(w)
 
 	o.l.Debug(agent, "started")
 

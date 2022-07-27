@@ -33,6 +33,8 @@ func newOrderTracker(api *kucoin.ApiService, l logger.Logger) *orderTracker {
 func (t *orderTracker) run(wg *sync.WaitGroup) {
 	const op = errors.Op("Kucoin.orderTracker.run")
 
+	t.l.Debug(string(op), "started")
+
 	defer wg.Done()
 	for {
 		select {

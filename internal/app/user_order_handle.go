@@ -17,10 +17,10 @@ import (
 // 4. if the exchange return the withdrawal id, add the withdrawal to withdrawal cache and withdrawal handler proccess will track it's status
 
 type orderHandler struct {
-	repo     entity.OrderRepo
-	oc       entity.OrderCache
-	wc       entity.WithdrawalCache
-	exs      map[string]entity.Exchange
+	repo entity.OrderRepo
+	oc   entity.OrderCache
+	wc   entity.WithdrawalCache
+	*exStore
 	eTracker *exOrderTracker
 	oCh      chan *entity.UserOrder
 	fee      entity.FeeService
@@ -28,12 +28,12 @@ type orderHandler struct {
 	l logger.Logger
 }
 
-func newOrderHandler(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, fee entity.FeeService, exs map[string]entity.Exchange, l logger.Logger) *orderHandler {
+func newOrderHandler(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
 	oh := &orderHandler{
 		repo:     repo,
 		oc:       oc,
 		wc:       wc,
-		exs:      exs,
+		exStore:  exs,
 		eTracker: newExOrderTracker(oc, l),
 		oCh:      make(chan *entity.UserOrder, 1024),
 		fee:      fee,
