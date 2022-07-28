@@ -27,7 +27,7 @@ func (r *CreateDopsiteRequest) reader() io.Reader {
 }
 
 type CreateDepositeResp struct {
-	Id       int64  `json:"id"`
+	Id       int64  `json:"deposit_id"`
 	UserId   int64  `json:"user_id"`
 	OrderId  int64  `json:"order_id"`
 	Exchange string `json:"exchange"`
@@ -63,10 +63,8 @@ type supportCoin struct {
 
 func (c *supportCoin) MapToEntity() *entity.Coin {
 	return &entity.Coin{
-		Id: c.CoinId,
-		Chain: &entity.Chain{
-			Id: c.ChainId,
-		},
+		CoinId:  c.CoinId,
+		ChainId: c.ChainId,
 	}
 }
 

@@ -9,8 +9,6 @@ import (
 )
 
 type exTrackerFeed struct {
-	userId  int64
-	orderId int64
 	eo      *entity.ExchangeOrder
 	ex      entity.Exchange
 	succeed chan bool

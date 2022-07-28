@@ -8,8 +8,8 @@ import (
 type coin struct {
 	CoinId            string `json:"coin_id"`
 	ChainId           string `json:"chain_id"`
-	MinOrderSize      string `json:"min_size,omitempty"`
-	MaxOrderSize      string `json:"max_size,omitempty"`
+	MinOrderSize      string `json:"min_order_size,omitempty"`
+	MaxOrderSize      string `json:"max_order_size,omitempty"`
 	MinWithdrawalSize string `json:"min_withdrawal_size,omitempty"`
 	WithdrawalMinFee  string `json:"withdrawal_min_fee,omitempty"`
 }
@@ -53,10 +53,8 @@ func (r *AddPairsRequest) Validate() error {
 
 func (r *exPair) BaseCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.BC.CoinId,
-		Chain: &entity.Chain{
-			Id: r.BC.ChainId,
-		},
+		CoinId:  r.BC.CoinId,
+		ChainId: r.BC.ChainId,
 	}
 
 	return c, nil
@@ -64,10 +62,8 @@ func (r *exPair) BaseCoin() (*entity.Coin, error) {
 
 func (r *exPair) QuoteCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.QC.CoinId,
-		Chain: &entity.Chain{
-			Id: r.QC.ChainId,
-		},
+		CoinId:  r.QC.CoinId,
+		ChainId: r.QC.ChainId,
 	}
 
 	return c, nil
@@ -105,16 +101,16 @@ type pair struct {
 func PairDTO(p *entity.Pair) *pair {
 	return &pair{
 		BC: &coin{
-			CoinId:            p.BC.Coin.Id,
-			ChainId:           p.BC.Coin.Chain.Id,
+			CoinId:            p.BC.Coin.CoinId,
+			ChainId:           p.BC.Coin.ChainId,
 			MinOrderSize:      p.BC.MinOrderSize,
 			MaxOrderSize:      p.BC.MaxOrderSize,
 			MinWithdrawalSize: p.BC.MinWithdrawalSize,
 			WithdrawalMinFee:  p.BC.WithdrawalMinFee,
 		},
 		QC: &coin{
-			CoinId:            p.QC.Coin.Id,
-			ChainId:           p.QC.Coin.Chain.Id,
+			CoinId:            p.QC.Coin.CoinId,
+			ChainId:           p.QC.Coin.ChainId,
 			MinOrderSize:      p.QC.MinOrderSize,
 			MaxOrderSize:      p.QC.MaxOrderSize,
 			MinWithdrawalSize: p.QC.MinWithdrawalSize,

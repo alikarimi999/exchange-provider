@@ -8,7 +8,7 @@ import (
 )
 
 func (k *kucoinExchange) setPrice(p *entity.Pair) error {
-	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.BC.Coin.Id, pairDelimiter, p.QC.Coin.Id))
+	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.BC.Coin.CoinId, pairDelimiter, p.QC.Coin.CoinId))
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (k *kucoinExchange) setPrice(p *entity.Pair) error {
 }
 
 func (k *kucoinExchange) setOrderFeeRate(p *entity.Pair) error {
-	res, err := k.api.ActualFee(fmt.Sprintf("%s%s%s", p.BC.Coin.Id, pairDelimiter, p.QC.Coin.Id))
+	res, err := k.api.ActualFee(fmt.Sprintf("%s%s%s", p.BC.Coin.CoinId, pairDelimiter, p.QC.Coin.CoinId))
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -42,7 +42,7 @@ func (k *kucoinExchange) setOrderFeeRate(p *entity.Pair) error {
 }
 
 func (k *kucoinExchange) setWithdrawalLimit(p *entity.Pair) error {
-	res, err := k.api.CurrencyV2(p.BC.Coin.Id, "")
+	res, err := k.api.CurrencyV2(p.BC.Coin.CoinId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -54,14 +54,14 @@ func (k *kucoinExchange) setWithdrawalLimit(p *entity.Pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == p.BC.Chain.Id {
+		if c.ChainName == p.BC.ChainId {
 			p.BC.MinWithdrawalSize = c.WithdrawalMinSize
 			p.BC.WithdrawalMinFee = c.WithdrawalMinFee
 			break
 		}
 	}
 
-	res, err = k.api.CurrencyV2(p.QC.Coin.Id, "")
+	res, err = k.api.CurrencyV2(p.QC.Coin.CoinId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -73,12 +73,16 @@ func (k *kucoinExchange) setWithdrawalLimit(p *entity.Pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == p.QC.Chain.Id {
+		if c.ChainName == p.QC.ChainId {
 			p.QC.MinWithdrawalSize = c.WithdrawalMinSize
 			p.QC.WithdrawalMinFee = c.WithdrawalMinFee
 			break
 		}
 	}
+
+	p.BC.WithdrawalPrecision = int(m.Precision)
+	p.QC.WithdrawalPrecision = int(m.Precision)
+
 	return nil
 }
 

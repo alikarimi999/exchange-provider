@@ -8,6 +8,7 @@ import (
 )
 
 type withdrawalCoin struct {
+	precision int
 	needChain bool
 }
 
@@ -33,15 +34,15 @@ func (s *withdrawalCoins) add(coins map[string]*withdrawalCoin) {
 
 }
 
-// func (s *withdrawalCoins) get(coinId, chainId string) (*withdrawalCoin, error) {
-// 	s.mux.Lock()
-// 	defer s.mux.Unlock()
-// 	wc, exist := s.coins[coinId+chainId]
-// 	if exist {
-// 		return wc, nil
-// 	}
-// 	return nil, errors.New("coin not found")
-// }
+func (s *withdrawalCoins) get(coinId, chainId string) (*withdrawalCoin, error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	wc, exist := s.coins[coinId+chainId]
+	if exist {
+		return wc, nil
+	}
+	return nil, errors.New("coin not found")
+}
 
 func (s *withdrawalCoins) needChain(coinId, chainId string) (bool, error) {
 	s.mux.Lock()
@@ -58,13 +59,13 @@ func (k *kucoinExchange) withdrawalOpts(c *entity.Coin) (map[string]string, erro
 
 	opts := map[string]string{}
 
-	need, err := k.withdrawalCoins.needChain(c.Id, c.Chain.Id)
+	need, err := k.withdrawalCoins.needChain(c.CoinId, c.ChainId)
 	if err != nil {
 		return nil, err
 	}
 
 	if need {
-		opts["chain"] = c.Chain.Id
+		opts["chain"] = c.ChainId
 	}
 
 	return opts, nil

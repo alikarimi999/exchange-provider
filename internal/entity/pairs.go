@@ -5,19 +5,20 @@ type Chain struct {
 }
 
 type Coin struct {
-	Id    string
-	Chain *Chain
+	CoinId  string
+	ChainId string
 }
 
 type PairCoin struct {
 	*Coin
 
-	MinOrderSize      string
-	MaxOrderSize      string
-	MinWithdrawalSize string
-	WithdrawalMinFee  string
-	Precision         int
-	SetChain          bool
+	MinOrderSize        string
+	MaxOrderSize        string
+	MinWithdrawalSize   string
+	WithdrawalMinFee    string
+	OrderPrecision      int
+	WithdrawalPrecision int
+	SetChain            bool
 }
 
 type Pair struct {

@@ -3,10 +3,10 @@ package dto
 import "order_service/internal/entity"
 
 type GetPair struct {
-	BaseCoin   string `json:"base_coin"`
-	BaseChain  string `json:"base_chain"`
-	QuoteCoin  string `json:"quote_coin"`
-	QuoteChain string `json:"quote_chain"`
+	BC     string `json:"base_coin"`
+	BChain string `json:"base_chain"`
+	QC     string `json:"quote_coin"`
+	QChain string `json:"quote_chain"`
 }
 
 type GetExchangesPairsRequest struct {
@@ -20,9 +20,9 @@ type GetExchangesPairsResponse struct {
 
 func ToDTO(p *entity.Pair) *GetPair {
 	return &GetPair{
-		BaseCoin:   p.BC.Id,
-		BaseChain:  p.BC.Chain.Id,
-		QuoteCoin:  p.QC.Id,
-		QuoteChain: p.QC.Chain.Id,
+		BC:     p.BC.CoinId,
+		BChain: p.BC.ChainId,
+		QC:     p.QC.CoinId,
+		QChain: p.QC.ChainId,
 	}
 }

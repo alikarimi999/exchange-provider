@@ -38,7 +38,8 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 			continue
 		}
 
-		ps = append(ps, fromEntity(p))
+		pa := fromEntity(p)
+		ps = append(ps, pa)
 		res.Added = append(res.Added, p)
 	}
 
@@ -46,11 +47,13 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 
 	cs := map[string]*withdrawalCoin{}
 	for _, p := range pairs {
-		cs[p.BC.Id+p.BC.Chain.Id] = &withdrawalCoin{
+		cs[p.BC.CoinId+p.BC.ChainId] = &withdrawalCoin{
+			precision: p.BC.WithdrawalPrecision,
 			needChain: p.BC.SetChain,
 		}
 
-		cs[p.QC.Id+p.QC.Chain.Id] = &withdrawalCoin{
+		cs[p.QC.CoinId+p.QC.ChainId] = &withdrawalCoin{
+			precision: p.QC.WithdrawalPrecision,
 			needChain: p.QC.SetChain,
 		}
 	}

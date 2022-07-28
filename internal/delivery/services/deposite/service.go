@@ -2,6 +2,7 @@ package deposite
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"order_service/internal/entity"
@@ -24,8 +25,8 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 	c := &CreateDopsiteRequest{
 		UserId:   userId,
 		OrderId:  orderId,
-		CoinId:   coin.Id,
-		ChainId:  coin.Chain.Id,
+		CoinId:   coin.CoinId,
+		ChainId:  coin.ChainId,
 		Exchange: exchange,
 	}
 
@@ -35,7 +36,7 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
+		return nil, errors.Wrap(errors.New(fmt.Sprintf("%d:%s", resp.StatusCode, err)), op, errors.ErrInternal)
 	}
 
 	defer resp.Body.Close()
@@ -65,8 +66,8 @@ func (d *depositeService) Supported(exchange string, coins ...*entity.Coin) ([]*
 
 	for _, coin := range coins {
 		sr.Coins = append(sr.Coins, &Coin{
-			CoinId:  coin.Id,
-			ChainId: coin.Chain.Id,
+			CoinId:  coin.CoinId,
+			ChainId: coin.ChainId,
 		})
 	}
 

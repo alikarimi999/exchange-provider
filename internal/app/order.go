@@ -19,25 +19,25 @@ type OrderUseCase struct {
 	oh    *orderHandler
 	wh    *withdrawalHandler
 
-	*exStore
-	l logger.Logger
+	exs *exStore
+	l   logger.Logger
 }
 
 func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
 	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
-		repo:    repo,
-		cache:   oc,
-		rc:      rc,
-		ds:      depo,
-		exStore: newExStore(l),
+		repo:  repo,
+		cache: oc,
+		rc:    rc,
+		ds:    depo,
+		exs:   newExStore(l),
 
 		l: l,
 	}
 
-	o.oh = newOrderHandler(repo, oc, wc, fee, o.exStore, l)
-	o.wh = newWithdrawalHandler(repo, oc, wc, o.exStore, l)
+	o.oh = newOrderHandler(repo, oc, wc, fee, o.exs, l)
+	o.wh = newWithdrawalHandler(repo, oc, wc, o.exs, l)
 	return o
 }
 
@@ -51,7 +51,10 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 	go o.wh.handle(w)
 
 	wg.Add(1)
-	go o.exStore.start(w)
+	go o.wh.tracker.run(wg)
+
+	wg.Add(1)
+	go o.exs.start(w)
 
 	o.l.Debug(agent, "started")
 
@@ -65,18 +68,26 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 // 2. send a request to the deposite service to create a deposite
 // 3. get the deposite id as response and add it to the order
 // 4. add the order to the cache
-func (u *OrderUseCase) NewUserOrder(userId int64, address string, rCoin, pCoin *entity.Coin) (*entity.UserOrder, error) {
+func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity.Coin, side string) (*entity.UserOrder, error) {
 	const op = errors.Op("Order-Usecase.NewUserOrder")
 
-	ex, err := u.selectExchange(rCoin, pCoin)
+	ex, err := u.selectExchange(bc, qc)
 	if err != nil {
-		return nil, errors.Wrap(err, op, &ErrMsg{msg: "select exchange failed"})
+		return nil, errors.Wrap(err, op, &ErrMsg{msg: "pair is not supported by the system"})
 	}
 
-	o := entity.NewOrder(userId, address, rCoin, pCoin, ex)
-	d, err := u.ds.New(userId, o.Id, pCoin, ex)
+	o := entity.NewOrder(userId, address, bc, qc, side, ex)
+
+	var dc *entity.Coin
+	if side == "buy" {
+		dc = bc
+	} else {
+		dc = qc
+	}
+
+	d, err := u.ds.New(userId, o.Id, dc, ex)
 	if err != nil {
-		err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',rCoin: %+v , pCoin: %+v ", userId, rCoin, pCoin),
+		err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',quote_coin: %+v , base_oin: %+v ", userId, bc, qc),
 			&ErrMsg{msg: "create deposite failed, internal error"})
 		u.l.Error(string(op), err.Error())
 
@@ -236,9 +247,16 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	if o.Status != entity.OrderStatusWaitForDepositeConfirm {
 		return errors.Wrap(err, op, &ErrMsg{msg: "order status is not waiting for deposite confirmation"})
 	}
-	o.Deposite.Volume = vol
 	o.Deposite.Fullfilled = true
 	o.Status = entity.OrderStatusDepositeConfimred
+
+	o.Deposite.Volume = vol
+
+	if o.Side == "buy" {
+		o.Size = vol
+	} else {
+		o.Funds = vol
+	}
 
 	if err := u.cache.Update(o); err != nil {
 		err = errors.Wrap(err, o.String(), op, errors.ErrInternal)

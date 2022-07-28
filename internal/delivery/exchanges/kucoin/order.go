@@ -1,6 +1,7 @@
 package kucoin
 
 import (
+	"fmt"
 	"order_service/internal/entity"
 	"strings"
 
@@ -8,30 +9,21 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) createOrderRequest(from, to *entity.Coin, vol string) (*kucoin.CreateOrderModel, error) {
+func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder) (*kucoin.CreateOrderModel, error) {
 
-	p, err := k.exchangePairs.get(from, to)
+	p, err := k.exchangePairs.get(o.BC, o.QC)
 	if err != nil {
 		return nil, err
 	}
 
-	if from.Id == p.bc.Id {
-		return &kucoin.CreateOrderModel{
-			ClientOid: uuid.New().String(),
-			Symbol:    p.symbol,
-			Type:      "market",
-			Side:      "sell",
-			Size:      trim(vol, p.bc.precision),
-		}, nil
-	} else {
-		return &kucoin.CreateOrderModel{
-			ClientOid: uuid.New().String(),
-			Symbol:    p.symbol,
-			Type:      "market",
-			Side:      "buy",
-			Funds:     trim(vol, p.qc.precision),
-		}, nil
-	}
+	return &kucoin.CreateOrderModel{
+		ClientOid: uuid.New().String(),
+		Symbol:    p.symbol,
+		Type:      "market",
+		Side:      o.Side,
+		Size:      trim(o.Size, p.bc.orderPrecision),
+		Funds:     trim(o.Funds, p.qc.orderPrecision),
+	}, nil
 
 }
 
@@ -53,5 +45,6 @@ func trim(s string, l int) string {
 	} else {
 		result = ss[0] + ".0"
 	}
+	fmt.Printf("trim %s to %s\n", s, result)
 	return result
 }

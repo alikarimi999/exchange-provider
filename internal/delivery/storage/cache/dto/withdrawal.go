@@ -26,12 +26,11 @@ type Withdrawal struct {
 
 func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 	return &Withdrawal{
-		Id:          w.Id,
-		OrderId:     w.OrderId,
-		UserId:      w.UserId,
-		Address:     w.Address,
-		Coin:        w.Coin.Id,
-		Chain:       w.Coin.Chain.Id,
+		Id:      w.Id,
+		OrderId: w.OrderId,
+		UserId:  w.UserId,
+		Address: w.Address,
+
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -48,7 +47,6 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 		OrderId:     w.OrderId,
 		UserId:      w.UserId,
 		Address:     w.Address,
-		Coin:        &entity.Coin{Id: w.Coin, Chain: &entity.Chain{Id: w.Chain}},
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -78,11 +76,10 @@ type PendingWithdrawal struct {
 
 func WToDTO(w *entity.Withdrawal) *PendingWithdrawal {
 	return &PendingWithdrawal{
-		Id:       w.Id,
-		OrderId:  w.OrderId,
-		UserId:   w.UserId,
-		Coin:     w.Coin.Id,
-		Chain:    w.Coin.Chain.Id,
+		Id:      w.Id,
+		OrderId: w.OrderId,
+		UserId:  w.UserId,
+
 		Exchange: w.Exchange,
 	}
 }
@@ -92,7 +89,6 @@ func (w *PendingWithdrawal) ToEntity() *entity.Withdrawal {
 		Id:       w.Id,
 		OrderId:  w.OrderId,
 		UserId:   w.UserId,
-		Coin:     &entity.Coin{Id: w.Coin, Chain: &entity.Chain{Id: w.Chain}},
 		Exchange: w.Exchange,
 	}
 }
