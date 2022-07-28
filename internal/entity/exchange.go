@@ -19,8 +19,8 @@ type ExchangeOrder struct {
 	Id          string
 	UserId      int64
 	OrderId     int64
-	Symbol      string
 	Exchange    string
+	Symbol      string
 	Side        string
 	Funds       string
 	Size        string
@@ -31,7 +31,7 @@ type ExchangeOrder struct {
 
 type Exchange interface {
 	ID() string
-	Exchange(from, to *Coin, volume string) (string, error)
+	Exchange(o *UserOrder) (string, error)
 	TrackOrder(o *ExchangeOrder, done chan<- struct{}, err chan<- error)
 
 	Withdrawal(coin *Coin, address string, vol string) (string, error)
@@ -52,7 +52,7 @@ type ExchangeManager interface {
 	// get all pairs from the exchange
 	GetPairs() []*Pair
 	// check if the exchange support a pair with combination of two coins
-	Support(c1, c2 *Coin) bool
+	Support(bc, qc *Coin) bool
 }
 
 type AddPairsResult struct {

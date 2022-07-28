@@ -31,10 +31,10 @@ func UoFromEntity(o *entity.UserOrder) *UserOrder {
 		Deposit:       DFromEntity(o.Deposite),
 		Exchange:      o.Exchange,
 		Withdrawal:    WFromEntity(o.Withdrawal),
-		RequestCoin:   o.RequestCoin.Id,
-		RequestChain:  o.RequestCoin.Chain.Id,
-		ProvideCoin:   o.ProvideCoin.Id,
-		ProvideChain:  o.ProvideCoin.Chain.Id,
+		RequestCoin:   o.BC.CoinId,
+		RequestChain:  o.BC.ChainId,
+		ProvideCoin:   o.QC.CoinId,
+		ProvideChain:  o.QC.ChainId,
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
 		Broken:        o.Broken,
 		BrokeReason:   o.BrokeReason,
@@ -42,13 +42,17 @@ func UoFromEntity(o *entity.UserOrder) *UserOrder {
 }
 
 type CreateOrderRequest struct {
-	UserId  int64  `json:"user_id"`
-	Address string `json:"address"`
-	RCoin   string `json:"r_coin"`
-	RChain  string `json:"r_chain"`
+	UserId int64 `json:"user_id"`
 
-	PCoin  string `json:"p_coin"`
-	PChain string `json:"p_chain"`
+	BC     string `json:"base_coin"`
+	BChain string `json:"base_chain"`
+
+	QC     string `json:"quote_coin"`
+	QChain string `json:"quote_chain"`
+
+	Side string `json:"side"`
+
+	Address string `json:"address"`
 }
 
 func (r *CreateOrderRequest) Validate() error {
@@ -58,27 +62,31 @@ func (r *CreateOrderRequest) Validate() error {
 	if r.Address == "" {
 		return errors.Wrap(errors.NewMesssage("address is required"))
 	}
-	if r.RCoin == "" {
-		return errors.Wrap(errors.NewMesssage("r_coin is required"))
+	if r.BC == "" {
+		return errors.Wrap(errors.NewMesssage("base_coin is required"))
 	}
-	if r.RChain == "" {
-		return errors.Wrap(errors.NewMesssage("r_chain is required"))
+	if r.BChain == "" {
+		return errors.Wrap(errors.NewMesssage("base_chain is required"))
 	}
 
-	if r.PCoin == "" {
-		return errors.Wrap(errors.NewMesssage("p_coin is required"))
+	if r.QC == "" {
+		return errors.Wrap(errors.NewMesssage("quote_coin is required"))
 	}
-	if r.PChain == "" {
-		return errors.Wrap(errors.NewMesssage("p_chain is required"))
+	if r.QChain == "" {
+		return errors.Wrap(errors.NewMesssage("quote_chain is required"))
+	}
+
+	if r.Side != "buy" && r.Side != "sell" {
+		return errors.Wrap(errors.NewMesssage("only buy or sell is allowed for side"))
 	}
 
 	return nil
 }
 
 type CreateOrderResponse struct {
-	Id              int64  `json:"id"`
-	DepositeId      int64  `json:"deposite_id"`
-	DepositeAddress string `json:"deposite_address"`
+	OrderId         int64  `json:"order_id"`
+	DepositeId      int64  `json:"deposit_id"`
+	DepositeAddress string `json:"deposit_address"`
 }
 
 type GetOrderResponse struct {

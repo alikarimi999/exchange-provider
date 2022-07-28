@@ -113,7 +113,7 @@ func test() {
 	s := storage.NewStorage(db, rc, l)
 
 	ss := services.WrapServices(&services.Config{
-		DepositeServiceURL: "http://localhost:8080/deposites",
+		DepositeServiceURL: "http://localhost:8080",
 		FeeServiceURL:      "http://localhost:8083/fee",
 	})
 

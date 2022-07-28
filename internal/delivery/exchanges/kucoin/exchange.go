@@ -13,16 +13,16 @@ func (k *kucoinExchange) ID() string {
 	return "kucoin"
 }
 
-func (k *kucoinExchange) Exchange(from, to *entity.Coin, vol string) (string, error) {
+func (k *kucoinExchange) Exchange(o *entity.UserOrder) (string, error) {
 	const op = errors.Op("Kucoin.Exchange")
 
-	oDTO, err := k.createOrderRequest(from, to, vol)
+	req, err := k.createOrderRequest(o)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	k.l.Debug(string(op), fmt.Sprintf("kucoin opening order request: %+v", oDTO))
-	res, err := k.api.CreateOrder((*kucoin.CreateOrderModel)(oDTO))
+	k.l.Debug(string(op), fmt.Sprintf("kucoin opening order request: %+v", req))
+	res, err := k.api.CreateOrder(req)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
@@ -44,13 +44,20 @@ func (k *kucoinExchange) Withdrawal(coin *entity.Coin, addr, vol string) (string
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
+	wc, err := k.withdrawalCoins.get(coin.CoinId, coin.ChainId)
+	if err != nil {
+		return "", errors.Wrap(err, op, errors.ErrBadRequest)
+	}
+
+	vol = trim(vol, wc.precision)
+
 	// first transfer from trade account to main account
-	res, err := k.api.InnerTransferV2(uuid.New().String(), coin.Id, "trade", "main", vol)
+	res, err := k.api.InnerTransferV2(uuid.New().String(), coin.CoinId, "trade", "main", vol)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
 
-	res, err = k.api.ApplyWithdrawal(coin.Id, addr, vol, opts)
+	res, err = k.api.ApplyWithdrawal(coin.CoinId, addr, vol, opts)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}

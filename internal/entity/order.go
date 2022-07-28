@@ -32,37 +32,40 @@ type UserOrder struct {
 	Deposite      *Deposit
 	Exchange      string
 	Withdrawal    *Withdrawal
-	RequestCoin   *Coin
-	ProvideCoin   *Coin
+	BC            *Coin
+	QC            *Coin
+	Side          string // buy or sell
+	Size          string
+	Funds         string
 	ExchangeOrder *ExchangeOrder
 	Broken        bool
 	BrokeReason   string
 }
 
-func NewOrder(userId int64, address string, rCoin, pCoin *Coin, exchange string) *UserOrder {
+func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *UserOrder {
 	w := &UserOrder{
-		Id:          genOrderId(9),
-		UserId:      userId,
-		CreatedAt:   time.Now().Unix(),
-		Status:      OrderStatusOpen,
-		Exchange:    exchange,
-		RequestCoin: rCoin,
-		ProvideCoin: pCoin,
+		Id:        genOrderId(9),
+		UserId:    userId,
+		CreatedAt: time.Now().Unix(),
+		Status:    OrderStatusOpen,
+		Exchange:  ex,
+		BC:        bc,
+		QC:        qc,
+		Side:      side,
 		Deposite: &Deposit{
 			UserId:   userId,
-			Exchange: exchange,
+			Exchange: ex,
 		},
 		ExchangeOrder: &ExchangeOrder{
 			UserId:   userId,
 			Status:   "",
-			Exchange: exchange,
+			Exchange: ex,
 		},
 		Withdrawal: &Withdrawal{
 			UserId:   userId,
 			Address:  address,
-			Exchange: exchange,
+			Exchange: ex,
 			Status:   "",
-			Coin:     rCoin,
 		},
 	}
 

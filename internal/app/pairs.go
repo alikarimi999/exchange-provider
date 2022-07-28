@@ -10,18 +10,20 @@ func (o *OrderUseCase) AddPairs(ex entity.Exchange, pairs []*entity.Pair) (*enti
 }
 
 func (o *OrderUseCase) SupportedPairs(exchange string) ([]*entity.Pair, error) {
-	ex, exists := o.exs[exchange]
-	if exists {
-		return ex.GetPairs(), nil
+	ex, err := o.exs.get(exchange)
+	if err != nil {
+		return nil, errors.Wrap(errors.ErrNotFound, "exchange not found")
 	}
-	return nil, errors.Wrap(errors.ErrNotFound, "exchange not found")
+
+	return ex.GetPairs(), nil
 }
 
 // check if the pair is supported by the exchange
-func (o *OrderUseCase) Support(exchange string, c1, c2 *entity.Coin) (bool, error) {
-	ex, exists := o.exs[exchange]
-	if exists {
-		return ex.Support(c1, c2), nil
+func (o *OrderUseCase) Support(exchange string, bc, qc *entity.Coin) (bool, error) {
+	ex, err := o.exs.get(exchange)
+	if err != nil {
+		return false, errors.Wrap(errors.ErrNotFound, "exchange not found")
 	}
-	return false, errors.Wrap(errors.ErrNotFound, "exchange not found")
+
+	return ex.Support(bc, qc), nil
 }

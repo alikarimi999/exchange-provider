@@ -9,15 +9,19 @@ import (
 
 type Order struct {
 	gorm.Model
-	UserId        int64 `gorm:"primaryKey"`
-	Status        string
-	Deposite      *Deposite `gorm:"foreignKey:OrderId,UserId"`
-	Exchange      string
-	Withdrawal    *Withdrawal `gorm:"foreignKey:OrderId,UserId"`
-	RequestCoin   string
-	RequestChain  string
-	ProvideCoin   string
-	ProvideChain  string
+	UserId     int64 `gorm:"primaryKey"`
+	Status     string
+	Deposite   *Deposite `gorm:"foreignKey:OrderId,UserId"`
+	Exchange   string
+	Withdrawal *Withdrawal `gorm:"foreignKey:OrderId,UserId"`
+
+	BC     string
+	BChain string
+
+	QC     string
+	QChain string
+
+	Side          string
 	ExchangeOrder *ExchangeOrder `gorm:"foreignKey:OrderId,UserId"`
 }
 
@@ -32,10 +36,11 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		Deposite:      DToDto(uo.Deposite),
 		Exchange:      uo.Exchange,
 		Withdrawal:    WToDto(uo.Withdrawal),
-		RequestCoin:   uo.RequestCoin.Id,
-		RequestChain:  uo.RequestCoin.Chain.Id,
-		ProvideCoin:   uo.ProvideCoin.Id,
-		ProvideChain:  uo.ProvideCoin.Chain.Id,
+		BC:            uo.BC.CoinId,
+		BChain:        uo.BC.ChainId,
+		QC:            uo.QC.CoinId,
+		QChain:        uo.QC.ChainId,
+		Side:          uo.Side,
 		ExchangeOrder: EToDto(uo.ExchangeOrder),
 	}
 }
@@ -49,8 +54,9 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		Deposite:      o.Deposite.ToEntity(),
 		Exchange:      o.Exchange,
 		Withdrawal:    o.Withdrawal.ToEntity(),
-		RequestCoin:   &entity.Coin{Id: o.RequestCoin, Chain: &entity.Chain{Id: o.RequestChain}},
-		ProvideCoin:   &entity.Coin{Id: o.ProvideCoin, Chain: &entity.Chain{Id: o.ProvideChain}},
+		BC:            &entity.Coin{CoinId: o.BC, ChainId: o.BChain},
+		QC:            &entity.Coin{CoinId: o.QC, ChainId: o.QChain},
+		Side:          o.Side,
 		ExchangeOrder: o.ExchangeOrder.ToEntity(),
 	}
 }

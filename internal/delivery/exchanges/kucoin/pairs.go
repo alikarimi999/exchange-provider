@@ -10,35 +10,35 @@ const (
 	pairDelimiter = "-"
 )
 
-type exCoin struct {
+type kuCoin struct {
 	*entity.Coin
-	minSize   string
-	maxSize   string
-	precision int
+	minSize        string
+	maxSize        string
+	orderPrecision int
 }
 
 type pair struct {
 	id     string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
 	symbol string  // base.id + pairDelimiter + quote.id
-	bc     *exCoin // base coin
-	qc     *exCoin // quote coin
+	bc     *kuCoin // base coin
+	qc     *kuCoin // quote coin
 }
 
 func fromEntity(ep *entity.Pair) *pair {
 	return &pair{
-		id:     ep.BC.Id + ep.BC.Chain.Id + ep.QC.Id + ep.QC.Chain.Id,
-		symbol: ep.BC.Id + pairDelimiter + ep.QC.Id,
-		bc: &exCoin{
-			Coin:      ep.BC.Coin,
-			minSize:   ep.BC.MinOrderSize,
-			maxSize:   ep.BC.MaxOrderSize,
-			precision: ep.BC.Precision,
+		id:     ep.BC.CoinId + ep.BC.ChainId + ep.QC.CoinId + ep.QC.ChainId,
+		symbol: ep.BC.CoinId + pairDelimiter + ep.QC.CoinId,
+		bc: &kuCoin{
+			Coin:           ep.BC.Coin,
+			minSize:        ep.BC.MinOrderSize,
+			maxSize:        ep.BC.MaxOrderSize,
+			orderPrecision: ep.BC.OrderPrecision,
 		},
-		qc: &exCoin{
-			Coin:      ep.QC.Coin,
-			minSize:   ep.QC.MinOrderSize,
-			maxSize:   ep.QC.MaxOrderSize,
-			precision: ep.QC.Precision,
+		qc: &kuCoin{
+			Coin:           ep.QC.Coin,
+			minSize:        ep.QC.MinOrderSize,
+			maxSize:        ep.QC.MaxOrderSize,
+			orderPrecision: ep.QC.OrderPrecision,
 		},
 	}
 }
@@ -46,16 +46,16 @@ func fromEntity(ep *entity.Pair) *pair {
 func (p *pair) toEntity() *entity.Pair {
 	return &entity.Pair{
 		BC: &entity.PairCoin{
-			Coin:         p.bc.Coin,
-			MinOrderSize: p.bc.minSize,
-			MaxOrderSize: p.bc.maxSize,
-			Precision:    p.bc.precision,
+			Coin:           p.bc.Coin,
+			MinOrderSize:   p.bc.minSize,
+			MaxOrderSize:   p.bc.maxSize,
+			OrderPrecision: p.bc.orderPrecision,
 		},
 		QC: &entity.PairCoin{
-			Coin:         p.qc.Coin,
-			MinOrderSize: p.qc.minSize,
-			MaxOrderSize: p.qc.maxSize,
-			Precision:    p.qc.precision,
+			Coin:           p.qc.Coin,
+			MinOrderSize:   p.qc.minSize,
+			MaxOrderSize:   p.qc.maxSize,
+			OrderPrecision: p.qc.orderPrecision,
 		},
 	}
 }
@@ -80,33 +80,23 @@ func (sp *exPairs) add(pairs []*pair) {
 	}
 }
 
-func (sp *exPairs) exists(c1, c2 *entity.Coin) bool {
+func (sp *exPairs) exists(bc, qc *entity.Coin) bool {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
-	id := c1.Id + c1.Chain.Id + c2.Id + c2.Chain.Id
-	_, exist := sp.pairs[id]
+	_, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
 	if exist {
 		return true
 	}
 
-	id = c2.Id + c2.Chain.Id + c1.Id + c1.Chain.Id
-	_, exist = sp.pairs[id]
 	return exist
 }
 
-func (sp *exPairs) get(c1, c2 *entity.Coin) (*pair, error) {
+func (sp *exPairs) get(bc, qc *entity.Coin) (*pair, error) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
-	id := c1.Id + c1.Chain.Id + c2.Id + c2.Chain.Id
-	p, exist := sp.pairs[id]
-	if exist {
-		return p, nil
-	}
-
-	id = c2.Id + c2.Chain.Id + c1.Id + c1.Chain.Id
-	p, exist = sp.pairs[id]
+	p, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
 	if exist {
 		return p, nil
 	}

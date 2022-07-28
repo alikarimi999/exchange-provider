@@ -32,12 +32,12 @@ func (s *Server) NewUserOrder(ctx Context) {
 	}
 
 	if err := req.Validate(); err != nil {
-		handlerErr(ctx, err)
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
 		return
 	}
 
-	o, err := s.app.NewUserOrder(req.UserId, req.Address, &entity.Coin{Id: req.RCoin, Chain: &entity.Chain{Id: req.RChain}},
-		&entity.Coin{Id: req.PCoin, Chain: &entity.Chain{Id: req.PChain}})
+	o, err := s.app.NewUserOrder(req.UserId, req.Address, &entity.Coin{CoinId: req.BC, ChainId: req.BChain},
+		&entity.Coin{CoinId: req.QC, ChainId: req.QChain}, req.Side)
 
 	if err != nil {
 		handlerErr(ctx, err)
@@ -45,7 +45,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 	}
 
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
-		Id:              o.Id,
+		OrderId:         o.Id,
 		DepositeId:      o.Deposite.Id,
 		DepositeAddress: o.Deposite.Address,
 	})

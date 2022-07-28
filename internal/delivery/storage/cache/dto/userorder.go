@@ -6,17 +6,19 @@ import (
 )
 
 type UserOrder struct {
-	Id            int64
-	UserId        int64
-	CreatedAt     int64
-	Status        string
-	Deposite      *deposite
-	Exchange      string
-	Withdrawal    *Withdrawal
-	RequestCoin   string
-	RequestChain  string
-	ProvideCoin   string
-	ProvideChain  string
+	Id         int64
+	UserId     int64
+	CreatedAt  int64
+	Status     string
+	Deposite   *deposite
+	Exchange   string
+	Withdrawal *Withdrawal
+	BC         string
+	BChain     string
+	QC         string
+	QChain     string
+
+	Side          string
 	ExchangeOrder *exchangeOrder
 	Broken        bool
 	BrokeReason   string
@@ -31,10 +33,11 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 		Deposite:      dToDto(u.Deposite),
 		Exchange:      u.Exchange,
 		Withdrawal:    OWToDTO(u.Withdrawal),
-		RequestCoin:   u.RequestCoin.Id,
-		RequestChain:  u.RequestCoin.Chain.Id,
-		ProvideCoin:   u.ProvideCoin.Id,
-		ProvideChain:  u.ProvideCoin.Chain.Id,
+		BC:            u.BC.CoinId,
+		BChain:        u.BC.ChainId,
+		QC:            u.QC.CoinId,
+		QChain:        u.QC.ChainId,
+		Side:          u.Side,
 		ExchangeOrder: eoToDto(u.ExchangeOrder),
 		Broken:        u.Broken,
 		BrokeReason:   u.BrokeReason,
@@ -50,16 +53,16 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 		Deposite:   u.Deposite.ToEntity(),
 		Exchange:   u.Exchange,
 		Withdrawal: u.Withdrawal.ToEntity(),
-		RequestCoin: &entity.Coin{
-			Id:    u.RequestCoin,
-			Chain: &entity.Chain{Id: u.RequestChain},
+		BC: &entity.Coin{
+			CoinId:  u.BC,
+			ChainId: u.BChain,
 		},
 
-		ProvideCoin: &entity.Coin{
-			Id:    u.ProvideCoin,
-			Chain: &entity.Chain{Id: u.ProvideChain},
+		QC: &entity.Coin{
+			CoinId:  u.QC,
+			ChainId: u.QChain,
 		},
-
+		Side:          u.Side,
 		ExchangeOrder: u.ExchangeOrder.ToEntity(),
 		Broken:        u.Broken,
 		BrokeReason:   u.BrokeReason,

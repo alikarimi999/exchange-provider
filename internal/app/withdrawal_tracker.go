@@ -14,19 +14,19 @@ type withdrawalTracker struct {
 	repo entity.OrderRepo
 	oc   entity.OrderCache
 	wc   entity.WithdrawalCache
-	*exStore
+	exs  *exStore
 
 	l logger.Logger
 }
 
 func newWithdrawalTracker(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalTracker {
 	w := &withdrawalTracker{
-		wCh:     make(chan *entity.Withdrawal, 1024),
-		repo:    repo,
-		oc:      oc,
-		wc:      wc,
-		exStore: exs,
-		l:       l,
+		wCh:  make(chan *entity.Withdrawal, 1024),
+		repo: repo,
+		oc:   oc,
+		wc:   wc,
+		exs:  exs,
+		l:    l,
 	}
 	return w
 }
@@ -41,7 +41,12 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 			go func(w *entity.Withdrawal) {
 				t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.Id, w.OrderId, w.UserId))
 
-				ex := t.exs[w.Exchange]
+				ex, err := t.exs.get(w.Exchange)
+				if err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op, "exchange not found").Error())
+					return
+				}
+
 				done := make(chan struct{})
 				errCh := make(chan error)
 				proccessedCh := make(chan bool)
@@ -53,26 +58,34 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				select {
 				case <-done:
 
-					o, err := t.oc.Get(w.UserId, w.OrderId)
-					if err != nil {
-						t.l.Error(string(op), errors.Wrap(err, op,
-							fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
-						proccessedCh <- false
-						return
-					}
-
-					t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
-						w.Id, w.Status, w.OrderId, w.UserId))
-
 					switch w.Status {
 					case entity.WithdrawalPending:
+						t.l.Debug(string(op), fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d' is pending yet", w.Id, w.OrderId, w.UserId))
 						return
 					case entity.WithdrawalSucceed:
+
+						o, err := t.oc.Get(w.UserId, w.OrderId)
+						if err != nil {
+							t.l.Error(string(op), errors.Wrap(err, op,
+								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
+							proccessedCh <- false
+							return
+						}
+
+						t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
+							w.Id, w.Status, w.OrderId, w.UserId))
+
 						o.Status = entity.OrderStatusSecceed
 						o.Withdrawal.Status = entity.WithdrawalSucceed
 						o.Withdrawal.ExchangeFee = w.ExchangeFee
 						o.Withdrawal.Executed = w.Executed
 						o.Withdrawal.TxId = w.TxId
+
+						if o.Side == "buy" {
+							o.Size = w.Executed
+						} else {
+							o.Funds = w.Executed
+						}
 
 						if err := t.repo.Add(o); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
@@ -97,6 +110,18 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 						return
 
 					case entity.WithdrawalFailed:
+
+						o, err := t.oc.Get(w.UserId, w.OrderId)
+						if err != nil {
+							t.l.Error(string(op), errors.Wrap(err, op,
+								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
+							proccessedCh <- false
+							return
+						}
+
+						t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
+							w.Id, w.Status, w.OrderId, w.UserId))
+
 						o.Broken = true
 						o.BrokeReason = "withdrawal failed"
 						o.Withdrawal.Status = entity.WithdrawalFailed

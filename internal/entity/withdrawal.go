@@ -18,7 +18,6 @@ type Withdrawal struct {
 	UserId  int64
 	Address string
 
-	Coin     *Coin
 	Exchange string
 
 	Total       string

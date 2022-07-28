@@ -58,7 +58,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ex := o.exs[ord.Exchange]
 
 				// 1. open a new order in exchange to exchange user provided coin to requested coin
-				id, err := ex.Exchange(ord.ProvideCoin, ord.RequestCoin, ord.Deposite.Volume)
+				id, err := ex.Exchange(ord)
 				if err != nil {
 
 					ord.Broken = true
@@ -81,8 +81,6 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				}
 
 				ef := &exTrackerFeed{
-					userId:  ord.UserId,
-					orderId: ord.Id,
 					eo:      ord.ExchangeOrder,
 					ex:      ex,
 					succeed: make(chan bool),
@@ -101,12 +99,15 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 							return
 						}
 
-						switch ord.ExchangeOrder.Side {
+						var wc *entity.Coin
+						switch ord.Side {
 						case "buy":
 							ord.Withdrawal.Total = ord.ExchangeOrder.Size
+							wc = ord.BC
 
 						case "sell":
 							ord.Withdrawal.Total = ord.ExchangeOrder.Funds
+							wc = ord.QC
 						}
 
 						r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)
@@ -124,9 +125,9 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 						}
 
-						o.l.Debug(string(op), fmt.Sprintf("order: %d user: %d , transferring '%s' %v to '%s'", ord.Id, ord.UserId, r, ord.RequestCoin, ord.Withdrawal.Address))
+						o.l.Debug(string(op), fmt.Sprintf("order: %d user: %d , transferring '%s' %v to '%s'", ord.Id, ord.UserId, r, ord.BC, ord.Withdrawal.Address))
 						ord.Withdrawal.Fee = f
-						ord.Withdrawal.Id, err = ex.Withdrawal(ord.RequestCoin, ord.Withdrawal.Address, r)
+						id, err = ex.Withdrawal(wc, ord.Withdrawal.Address, r)
 						if err != nil {
 							ord.Broken = true
 							ord.BrokeReason = fmt.Sprintf("unable to create withdrawal in exchange: %s", err.Error())
@@ -140,8 +141,10 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 						}
 
+						ord.Withdrawal.Id = id
 						ord.Withdrawal.Status = entity.WithdrawalPending
 						ord.Status = entity.OrderStatusWaitForWithdrawalConfirm
+
 						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.Id))
 						if err = o.oc.Update(ord); err != nil {
 							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())

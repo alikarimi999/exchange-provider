@@ -61,13 +61,13 @@ func (pl *pairList) support(p *entity.Pair) (bool, error) {
 	defer pl.mux.Unlock()
 
 	for _, pair := range pl.pairs {
-		if pair.BaseCurrency == p.BC.Id && pair.QuoteCurrency == p.QC.Id {
+		if pair.BaseCurrency == p.BC.CoinId && pair.QuoteCurrency == p.QC.CoinId {
 			p.BC.MinOrderSize = pair.BaseMinSize
 			p.BC.MaxOrderSize = pair.BaseMaxSize
-			p.BC.Precision = calcPrecision(pair.BaseIncrement)
+			p.BC.OrderPrecision = calcPrecision(pair.BaseIncrement)
 			p.QC.MinOrderSize = pair.QuoteMinSize
 			p.QC.MaxOrderSize = pair.QuoteMaxSize
-			p.QC.Precision = calcPrecision(pair.QuoteIncrement)
+			p.QC.OrderPrecision = calcPrecision(pair.QuoteIncrement)
 
 			p.FeeCurrency = pair.FeeCurrency
 
