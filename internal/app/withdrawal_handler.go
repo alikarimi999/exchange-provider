@@ -2,34 +2,31 @@ package app
 
 import (
 	"order_service/internal/entity"
+	"order_service/pkg/errors"
 	"order_service/pkg/logger"
 	"sync"
+	"time"
 )
 
-type tickerList struct {
-	mu   sync.Mutex
-	list map[string]*chainTicker
-}
-
 type withdrawalHandler struct {
-	tList    *tickerList
-	tickerCh chan *chainTicker
-	tracker  *withdrawalTracker
-	wg       *sync.WaitGroup
-	l        logger.Logger
+	tracker     *withdrawalTracker
+	wg          *sync.WaitGroup
+	ticker      *time.Ticker
+	cache       entity.WithdrawalCache
+	windowsSize time.Duration
+	l           logger.Logger
 }
 
 func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
 	wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalHandler {
 
 	w := &withdrawalHandler{
-		tList: &tickerList{
-			mu:   sync.Mutex{},
-			list: map[string]*chainTicker{},
-		},
-		tickerCh: make(chan *chainTicker),
-		tracker:  newWithdrawalTracker(repo, oc, wc, exs, l),
-		wg:       &sync.WaitGroup{},
+
+		tracker:     newWithdrawalTracker(repo, oc, wc, exs, l),
+		ticker:      time.NewTicker(time.Minute * 5),
+		windowsSize: time.Minute * 10,
+		cache:       wc,
+		wg:          &sync.WaitGroup{},
 
 		l: l,
 	}
@@ -37,45 +34,23 @@ func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
 	return w
 }
 
-func (h *withdrawalHandler) run(wg *sync.WaitGroup) {
-	const agent = "Withdrawal-Handler.run"
+func (wh *withdrawalHandler) handle(wg *sync.WaitGroup) {
+	const op = errors.Op("chainTicker.tick")
 
 	defer wg.Done()
+	for {
+		select {
+		case t := <-wh.ticker.C:
+			ws, err := wh.cache.GetPendingWithdrawals(t.Add(-wh.windowsSize))
+			if err != nil {
+				wh.l.Error(string(op), errors.Wrap(err, op, "pending withdrawals").Error())
+				continue
+			}
+			for _, w := range ws {
+				wh.tracker.track(w)
+			}
 
-	h.wg.Add(1)
-	go h.tracker.run(h.wg)
-
-	for ti := range h.tickerCh {
-		h.wg.Add(1)
-		go ti.tick(h.wg)
-	}
-
-	h.wg.Wait()
-}
-
-func (h *withdrawalHandler) addChainTickers(chains []*entity.Chain) {
-	// check if chain exists
-	h.tList.mu.Lock()
-	defer h.tList.mu.Unlock()
-
-	for _, chain := range chains {
-		if _, ok := h.tList.list[chain.Id]; !ok {
-			ti := h.newChainTicker(chain)
-			h.tList.list[chain.Id] = ti
-			h.tickerCh <- ti
 		}
-
 	}
 
-}
-
-func (h *withdrawalHandler) removeTicker(chainId string) {
-	ti := h.tList.list[chainId]
-	ti.stop()
-	delete(h.tList.list, chainId)
-}
-
-func (h *withdrawalHandler) isTickerRunning(chainId string) bool {
-	_, ok := h.tList.list[chainId]
-	return ok
 }

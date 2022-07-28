@@ -1,10 +1,7 @@
 package entity
 
-import "time"
-
 type Chain struct {
-	Id        string
-	BlockTime time.Duration
+	Id string
 }
 
 type Coin struct {

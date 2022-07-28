@@ -20,7 +20,6 @@ func (s *Server) AddPairs(ctx Context) {
 	}
 
 	eps := map[string][]*entity.Pair{}
-	coins := make(map[string]*entity.Coin) // map[coinId+chainId]*entity.Coin
 	for _, p := range req.Pairs {
 		bc, err := p.BaseCoin()
 		if err != nil {
@@ -32,9 +31,6 @@ func (s *Server) AddPairs(ctx Context) {
 			handlerErr(ctx, err)
 			return
 		}
-
-		coins[bc.Id+bc.Chain.Id] = bc
-		coins[qc.Id+qc.Chain.Id] = qc
 
 		for ex, p := range p.ExchangePairs(bc, qc) {
 			eps[ex] = append(eps[ex], p)
@@ -65,7 +61,6 @@ func (s *Server) AddPairs(ctx Context) {
 	}
 
 	// add pair's coins to the supported coins
-	s.app.AddCoins(coins)
 
 	ctx.JSON(200, resp)
 }
