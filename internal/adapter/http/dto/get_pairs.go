@@ -20,9 +20,9 @@ type GetExchangesPairsResponse struct {
 
 func ToDTO(p *entity.Pair) *GetPair {
 	return &GetPair{
-		BaseCoin:   p.BaseCoin.Id,
-		BaseChain:  p.BaseCoin.Chain.Id,
-		QuoteCoin:  p.QuoteCoin.Id,
-		QuoteChain: p.QuoteCoin.Chain.Id,
+		BaseCoin:   p.BC.Id,
+		BaseChain:  p.BC.Chain.Id,
+		QuoteCoin:  p.QC.Id,
+		QuoteChain: p.QC.Chain.Id,
 	}
 }

@@ -31,12 +31,13 @@ type kucoinExchange struct {
 	cfg *Configs
 	api *kucoin.ApiService
 	// ws   *webSocket
-	ot *orderTracker
-	wt *withdrawalTracker
-	wa *withdrawalAggregator
-	l  logger.Logger
+	ot  *orderTracker
+	wt  *withdrawalTracker
+	wa  *withdrawalAggregator
+	pls *pairList
+	l   logger.Logger
 
-	exchangePairs   *exchangePairs
+	exchangePairs   *exPairs
 	withdrawalCoins *withdrawalCoins
 }
 
@@ -55,7 +56,7 @@ func (k *kucoinExchange) Setup(cfgi interface{}, rc *redis.Client, l logger.Logg
 	k = &kucoinExchange{
 		cfg:             cfg,
 		l:               l,
-		exchangePairs:   newExchangePairs(),
+		exchangePairs:   newExPairs(),
 		withdrawalCoins: newWithdrawalCoins(),
 	}
 	k.api = kucoin.NewApiService(
@@ -74,6 +75,7 @@ func (k *kucoinExchange) Setup(cfgi interface{}, rc *redis.Client, l logger.Logg
 	k.ot = newOrderTracker(k.api, l)
 	k.wt = newWithdrawalTracker(rc, l)
 	k.wa = newWithdrawalAggregator(k.api, l, rc)
+	k.pls = newPairList(k.api, l)
 	// k.setupWebSocket(rc)
 
 	return k, nil

@@ -42,6 +42,7 @@ func (k *kucoinExchange) ChangeAccount(cfgi interface{}) error {
 	k.cfg = cfg
 	k.ot.api = k1.api
 	k.wa.api = k1.api
+	k.pls.api = k1.api
 
 	return nil
 

@@ -10,7 +10,7 @@ import (
 func (s *Server) AddPairs(ctx Context) {
 	req := &dto.AddPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, "invalid request"))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
 		return
 	}
 
@@ -19,7 +19,7 @@ func (s *Server) AddPairs(ctx Context) {
 		return
 	}
 
-	eps := map[string][]*entity.ExchangePair{}
+	eps := map[string][]*entity.Pair{}
 	coins := make(map[string]*entity.Coin) // map[coinId+chainId]*entity.Coin
 	for _, p := range req.Pairs {
 		bc, err := p.BaseCoin()
@@ -42,15 +42,32 @@ func (s *Server) AddPairs(ctx Context) {
 
 	}
 
+	resp := &dto.AddPairsResponse{
+		Exchanges: make(map[string]*dto.AddPairsResult),
+	}
+
 	// add pairs to the exchange
-	for ex, pairs := range eps {
-		s.app.AddPairs(ex, pairs)
+	for id, pairs := range eps {
+		ex, err := s.app.GetExchange(id)
+		if err != nil {
+			handlerErr(ctx, errors.Wrap(errors.NewMesssage(fmt.Sprintf("exchange '%s' not found", id))))
+			return
+		}
+
+		res, err := s.app.AddPairs(ex, pairs)
+		if err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
+		resp.Exchanges[id] = dto.FromEntity(res)
+
 	}
 
 	// add pair's coins to the supported coins
 	s.app.AddCoins(coins)
 
-	ctx.JSON(200, "done")
+	ctx.JSON(200, resp)
 }
 
 func (s *Server) GetExchangesPairs(ctx Context) {

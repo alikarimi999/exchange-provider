@@ -42,10 +42,11 @@ func (t *orderTracker) run(wg *sync.WaitGroup) {
 			func(f *trackerFedd) {
 
 				resp, err := t.api.Order(f.eo.Id)
-				if err != nil || resp.Code != "200000" {
+				if err = handleSDKErr(err, resp); err != nil {
 					f.err <- errors.Wrap(err, op, errors.ErrInternal)
 					return
 				}
+
 				order := &kucoin.OrderModel{}
 				if err = resp.ReadData(order); err != nil {
 					f.err <- errors.Wrap(err, op, errors.ErrInternal)

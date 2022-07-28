@@ -5,14 +5,8 @@ import (
 	"order_service/pkg/errors"
 )
 
-func (o *OrderUseCase) AddPairs(exchange string, pairs []*entity.ExchangePair) {
-	// add pairs to the exchange
-
-	ex, exists := o.exs[exchange]
-	if exists {
-		ex.AddPairs(pairs)
-	}
-
+func (o *OrderUseCase) AddPairs(ex entity.Exchange, pairs []*entity.Pair) (*entity.AddPairsResult, error) {
+	return ex.AddPairs(pairs)
 }
 
 func (o *OrderUseCase) SupportedPairs(exchange string) ([]*entity.Pair, error) {

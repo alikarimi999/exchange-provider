@@ -10,40 +10,69 @@ const (
 	pairDelimiter = "-"
 )
 
-type exchangeCoin struct {
+type exCoin struct {
 	*entity.Coin
+	minSize   string
+	maxSize   string
 	precision int
 }
 
 type pair struct {
-	id     string        // base.id + base.Chain.Id + quote.id + quote.Chain.Id
-	symbol string        // base.id + pairDelimiter + quote.id
-	b      *exchangeCoin // base coin
-	q      *exchangeCoin // quote coin
+	id     string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
+	symbol string  // base.id + pairDelimiter + quote.id
+	bc     *exCoin // base coin
+	qc     *exCoin // quote coin
 }
 
-func newPair(ep *entity.ExchangePair) *pair {
+func fromEntity(ep *entity.Pair) *pair {
 	return &pair{
 		id:     ep.BC.Id + ep.BC.Chain.Id + ep.QC.Id + ep.QC.Chain.Id,
 		symbol: ep.BC.Id + pairDelimiter + ep.QC.Id,
-		b:      &exchangeCoin{ep.BC.Coin, ep.BC.Precision},
-		q:      &exchangeCoin{ep.QC.Coin, ep.QC.Precision},
+		bc: &exCoin{
+			Coin:      ep.BC.Coin,
+			minSize:   ep.BC.MinOrderSize,
+			maxSize:   ep.BC.MaxOrderSize,
+			precision: ep.BC.Precision,
+		},
+		qc: &exCoin{
+			Coin:      ep.QC.Coin,
+			minSize:   ep.QC.MinOrderSize,
+			maxSize:   ep.QC.MaxOrderSize,
+			precision: ep.QC.Precision,
+		},
 	}
 }
 
-type exchangePairs struct {
+func (p *pair) toEntity() *entity.Pair {
+	return &entity.Pair{
+		BC: &entity.PairCoin{
+			Coin:         p.bc.Coin,
+			MinOrderSize: p.bc.minSize,
+			MaxOrderSize: p.bc.maxSize,
+			Precision:    p.bc.precision,
+		},
+		QC: &entity.PairCoin{
+			Coin:         p.qc.Coin,
+			MinOrderSize: p.qc.minSize,
+			MaxOrderSize: p.qc.maxSize,
+			Precision:    p.qc.precision,
+		},
+	}
+}
+
+type exPairs struct {
 	mux   *sync.Mutex
 	pairs map[string]*pair // map[id]*pair
 }
 
-func newExchangePairs() *exchangePairs {
-	return &exchangePairs{
+func newExPairs() *exPairs {
+	return &exPairs{
 		mux:   &sync.Mutex{},
 		pairs: make(map[string]*pair),
 	}
 }
 
-func (sp *exchangePairs) add(pairs []*pair) {
+func (sp *exPairs) add(pairs []*pair) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 	for _, p := range pairs {
@@ -51,7 +80,7 @@ func (sp *exchangePairs) add(pairs []*pair) {
 	}
 }
 
-func (sp *exchangePairs) exists(c1, c2 *entity.Coin) bool {
+func (sp *exPairs) exists(c1, c2 *entity.Coin) bool {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
@@ -66,7 +95,7 @@ func (sp *exchangePairs) exists(c1, c2 *entity.Coin) bool {
 	return exist
 }
 
-func (sp *exchangePairs) get(c1, c2 *entity.Coin) (*pair, error) {
+func (sp *exPairs) get(c1, c2 *entity.Coin) (*pair, error) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
@@ -85,7 +114,7 @@ func (sp *exchangePairs) get(c1, c2 *entity.Coin) (*pair, error) {
 	return nil, errors.New("pair not found")
 }
 
-func (sp *exchangePairs) snapshot() []*pair {
+func (sp *exPairs) snapshot() []*pair {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 

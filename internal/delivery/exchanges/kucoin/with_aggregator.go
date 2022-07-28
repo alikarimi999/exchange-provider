@@ -97,8 +97,8 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 	for {
 
 		res, err := wa.api.Withdrawals(wa.params, paginate)
-		if err != nil || res.Code != "200000" {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("ApplyWithdrawal   %s:%s:%s", res.Message, res.Code, err)), op, errors.ErrInternal)
+		if err = handleSDKErr(err, res); err != nil {
+			return nil, errors.Wrap(err, op)
 		}
 
 		withdrawals := []*dto.Withdrawal{}

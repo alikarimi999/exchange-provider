@@ -1,20 +1,22 @@
 package dto
 
 import (
-	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"time"
 )
 
 type coin struct {
-	CoinId    string `json:"coin_id"`
-	ChainId   string `json:"chain_id"`
-	BlockTime string `json:"block_time"`
+	CoinId            string `json:"coin_id"`
+	ChainId           string `json:"chain_id"`
+	BlockTime         string `json:"block_time,omitempty"`
+	MinOrderSize      string `json:"min_size,omitempty"`
+	MaxOrderSize      string `json:"max_size,omitempty"`
+	MinWithdrawalSize string `json:"min_withdrawal_size,omitempty"`
+	WithdrawalMinFee  string `json:"withdrawal_min_fee,omitempty"`
 }
 type coinConfig struct {
-	SetChain  bool `json:"set_chain"`
-	Precision int  `json:"precision"`
+	SetChain bool `json:"set_chain"`
 }
 
 type exchangeConfig struct {
@@ -22,24 +24,24 @@ type exchangeConfig struct {
 	QuoteC *coinConfig `json:"quote_coin"`
 }
 
-type pair struct {
-	BaseC  *coin                      `json:"base_coin"`
-	QuoteC *coin                      `json:"quote_coin"`
-	ExsC   map[string]*exchangeConfig `json:"exchanges_config"`
+type exPair struct {
+	BC   *coin                      `json:"base_coin"`
+	QC   *coin                      `json:"quote_coin"`
+	ExsC map[string]*exchangeConfig `json:"exchanges_config"`
 }
 
 type AddPairsRequest struct {
-	Pairs []*pair `json:"pairs"`
+	Pairs []*exPair `json:"pairs"`
 }
 
 // check there wasn't any zero values in the request
 // if there was return an error that the value must set
 func (r *AddPairsRequest) Validate() error {
 	for _, p := range r.Pairs {
-		if p.BaseC.CoinId == "" || p.BaseC.ChainId == "" || p.BaseC.BlockTime == "" {
+		if p.BC.CoinId == "" || p.BC.ChainId == "" || p.BC.BlockTime == "" {
 			return errors.Wrap(errors.ErrBadRequest, "base coin must have id, chain and block time")
 		}
-		if p.QuoteC.CoinId == "" || p.QuoteC.ChainId == "" || p.QuoteC.BlockTime == "" {
+		if p.QC.CoinId == "" || p.QC.ChainId == "" || p.QC.BlockTime == "" {
 			return errors.Wrap(errors.ErrBadRequest, "quote coin must have id, chain and block time")
 		}
 
@@ -47,29 +49,19 @@ func (r *AddPairsRequest) Validate() error {
 			return errors.Wrap(errors.ErrBadRequest, "exchanges config must be set")
 		}
 
-		for ex, conf := range p.ExsC {
-			if conf.BaseC.Precision == 0 {
-				return errors.Wrap(errors.ErrBadRequest,
-					fmt.Sprintf("base coin config for exchange '%s' must have 'precision' and 'set_chain'", ex))
-			}
-			if conf.QuoteC.Precision == 0 {
-				return errors.Wrap(errors.ErrBadRequest,
-					fmt.Sprintf("quote coin config for exchange '%s' must have 'precision' and 'set_chain'", ex))
-			}
-		}
 	}
 	return nil
 }
 
-func (r *pair) BaseCoin() (*entity.Coin, error) {
+func (r *exPair) BaseCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.BaseC.CoinId,
+		Id: r.BC.CoinId,
 		Chain: &entity.Chain{
-			Id: r.BaseC.ChainId,
+			Id: r.BC.ChainId,
 		},
 	}
 
-	bt, err := toTime(r.BaseC.BlockTime)
+	bt, err := toTime(r.BC.BlockTime)
 	if err != nil {
 		return nil, errors.Wrap(err, errors.ErrBadRequest, "block_time should follow the format 10s, 10m")
 	}
@@ -77,15 +69,15 @@ func (r *pair) BaseCoin() (*entity.Coin, error) {
 	return c, nil
 }
 
-func (r *pair) QuoteCoin() (*entity.Coin, error) {
+func (r *exPair) QuoteCoin() (*entity.Coin, error) {
 	c := &entity.Coin{
-		Id: r.QuoteC.CoinId,
+		Id: r.QC.CoinId,
 		Chain: &entity.Chain{
-			Id: r.QuoteC.ChainId,
+			Id: r.QC.ChainId,
 		},
 	}
 
-	bt, err := toTime(r.QuoteC.BlockTime)
+	bt, err := toTime(r.QC.BlockTime)
 	if err != nil {
 		return nil, err
 	}
@@ -93,19 +85,17 @@ func (r *pair) QuoteCoin() (*entity.Coin, error) {
 	return c, nil
 }
 
-func (req *pair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.ExchangePair {
-	exchangePairs := map[string]*entity.ExchangePair{}
+func (req *exPair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.Pair {
+	exchangePairs := map[string]*entity.Pair{}
 	for ex, conf := range req.ExsC {
-		ep := &entity.ExchangePair{
-			BC: &entity.CoinConfig{
-				Coin:      bc,
-				Precision: conf.BaseC.Precision,
-				SetChain:  conf.BaseC.SetChain,
+		ep := &entity.Pair{
+			BC: &entity.PairCoin{
+				Coin:     bc,
+				SetChain: conf.BaseC.SetChain,
 			},
-			QC: &entity.CoinConfig{
-				Coin:      qc,
-				Precision: conf.QuoteC.Precision,
-				SetChain:  conf.QuoteC.SetChain,
+			QC: &entity.PairCoin{
+				Coin:     qc,
+				SetChain: conf.QuoteC.SetChain,
 			},
 		}
 
@@ -113,6 +103,77 @@ func (req *pair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.ExchangeP
 
 	}
 	return exchangePairs
+}
+
+type pair struct {
+	BC *coin `json:"base_coin"`
+	QC *coin `json:"quote_coin"`
+
+	Price                string `json:"price"`
+	FeeCurrency          string `json:"fee_currency"`
+	ExchangeOrderFeeRate string `json:"exchange_order_fee_rate"`
+}
+
+func PairDTO(p *entity.Pair) *pair {
+	return &pair{
+		BC: &coin{
+			CoinId:            p.BC.Coin.Id,
+			ChainId:           p.BC.Coin.Chain.Id,
+			BlockTime:         p.BC.Coin.Chain.BlockTime.String(),
+			MinOrderSize:      p.BC.MinOrderSize,
+			MaxOrderSize:      p.BC.MaxOrderSize,
+			MinWithdrawalSize: p.BC.MinWithdrawalSize,
+			WithdrawalMinFee:  p.BC.WithdrawalMinFee,
+		},
+		QC: &coin{
+			CoinId:            p.QC.Coin.Id,
+			ChainId:           p.QC.Coin.Chain.Id,
+			BlockTime:         p.QC.Coin.Chain.BlockTime.String(),
+			MinOrderSize:      p.QC.MinOrderSize,
+			MaxOrderSize:      p.QC.MaxOrderSize,
+			MinWithdrawalSize: p.QC.MinWithdrawalSize,
+			WithdrawalMinFee:  p.QC.WithdrawalMinFee,
+		},
+		Price:                p.Price,
+		FeeCurrency:          p.FeeCurrency,
+		ExchangeOrderFeeRate: p.OrderFeeRate,
+	}
+}
+
+type AddPairsErr struct {
+	Pair *pair  `json:"pair"`
+	Err  string `json:"error"`
+}
+type AddPairsResult struct {
+	Addedd []*pair        `json:"added_pairs"`
+	Exs    []*pair        `json:"existed_pairs"`
+	Failed []*AddPairsErr `json:"failed_pairs"`
+}
+
+func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
+	res := &AddPairsResult{
+		Addedd: []*pair{},
+		Exs:    []*pair{},
+		Failed: []*AddPairsErr{},
+	}
+	for _, p := range r.Added {
+		res.Addedd = append(res.Addedd, PairDTO(p))
+	}
+	for _, p := range r.Existed {
+		res.Exs = append(res.Exs, PairDTO(p))
+	}
+	for _, p := range r.Failed {
+		res.Failed = append(res.Failed, &AddPairsErr{
+			Pair: PairDTO(p.Pair),
+			Err:  p.Err.Error(),
+		})
+	}
+	return res
+
+}
+
+type AddPairsResponse struct {
+	Exchanges map[string]*AddPairsResult `json:"exchanges"`
 }
 
 func toTime(t string) (time.Duration, error) {

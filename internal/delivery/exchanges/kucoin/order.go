@@ -15,13 +15,13 @@ func (k *kucoinExchange) createOrderRequest(from, to *entity.Coin, vol string) (
 		return nil, err
 	}
 
-	if from.Id == p.b.Id {
+	if from.Id == p.bc.Id {
 		return &kucoin.CreateOrderModel{
 			ClientOid: uuid.New().String(),
 			Symbol:    p.symbol,
 			Type:      "market",
 			Side:      "sell",
-			Size:      trim(vol, p.b.precision),
+			Size:      trim(vol, p.bc.precision),
 		}, nil
 	} else {
 		return &kucoin.CreateOrderModel{
@@ -29,7 +29,7 @@ func (k *kucoinExchange) createOrderRequest(from, to *entity.Coin, vol string) (
 			Symbol:    p.symbol,
 			Type:      "market",
 			Side:      "buy",
-			Funds:     trim(vol, p.q.precision),
+			Funds:     trim(vol, p.qc.precision),
 		}, nil
 	}
 

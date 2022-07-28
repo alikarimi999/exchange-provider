@@ -29,17 +29,6 @@ type ExchangeOrder struct {
 	Status      ExOrderStatus // succed, failed
 }
 
-type CoinConfig struct {
-	*Coin
-	SetChain  bool
-	Precision int
-}
-
-type ExchangePair struct {
-	BC *CoinConfig // base coin configs
-	QC *CoinConfig // queue coin configs
-}
-
 type Exchange interface {
 	ID() string
 	Exchange(from, to *Coin, volume string) (string, error)
@@ -59,9 +48,20 @@ type ExchangeManager interface {
 	Configs() interface{}
 
 	// add pairs to the exchange, if pair exist ignore it
-	AddPairs(pairs []*ExchangePair)
+	AddPairs(pairs []*Pair) (*AddPairsResult, error)
 	// get all pairs from the exchange
 	GetPairs() []*Pair
 	// check if the exchange support a pair with combination of two coins
 	Support(c1, c2 *Coin) bool
+}
+
+type AddPairsResult struct {
+	Added   []*Pair
+	Existed []*Pair
+	Failed  []*AddPairsErr
+}
+
+type AddPairsErr struct {
+	*Pair
+	Err error
 }
