@@ -21,8 +21,6 @@ type OrderUseCase struct {
 
 	*exStore
 	l logger.Logger
-
-	supportedCoins *supportedCoins
 }
 
 func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
@@ -36,8 +34,6 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCac
 		exStore: newExStore(l),
 
 		l: l,
-
-		supportedCoins: newSupportedCoins(),
 	}
 
 	o.oh = newOrderHandler(repo, oc, wc, fee, o.exStore, l)
@@ -52,7 +48,7 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 	w.Add(1)
 	go o.oh.run(w)
 	w.Add(1)
-	go o.wh.run(w)
+	go o.wh.handle(w)
 
 	wg.Add(1)
 	go o.exStore.start(w)

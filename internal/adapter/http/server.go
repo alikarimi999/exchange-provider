@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
@@ -34,18 +33,6 @@ func (s *Server) NewUserOrder(ctx Context) {
 
 	if err := req.Validate(); err != nil {
 		handlerErr(ctx, err)
-		return
-	}
-
-	if ok := s.app.Supported(req.RCoin, req.RChain); !ok {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest,
-			errors.NewMesssage(fmt.Sprintf("unsupported coin: %s for chain: %s", req.RCoin, req.RChain))))
-		return
-	}
-
-	if ok := s.app.Supported(req.PCoin, req.PChain); !ok {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest,
-			errors.NewMesssage(fmt.Sprintf("unsupported coin: %s for chain: %s", req.PCoin, req.PChain))))
 		return
 	}
 
