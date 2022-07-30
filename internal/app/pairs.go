@@ -9,21 +9,32 @@ func (o *OrderUseCase) AddPairs(ex entity.Exchange, pairs []*entity.Pair) (*enti
 	return ex.AddPairs(pairs)
 }
 
-func (o *OrderUseCase) SupportedPairs(exchange string) ([]*entity.Pair, error) {
+func (o *OrderUseCase) GetAllPairs(exchange string) ([]*entity.Pair, error) {
 	ex, err := o.exs.get(exchange)
 	if err != nil {
 		return nil, errors.Wrap(errors.ErrNotFound, "exchange not found")
 	}
 
-	return ex.GetPairs(), nil
+	return o.setFee(ex.GetAllPairs()...), nil
 }
 
-// check if the pair is supported by the exchange
-func (o *OrderUseCase) Support(exchange string, bc, qc *entity.Coin) (bool, error) {
-	ex, err := o.exs.get(exchange)
+func (o *OrderUseCase) GetPair(ex entity.Exchange, bc, qc *entity.Coin) (*entity.Pair, error) {
+	p, err := ex.GetPair(bc, qc)
 	if err != nil {
-		return false, errors.Wrap(errors.ErrNotFound, "exchange not found")
+		return nil, err
 	}
 
-	return ex.Support(bc, qc), nil
+	return o.setFee(p)[0], nil
+}
+
+func (o *OrderUseCase) setFee(ps ...*entity.Pair) []*entity.Pair {
+	f := o.fs.GetFee()
+	for _, p := range ps {
+		p.Fee = f
+	}
+	return ps
+}
+
+func (o *OrderUseCase) RemovePair(ex entity.Exchange, bc, qc *entity.Coin) error {
+	return ex.RemovePair(bc, qc)
 }

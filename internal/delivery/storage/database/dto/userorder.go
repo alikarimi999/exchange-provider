@@ -15,11 +15,11 @@ type Order struct {
 	Exchange   string
 	Withdrawal *Withdrawal `gorm:"foreignKey:OrderId,UserId"`
 
-	BC     string
-	BChain string
+	BaseCoin  string
+	BaseChain string
 
-	QC     string
-	QChain string
+	QuoteCoin  string
+	QuoteChain string
 
 	Side          string
 	ExchangeOrder *ExchangeOrder `gorm:"foreignKey:OrderId,UserId"`
@@ -36,10 +36,10 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		Deposite:      DToDto(uo.Deposite),
 		Exchange:      uo.Exchange,
 		Withdrawal:    WToDto(uo.Withdrawal),
-		BC:            uo.BC.CoinId,
-		BChain:        uo.BC.ChainId,
-		QC:            uo.QC.CoinId,
-		QChain:        uo.QC.ChainId,
+		BaseCoin:      uo.BC.CoinId,
+		BaseChain:     uo.BC.ChainId,
+		QuoteCoin:     uo.QC.CoinId,
+		QuoteChain:    uo.QC.ChainId,
 		Side:          uo.Side,
 		ExchangeOrder: EToDto(uo.ExchangeOrder),
 	}
@@ -54,8 +54,8 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		Deposite:      o.Deposite.ToEntity(),
 		Exchange:      o.Exchange,
 		Withdrawal:    o.Withdrawal.ToEntity(),
-		BC:            &entity.Coin{CoinId: o.BC, ChainId: o.BChain},
-		QC:            &entity.Coin{CoinId: o.QC, ChainId: o.QChain},
+		BC:            &entity.Coin{CoinId: o.BaseCoin, ChainId: o.BaseChain},
+		QC:            &entity.Coin{CoinId: o.QuoteCoin, ChainId: o.QuoteChain},
 		Side:          o.Side,
 		ExchangeOrder: o.ExchangeOrder.ToEntity(),
 	}

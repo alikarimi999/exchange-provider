@@ -11,17 +11,24 @@ const (
 )
 
 type kuCoin struct {
-	*entity.Coin
-	minSize        string
-	maxSize        string
-	orderPrecision int
+	coinId              string
+	chainId             string
+	minOrderSize        string
+	maxOrderSize        string
+	minWithdrawalSize   string
+	minWithdrawalFee    string
+	withdrawalPrecision int
+	orderPrecision      int
+
+	needChain bool
 }
 
 type pair struct {
-	id     string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
-	symbol string  // base.id + pairDelimiter + quote.id
-	bc     *kuCoin // base coin
-	qc     *kuCoin // quote coin
+	id          string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
+	symbol      string  // base.id + pairDelimiter + quote.id
+	bc          *kuCoin // base coin
+	qc          *kuCoin // quote coin
+	feeCurrency string
 }
 
 func fromEntity(ep *entity.Pair) *pair {
@@ -29,34 +36,60 @@ func fromEntity(ep *entity.Pair) *pair {
 		id:     ep.BC.CoinId + ep.BC.ChainId + ep.QC.CoinId + ep.QC.ChainId,
 		symbol: ep.BC.CoinId + pairDelimiter + ep.QC.CoinId,
 		bc: &kuCoin{
-			Coin:           ep.BC.Coin,
-			minSize:        ep.BC.MinOrderSize,
-			maxSize:        ep.BC.MaxOrderSize,
-			orderPrecision: ep.BC.OrderPrecision,
+			coinId:              ep.BC.CoinId,
+			chainId:             ep.BC.ChainId,
+			minOrderSize:        ep.BC.MinOrderSize,
+			maxOrderSize:        ep.BC.MaxOrderSize,
+			minWithdrawalSize:   ep.BC.MinWithdrawalSize,
+			minWithdrawalFee:    ep.BC.WithdrawalMinFee,
+			withdrawalPrecision: ep.BC.WithdrawalPrecision,
+			orderPrecision:      ep.BC.OrderPrecision,
+			needChain:           ep.BC.SetChain,
 		},
 		qc: &kuCoin{
-			Coin:           ep.QC.Coin,
-			minSize:        ep.QC.MinOrderSize,
-			maxSize:        ep.QC.MaxOrderSize,
-			orderPrecision: ep.QC.OrderPrecision,
+			coinId:              ep.QC.CoinId,
+			chainId:             ep.QC.ChainId,
+			minOrderSize:        ep.QC.MinOrderSize,
+			maxOrderSize:        ep.QC.MaxOrderSize,
+			minWithdrawalSize:   ep.QC.MinWithdrawalSize,
+			minWithdrawalFee:    ep.QC.WithdrawalMinFee,
+			withdrawalPrecision: ep.QC.WithdrawalPrecision,
+			orderPrecision:      ep.QC.OrderPrecision,
+			needChain:           ep.QC.SetChain,
 		},
+		feeCurrency: ep.FeeCurrency,
 	}
 }
 
 func (p *pair) toEntity() *entity.Pair {
 	return &entity.Pair{
 		BC: &entity.PairCoin{
-			Coin:           p.bc.Coin,
-			MinOrderSize:   p.bc.minSize,
-			MaxOrderSize:   p.bc.maxSize,
-			OrderPrecision: p.bc.orderPrecision,
+			Coin: &entity.Coin{
+				CoinId:  p.bc.coinId,
+				ChainId: p.bc.chainId,
+			},
+			MinOrderSize:        p.bc.minOrderSize,
+			MaxOrderSize:        p.bc.maxOrderSize,
+			MinWithdrawalSize:   p.bc.minWithdrawalSize,
+			WithdrawalMinFee:    p.bc.minWithdrawalFee,
+			WithdrawalPrecision: p.bc.withdrawalPrecision,
+			OrderPrecision:      p.bc.orderPrecision,
+			SetChain:            p.bc.needChain,
 		},
 		QC: &entity.PairCoin{
-			Coin:           p.qc.Coin,
-			MinOrderSize:   p.qc.minSize,
-			MaxOrderSize:   p.qc.maxSize,
-			OrderPrecision: p.qc.orderPrecision,
+			Coin: &entity.Coin{
+				CoinId:  p.qc.coinId,
+				ChainId: p.qc.chainId,
+			},
+			MinOrderSize:        p.qc.minOrderSize,
+			MaxOrderSize:        p.qc.maxOrderSize,
+			MinWithdrawalSize:   p.qc.minWithdrawalSize,
+			WithdrawalMinFee:    p.qc.minWithdrawalFee,
+			WithdrawalPrecision: p.qc.withdrawalPrecision,
+			OrderPrecision:      p.qc.orderPrecision,
+			SetChain:            p.qc.needChain,
 		},
+		FeeCurrency: p.feeCurrency,
 	}
 }
 
@@ -102,6 +135,13 @@ func (sp *exPairs) get(bc, qc *entity.Coin) (*pair, error) {
 	}
 
 	return nil, errors.New("pair not found")
+}
+
+func (sp *exPairs) remove(bc, qc *entity.Coin) {
+	sp.mux.Lock()
+	defer sp.mux.Unlock()
+
+	delete(sp.pairs, bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId)
 }
 
 func (sp *exPairs) snapshot() []*pair {

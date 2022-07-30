@@ -40,6 +40,10 @@ func (o *OrderUseCase) GetExchange(exchange string) (entity.Exchange, error) {
 	return o.exs.get(exchange)
 }
 
+func (o *OrderUseCase) GetAllExchanges() []string {
+	return o.exs.getAll()
+}
+
 func (o *OrderUseCase) ExchangeExists(exchange string) bool {
 	return o.exs.exists(exchange)
 }

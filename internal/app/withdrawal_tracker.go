@@ -90,23 +90,34 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 						if err := t.repo.Add(o); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
 
-							if err := t.oc.Update(o); err != nil {
+							if err := t.oc.Add(o); err != nil {
 								t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
 								proccessedCh <- false
 								return
 							}
+
+							proccessedCh <- true
+							if err := t.wc.DelPendingWithdrawal(w); err != nil {
+								t.l.Error(string(op), errors.Wrap(err, op,
+									fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
+							}
+
+							return
+
 						}
 
 						proccessedCh <- true
+
+						if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
+							t.l.Error(string(op), errors.Wrap(err, op,
+								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
+						}
 
 						if err := t.wc.DelPendingWithdrawal(w); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op,
 								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
 						}
-						if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.Id, w.OrderId, w.UserId)).Error())
-						}
+
 						return
 
 					case entity.WithdrawalFailed:
@@ -128,6 +139,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 
 						if err := t.oc.Update(o); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
+
 							proccessedCh <- false
 							return
 						}

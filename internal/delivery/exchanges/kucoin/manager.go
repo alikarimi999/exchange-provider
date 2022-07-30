@@ -64,15 +64,43 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 
 }
 
-func (k *kucoinExchange) GetPairs() []*entity.Pair {
+func (k *kucoinExchange) GetAllPairs() []*entity.Pair {
 	pairs := []*entity.Pair{}
 	ps := k.exchangePairs.snapshot()
+
 	for _, p := range ps {
-		pairs = append(pairs, p.toEntity())
+		pe := p.toEntity()
+		k.setPrice(pe)
+		k.setOrderFeeRate(pe)
+
+		pairs = append(pairs, pe)
 	}
 	return pairs
 }
 
-func (k *kucoinExchange) Support(c1, c2 *entity.Coin) bool {
-	return k.exchangePairs.exists(c1, c2)
+func (k *kucoinExchange) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
+	p, err := k.exchangePairs.get(bc, qc)
+	if err != nil {
+		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
+	}
+	pe := p.toEntity()
+	if err := k.setPrice(pe); err != nil {
+		return nil, err
+	}
+	if err := k.setOrderFeeRate(pe); err != nil {
+		return nil, err
+	}
+	return pe, nil
+}
+
+func (k *kucoinExchange) RemovePair(bc, qc *entity.Coin) error {
+	if k.exchangePairs.exists(bc, qc) {
+		k.exchangePairs.remove(bc, qc)
+		return nil
+	}
+	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
+}
+
+func (k *kucoinExchange) Support(bc, qc *entity.Coin) bool {
+	return k.exchangePairs.exists(bc, qc)
 }

@@ -23,8 +23,8 @@ func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
 	w := &withdrawalHandler{
 
 		tracker:     newWithdrawalTracker(repo, oc, wc, exs, l),
-		ticker:      time.NewTicker(time.Minute * 5),
-		windowsSize: time.Minute * 10,
+		ticker:      time.NewTicker(time.Minute * 2),
+		windowsSize: time.Minute * 2,
 		cache:       wc,
 		wg:          &sync.WaitGroup{},
 

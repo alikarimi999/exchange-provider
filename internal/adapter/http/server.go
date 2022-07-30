@@ -52,6 +52,27 @@ func (s *Server) NewUserOrder(ctx Context) {
 	return
 }
 
+func (s *Server) AdminGetUserOrder(ctx Context) {
+	userId, err := strconv.Atoi(ctx.Param("userId"))
+	if err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
+		return
+	}
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid order id")))
+		return
+	}
+	o, err := s.app.GetUserOrder(int64(userId), int64(id))
+	if err != nil {
+		handlerErr(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, dto.AdminUOFromEntity(o))
+	return
+}
+
 func (s *Server) GetUserOrder(ctx Context) {
 	userId, err := strconv.Atoi(ctx.Param("userId"))
 	if err != nil {
@@ -69,7 +90,7 @@ func (s *Server) GetUserOrder(ctx Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.UoFromEntity(o))
+	ctx.JSON(http.StatusOK, dto.UOFromEntity(o))
 	return
 }
 
@@ -86,9 +107,9 @@ func (s *Server) GetAllUserOrders(ctx Context) {
 		return
 	}
 
-	osDTO := []*dto.UserOrder{}
+	osDTO := []*dto.AdminUserOrder{}
 	for _, o := range os {
-		osDTO = append(osDTO, dto.UoFromEntity(o))
+		osDTO = append(osDTO, dto.AdminUOFromEntity(o))
 	}
 
 	ctx.JSON(http.StatusOK, osDTO)

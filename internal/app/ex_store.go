@@ -79,13 +79,14 @@ func (a *exStore) exists(exchange string) bool {
 	return ok
 }
 
-func (a *exStore) getAll() map[string]entity.Exchange {
+func (a *exStore) getAll() []string {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	res := make(map[string]entity.Exchange)
-	for k, v := range a.exs {
-		res[k] = v
+	var exs []string
+	for ex := range a.exs {
+		exs = append(exs, ex)
 	}
-	return res
+
+	return exs
 }

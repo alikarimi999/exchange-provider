@@ -18,6 +18,7 @@ type OrderUseCase struct {
 	ds    entity.DepositeService
 	oh    *orderHandler
 	wh    *withdrawalHandler
+	fs    entity.FeeService
 
 	exs *exStore
 	l   logger.Logger
@@ -32,6 +33,7 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCac
 		rc:    rc,
 		ds:    depo,
 		exs:   newExStore(l),
+		fs:    fee,
 
 		l: l,
 	}
@@ -80,22 +82,29 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 
 	var dc *entity.Coin
 	if side == "buy" {
-		dc = bc
-	} else {
 		dc = qc
+	} else {
+		dc = bc
 	}
 
 	d, err := u.ds.New(userId, o.Id, dc, ex)
 	if err != nil {
-		err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',quote_coin: %+v , base_oin: %+v ", userId, bc, qc),
-			&ErrMsg{msg: "create deposite failed, internal error"})
-		u.l.Error(string(op), err.Error())
+		switch errors.ErrorCode(err) {
+		case errors.ErrNotFound:
+			err = errors.Wrap(err, op, &ErrMsg{msg: fmt.Sprintf("coin %s chain %s not found in deposit service", dc.CoinId, dc.ChainId)})
+			u.l.Debug(string(op), err.Error())
 
-		// remove the order from the cache
-		if err := u.cache.Delete(userId, o.Id); err != nil {
-			u.l.Error(string(op), fmt.Sprintf("orderId: '%d' userId: '%d'", o.Id, o.UserId))
+		default:
+			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',quote_coin: %+v , base_oin: %+v ", userId, bc, qc),
+				&ErrMsg{msg: "create deposite failed, internal error"})
+			u.l.Error(string(op), err.Error())
+
+			// remove the order from the cache
+			if err := u.cache.Delete(userId, o.Id); err != nil {
+				u.l.Error(string(op), fmt.Sprintf("orderId: '%d' userId: '%d'", o.Id, o.UserId))
+			}
+			return nil, err
 		}
-		return nil, err
 	}
 
 	o.AddDeposite(d)
@@ -244,6 +253,12 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 		}
 	}
 
+	if !u.exs.exists(o.Deposite.Exchange) {
+		err = errors.Wrap(errors.ErrBadRequest, op, fmt.Sprintf("exchange: '%s' not supported by this service", o.Deposite.Exchange))
+		u.l.Error(string(op), err.Error())
+		return err
+	}
+
 	if o.Status != entity.OrderStatusWaitForDepositeConfirm {
 		return errors.Wrap(err, op, &ErrMsg{msg: "order status is not waiting for deposite confirmation"})
 	}
@@ -253,9 +268,9 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	o.Deposite.Volume = vol
 
 	if o.Side == "buy" {
-		o.Size = vol
-	} else {
 		o.Funds = vol
+	} else {
+		o.Size = vol
 	}
 
 	if err := u.cache.Update(o); err != nil {

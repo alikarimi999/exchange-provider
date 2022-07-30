@@ -1,6 +1,9 @@
 package dto
 
-import "order_service/internal/entity"
+import (
+	"order_service/internal/entity"
+	"strconv"
+)
 
 type ExchangeOrder struct {
 	Id          string `json:"id"`
@@ -11,13 +14,14 @@ type ExchangeOrder struct {
 	Side        string `json:"side"`
 	Funds       string `json:"funds"`
 	Size        string `json:"size"`
+	FilledPrice string `json:"filled_price"`
 	Fee         string `json:"fee"`
 	FeeCurrency string `json:"fee_currency"`
 	Status      string `json:"status"`
 }
 
 func EoFromEntity(e *entity.ExchangeOrder) *ExchangeOrder {
-	return &ExchangeOrder{
+	ex := &ExchangeOrder{
 		Id:          e.Id,
 		UserId:      e.UserId,
 		OrderId:     e.OrderId,
@@ -30,4 +34,12 @@ func EoFromEntity(e *entity.ExchangeOrder) *ExchangeOrder {
 		FeeCurrency: e.FeeCurrency,
 		Status:      string(e.Status),
 	}
+
+	if ex.Funds != "" && ex.Size != "" {
+		s, _ := strconv.ParseFloat(ex.Size, 64)
+		f, _ := strconv.ParseFloat(ex.Funds, 64)
+		ex.FilledPrice = strconv.FormatFloat(f/s, 'f', 8, 64)
+	}
+
+	return ex
 }

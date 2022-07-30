@@ -80,7 +80,8 @@ func genOrderId(l int) int64 {
 }
 
 func (o *UserOrder) AddDeposite(d *Deposit) {
-	o.Deposite = d
+	o.Deposite.Id = d.Id
+	o.Deposite.Address = d.Address
 	return
 }
 

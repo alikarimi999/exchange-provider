@@ -29,7 +29,7 @@ func newWithdrawalAggregator(api *kucoin.ApiService, l logger.Logger, r *redis.C
 		l:          l,
 		c:          newWithdrawalCache(r, l),
 		params:     make(map[string]string),
-		ticker:     time.NewTicker(time.Minute * 10),
+		ticker:     time.NewTicker(time.Minute * 2),
 		windowSize: time.Hour * 1,
 	}
 }

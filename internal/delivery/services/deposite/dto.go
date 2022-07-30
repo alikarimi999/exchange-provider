@@ -45,29 +45,53 @@ func (c *CreateDepositeResp) MapToEntity() *entity.Deposit {
 	}
 }
 
-type SupportedRequest struct {
-	Exchange string  `json:"exchange"`
-	Coins    []*Coin `json:"coins"`
+type AllCoins struct {
+	Coins []*ExchangeCoin `json:"coins"`
+	Msg   string          `json:"message,omitempty"`
 }
 
-// return io.Reader for the request body
-func (r *SupportedRequest) reader() io.Reader {
+func (r *AllCoins) ToDepositCoins() []*entity.Depositcoin {
+	var coins []*entity.Depositcoin
+	for _, v := range r.Coins {
+		coins = append(coins, v.ToDepositCoin())
+	}
+	return coins
+}
+
+type ExchangeCoin struct {
+	*Coin
+	Address   string `json:"address"`
+	SetChain  bool   `json:"set_chain"`
+	BlockTime string `json:"block_time"`
+	Confirms  int    `json:"confirms"`
+	Precision int    `json:"precision"`
+}
+
+func (c *ExchangeCoin) ToDepositCoin() *entity.Depositcoin {
+	return &entity.Depositcoin{
+		CoinId:   c.CoinId,
+		ChainId:  c.ChainId,
+		SetChain: c.SetChain,
+	}
+}
+
+type GetSupportedCoinsRequest struct {
+	Exchanges []string `json:"exchanges"`
+}
+
+func (r *GetSupportedCoinsRequest) reader() io.Reader {
 	b, _ := json.Marshal(r)
 	return bytes.NewReader(b)
 }
 
-type supportCoin struct {
-	*Coin
-	Supported bool `json:"supported"`
+type GetSupportedCoinsResponse struct {
+	Exchanges map[string]*AllCoins `json:"exchanges"`
 }
 
-func (c *supportCoin) MapToEntity() *entity.Coin {
-	return &entity.Coin{
-		CoinId:  c.CoinId,
-		ChainId: c.ChainId,
+func (r *GetSupportedCoinsResponse) Parse() map[string][]*entity.Depositcoin {
+	m := make(map[string][]*entity.Depositcoin)
+	for k, v := range r.Exchanges {
+		m[k] = v.ToDepositCoins()
 	}
-}
-
-type SupportedRespons struct {
-	Coins []*supportCoin `json:"coins"`
+	return m
 }

@@ -9,6 +9,10 @@ type Coin struct {
 	ChainId string
 }
 
+func (c *Coin) String() string {
+	return c.CoinId + "-" + c.ChainId
+}
+
 type PairCoin struct {
 	*Coin
 
@@ -25,7 +29,9 @@ type Pair struct {
 	BC *PairCoin
 	QC *PairCoin
 
-	Price        string
+	BestAsk      string
+	BestBid      string
 	FeeCurrency  string
 	OrderFeeRate string
+	Fee          string
 }

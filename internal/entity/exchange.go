@@ -50,7 +50,11 @@ type ExchangeManager interface {
 	// add pairs to the exchange, if pair exist ignore it
 	AddPairs(pairs []*Pair) (*AddPairsResult, error)
 	// get all pairs from the exchange
-	GetPairs() []*Pair
+	GetAllPairs() []*Pair
+	GetPair(bc, qc *Coin) (*Pair, error)
+
+	RemovePair(bc, qc *Coin) error
+
 	// check if the exchange support a pair with combination of two coins
 	Support(bc, qc *Coin) bool
 }
