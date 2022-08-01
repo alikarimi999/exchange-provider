@@ -6,7 +6,8 @@ import (
 )
 
 type ExchangeOrder struct {
-	Id          string `json:"id"`
+	Id          uint64
+	Ex_Id       string `json:"exchange_id"`
 	UserId      int64  `json:"user_id"`
 	OrderId     int64  `json:"order_id"`
 	Symbol      string `json:"symbol"`
@@ -23,6 +24,7 @@ type ExchangeOrder struct {
 func EoFromEntity(e *entity.ExchangeOrder) *ExchangeOrder {
 	ex := &ExchangeOrder{
 		Id:          e.Id,
+		Ex_Id:       e.ExId,
 		UserId:      e.UserId,
 		OrderId:     e.OrderId,
 		Symbol:      e.Symbol,

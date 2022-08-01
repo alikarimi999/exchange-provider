@@ -19,3 +19,15 @@ func RandInt64(l int) int64 {
 	return n
 
 }
+
+func RandString(l int) string {
+	s := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s)
+	c := []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, l)
+	for i := range b {
+		b[i] = c[r.Intn(len(c))]
+	}
+
+	return string(b)
+}

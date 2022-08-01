@@ -23,9 +23,16 @@ type Order struct {
 
 	Side          string
 	ExchangeOrder *ExchangeOrder `gorm:"foreignKey:OrderId,UserId"`
+
+	Broken      bool
+	BreakReason string
 }
 
 func UoToDto(uo *entity.UserOrder) *Order {
+	if uo == nil {
+		return &Order{}
+	}
+
 	return &Order{
 		Model: gorm.Model{
 			ID:        uint(uo.Id),
@@ -42,10 +49,17 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		QuoteChain:    uo.QC.ChainId,
 		Side:          uo.Side,
 		ExchangeOrder: EToDto(uo.ExchangeOrder),
+		Broken:        uo.Broken,
+		BreakReason:   uo.BreakReason,
 	}
 }
 
 func (o *Order) ToEntity() *entity.UserOrder {
+
+	if o == nil {
+		return &entity.UserOrder{}
+	}
+
 	return &entity.UserOrder{
 		Id:            int64(o.ID),
 		CreatedAt:     o.CreatedAt.Unix(),
@@ -58,5 +72,7 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		QC:            &entity.Coin{CoinId: o.QuoteCoin, ChainId: o.QuoteChain},
 		Side:          o.Side,
 		ExchangeOrder: o.ExchangeOrder.ToEntity(),
+		Broken:        o.Broken,
+		BreakReason:   o.BreakReason,
 	}
 }

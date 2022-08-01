@@ -33,8 +33,9 @@ func NewRouter(app *app.OrderUseCase, l logger.Logger) *Router {
 func (o *Router) orderSrvGrpV0() {
 	v0 := o.gin.Group("/orders")
 	{
-		v0.GET("/:userId/:id", func(ctx *gin.Context) {
-			o.srv.GetUserOrder(newContext(ctx))
+
+		v0.POST("/:userId", func(ctx *gin.Context) {
+			o.srv.GetPaginatedForUser(newContext(ctx))
 		})
 
 		v0.POST("", func(ctx *gin.Context) {
@@ -49,12 +50,8 @@ func (o *Router) orderSrvGrpV0() {
 
 		os := a.Group("/orders")
 		{
-			os.GET("/:userId/:id", func(ctx *gin.Context) {
-				o.srv.AdminGetUserOrder(newContext(ctx))
-			})
-
-			os.GET("/:userId", func(ctx *gin.Context) {
-				o.srv.GetAllUserOrders(newContext(ctx))
+			os.POST("/", func(ctx *gin.Context) {
+				o.srv.GetPaginatedForAdmin(newContext(ctx))
 			})
 		}
 

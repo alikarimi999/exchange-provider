@@ -6,7 +6,8 @@ import (
 )
 
 type exchangeOrder struct {
-	Id          string
+	Id          uint64
+	ExId        string
 	UserId      int64
 	OrderId     int64
 	Symbol      string
@@ -22,6 +23,7 @@ type exchangeOrder struct {
 func eoToDto(eo *entity.ExchangeOrder) *exchangeOrder {
 	return &exchangeOrder{
 		Id:          eo.Id,
+		ExId:        eo.ExId,
 		UserId:      eo.UserId,
 		OrderId:     eo.OrderId,
 		Symbol:      eo.Symbol,
@@ -38,6 +40,7 @@ func eoToDto(eo *entity.ExchangeOrder) *exchangeOrder {
 func (eo *exchangeOrder) ToEntity() *entity.ExchangeOrder {
 	return &entity.ExchangeOrder{
 		Id:          eo.Id,
+		ExId:        eo.ExId,
 		UserId:      eo.UserId,
 		OrderId:     eo.OrderId,
 		Symbol:      eo.Symbol,

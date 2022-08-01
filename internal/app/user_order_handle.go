@@ -18,8 +18,11 @@ import (
 
 type orderHandler struct {
 	repo entity.OrderRepo
-	oc   entity.OrderCache
-	wc   entity.WithdrawalCache
+
+	ouc *OrderUseCase
+
+	oc entity.OrderCache
+	wc entity.WithdrawalCache
 	*exStore
 	eTracker *exOrderTracker
 	oCh      chan *entity.UserOrder
@@ -28,9 +31,12 @@ type orderHandler struct {
 	l logger.Logger
 }
 
-func newOrderHandler(repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
+func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
 	oh := &orderHandler{
-		repo:     repo,
+		repo: repo,
+
+		ouc: ouc,
+
 		oc:       oc,
 		wc:       wc,
 		exStore:  exs,
@@ -62,20 +68,20 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				if err != nil {
 
 					ord.Broken = true
-					ord.BrokeReason = fmt.Sprintf("unable to create order in exchange: %s", err.Error())
+					ord.BreakReason = fmt.Sprintf("unable to create order in exchange: %s", err.Error())
 
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 
-					if err := o.oc.Update(ord); err != nil {
+					if err := o.ouc.write(ord); err != nil {
 						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 					}
 					return
 
 				}
 
-				ord.ExchangeOrder.Id = id
+				ord.ExchangeOrder.ExId = id
 				ord.Status = entity.OrderStatusWaitForExchangeOrderConfirm
-				if err = o.oc.Update(ord); err != nil {
+				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 					return
 				}
@@ -86,15 +92,15 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					succeed: make(chan bool),
 				}
 				go o.eTracker.track(ef)
-				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for exchange order: '%s' confirmation", ord.Id, ord.UserId, ord.ExchangeOrder.Id))
+				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for exchange order: '%s' confirmation", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
 
 				if <-ef.succeed {
 					switch ord.ExchangeOrder.Status {
 					case entity.ExOrderSucceed:
 
 						ord.Status = entity.OrderStatusExchangeOrderConfirmed
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' confirmed", ord.Id, ord.UserId, ord.ExchangeOrder.Id))
-						if err = o.oc.Update(ord); err != nil {
+						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' confirmed", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
+						if err = o.ouc.write(ord); err != nil {
 							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 							return
 						}
@@ -113,12 +119,12 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)
 						if err != nil {
 							ord.Broken = true
-							ord.BrokeReason = fmt.Sprintf("unable to apply fee: %s", err.Error())
+							ord.BreakReason = fmt.Sprintf("unable to apply fee: %s", err.Error())
 
 							o.l.Error(string(op), errors.Wrap(err, op,
 								fmt.Sprintf("orderId: '%d', userId: '%d'", ord.Id, ord.UserId)).Error())
 
-							if err := o.oc.Update(ord); err != nil {
+							if err := o.ouc.write(ord); err != nil {
 								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 							}
 							return
@@ -130,23 +136,23 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						id, err = ex.Withdrawal(wc, ord.Withdrawal.Address, r)
 						if err != nil {
 							ord.Broken = true
-							ord.BrokeReason = fmt.Sprintf("unable to create withdrawal in exchange: %s", err.Error())
+							ord.BreakReason = fmt.Sprintf("unable to create withdrawal in exchange: %s", err.Error())
 
 							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 
-							if err := o.oc.Update(ord); err != nil {
+							if err := o.ouc.write(ord); err != nil {
 								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 							}
 							return
 
 						}
 
-						ord.Withdrawal.Id = id
+						ord.Withdrawal.WId = id
 						ord.Withdrawal.Status = entity.WithdrawalPending
 						ord.Status = entity.OrderStatusWaitForWithdrawalConfirm
 
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.Id))
-						if err = o.oc.Update(ord); err != nil {
+						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
+						if err = o.ouc.write(ord); err != nil {
 							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 							return
 						}
@@ -156,7 +162,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
 							o.l.Error(string(op), errors.Wrap(err, op, ord.Withdrawal.String()).Error())
 						}
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.Id))
+						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
 						return
 
 					case entity.ExOrderPending:
@@ -166,11 +172,11 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					default:
 
 						ord.Broken = true
-						ord.BrokeReason = "exchange order failed"
+						ord.BreakReason = "exchange order failed"
 
-						o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' has status: '%s'", ord.Id, ord.UserId, ord.ExchangeOrder.Id, ord.ExchangeOrder.Status))
+						o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' has status: '%s'", ord.Id, ord.UserId, ord.ExchangeOrder.ExId, ord.ExchangeOrder.Status))
 
-						if err := o.oc.Update(ord); err != nil {
+						if err := o.ouc.write(ord); err != nil {
 							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 						}
 						return
@@ -179,11 +185,11 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				}
 
 				ord.Broken = true
-				ord.BrokeReason = "exchange order tracking failed"
+				ord.BreakReason = "exchange order tracking failed"
 
-				o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' tracking failed for unknown reason.", ord.Id, ord.UserId, ord.ExchangeOrder.Id))
+				o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' tracking failed for unknown reason.", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
 
-				if err := o.oc.Update(ord); err != nil {
+				if err := o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 				}
 				return

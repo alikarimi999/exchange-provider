@@ -13,13 +13,11 @@ import (
 type Storage struct {
 	Repo entity.OrderRepo
 	Oc   entity.OrderCache
-	Wc   entity.WithdrawalCache
 }
 
 func NewStorage(db *gorm.DB, rc *redis.Client, l logger.Logger) *Storage {
 	return &Storage{
 		Repo: database.NewUserRepo(db),
-		Wc:   cache.NewWithdrawalCache(rc),
 		Oc:   cache.NewOrderCache(rc),
 	}
 

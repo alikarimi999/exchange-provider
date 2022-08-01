@@ -1,0 +1,25 @@
+package app
+
+import (
+	"order_service/internal/entity"
+	"order_service/pkg/errors"
+)
+
+func (u *OrderUseCase) GetPaginated(pa *entity.PaginatedUserOrders) error {
+	const op = errors.Op("Order-UseCase.GetAllUserOrders")
+
+	if err := u.read(pa); err != nil {
+		switch errors.ErrorCode(err) {
+		case errors.ErrNotFound:
+			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
+			u.l.Debug(string(op), err.Error())
+		default:
+			err = errors.Wrap(err, op, &ErrMsg{msg: "get orders failed, internal error"})
+			u.l.Error(string(op), err.Error())
+		}
+
+		return err
+	}
+	return nil
+
+}

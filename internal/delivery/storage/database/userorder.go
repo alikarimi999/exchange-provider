@@ -23,10 +23,14 @@ func NewUserRepo(db *gorm.DB) entity.OrderRepo {
 func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	const op = errors.Op("MySqlDB.Add")
 
-	err := m.db.Create(dto.UoToDto(order)).Error
+	od := dto.UoToDto(order)
+	err := m.db.Omit("Deposite", "ExchangeOrder").Create(od).Error
 	if err != nil {
 		err = errors.Wrap(err, op, errors.ErrInternal)
 	}
+	order.Id = int64(od.ID)
+	order.Withdrawal.Id = od.Withdrawal.Id
+	order.ExchangeOrder.Id = od.ExchangeOrder.Id
 	return err
 }
 
@@ -70,7 +74,7 @@ func (m *MySqlDB) GetAll(UserId int64) ([]*entity.UserOrder, error) {
 func (m *MySqlDB) Update(order *entity.UserOrder) error {
 	const op = errors.Op("MySqlDB.Update")
 
-	if err := m.db.Save(dto.UoToDto(order)).Error; err != nil {
+	if err := m.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(dto.UoToDto(order)).Error; err != nil {
 		return errors.Wrap(op, err, errors.ErrInternal)
 	}
 	return nil

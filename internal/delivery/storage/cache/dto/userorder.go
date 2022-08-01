@@ -21,7 +21,7 @@ type UserOrder struct {
 	Side          string
 	ExchangeOrder *exchangeOrder
 	Broken        bool
-	BrokeReason   string
+	BreakeReason  string
 }
 
 func ToDTO(u *entity.UserOrder) *UserOrder {
@@ -40,7 +40,7 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 		Side:          u.Side,
 		ExchangeOrder: eoToDto(u.ExchangeOrder),
 		Broken:        u.Broken,
-		BrokeReason:   u.BrokeReason,
+		BreakeReason:  u.BreakReason,
 	}
 }
 
@@ -65,7 +65,7 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 		Side:          u.Side,
 		ExchangeOrder: u.ExchangeOrder.ToEntity(),
 		Broken:        u.Broken,
-		BrokeReason:   u.BrokeReason,
+		BreakReason:   u.BreakeReason,
 	}
 }
 

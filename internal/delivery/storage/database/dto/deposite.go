@@ -3,7 +3,7 @@ package dto
 import "order_service/internal/entity"
 
 type Deposite struct {
-	Id         int64 `gorm:"primary_key"`
+	Id         int64
 	OrderId    int64
 	UserId     int64
 	Exchange   string

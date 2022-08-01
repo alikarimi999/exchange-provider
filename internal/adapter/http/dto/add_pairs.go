@@ -90,7 +90,7 @@ type Pair struct {
 	QC *Coin `json:"quote_coin"`
 
 	BestAskPrice         string `json:"best_ask_price,omitempty"`
-	BestBidPrice         string `json:"best_bit_price,omitempty"`
+	BestBidPrice         string `json:"best_bid_price,omitempty"`
 	FeeCurrency          string `json:"fee_currency,omitempty"`
 	ExchangeOrderFeeRate string `json:"exchange_order_fee_rate,omitempty"`
 	FeeRate              string `json:"fee_rate,omitempty"`

@@ -52,66 +52,55 @@ func (s *Server) NewUserOrder(ctx Context) {
 	return
 }
 
-func (s *Server) AdminGetUserOrder(ctx Context) {
+func (s *Server) GetPaginatedForUser(ctx Context) {
 	userId, err := strconv.Atoi(ctx.Param("userId"))
 	if err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
 		return
 	}
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid order id")))
-		return
-	}
-	o, err := s.app.GetUserOrder(int64(userId), int64(id))
-	if err != nil {
-		handlerErr(ctx, err)
+
+	pa := &dto.PaginatedUserOrdersRequest{}
+	if err := ctx.Bind(pa); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, dto.AdminUOFromEntity(o))
+	if err := pa.Validate(int64(userId)); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		return
+	}
+
+	pao := pa.Map()
+	if err := s.app.GetPaginated(pao); err != nil {
+		handlerErr(ctx, err)
+		return
+	}
+	r := &dto.PaginatedUserOrdersResponse{}
+	r.Map(pao, false)
+	ctx.JSON(http.StatusOK, r)
 	return
 }
 
-func (s *Server) GetUserOrder(ctx Context) {
-	userId, err := strconv.Atoi(ctx.Param("userId"))
-	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
+func (s *Server) GetPaginatedForAdmin(ctx Context) {
+
+	pa := &dto.PaginatedUserOrdersRequest{}
+	if err := ctx.Bind(pa); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
 		return
 	}
-	id, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid order id")))
+
+	if err := pa.Validate(0); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
 		return
 	}
-	o, err := s.app.GetUserOrder(int64(userId), int64(id))
-	if err != nil {
+
+	pao := pa.Map()
+	if err := s.app.GetPaginated(pao); err != nil {
 		handlerErr(ctx, err)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, dto.UOFromEntity(o))
-	return
-}
-
-func (s *Server) GetAllUserOrders(ctx Context) {
-	userId, err := strconv.Atoi(ctx.Param("userId"))
-	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
-		return
-	}
-
-	os, err := s.app.GetAllUserOrders(int64(userId))
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	osDTO := []*dto.AdminUserOrder{}
-	for _, o := range os {
-		osDTO = append(osDTO, dto.AdminUOFromEntity(o))
-	}
-
-	ctx.JSON(http.StatusOK, osDTO)
+	r := &dto.PaginatedUserOrdersResponse{}
+	r.Map(pao, true)
+	ctx.JSON(http.StatusOK, r)
 	return
 }

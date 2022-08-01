@@ -14,13 +14,13 @@ import (
 )
 
 type OrderCache struct {
-	c   *redis.Client
+	r   *redis.Client
 	ctx context.Context
 }
 
 func NewOrderCache(c *redis.Client) entity.OrderCache {
 	return &OrderCache{
-		c:   c,
+		r:   c,
 		ctx: context.Background(),
 	}
 }
@@ -30,7 +30,7 @@ func (c *OrderCache) Add(order *entity.UserOrder) error {
 
 	o := dto.ToDTO(order)
 	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
-	if err := c.c.Set(c.ctx, key, o, time.Duration(24*time.Hour)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, key, o, time.Duration(24*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
@@ -41,7 +41,7 @@ func (c *OrderCache) Get(userId, id int64) (*entity.UserOrder, error) {
 
 	key := fmt.Sprintf("user:%d:order:%d", userId, id)
 	o := &dto.UserOrder{}
-	b, err := c.c.Get(c.ctx, key).Bytes()
+	b, err := c.r.Get(c.ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, errors.Wrap(err, op, errors.ErrNotFound)
@@ -60,7 +60,7 @@ func (c *OrderCache) GetAll(userId int64) ([]*entity.UserOrder, error) {
 
 	p := fmt.Sprintf("user:%d:order:*", userId)
 	var keys []string
-	if err := c.c.Keys(c.ctx, p).ScanSlice(&keys); err != nil {
+	if err := c.r.Keys(c.ctx, p).ScanSlice(&keys); err != nil {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
 
@@ -68,7 +68,7 @@ func (c *OrderCache) GetAll(userId int64) ([]*entity.UserOrder, error) {
 		return nil, errors.Wrap(op, errors.ErrNotFound)
 	}
 
-	vals, err := c.c.MGet(c.ctx, keys...).Result()
+	vals, err := c.r.MGet(c.ctx, keys...).Result()
 	if err != nil {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
@@ -116,7 +116,7 @@ func (c *OrderCache) Delete(userId, id int64) error {
 	const op = errors.Op("OrderCache.Delete")
 
 	key := fmt.Sprintf("user:%d:order:%d", userId, id)
-	if err := c.c.Del(c.ctx, key).Err(); err != nil {
+	if err := c.r.Del(c.ctx, key).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil

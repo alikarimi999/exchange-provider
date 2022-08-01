@@ -75,7 +75,7 @@ type AdminUserOrder struct {
 	Withdrawal    *Withdrawal    `json:"withdrawal"`
 	CreatedAt     int64          `json:"created_at"`
 	Broken        bool           `json:"broken"`
-	BrokeReason   string         `json:"broke_reason"`
+	BreakReason   string         `json:"break_reason"`
 }
 
 func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
@@ -92,7 +92,7 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 		Side:          o.Side,
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
 		Broken:        o.Broken,
-		BrokeReason:   o.BrokeReason,
+		BreakReason:   o.BreakReason,
 	}
 }
 

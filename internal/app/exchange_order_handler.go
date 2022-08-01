@@ -46,7 +46,7 @@ func (h *exOrderTracker) run() {
 				case err := <-errCh:
 					// TODO: handle the error
 					f.succeed <- false
-					h.l.Error(string(op), errors.Wrap(err, op, fmt.Sprintf("exchangeOrderId: '%s', orderId: '%d', userId: '%d'", f.eo.Id, f.eo.OrderId, f.eo.UserId)).Error())
+					h.l.Error(string(op), errors.Wrap(err, op, fmt.Sprintf("exchangeOrderId: '%s', orderId: '%d', userId: '%d'", f.eo.ExId, f.eo.OrderId, f.eo.UserId)).Error())
 					return
 				}
 

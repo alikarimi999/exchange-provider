@@ -16,7 +16,8 @@ const (
 )
 
 type ExchangeOrder struct {
-	Id          string
+	Id          uint64
+	ExId        string
 	UserId      int64
 	OrderId     int64
 	Exchange    string
