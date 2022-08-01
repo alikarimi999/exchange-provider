@@ -13,6 +13,10 @@ type Deposite struct {
 }
 
 func DToDto(d *entity.Deposit) *Deposite {
+	if d == nil {
+		return &Deposite{}
+	}
+
 	return &Deposite{
 		Id:         d.Id,
 		UserId:     d.UserId,
@@ -25,6 +29,10 @@ func DToDto(d *entity.Deposit) *Deposite {
 }
 
 func (d *Deposite) ToEntity() *entity.Deposit {
+	if d == nil {
+		return &entity.Deposit{}
+	}
+
 	return &entity.Deposit{
 		Id:         d.Id,
 		UserId:     d.UserId,
