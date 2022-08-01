@@ -13,7 +13,8 @@ const (
 )
 
 type Withdrawal struct {
-	Id      string
+	Id      uint64
+	WId     string
 	OrderId int64
 	UserId  int64
 	Address string

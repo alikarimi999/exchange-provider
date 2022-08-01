@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"context"
 	"fmt"
 	"order_service/internal/delivery/storage/cache/dto"
 	"order_service/internal/entity"
@@ -12,19 +11,7 @@ import (
 	"github.com/go-redis/redis/v9"
 )
 
-type WithdrawalCache struct {
-	r   *redis.Client
-	ctx context.Context
-}
-
-func NewWithdrawalCache(r *redis.Client) entity.WithdrawalCache {
-	return &WithdrawalCache{
-		r:   r,
-		ctx: context.Background(),
-	}
-}
-
-func (c *WithdrawalCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
+func (c *OrderCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("WithdrawalCache.AddPendingWithdrawal")
 
 	dto := dto.WToDTO(w)
@@ -39,7 +26,7 @@ func (c *WithdrawalCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
 	return nil
 }
 
-func (c *WithdrawalCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal, error) {
+func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal, error) {
 	const op = errors.Op("WithdrawalCache.GetPendingWithdrawals")
 
 	key := fmt.Sprintf("pending_withdrawals")
@@ -63,7 +50,7 @@ func (c *WithdrawalCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdr
 	return ews, nil
 }
 
-func (c *WithdrawalCache) DelPendingWithdrawal(w *entity.Withdrawal) error {
+func (c *OrderCache) DelPendingWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("WithdrawalCache.DelPendingWithdrawal")
 
 	key := fmt.Sprintf("pending_withdrawals")

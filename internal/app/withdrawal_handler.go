@@ -17,12 +17,12 @@ type withdrawalHandler struct {
 	l           logger.Logger
 }
 
-func newWithdrawalHandler(repo entity.OrderRepo, oc entity.OrderCache,
+func newWithdrawalHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache,
 	wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalHandler {
 
 	w := &withdrawalHandler{
 
-		tracker:     newWithdrawalTracker(repo, oc, wc, exs, l),
+		tracker:     newWithdrawalTracker(ouc, repo, oc, wc, exs, l),
 		ticker:      time.NewTicker(time.Minute * 2),
 		windowsSize: time.Minute * 2,
 		cache:       wc,

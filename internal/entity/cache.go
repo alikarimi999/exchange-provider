@@ -6,10 +6,12 @@ type OrderCache interface {
 	Add(order *UserOrder) error
 	Get(userId, id int64) (*UserOrder, error)
 	GetAll(userId int64) ([]*UserOrder, error)
-	Update(order *UserOrder) error
-	UpdateExchangeOrder(eo *ExchangeOrder) error
-	UpdateWithdrawal(w *Withdrawal) error
+	// Update(order *UserOrder) error
+	// UpdateExchangeOrder(eo *ExchangeOrder) error
+	// UpdateWithdrawal(w *Withdrawal) error
 	Delete(userId, id int64) error
+
+	WithdrawalCache
 }
 
 type WithdrawalCache interface {

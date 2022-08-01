@@ -3,14 +3,16 @@ package dto
 import "order_service/internal/entity"
 
 type Withdrawal struct {
-	Id      string
-	OrderId int64
-	UserId  int64
+	Id       uint64 `json:"id"`
+	WId      string `json:"exchange_withdrawal_id"`
+	OrderId  int64
+	UserId   int64
+	Exchange string
+
 	Address string
 
-	Coin     string
-	Chain    string
-	Exchange string
+	Coin  string
+	Chain string
 
 	Total       string
 	Fee         string
@@ -24,6 +26,7 @@ type Withdrawal struct {
 func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 	return &Withdrawal{
 		Id:      w.Id,
+		WId:     w.WId,
 		OrderId: w.OrderId,
 		UserId:  w.UserId,
 		Address: w.Address,

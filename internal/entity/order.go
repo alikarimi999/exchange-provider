@@ -20,7 +20,7 @@ const (
 	OrderStatusWaitForWithdrawalConfirm OrderStatus = "wait_for_withdrawal_confirm"
 	OrderStatusWithdrawalConfirmed      OrderStatus = "withdrawal_confirmed"
 
-	OrderStatusSecceed OrderStatus = "succeed"
+	OrderStatusSucceed OrderStatus = "succeed"
 	OrderStatusFailed  OrderStatus = "failed"
 )
 
@@ -39,12 +39,11 @@ type UserOrder struct {
 	Funds         string
 	ExchangeOrder *ExchangeOrder
 	Broken        bool
-	BrokeReason   string
+	BreakReason   string
 }
 
 func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *UserOrder {
 	w := &UserOrder{
-		Id:        genOrderId(9),
 		UserId:    userId,
 		CreatedAt: time.Now().Unix(),
 		Status:    OrderStatusOpen,
@@ -52,10 +51,7 @@ func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *User
 		BC:        bc,
 		QC:        qc,
 		Side:      side,
-		Deposite: &Deposit{
-			UserId:   userId,
-			Exchange: ex,
-		},
+		Deposite:  &Deposit{},
 		ExchangeOrder: &ExchangeOrder{
 			UserId:   userId,
 			Status:   "",
@@ -69,20 +65,27 @@ func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *User
 		},
 	}
 
-	w.Deposite.OrderId = w.Id
 	w.Withdrawal.OrderId = w.Id
 	w.ExchangeOrder.OrderId = w.Id
 	return w
 }
 
-func genOrderId(l int) int64 {
-	return utils.RandInt64(l)
+func (o *UserOrder) AddDepositeConfirm(id int64, vol string) {
+	o.Status = OrderStatusDepositeConfimred
+	o.Deposite = &Deposit{
+		Id:         id,
+		UserId:     o.UserId,
+		OrderId:    o.Id,
+		Exchange:   o.Exchange,
+		Volume:     vol,
+		Fullfilled: true,
+		Address:    "",
+	}
+
 }
 
-func (o *UserOrder) AddDeposite(d *Deposit) {
-	o.Deposite.Id = d.Id
-	o.Deposite.Address = d.Address
-	return
+func genOrderId(l int) int64 {
+	return utils.RandInt64(l)
 }
 
 // implement stringer interface

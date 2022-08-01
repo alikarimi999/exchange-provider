@@ -24,7 +24,7 @@ type OrderUseCase struct {
 	l   logger.Logger
 }
 
-func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache,
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache,
 	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
@@ -38,8 +38,8 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCac
 		l: l,
 	}
 
-	o.oh = newOrderHandler(repo, oc, wc, fee, o.exs, l)
-	o.wh = newWithdrawalHandler(repo, oc, wc, o.exs, l)
+	o.oh = newOrderHandler(o, repo, oc, oc, fee, o.exs, l)
+	o.wh = newWithdrawalHandler(o, repo, oc, oc, o.exs, l)
 	return o
 }
 
@@ -80,6 +80,10 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 
 	o := entity.NewOrder(userId, address, bc, qc, side, ex)
 
+	if err := u.write(o); err != nil {
+		return nil, errors.Wrap(err, op, &ErrMsg{msg: "create order failed, internal error"})
+	}
+
 	var dc *entity.Coin
 	if side == "buy" {
 		dc = qc
@@ -107,14 +111,21 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 		}
 	}
 
-	o.AddDeposite(d)
+	o.Deposite = d
+
 	o.Status = entity.OrderStatusWaitForDepositeConfirm
 
-	if err = u.cache.Add(o); err != nil {
+	if err := u.write(o); err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("userId: '%d'", userId), op, &ErrMsg{msg: "create order failed, internal error"})
 		u.l.Error(string(op), err.Error())
 		return nil, err
 	}
+
+	// if err = u.cache.Add(o); err != nil {
+	// 	err = errors.Wrap(err, fmt.Sprintf("userId: '%d'", userId), op, &ErrMsg{msg: "create order failed, internal error"})
+	// 	u.l.Error(string(op), err.Error())
+	// 	return nil, err
+	// }
 	u.l.Debug(string(op), fmt.Sprintf("userId: '%d', orderId: '%d'. depositeId: '%d' created", o.UserId, o.Id, o.Deposite.Id))
 	return o, nil
 }
@@ -155,46 +166,28 @@ func (u *OrderUseCase) GetUserOrder(userId, orderId int64) (*entity.UserOrder, e
 func (u *OrderUseCase) GetAllUserOrders(userId int64) ([]*entity.UserOrder, error) {
 	const op = errors.Op("Order-UseCase.GetAllUserOrders")
 
-	cos, ce := u.GetAllPendingUserOrders(userId)
-	if ce != nil {
-		switch errors.ErrorCode(ce) {
+	os := []*entity.UserOrder{{UserId: userId}}
+	if err := u.read(&os); err != nil {
+		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:
-			// ignore
+			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
+			u.l.Debug(string(op), err.Error())
 		default:
-			ce = errors.Wrap(ce, op, fmt.Sprintf("userId: '%d'", userId),
-				&ErrMsg{msg: "get orders failed, internal error"})
-			u.l.Error(string(op), ce.Error())
-			return nil, ce
+			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d'", userId), &ErrMsg{msg: "get orders failed, internal error"})
+			u.l.Error(string(op), err.Error())
 		}
-	}
 
-	pos, pe := u.GetAllClosedUserOrders(userId)
-	if pe != nil {
-		switch errors.ErrorCode(pe) {
-		case errors.ErrNotFound:
-			// ignore
-		default:
-			pe = errors.Wrap(pe, op, fmt.Sprintf("userId: '%d'", userId),
-				&ErrMsg{msg: "get orders failed, internal error"})
-			u.l.Error(string(op), pe.Error())
-			return nil, pe
-		}
+		return nil, err
 	}
-	if errors.ErrorCode(ce) == errors.ErrNotFound && errors.ErrorCode(pe) == errors.ErrNotFound {
-		return nil, errors.Wrap(errors.ErrNotFound, op,
-			&ErrMsg{msg: "orders not found"})
-	}
-
-	return append(cos, pos...), nil
+	return os, nil
 
 }
 
-// retrieve all orders from the permenant db
 func (u *OrderUseCase) GetAllClosedUserOrders(userId int64) ([]*entity.UserOrder, error) {
 	const op = errors.Op("Order-UseCase.GetAllUserOrders")
 
-	os, err := u.repo.GetAll(userId)
-	if err != nil {
+	os := []*entity.UserOrder{{UserId: userId}}
+	if err := u.read(userId); err != nil {
 		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:
 			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
@@ -212,7 +205,8 @@ func (u *OrderUseCase) GetAllClosedUserOrders(userId int64) ([]*entity.UserOrder
 // retrieve all orders from the cache
 func (u *OrderUseCase) GetAllPendingUserOrders(userId int64) ([]*entity.UserOrder, error) {
 	const op = errors.Op("Order-UseCase.GetAllPendingUserOrders")
-	os, err := u.cache.GetAll(userId)
+	os := []*entity.UserOrder{}
+	err := u.read(userId)
 	if err != nil {
 		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:
@@ -237,7 +231,9 @@ func (u *OrderUseCase) GetAllPendingUserOrders(userId int64) ([]*entity.UserOrde
 func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol string) error {
 	const op = errors.Op("Order-UseCase.SetDepositeVolume")
 
-	o, err := u.cache.Get(userId, orderId)
+	o := &entity.UserOrder{Id: orderId, UserId: userId}
+
+	err := u.read(o)
 	if err != nil {
 		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:
@@ -253,8 +249,8 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 		}
 	}
 
-	if !u.exs.exists(o.Deposite.Exchange) {
-		err = errors.Wrap(errors.ErrBadRequest, op, fmt.Sprintf("exchange: '%s' not supported by this service", o.Deposite.Exchange))
+	if !u.exs.exists(o.Exchange) {
+		err = errors.Wrap(errors.ErrBadRequest, op, errors.NewMesssage(fmt.Sprintf("exchange: '%s' not supported by this service", o.Exchange)))
 		u.l.Error(string(op), err.Error())
 		return err
 	}
@@ -262,9 +258,8 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	if o.Status != entity.OrderStatusWaitForDepositeConfirm {
 		return errors.Wrap(err, op, &ErrMsg{msg: "order status is not waiting for deposite confirmation"})
 	}
-	o.Deposite.Fullfilled = true
-	o.Status = entity.OrderStatusDepositeConfimred
 
+	o.Deposite.Id = depositeId
 	o.Deposite.Volume = vol
 
 	if o.Side == "buy" {
@@ -273,7 +268,7 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 		o.Size = vol
 	}
 
-	if err := u.cache.Update(o); err != nil {
+	if err := u.write(o); err != nil {
 		err = errors.Wrap(err, o.String(), op, errors.ErrInternal)
 		u.l.Error(string(op), err.Error())
 		return err

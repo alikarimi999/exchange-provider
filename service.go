@@ -67,7 +67,7 @@ func production() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -133,7 +133,7 @@ func test() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, s.Wc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 

@@ -6,7 +6,8 @@ import (
 )
 
 type Withdrawal struct {
-	Id      string
+	Id      uint64
+	WId     string
 	OrderId int64
 	UserId  int64
 	Address string
@@ -27,6 +28,7 @@ type Withdrawal struct {
 func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 	return &Withdrawal{
 		Id:      w.Id,
+		WId:     w.WId,
 		OrderId: w.OrderId,
 		UserId:  w.UserId,
 		Address: w.Address,
@@ -44,6 +46,7 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 	return &entity.Withdrawal{
 		Id:          w.Id,
+		WId:         w.WId,
 		OrderId:     w.OrderId,
 		UserId:      w.UserId,
 		Address:     w.Address,
@@ -66,7 +69,8 @@ func (w *Withdrawal) UnmarshalBinary(data []byte) error {
 }
 
 type PendingWithdrawal struct {
-	Id       string
+	Id       uint64
+	WId      string
 	OrderId  int64
 	UserId   int64
 	Coin     string
@@ -77,6 +81,7 @@ type PendingWithdrawal struct {
 func WToDTO(w *entity.Withdrawal) *PendingWithdrawal {
 	return &PendingWithdrawal{
 		Id:      w.Id,
+		WId:     w.WId,
 		OrderId: w.OrderId,
 		UserId:  w.UserId,
 
@@ -87,6 +92,7 @@ func WToDTO(w *entity.Withdrawal) *PendingWithdrawal {
 func (w *PendingWithdrawal) ToEntity() *entity.Withdrawal {
 	return &entity.Withdrawal{
 		Id:       w.Id,
+		WId:      w.WId,
 		OrderId:  w.OrderId,
 		UserId:   w.UserId,
 		Exchange: w.Exchange,

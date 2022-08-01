@@ -1,9 +1,12 @@
 package dto
 
-import "order_service/internal/entity"
+import (
+	"order_service/internal/entity"
+)
 
 type ExchangeOrder struct {
-	Id          string `gorm:"primary_key"`
+	Id          uint64 `gorm:"primary_key"`
+	ExId        string
 	UserId      int64
 	OrderId     int64
 	Symbol      string
@@ -17,8 +20,13 @@ type ExchangeOrder struct {
 }
 
 func EToDto(eo *entity.ExchangeOrder) *ExchangeOrder {
+	if eo == nil {
+		return &ExchangeOrder{}
+	}
+
 	return &ExchangeOrder{
-		Id:          eo.Id,
+		Id:          uint64(eo.Id),
+		ExId:        eo.ExId,
 		UserId:      eo.UserId,
 		OrderId:     eo.OrderId,
 		Symbol:      eo.Symbol,
@@ -33,8 +41,12 @@ func EToDto(eo *entity.ExchangeOrder) *ExchangeOrder {
 }
 
 func (eo *ExchangeOrder) ToEntity() *entity.ExchangeOrder {
+	if eo == nil {
+		return &entity.ExchangeOrder{}
+	}
 	return &entity.ExchangeOrder{
 		Id:          eo.Id,
+		ExId:        eo.ExId,
 		UserId:      eo.UserId,
 		OrderId:     eo.OrderId,
 		Symbol:      eo.Symbol,
@@ -46,4 +58,5 @@ func (eo *ExchangeOrder) ToEntity() *entity.ExchangeOrder {
 		FeeCurrency: eo.FeeCurrency,
 		Status:      entity.ExOrderStatus(eo.Status),
 	}
+
 }

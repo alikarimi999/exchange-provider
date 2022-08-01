@@ -41,7 +41,7 @@ func (t *orderTracker) run(wg *sync.WaitGroup) {
 		case feed := <-t.feedCh:
 			func(f *trackerFedd) {
 
-				resp, err := t.api.Order(f.eo.Id)
+				resp, err := t.api.Order(f.eo.ExId)
 				if err = handleSDKErr(err, resp); err != nil {
 					f.err <- errors.Wrap(err, op, errors.ErrInternal)
 					return

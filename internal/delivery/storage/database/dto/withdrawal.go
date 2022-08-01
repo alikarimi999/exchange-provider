@@ -5,7 +5,8 @@ import (
 )
 
 type Withdrawal struct {
-	Id      string `gorm:"primary_key"`
+	Id      uint64 `gorm:"primary_key"`
+	WId     string
 	UserId  int64
 	OrderId int64
 	Address string
@@ -24,8 +25,14 @@ type Withdrawal struct {
 }
 
 func WToDto(w *entity.Withdrawal) *Withdrawal {
+
+	if w == nil {
+		return &Withdrawal{}
+	}
+
 	return &Withdrawal{
 		Id:      w.Id,
+		WId:     w.WId,
 		UserId:  w.UserId,
 		OrderId: w.OrderId,
 		Address: w.Address,
@@ -45,6 +52,7 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 	return &entity.Withdrawal{
 		Id:      w.Id,
+		WId:     w.WId,
 		UserId:  w.UserId,
 		OrderId: w.OrderId,
 		Address: w.Address,

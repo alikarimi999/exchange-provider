@@ -40,7 +40,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 		select {
 		case feed := <-t.feedCh:
 			func(f *wtFeed) {
-				wd, err := t.c.getWithdrawal(f.w.Id)
+				wd, err := t.c.getWithdrawal(f.w.WId)
 				if err != nil {
 					f.err <- errors.Wrap(err, op)
 					return
@@ -60,10 +60,10 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 
 				if <-f.proccessedCh {
-					if err := t.c.delWithdrawal(f.w.Id); err != nil {
+					if err := t.c.delWithdrawal(f.w.WId); err != nil {
 						t.l.Error(string(op), errors.Wrap(err, op).Error())
 					}
-					if err := t.c.proccessedWithdrawal(f.w.Id); err != nil {
+					if err := t.c.proccessedWithdrawal(f.w.WId); err != nil {
 						t.l.Error(string(op), errors.Wrap(err, op).Error())
 					}
 					return
