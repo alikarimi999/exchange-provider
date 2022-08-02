@@ -64,7 +64,6 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *entity.Pair) error {
 		if c.ChainName == p.BC.ChainId {
 			p.BC.MinWithdrawalSize = c.WithdrawalMinSize
 			p.BC.WithdrawalMinFee = c.WithdrawalMinFee
-			p.BC.WithdrawalPrecision = int(m.Precision)
 			return nil
 		}
 	}
@@ -94,7 +93,6 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *entity.Pair) error {
 		if c.ChainName == p.QC.ChainId {
 			p.QC.MinWithdrawalSize = c.WithdrawalMinSize
 			p.QC.WithdrawalMinFee = c.WithdrawalMinFee
-			p.QC.WithdrawalPrecision = int(m.Precision)
 			return nil
 		}
 	}

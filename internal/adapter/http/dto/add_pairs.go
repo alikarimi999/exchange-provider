@@ -17,13 +17,17 @@ type Coin struct {
 	SetChain            bool   `json:"set_chain,omitempty"`
 }
 type coinConfig struct {
-	SetChain bool `json:"set_chain"`
+	WithdrawalPrecision int `json:"withdrawal_precision,omitempty"`
 }
 
+type ExchangeConfig struct {
+	BC *coinConfig `json:"base_coin"`
+	QC *coinConfig `json:"quote_coin"`
+}
 type exPair struct {
-	BC        *Coin    `json:"base_coin"`
-	QC        *Coin    `json:"quote_coin"`
-	Exchanges []string `json:"exchanges"`
+	BC        *Coin                      `json:"base_coin"`
+	QC        *Coin                      `json:"quote_coin"`
+	Exchanges map[string]*ExchangeConfig `json:"exchange_config"`
 }
 
 type AddPairsRequest struct {
@@ -69,17 +73,20 @@ func (r *exPair) QuoteCoin() (*entity.Coin, error) {
 
 func (req *exPair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.Pair {
 	exchangePairs := map[string]*entity.Pair{}
-	for _, ex := range req.Exchanges {
+	for id, conf := range req.Exchanges {
 		ep := &entity.Pair{
 			BC: &entity.PairCoin{
-				Coin: bc,
+				Coin:                bc,
+				WithdrawalPrecision: conf.BC.WithdrawalPrecision,
 			},
+
 			QC: &entity.PairCoin{
-				Coin: qc,
+				Coin:                qc,
+				WithdrawalPrecision: conf.QC.WithdrawalPrecision,
 			},
 		}
 
-		exchangePairs[ex] = ep
+		exchangePairs[id] = ep
 
 	}
 	return exchangePairs
