@@ -46,8 +46,16 @@ func (s *Server) AddPairs(ctx Context) {
 	for id, pairs := range eps {
 		ex, err := s.app.GetExchange(id)
 		if err != nil {
-			handlerErr(ctx, errors.Wrap(errors.NewMesssage(fmt.Sprintf("exchange '%s' not found", id))))
-			return
+			switch errors.ErrorCode(err) {
+			case errors.ErrNotFound:
+				resp.Exchanges[id] = &dto.AddPairsResult{
+					Error: fmt.Sprintf("exchange '%s' not found", id),
+				}
+				continue
+			default:
+				handlerErr(ctx, err)
+				return
+			}
 		}
 
 		res, err := s.app.AddPairs(ex, pairs)

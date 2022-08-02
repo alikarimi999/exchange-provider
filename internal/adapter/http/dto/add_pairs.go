@@ -143,6 +143,7 @@ type AddPairsResult struct {
 	Addedd []*Pair        `json:"added_pairs"`
 	Exs    []*Pair        `json:"existed_pairs"`
 	Failed []*AddPairsErr `json:"failed_pairs"`
+	Error  string         `json:"error"`
 }
 
 func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
