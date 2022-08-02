@@ -30,7 +30,9 @@ func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	}
 	order.Id = int64(od.ID)
 	order.Withdrawal.Id = od.Withdrawal.Id
+	order.Withdrawal.OrderId = int64(od.ID)
 	order.ExchangeOrder.Id = od.ExchangeOrder.Id
+	order.ExchangeOrder.OrderId = int64(od.ID)
 	return err
 }
 
