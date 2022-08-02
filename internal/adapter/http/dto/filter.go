@@ -8,16 +8,16 @@ import (
 )
 
 type Filter struct {
-	Param  string        `json:"param"`
-	Cond   string        `json:"cond"`
-	Values []interface{} `json:"values"`
+	Param    string        `json:"param"`
+	Operator string        `json:"operator"`
+	Values   []interface{} `json:"values"`
 }
 
 func (f *Filter) ToEntity() *entity.Filter {
 	return &entity.Filter{
-		Param:  f.Param,
-		Cond:   entity.ParseFilterCond(f.Cond),
-		Values: f.Values,
+		Param:    f.Param,
+		Operator: entity.ParseFilterOperator(f.Operator),
+		Values:   f.Values,
 	}
 }
 
@@ -27,27 +27,27 @@ func (r *PaginatedUserOrdersRequest) ValidateFiltersForUser(f *Filter) error {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("invalid filter : %+v", f)))
 	}
 
-	switch f.Cond {
+	switch f.Operator {
 	case "eq", "neq", "gt", "gte", "lt", "lte":
 		if len(f.Values) != 1 {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(
-				fmt.Sprintf("for this conditions `eq`, `neq`, `gt`, `gte`, `lt`, `lte` only one value is allowed, but got %d", len(f.Values))))
+				fmt.Sprintf("for this operators `eq`, `neq`, `gt`, `gte`, `lt`, `lte` only one value is allowed, but got %d", len(f.Values))))
 		}
 	case "in", "notin":
 		if len(f.Values) == 0 {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(
-				fmt.Sprintf("for this conditions `in`, `notin` at least one value is required, but got %d", len(f.Values))))
+				fmt.Sprintf("for this operators `in`, `notin` at least one value is required, but got %d", len(f.Values))))
 
 		}
 
 	case "between":
 		if len(f.Values) != 2 {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(
-				fmt.Sprintf("for this conditions `between` only two values are allowed, but got %d", len(f.Values))))
+				fmt.Sprintf("for this operators `between` only two values are allowed, but got %d", len(f.Values))))
 		}
 	default:
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(
-			fmt.Sprintf("invalid condition : %s", f.Cond)))
+			fmt.Sprintf("invalid operators : %s", f.Operator)))
 
 	}
 
@@ -129,7 +129,7 @@ func (r *PaginatedUserOrdersRequest) ValidateFiltersForUser(f *Filter) error {
 
 		// query between two dates
 		// recieve two dates in epoch format
-		// only condition `in` is allowed
+		// only operators `in` is allowed
 	case "created_at":
 		for i, v := range f.Values {
 			n, ok := v.(float64)

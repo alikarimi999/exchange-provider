@@ -14,57 +14,57 @@ func setClauses(db *gorm.DB, filters []*entity.Filter) *gorm.DB {
 
 	es := []clause.Expression{}
 	for _, f := range filters {
-		switch f.Cond {
-		case entity.FilterCondEqual:
+		switch f.Operator {
+		case entity.FilterOperatorEqual:
 			es = append(es, clause.Eq{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
 
-		case entity.FilterCondNotEqual:
+		case entity.FilterOpratorNotEqual:
 			es = append(es, clause.Neq{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
-		case entity.FilterCondGreater:
+		case entity.FilterOperatorGreater:
 			es = append(es, clause.Gt{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
 
-		case entity.FilterCondGreaterEqual:
+		case entity.FilterOperatorGreaterEqual:
 			es = append(es, clause.Gte{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
 
-		case entity.FilterCondLess:
+		case entity.FilterOperatorLess:
 			es = append(es, clause.Lt{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
 
-		case entity.FilterCondLessEqual:
+		case entity.FilterOperatorLessEqual:
 			es = append(es, clause.Lte{
 				Column: f.Param,
 				Value:  f.Values[0],
 			})
 
-		case entity.FilterCondIN:
+		case entity.FilterOperatorIN:
 
 			es = append(es, clause.IN{
 				Column: f.Param,
 				Values: f.Values,
 			})
 
-		case entity.FilterCondNotIn:
+		case entity.FilterOperatorNotIn:
 			es = append(es, clause.Not(clause.IN{
 				Column: f.Param,
 				Values: f.Values,
 			}))
 
 			// simulate `between` clause
-		case entity.FilterCondBetween:
+		case entity.FilterOperatorBetween:
 			exs := []clause.Expression{}
 			gte := clause.Gte{
 				Column: f.Param,

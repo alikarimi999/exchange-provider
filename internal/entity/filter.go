@@ -1,52 +1,52 @@
 package entity
 
 type Filter struct {
-	Param  string
-	Cond   FilterCond
-	Values []interface{}
+	Param    string
+	Operator FilterOperator
+	Values   []interface{}
 }
 
-type FilterCond int
+type FilterOperator int
 
 const (
-	FilterCondEqual FilterCond = iota
-	FilterCondNotEqual
-	FilterCondGreater
-	FilterCondGreaterEqual
-	FilterCondLess
-	FilterCondLessEqual
-	FilterCondIN
-	FilterCondNotIn
-	FilterCondBetween
+	FilterOperatorEqual FilterOperator = iota
+	FilterOpratorNotEqual
+	FilterOperatorGreater
+	FilterOperatorGreaterEqual
+	FilterOperatorLess
+	FilterOperatorLessEqual
+	FilterOperatorIN
+	FilterOperatorNotIn
+	FilterOperatorBetween
 )
 
-func ParseFilterCond(cond string) FilterCond {
+func ParseFilterOperator(cond string) FilterOperator {
 	switch cond {
 	case "eq":
-		return FilterCondEqual
+		return FilterOperatorEqual
 
 	case "neq":
-		return FilterCondNotEqual
+		return FilterOpratorNotEqual
 
 	case "gt":
-		return FilterCondGreater
+		return FilterOperatorGreater
 
 	case "gte":
-		return FilterCondGreaterEqual
+		return FilterOperatorGreaterEqual
 
 	case "lt":
-		return FilterCondLess
+		return FilterOperatorLess
 
 	case "lte":
-		return FilterCondLessEqual
+		return FilterOperatorLessEqual
 	case "in":
-		return FilterCondIN
+		return FilterOperatorIN
 	case "notin":
-		return FilterCondNotIn
+		return FilterOperatorNotIn
 	case "between":
-		return FilterCondBetween
+		return FilterOperatorBetween
 
 	default:
-		return FilterCondEqual
+		return FilterOperatorEqual
 	}
 }

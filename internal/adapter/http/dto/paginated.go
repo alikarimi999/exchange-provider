@@ -34,7 +34,7 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 	if userId != 0 {
 		for _, f := range r.Fs {
 			if f.Param == "user_id" {
-				if f.Cond != "eq" || f.Values[0].(int64) != userId {
+				if f.Operator != "eq" || f.Values[0].(int64) != userId {
 					return errors.Wrap(errors.ErrForbidden, errors.NewMesssage(fmt.Sprintf("user_id must be equal to %d", userId)))
 				}
 				return nil
@@ -42,9 +42,9 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 		}
 
 		r.Fs = append(r.Fs, &Filter{
-			Param:  "user_id",
-			Cond:   "eq",
-			Values: []interface{}{userId},
+			Param:    "user_id",
+			Operator: "eq",
+			Values:   []interface{}{userId},
 		})
 	}
 

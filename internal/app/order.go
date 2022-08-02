@@ -112,6 +112,7 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 	}
 
 	o.Deposite = d
+	o.Deposite.Fullfilled = true
 
 	o.Status = entity.OrderStatusWaitForDepositeConfirm
 

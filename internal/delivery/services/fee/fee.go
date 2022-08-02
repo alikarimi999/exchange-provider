@@ -21,6 +21,7 @@ type feeService struct {
 func NewFeeService() entity.FeeService {
 	return &feeService{
 		mux: &sync.Mutex{},
+		fee: 0.001,
 	}
 }
 
@@ -35,7 +36,7 @@ func (f *feeService) ApplyFee(userId int64, total string) (remainder, fee string
 	ff := t * rate
 	re := t - ff
 
-	return strconv.FormatFloat(re, 'f', 6, 64), strconv.FormatFloat(ff, 'f', 6, 64), nil
+	return strconv.FormatFloat(re, 'f', -1, 64), strconv.FormatFloat(ff, 'f', 6, 64), nil
 }
 
 func (f *feeService) feeRate(userId int64) (rate float64) {

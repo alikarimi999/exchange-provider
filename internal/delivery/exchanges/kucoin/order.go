@@ -27,6 +27,7 @@ func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder) (*kucoin.Create
 
 }
 
+// trim returns a string with the given precision.
 func trim(s string, l int) string {
 	if s == "" || l == 0 {
 		return s
