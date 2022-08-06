@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"order_service/internal/adapter/http/dto"
+	"order_service/internal/app"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 )
@@ -43,19 +44,19 @@ func (s *Server) AddPairs(ctx Context) {
 	}
 
 	// add pairs to the exchange
-	for id, pairs := range eps {
-		ex, err := s.app.GetExchange(id)
+	for nid, pairs := range eps {
+		ex, err := s.app.GetExchange(nid)
 		if err != nil {
-			switch errors.ErrorCode(err) {
-			case errors.ErrNotFound:
-				resp.Exchanges[id] = &dto.AddPairsResult{
-					Error: fmt.Sprintf("exchange '%s' not found", id),
-				}
-				continue
-			default:
-				handlerErr(ctx, err)
-				return
+			resp.Exchanges[nid] = &dto.AddPairsResult{
+				Error: errors.ErrorMsg(err),
 			}
+			continue
+		}
+		if ex.CurrentStatus == app.ExchangeStatusDisabled || ex.CurrentStatus == app.ExchangeStatusDeactive {
+			resp.Exchanges[nid] = &dto.AddPairsResult{
+				Error: fmt.Sprintf("exchange '%s' is %s", nid, ex.CurrentStatus),
+			}
+			continue
 		}
 
 		res, err := s.app.AddPairs(ex, pairs)
@@ -64,7 +65,7 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
-		resp.Exchanges[id] = dto.FromEntity(res)
+		resp.Exchanges[nid] = dto.FromEntity(res)
 
 	}
 
@@ -84,28 +85,34 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 		Exchanges: make(map[string][]*dto.Pair),
 	}
 
-	var exs []string
+	var exs []*app.Exchange
 	if len(req.Exchanges) == 1 && req.Exchanges[0] == "*" {
-		exs = s.app.GetAllExchanges()
+		exs = append(exs, s.app.GetAllActivesExchanges()...)
 	} else {
-		exs = req.Exchanges
+		for _, nid := range req.Exchanges {
+			ex, err := s.app.GetExchange(nid)
+			if err != nil {
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' not found", nid))
+				continue
+			}
+			if ex.CurrentStatus == app.ExchangeStatusDisabled || ex.CurrentStatus == app.ExchangeStatusDeactive {
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' is %s", ex, ex.CurrentStatus))
+				continue
+			}
+
+			exs = append(exs, ex)
+		}
 	}
 
 	for _, ex := range exs {
 		ps, err := s.app.GetAllPairs(ex)
 		if err != nil {
-			switch errors.ErrorCode(err) {
-			case errors.ErrNotFound:
-				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' not found", ex))
-				continue
-			default:
-				handlerErr(ctx, err)
-				return
-			}
+			resp.Messages = append(resp.Messages, err.Error())
+			continue
 		}
 
 		for _, p := range ps {
-			resp.Exchanges[ex] = append(resp.Exchanges[ex], dto.PairDTO(p))
+			resp.Exchanges[ex.NID()] = append(resp.Exchanges[ex.NID()], dto.PairDTO(p))
 		}
 	}
 
@@ -126,40 +133,43 @@ func (s *Server) GetPair(ctx Context) {
 		return
 	}
 
-	exs := []string{}
-	if len(req.Exchanges) == 1 && req.Exchanges[0] == "*" {
-		exs = s.app.GetAllExchanges()
-	} else {
-		exs = req.Exchanges
-	}
-
 	resp := &dto.GetPairResponse{
 		Exchanges: make(map[string]*dto.Pair),
 	}
-	for _, exc := range exs {
-		ex, err := s.app.GetExchange(exc)
+
+	var exs []*app.Exchange
+	if len(req.Exchanges) == 1 && req.Exchanges[0] == "*" {
+		exs = append(exs, s.app.GetAllActivesExchanges()...)
+	} else {
+		for _, nid := range req.Exchanges {
+			ex, err := s.app.GetExchange(nid)
+			if err != nil {
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' not found", nid))
+				continue
+			}
+			if ex.CurrentStatus == app.ExchangeStatusDisabled || ex.CurrentStatus == app.ExchangeStatusDeactive {
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' is %s", ex.NID(), ex.CurrentStatus))
+				continue
+			}
+
+			exs = append(exs, ex)
+		}
+	}
+
+	for _, ex := range exs {
+
+		p, err := s.app.GetPair(ex.Exchange, bc, qc)
 		if err != nil {
 			switch errors.ErrorCode(err) {
 			case errors.ErrNotFound:
-				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' not found", exc))
+				resp.Messages = append(resp.Messages, fmt.Sprintf("pair '%s/%s' not found in %s", bc, qc, ex.NID()))
 				continue
 			default:
 				handlerErr(ctx, err)
 				return
 			}
 		}
-		p, err := s.app.GetPair(ex, bc, qc)
-		if err != nil {
-			switch errors.ErrorCode(err) {
-			case errors.ErrNotFound:
-				resp.Messages = append(resp.Messages, fmt.Sprintf("pair '%s/%s' not found in %s", bc, qc, exc))
-				continue
-			default:
-				handlerErr(ctx, err)
-				return
-			}
-		}
-		resp.Exchanges[exc] = dto.PairDTO(p)
+		resp.Exchanges[ex.NID()] = dto.PairDTO(p)
 
 	}
 
@@ -194,7 +204,13 @@ func (s *Server) RemovePair(ctx Context) {
 				return
 			}
 		}
-		err = s.app.RemovePair(ex, bc, qc)
+
+		if ex.CurrentStatus == app.ExchangeStatusDisabled || ex.CurrentStatus == app.ExchangeStatusDeactive {
+			resp.Exchanges[exc] = fmt.Sprintf("exchange '%s' is %s", ex.NID(), ex.CurrentStatus)
+			continue
+		}
+
+		err = s.app.RemovePair(ex.Exchange, bc, qc)
 		if err != nil {
 			switch errors.ErrorCode(err) {
 			case errors.ErrNotFound:

@@ -9,8 +9,20 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) ID() string {
+func (k *kucoinExchange) NID() string {
+	k.mux.Lock()
+	defer k.mux.Unlock()
+	return fmt.Sprintf("%s-%s", k.Name(), k.accountId)
+}
+
+func (k *kucoinExchange) Name() string {
 	return "kucoin"
+}
+
+func (k *kucoinExchange) AccountId() string {
+	k.mux.Lock()
+	defer k.mux.Unlock()
+	return k.accountId
 }
 
 func (k *kucoinExchange) Exchange(o *entity.UserOrder) (string, error) {

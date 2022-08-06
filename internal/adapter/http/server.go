@@ -36,8 +36,15 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	o, err := s.app.NewUserOrder(req.UserId, req.Address, &entity.Coin{CoinId: req.BC, ChainId: req.BChain},
-		&entity.Coin{CoinId: req.QC, ChainId: req.QChain}, req.Side)
+	bc := &entity.Coin{CoinId: req.BC, ChainId: req.BChain}
+	qc := &entity.Coin{CoinId: req.QC, ChainId: req.QChain}
+
+	ex, err := s.app.SelectExchangeByPair(bc, qc)
+	if err != nil {
+		handlerErr(ctx, err)
+	}
+
+	o, err := s.app.NewUserOrder(req.UserId, req.Address, bc, qc, req.Side, ex)
 
 	if err != nil {
 		handlerErr(ctx, err)

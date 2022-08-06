@@ -10,6 +10,8 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 	res := &entity.AddPairsResult{}
 
 	ps := []*pair{}
+	cs := map[string]*withdrawalCoin{}
+
 	for _, p := range pairs {
 
 		if k.exchangePairs.exists(p.BC.Coin, p.QC.Coin) {
@@ -22,7 +24,7 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 			return nil, err
 		}
 		if !ok {
-			res.Failed = append(res.Failed, &entity.AddPairsErr{
+			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p,
 				Err:  errors.Wrap(errors.ErrBadRequest, errors.New("pair not supported")),
 			})
@@ -31,7 +33,7 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 
 		err = k.setInfos(p)
 		if err != nil {
-			res.Failed = append(res.Failed, &entity.AddPairsErr{
+			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p,
 				Err:  err,
 			})
@@ -41,12 +43,6 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 		pa := fromEntity(p)
 		ps = append(ps, pa)
 		res.Added = append(res.Added, p)
-	}
-
-	k.exchangePairs.add(ps)
-
-	cs := map[string]*withdrawalCoin{}
-	for _, p := range pairs {
 		cs[p.BC.CoinId+p.BC.ChainId] = &withdrawalCoin{
 			precision: p.BC.WithdrawalPrecision,
 			needChain: p.BC.SetChain,
@@ -58,6 +54,7 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 		}
 	}
 
+	k.exchangePairs.add(ps)
 	k.withdrawalCoins.add(cs)
 
 	return res, nil

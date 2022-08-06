@@ -144,6 +144,12 @@ func (sp *exPairs) remove(bc, qc *entity.Coin) {
 	delete(sp.pairs, bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId)
 }
 
+func (sp *exPairs) purge() {
+	sp.mux.Lock()
+	defer sp.mux.Unlock()
+	sp.pairs = make(map[string]*pair)
+}
+
 func (sp *exPairs) snapshot() []*pair {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()

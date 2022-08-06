@@ -31,7 +31,7 @@ func newWithdrawalTracker(r *redis.Client, l logger.Logger) *withdrawalTracker {
 	}
 }
 
-func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
+func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 	const op = errors.Op("Kucoin.WithdrawalTracker.run")
 	t.l.Debug(string(op), "started")
 
@@ -70,6 +70,10 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 
 			}(feed)
+
+		case <-stopCh:
+			t.l.Debug(string(op), "stopped")
+			return
 
 		}
 	}

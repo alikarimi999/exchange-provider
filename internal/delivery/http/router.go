@@ -86,8 +86,13 @@ func (o *Router) orderSrvGrpV0() {
 
 		es := a.Group("/exchanges")
 		{
+			es.POST("/list", func(ctx *gin.Context) {
+				o.srv.GetExchangeList(newContext(ctx))
+			})
+			es.POST("/change_status", func(ctx *gin.Context) {
+				o.srv.ChangeStatus(newContext(ctx))
+			})
 			es.POST("/add_account/:id", func(ctx *gin.Context) { o.srv.AddExchange(newContext(ctx)) })
-			es.POST("/change_account/:id", func(ctx *gin.Context) { o.srv.ChangeExchangeAccount(newContext(ctx)) })
 		}
 	}
 

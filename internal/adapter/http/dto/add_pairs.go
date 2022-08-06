@@ -48,6 +48,15 @@ func (r *AddPairsRequest) Validate() error {
 		if len(p.Exchanges) == 0 {
 			return errors.Wrap(errors.ErrBadRequest, "at least one exchange must be set")
 		}
+		for _, conf := range p.Exchanges {
+			if conf.BC.WithdrawalPrecision == 0 {
+				return errors.Wrap(errors.ErrBadRequest, "base coin withdrawal precision must be set")
+			}
+			if conf.QC.WithdrawalPrecision == 0 {
+				return errors.Wrap(errors.ErrBadRequest, "quote coin withdrawal precision must be set")
+			}
+
+		}
 
 	}
 	return nil
@@ -73,7 +82,7 @@ func (r *exPair) QuoteCoin() (*entity.Coin, error) {
 
 func (req *exPair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.Pair {
 	exchangePairs := map[string]*entity.Pair{}
-	for id, conf := range req.Exchanges {
+	for nid, conf := range req.Exchanges {
 		ep := &entity.Pair{
 			BC: &entity.PairCoin{
 				Coin:                bc,
@@ -86,7 +95,7 @@ func (req *exPair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.Pair {
 			},
 		}
 
-		exchangePairs[id] = ep
+		exchangePairs[nid] = ep
 
 	}
 	return exchangePairs
@@ -135,22 +144,23 @@ func PairDTO(p *entity.Pair) *Pair {
 	}
 }
 
-type AddPairsErr struct {
-	Pair *Pair  `json:"pair"`
-	Err  string `json:"error"`
+type PairsErr struct {
+	BC  string `json:"base_coin"`
+	QC  string `json:"quote_coin"`
+	Err string `json:"error"`
 }
 type AddPairsResult struct {
-	Addedd []*Pair        `json:"added_pairs"`
-	Exs    []*Pair        `json:"existed_pairs"`
-	Failed []*AddPairsErr `json:"failed_pairs"`
-	Error  string         `json:"error"`
+	Addedd []*Pair     `json:"added_pairs"`
+	Exs    []*Pair     `json:"existed_pairs"`
+	Failed []*PairsErr `json:"failed_pairs"`
+	Error  string      `json:"error"`
 }
 
 func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 	res := &AddPairsResult{
 		Addedd: []*Pair{},
 		Exs:    []*Pair{},
-		Failed: []*AddPairsErr{},
+		Failed: []*PairsErr{},
 	}
 	for _, p := range r.Added {
 		res.Addedd = append(res.Addedd, PairDTO(p))
@@ -159,9 +169,10 @@ func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 		res.Exs = append(res.Exs, PairDTO(p))
 	}
 	for _, p := range r.Failed {
-		res.Failed = append(res.Failed, &AddPairsErr{
-			Pair: PairDTO(p.Pair),
-			Err:  p.Err.Error(),
+		res.Failed = append(res.Failed, &PairsErr{
+			BC:  p.BC.String(),
+			QC:  p.QC.String(),
+			Err: p.Err.Error(),
 		})
 	}
 	return res

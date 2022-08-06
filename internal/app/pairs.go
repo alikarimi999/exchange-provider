@@ -2,19 +2,14 @@ package app
 
 import (
 	"order_service/internal/entity"
-	"order_service/pkg/errors"
 )
 
-func (o *OrderUseCase) AddPairs(ex entity.Exchange, pairs []*entity.Pair) (*entity.AddPairsResult, error) {
+func (o *OrderUseCase) AddPairs(ex *Exchange, pairs []*entity.Pair) (*entity.AddPairsResult, error) {
+
 	return ex.AddPairs(pairs)
 }
 
-func (o *OrderUseCase) GetAllPairs(exchange string) ([]*entity.Pair, error) {
-	ex, err := o.exs.get(exchange)
-	if err != nil {
-		return nil, errors.Wrap(errors.ErrNotFound, "exchange not found")
-	}
-
+func (o *OrderUseCase) GetAllPairs(ex *Exchange) ([]*entity.Pair, error) {
 	return o.setFee(ex.GetAllPairs()...), nil
 }
 

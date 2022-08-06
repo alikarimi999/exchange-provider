@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`orders` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT NOT NULL,
   `status` VARCHAR(100) NULL DEFAULT NULL,
-  `exchange` VARCHAR(45) NULL DEFAULT NULL,
+  `exchange` VARCHAR(256) NULL DEFAULT NULL,
   `base_coin` VARCHAR(45) NULL DEFAULT NULL,
   `base_chain` VARCHAR(45) NULL DEFAULT NULL,
   `quote_coin` VARCHAR(45) NULL DEFAULT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`orders` (
   `break_reason` TEXT NULL DEFAULT NULL,
   PRIMARY KEY (`id`, `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 23
+AUTO_INCREMENT = 24
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -49,12 +49,13 @@ CREATE TABLE IF NOT EXISTS `order_service`.`deposites` (
   `id` INT NULL DEFAULT NULL,
   `order_id` INT NOT NULL,
   `user_id` INT NOT NULL,
-  `exchange` VARCHAR(40) NULL DEFAULT NULL,
+  `exchange` VARCHAR(256) NULL DEFAULT NULL,
   `volume` VARCHAR(50) NULL DEFAULT NULL,
   `fullfilled` TINYINT NULL DEFAULT NULL,
   `address` VARCHAR(1024) NULL DEFAULT NULL,
+  `tag` VARCHAR(50) NULL DEFAULT NULL,
   `tx_id` VARCHAR(1024) NULL DEFAULT NULL,
-  PRIMARY KEY (`user_id`, `order_id`),
+  PRIMARY KEY (`order_id`, `user_id`),
   INDEX `fk_deposites_orders1_idx` (`order_id` ASC, `user_id` ASC) VISIBLE,
   CONSTRAINT `fk_deposites_orders1`
     FOREIGN KEY (`order_id` , `user_id`)
@@ -72,7 +73,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`exchange_orders` (
   `ex_id` VARCHAR(100) NULL DEFAULT NULL,
   `order_id` INT NOT NULL,
   `user_id` INT NOT NULL,
-  `exchange` VARCHAR(45) NULL DEFAULT NULL,
+  `exchange` VARCHAR(256) NULL DEFAULT NULL,
   `symbol` VARCHAR(45) NULL DEFAULT NULL,
   `side` VARCHAR(45) NULL DEFAULT NULL,
   `funds` VARCHAR(45) NULL DEFAULT NULL,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`exchange_orders` (
     FOREIGN KEY (`order_id` , `user_id`)
     REFERENCES `order_service`.`orders` (`id` , `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 7
+AUTO_INCREMENT = 10
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -99,11 +100,12 @@ CREATE TABLE IF NOT EXISTS `order_service`.`withdrawals` (
   `w_id` VARCHAR(100) NULL DEFAULT NULL,
   `order_id` INT NOT NULL,
   `user_id` INT NOT NULL,
-  `exchange` VARCHAR(45) NULL DEFAULT NULL,
+  `exchange` VARCHAR(256) NULL DEFAULT NULL,
   `coin` VARCHAR(45) NULL DEFAULT NULL,
   `chain` VARCHAR(45) NULL DEFAULT NULL,
   `total` VARCHAR(45) NULL DEFAULT NULL,
   `address` VARCHAR(1024) NULL DEFAULT NULL,
+  `tag` VARCHAR(50) NULL DEFAULT NULL,
   `fee` VARCHAR(45) NULL DEFAULT NULL,
   `exchange_fee` VARCHAR(45) NULL DEFAULT NULL,
   `executed` VARCHAR(45) NULL DEFAULT NULL,
@@ -115,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`withdrawals` (
     FOREIGN KEY (`order_id` , `user_id`)
     REFERENCES `order_service`.`orders` (`id` , `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 41
+AUTO_INCREMENT = 42
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

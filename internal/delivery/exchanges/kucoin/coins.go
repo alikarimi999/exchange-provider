@@ -71,3 +71,23 @@ func (k *kucoinExchange) withdrawalOpts(c *entity.Coin) (map[string]string, erro
 	return opts, nil
 
 }
+
+func (s *withdrawalCoins) snapshot() map[string]*withdrawalCoin {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	res := make(map[string]*withdrawalCoin)
+	for id, wc := range s.coins {
+		res[id] = &withdrawalCoin{
+			precision: wc.precision,
+			needChain: wc.needChain,
+		}
+	}
+
+	return res
+}
+
+func (s *withdrawalCoins) purge() {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	s.coins = make(map[string]*withdrawalCoin)
+}
