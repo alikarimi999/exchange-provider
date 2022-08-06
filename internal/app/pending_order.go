@@ -4,7 +4,7 @@ import (
 	"order_service/internal/entity"
 )
 
-func (o *OrderUseCase) TotalPendingOrders(ex entity.Exchange) (total int64, err error) {
+func (o *OrderUseCase) totalPendingOrders(ex entity.Exchange, fs ...*entity.Filter) (total int64, err error) {
 	f1 := &entity.Filter{
 		Param:    "exchange",
 		Operator: entity.FilterOperatorEqual,
@@ -23,6 +23,10 @@ func (o *OrderUseCase) TotalPendingOrders(ex entity.Exchange) (total int64, err 
 		Total:   0,
 		Filters: []*entity.Filter{f1, f2},
 		Orders:  []*entity.UserOrder{},
+	}
+
+	for _, f := range fs {
+		pa.Filters = append(pa.Filters, f)
 	}
 
 	if err = o.GetPaginated(pa); err != nil {

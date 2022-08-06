@@ -17,7 +17,11 @@ func (o *OrderUseCase) AddExchange(exc entity.Exchange) error {
 			return errors.Wrap(op, errors.New(fmt.Sprintf("exchange %s (err: %s )", exc.NID(), err.Error())))
 		}
 
-		o.exs.add(ex)
+		o.exs.add(&Exchange{
+			Exchange:       ex,
+			CurrentStatus:  ExchangeStatusActive,
+			LastChangeTime: time.Now(),
+		})
 		return nil
 	}
 	return errors.Wrap(errors.ErrBadRequest, errors.New(fmt.Sprintf("exchange %s with accountId %s already exists and it's status is %s", exc.Name(), exc.AccountId(), status)))

@@ -42,6 +42,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 	ex, err := s.app.SelectExchangeByPair(bc, qc)
 	if err != nil {
 		handlerErr(ctx, err)
+		return
 	}
 
 	o, err := s.app.NewUserOrder(req.UserId, req.Address, bc, qc, req.Side, ex)

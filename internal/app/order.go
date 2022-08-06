@@ -90,9 +90,9 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 	if err != nil {
 		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, &ErrMsg{msg: fmt.Sprintf("coin %s chain %s not found in deposit service", dc.CoinId, dc.ChainId)})
+			err = errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("coin %s  not found in deposit service", dc.String())))
 			u.l.Debug(string(op), err.Error())
-
+			return nil, err
 		default:
 			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',quote_coin: %+v , base_oin: %+v ", userId, bc, qc),
 				&ErrMsg{msg: "create deposite failed, internal error"})
@@ -262,7 +262,7 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 		return err
 	}
 
-	if status == ExchangeStatusDisabled {
+	if status == ExchangeStatusDisable {
 		err = errors.Wrap(errors.ErrBadRequest, op, errors.NewMesssage(fmt.Sprintf("exchange: '%s' is disabled", o.Exchange)))
 		u.l.Error(string(op), err.Error())
 		o.Broken = true

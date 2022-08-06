@@ -42,7 +42,7 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 				Removed:        []*entity.PairsErr{},
 			}, nil
 
-		case ExchangeStatusDisabled:
+		case ExchangeStatusDisable:
 			res, err := ex.StartAgain()
 			if err != nil {
 				return nil, errors.Wrap(op, err)
@@ -56,7 +56,7 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 			return &ChangeExchangeStatus{
 				Exchange:       nid,
 				CurrentStatus:  ExchangeStatusActive,
-				PreviousStatus: ExchangeStatusDisabled,
+				PreviousStatus: ExchangeStatusDisable,
 				LastChange:     lt,
 				Removed:        res.Removed,
 			}, nil
@@ -89,18 +89,34 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 				Removed:        []*entity.PairsErr{},
 			}, nil
 
-		case ExchangeStatusDisabled:
-			return nil, errors.Wrap(errors.ErrBadRequest, errors.New(fmt.Sprintf("exchange %s is disabled", nid)))
+		case ExchangeStatusDisable:
+			res, err := ex.StartAgain()
+			if err != nil {
+				return nil, errors.Wrap(op, err)
+			}
+
+			if err := o.exs.deactivate(nid); err != nil {
+				return nil, errors.Wrap(op, err)
+			}
+
+			o.l.Info(string(op), fmt.Sprintf("exchange %s : status changed from disabled to deactive", nid))
+			return &ChangeExchangeStatus{
+				Exchange:       nid,
+				CurrentStatus:  ExchangeStatusDeactive,
+				PreviousStatus: ExchangeStatusDisable,
+				LastChange:     lt,
+				Removed:        res.Removed,
+			}, nil
 		}
 
-	case ExchangeStatusDisabled:
+	case ExchangeStatusDisable:
 
 		switch ex.CurrentStatus {
 		case ExchangeStatusActive:
 			if !force {
 				// First, check whether there is a request being processed for this exchange.
 				// if there is, we cannot disable it
-				t, err := o.TotalPendingOrders(ex.Exchange)
+				t, err := o.totalPendingOrders(ex.Exchange)
 				if err != nil {
 					return nil, errors.Wrap(op, err)
 				}
@@ -119,7 +135,7 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 			o.l.Info(string(op), fmt.Sprintf("exchange %s : status changed from active to disabled", nid))
 			return &ChangeExchangeStatus{
 				Exchange:       nid,
-				CurrentStatus:  ExchangeStatusDisabled,
+				CurrentStatus:  ExchangeStatusDisable,
 				PreviousStatus: ExchangeStatusActive,
 				LastChange:     lt,
 				Removed:        []*entity.PairsErr{},
@@ -129,7 +145,7 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 			if !force {
 				// First, check whether there is a request being processed for this exchange.
 				// if there is, we cannot disable it
-				t, err := o.TotalPendingOrders(ex.Exchange)
+				t, err := o.totalPendingOrders(ex.Exchange)
 				if err != nil {
 					return nil, errors.Wrap(op, err)
 				}
@@ -148,17 +164,17 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 			o.l.Info(string(op), fmt.Sprintf("exchange %s : status changed from deactive to disabled", nid))
 			return &ChangeExchangeStatus{
 				Exchange:       nid,
-				CurrentStatus:  ExchangeStatusDisabled,
+				CurrentStatus:  ExchangeStatusDisable,
 				PreviousStatus: ExchangeStatusDeactive,
 				LastChange:     lt,
 				Removed:        []*entity.PairsErr{},
 			}, nil
 
-		case ExchangeStatusDisabled:
+		case ExchangeStatusDisable:
 			return &ChangeExchangeStatus{
 				Exchange:       nid,
-				CurrentStatus:  ExchangeStatusDisabled,
-				PreviousStatus: ExchangeStatusDisabled,
+				CurrentStatus:  ExchangeStatusDisable,
+				PreviousStatus: ExchangeStatusDisable,
 				LastChange:     lt,
 				Removed:        []*entity.PairsErr{},
 			}, nil
@@ -167,4 +183,37 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 	}
 
 	return nil, errors.Wrap(errors.ErrBadRequest, errors.New(fmt.Sprintf("incorrect status `%s`", status)))
+}
+
+func (o *OrderUseCase) RemoveExchange(nid string, force bool) error {
+	op := "DepositeUsecase.RemoveExchange"
+	ex, err := o.exs.get(nid)
+	if err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	if ex.CurrentStatus != ExchangeStatusDisable {
+		if !force {
+			// First, check whether there is a request being processed for this exchange.
+			// if there is, we cannot disable it
+			t, err := o.totalPendingOrders(ex.Exchange)
+			if err != nil {
+				return errors.Wrap(op, err)
+			}
+
+			if t > 0 {
+				o.l.Info(string(op), fmt.Sprintf("unable to remove exchange %s because there are %d pending orders", nid, t))
+				return errors.Wrap(errors.ErrBadRequest,
+					errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't remove it, unless force it", nid, t)))
+			}
+		}
+		ex.Stop()
+	}
+
+	if err := o.exs.remove(nid); err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	o.l.Info(string(op), fmt.Sprintf("exchange %s removed", nid))
+	return nil
 }

@@ -7,12 +7,17 @@ import (
 )
 
 type GetAllPairsRequest struct {
-	Exchanges []string `json:"exchanges"`
+	Exchanges []string `json:"exchange_names"`
+}
+
+type Exchange struct {
+	Status string  `json:"status"`
+	Pairs  []*Pair `json:"pairs"`
 }
 
 type GetAllPairsResponse struct {
-	Exchanges map[string][]*Pair `json:"exchanges"`
-	Messages  []string           `json:"messages"`
+	Exchanges map[string]*Exchange `json:"exchanges"`
+	Messages  []string             `json:"messages"`
 }
 
 type GetPairRequest struct {

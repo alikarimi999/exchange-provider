@@ -65,9 +65,6 @@ func (o *Router) orderSrvGrpV0() {
 				o.srv.GetExchangesPairs(newContext(ctx))
 			})
 
-			ps.POST("/get", func(ctx *gin.Context) {
-				o.srv.GetPair(newContext(ctx))
-			})
 			ps.DELETE("", func(ctx *gin.Context) {
 				o.srv.RemovePair(newContext(ctx))
 			})

@@ -86,7 +86,7 @@ func (s *Server) ChangeStatus(ctx Context) {
 	}
 
 	switch req.Status {
-	case app.ExchangeStatusActive, app.ExchangeStatusDeactive, app.ExchangeStatusDisabled:
+	case app.ExchangeStatusActive, app.ExchangeStatusDeactive, app.ExchangeStatusDisable:
 		res, err := s.app.ChangeExchangeStatus(req.Id, req.Status, req.Force)
 		if err != nil {
 			handlerErr(ctx, err)
@@ -97,6 +97,12 @@ func (s *Server) ChangeStatus(ctx Context) {
 		r.FromEntity(res)
 		ctx.JSON(http.StatusOK, r)
 
+	case "remove":
+		if err := s.app.RemoveExchange(req.Id, req.Force); err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s removed!", req.Id))
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("status %s not supported", req.Status))
 	}

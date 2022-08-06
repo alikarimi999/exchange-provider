@@ -12,6 +12,10 @@ func handlerErr(ctx Context, err error) {
 		return
 	case errors.ErrBadRequest:
 		ctx.JSON(http.StatusBadRequest, errors.ErrorMsg(err))
+		return
+	case errors.ErrForbidden:
+		ctx.JSON(http.StatusForbidden, errors.ErrorMsg(err))
+		return
 	default:
 		ctx.JSON(http.StatusInternalServerError, errors.ErrorMsg(err))
 		return
