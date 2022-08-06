@@ -142,6 +142,7 @@ type CreateOrderResponse struct {
 	OrderId         int64  `json:"order_id"`
 	DepositeId      int64  `json:"deposit_id"`
 	DepositeAddress string `json:"deposit_address"`
+	AddressTag      string `json:"address_tag"`
 }
 
 type GetOrderResponse struct {

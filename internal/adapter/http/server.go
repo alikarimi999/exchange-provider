@@ -55,6 +55,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 		OrderId:         o.Id,
 		DepositeId:      o.Deposite.Id,
 		DepositeAddress: o.Deposite.Address,
+		AddressTag:      o.Deposite.Tag,
 	})
 	return
 }

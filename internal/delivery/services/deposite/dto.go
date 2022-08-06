@@ -32,6 +32,7 @@ type CreateDepositeResp struct {
 	OrderId  int64  `json:"order_id"`
 	Exchange string `json:"exchange"`
 	Address  string `json:"address"`
+	Tag      string `json:"tag"`
 }
 
 func (c *CreateDepositeResp) MapToEntity() *entity.Deposit {
@@ -42,6 +43,7 @@ func (c *CreateDepositeResp) MapToEntity() *entity.Deposit {
 		Exchange:   c.Exchange,
 		Fullfilled: false,
 		Address:    c.Address,
+		Tag:        c.Tag,
 	}
 }
 

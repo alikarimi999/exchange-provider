@@ -9,6 +9,7 @@ type Deposit struct {
 
 	Fullfilled bool
 	Address    string
+	Tag        string
 }
 
 type DepositeService interface {

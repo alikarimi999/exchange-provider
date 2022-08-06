@@ -10,6 +10,7 @@ type Deposite struct {
 	Volume     string
 	Fullfilled bool
 	Address    string
+	Tag        string
 }
 
 func DToDto(d *entity.Deposit) *Deposite {
@@ -25,6 +26,7 @@ func DToDto(d *entity.Deposit) *Deposite {
 		Volume:     d.Volume,
 		Fullfilled: d.Fullfilled,
 		Address:    d.Address,
+		Tag:        d.Tag,
 	}
 }
 
@@ -41,5 +43,6 @@ func (d *Deposite) ToEntity() *entity.Deposit {
 		Volume:     d.Volume,
 		Fullfilled: d.Fullfilled,
 		Address:    d.Address,
+		Tag:        d.Tag,
 	}
 }
