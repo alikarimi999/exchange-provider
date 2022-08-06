@@ -3,21 +3,13 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"order_service/internal/adapter/http/dto"
+	"order_service/internal/app"
 	"order_service/internal/delivery/exchanges/kucoin"
 )
 
 func (s *Server) AddExchange(ctx Context) {
 	id := ctx.Param("id")
-
-	if s.app.ExchangeExists(id) {
-		ex, err := s.app.GetExchange(id)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, err)
-			return
-		}
-		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s with configs ( %s ) already exists", id, ex.Configs()))
-		return
-	}
 
 	switch id {
 	case "kucoin":
@@ -26,13 +18,17 @@ func (s *Server) AddExchange(ctx Context) {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		ex := kucoin.NewKucoinExchange()
+		ex, err := kucoin.NewKucoinExchange(cfg)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, err)
+			return
+		}
 
-		if err := s.app.AddExchange(ex, cfg); err != nil {
+		if err := s.app.AddExchange(ex); err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s with configs ( %s ) added", ex.ID(), cfg))
+		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s with accountId %s added!", id, ex.NID()))
 		return
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))
@@ -41,34 +37,68 @@ func (s *Server) AddExchange(ctx Context) {
 
 }
 
-func (s *Server) ChangeExchangeAccount(ctx Context) {
-	const agent = "http.Server.ChangeExchangeAccount"
-	id := ctx.Param("id")
+func (s *Server) GetExchangeList(ctx Context) {
+	req := struct {
+		Es []string `json:"exchange_names"`
+	}{}
 
-	if !s.app.ExchangeExists(id) {
-		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not exists", id))
+	if err := ctx.Bind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	switch id {
-	case "kucoin":
-		cfg := &kucoin.Configs{}
-		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
-			return
-		}
+	exs := []*app.Exchange{}
+	if len(req.Es) == 1 && req.Es[0] == "*" {
+		exs = s.app.AllExchanges()
+	} else {
+		exs = s.app.AllExchanges(req.Es...)
+	}
 
-		s.l.Info(agent, fmt.Sprintf("change exchange %s account with configs %s", id, cfg))
+	res := &dto.GetAllExchangesResponse{
+		Exchanges: make(map[string]*dto.Account),
+	}
 
-		if err := s.app.ChangeExchangeAccount(id, cfg); err != nil {
-			ctx.JSON(http.StatusInternalServerError, err.Error())
-			return
+	for _, ex := range exs {
+		res.Exchanges[ex.NID()] = &dto.Account{
+			Status: string(ex.CurrentStatus),
+			Conf:   ex.Configs(),
 		}
 	}
-	ex, err := s.app.GetExchange(id)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (s *Server) ChangeStatus(ctx Context) {
+	req := struct {
+		Id     string `json:"id"`
+		Status string `json:"status"`
+		Force  bool   `json:"force"`
+	}{}
+
+	if err := ctx.Bind(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
-	ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s with configs ( %s ) changed", ex.ID(), ex.Configs()))
+
+	if req.Id == "" || req.Status == "" {
+		ctx.JSON(http.StatusBadRequest, "id and status are required")
+		return
+	}
+
+	switch req.Status {
+	case app.ExchangeStatusActive, app.ExchangeStatusDeactive, app.ExchangeStatusDisabled:
+		res, err := s.app.ChangeExchangeStatus(req.Id, req.Status, req.Force)
+		if err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
+		r := &dto.ChangeExchangeStatusResponse{}
+		r.FromEntity(res)
+		ctx.JSON(http.StatusOK, r)
+
+	default:
+		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("status %s not supported", req.Status))
+	}
+
 }

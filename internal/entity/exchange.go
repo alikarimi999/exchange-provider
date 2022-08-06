@@ -31,7 +31,10 @@ type ExchangeOrder struct {
 }
 
 type Exchange interface {
-	ID() string
+	Name() string
+	AccountId() string
+	NID() string
+
 	Exchange(o *UserOrder) (string, error)
 	TrackOrder(o *ExchangeOrder, done chan<- struct{}, err chan<- error)
 
@@ -42,8 +45,10 @@ type Exchange interface {
 }
 
 type ExchangeManager interface {
+	Stop()
+	StartAgain() (*StartAgainResult, error)
 	ChangeAccount(cfgi interface{}) error
-	Setup(cfg interface{}, rc *redis.Client, l logger.Logger) (Exchange, error)
+	Setup(rc *redis.Client, l logger.Logger) (Exchange, error)
 
 	Run(wg *sync.WaitGroup)
 	Configs() interface{}
@@ -63,10 +68,14 @@ type ExchangeManager interface {
 type AddPairsResult struct {
 	Added   []*Pair
 	Existed []*Pair
-	Failed  []*AddPairsErr
+	Failed  []*PairsErr
 }
 
-type AddPairsErr struct {
+type PairsErr struct {
 	*Pair
 	Err error
+}
+
+type StartAgainResult struct {
+	Removed []*PairsErr
 }

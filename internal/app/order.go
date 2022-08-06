@@ -70,13 +70,8 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 // 2. send a request to the deposite service to create a deposite
 // 3. get the deposite id as response and add it to the order
 // 4. add the order to the cache
-func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity.Coin, side string) (*entity.UserOrder, error) {
+func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity.Coin, side, ex string) (*entity.UserOrder, error) {
 	const op = errors.Op("Order-Usecase.NewUserOrder")
-
-	ex, err := u.selectExchange(bc, qc)
-	if err != nil {
-		return nil, errors.Wrap(err, op, &ErrMsg{msg: "pair is not supported by the system"})
-	}
 
 	o := entity.NewOrder(userId, address, bc, qc, side, ex)
 
@@ -250,9 +245,34 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 		}
 	}
 
-	if !u.exs.exists(o.Exchange) {
+	ok, status := u.exs.exists(o.Exchange)
+	if !ok {
 		err = errors.Wrap(errors.ErrBadRequest, op, errors.NewMesssage(fmt.Sprintf("exchange: '%s' not supported by this service", o.Exchange)))
 		u.l.Error(string(op), err.Error())
+		o.Broken = true
+		o.BreakReason = errors.ErrorMsg(err)
+
+		if er := u.write(o); err != nil {
+			u.l.Error(string(op), err.Error())
+			err = fmt.Errorf("%s, %s", err.Error(), er.Error())
+			return err
+		}
+
+		return err
+	}
+
+	if status == ExchangeStatusDisabled {
+		err = errors.Wrap(errors.ErrBadRequest, op, errors.NewMesssage(fmt.Sprintf("exchange: '%s' is disabled", o.Exchange)))
+		u.l.Error(string(op), err.Error())
+		o.Broken = true
+		o.BreakReason = errors.ErrorMsg(err)
+
+		if er := u.write(o); err != nil {
+			u.l.Error(string(op), err.Error())
+			err = fmt.Errorf("%s, %s", err.Error(), er.Error())
+			return err
+		}
+
 		return err
 	}
 
@@ -263,10 +283,13 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	o.Deposite.Id = depositeId
 	o.Deposite.Volume = vol
 
-	if o.Side == "buy" {
+	switch o.Side {
+	case "buy":
 		o.Funds = vol
-	} else {
+	case "sell":
 		o.Size = vol
+	default:
+		return errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("order side is %s not supported", o.Side)))
 	}
 
 	if err := u.write(o); err != nil {

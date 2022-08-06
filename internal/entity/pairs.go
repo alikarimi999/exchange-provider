@@ -35,3 +35,7 @@ type Pair struct {
 	OrderFeeRate string
 	Fee          string
 }
+
+func (p *PairCoin) String() string {
+	return p.CoinId + "-" + p.ChainId
+}

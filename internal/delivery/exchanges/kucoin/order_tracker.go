@@ -30,7 +30,7 @@ func newOrderTracker(api *kucoin.ApiService, l logger.Logger) *orderTracker {
 	}
 }
 
-func (t *orderTracker) run(wg *sync.WaitGroup) {
+func (t *orderTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 	const op = errors.Op("Kucoin.orderTracker.run")
 
 	t.l.Debug(string(op), "started")
@@ -63,6 +63,10 @@ func (t *orderTracker) run(wg *sync.WaitGroup) {
 				return
 
 			}(feed)
+
+		case <-stopCh:
+			t.l.Debug(string(op), "stopped")
+			return
 		}
 	}
 }

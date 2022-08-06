@@ -61,7 +61,12 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 			go func(ord *entity.UserOrder) {
 				o.l.Debug(string(op), fmt.Sprintf("handle order: '%d' for user: '%d'", ord.Id, ord.UserId))
-				ex := o.exs[ord.Exchange]
+				exc, err := o.exStore.get(ord.Exchange)
+				if err != nil {
+					o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )", ord.Exchange, err.Error()))
+					return
+				}
+				ex := exc.Exchange
 
 				// 1. open a new order in exchange to exchange user provided coin to requested coin
 				id, err := ex.Exchange(ord)
