@@ -59,35 +59,25 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 
 }
 
-func (d *depositeService) GetSupportedCoins() (map[string][]*entity.Depositcoin, error) {
-	const op = errors.Op("DepositeService.Supported")
-	const path = "/admin/coins/get_all"
+func (d *depositeService) SetTxId(userId, orderId, depositeId int64, txId string) error {
+	const op = errors.Op("DepositeService.SetTxId")
+	const path = "deposites/set_tx_id"
 
-	r := &GetSupportedCoinsRequest{[]string{"*"}}
-	req, _ := http.NewRequest(http.MethodGet, joinUrl(d.url, path), r.reader())
+	r := &SetTxIdRequest{
+		UserId:     userId,
+		OrderId:    orderId,
+		DepositeId: depositeId,
+		TxId:       txId,
+	}
+
+	req, _ := http.NewRequest(http.MethodPost, joinUrl(d.url, path), r.reader())
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(errors.New(fmt.Sprintf("%d:%s", resp.StatusCode, err)), op, errors.ErrInternal)
+		return errors.Wrap(errors.New(fmt.Sprintf("%d:%s", resp.StatusCode, err)), op, errors.ErrInternal)
 	}
 
-	defer resp.Body.Close()
-
-	bod, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-	}
-
-	cResp := GetSupportedCoinsResponse{
-		Exchanges: make(map[string]*AllCoins),
-	}
-
-	if err = json.Unmarshal(bod, &cResp); err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-	}
-
-	return cResp.Parse(), nil
-
+	return nil
 }

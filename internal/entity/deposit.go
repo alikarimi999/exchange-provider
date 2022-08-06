@@ -14,7 +14,7 @@ type Deposit struct {
 
 type DepositeService interface {
 	New(userId, orderId int64, coin *Coin, exchange string) (*Deposit, error)
-	GetSupportedCoins() (map[string][]*Depositcoin, error)
+	SetTxId(userId, orderId, depositeId int64, txId string) error
 }
 
 type Depositcoin struct {

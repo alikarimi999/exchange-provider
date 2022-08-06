@@ -42,6 +42,10 @@ func (o *Router) orderSrvGrpV0() {
 			o.srv.NewUserOrder(newContext(ctx))
 		})
 
+		v0.POST("/set_tx_id", func(ctx *gin.Context) {
+			o.srv.SetTxId(newContext(ctx))
+		})
+
 	}
 
 	a := o.gin.Group("/admin")

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
@@ -112,4 +113,24 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 	r.Map(pao, true)
 	ctx.JSON(http.StatusOK, r)
 	return
+}
+
+func (s *Server) SetTxId(ctx Context) {
+	r := &dto.SetTxIdRequest{}
+	if err := ctx.Bind(r); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+		return
+	}
+
+	if err := r.Validate(); err != nil {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		return
+	}
+
+	if err := s.app.SetTxId(r.UserId, r.OrderId, r.DepositId, r.TxId); err != nil {
+		handlerErr(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, fmt.Sprintf("txId %s set for order %d", r.TxId, r.OrderId))
 }
