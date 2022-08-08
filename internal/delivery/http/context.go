@@ -32,6 +32,10 @@ func (ec *ginContext) SetKey(key string, value interface{}) {
 	ec.ctx.Set(key, value)
 }
 
+func (ec *ginContext) GetHeader(key string) string {
+	return ec.ctx.GetHeader(key)
+}
+
 // newContext function return a new ServerContext
 func newContext(ctx *gin.Context) h.Context {
 	return &ginContext{ctx: ctx}

@@ -20,22 +20,16 @@ type GetAllPairsResponse struct {
 	Messages  []string             `json:"messages"`
 }
 
-type GetPairRequest struct {
-	Exchanges []string `json:"exchanges"`
-	BC        string   `json:"base_coin"`  // combined with chain id  ex: BTC-BTC
-	QC        string   `json:"quote_coin"` // combined with chain id  ex: USDT-TRC20
+type GetPairsToUserRequest struct {
+	BC string `json:"base_coin"`  // combined with chain id  ex: BTC-BTC
+	QC string `json:"quote_coin"` // combined with chain id  ex: USDT-TRC20
 }
 
-func (r *GetPairRequest) Parse() (bc, qc *entity.Coin, err error) {
+func (r *GetPairsToUserRequest) Parse() (bc, qc *entity.Coin, err error) {
 
 	if r.BC == "" || r.QC == "" {
 		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin and quote coin must be set"))
 	}
-
-	if len(r.Exchanges) == 0 {
-		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("at least one exchange must be set"))
-	}
-
 	bc, err = ParseCoin(r.BC)
 	if err != nil {
 		return nil, nil, err
@@ -62,7 +56,24 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 	}, nil
 }
 
-type GetPairResponse struct {
-	Exchanges map[string]*Pair `json:"exchanges"`
-	Messages  []string         `json:"messages"`
+type UserPair struct {
+	BC        string `json:"base_coin"`
+	QC        string `json:"quote_coin"`
+	BuyPrice  string `json:"buy_price"`
+	SellPrice string `json:"sell_price"`
+	FeeRate   string `json:"fee_rate"`
+}
+
+func EntityPairToUserRequest(p *entity.Pair) *UserPair {
+	return &UserPair{
+		BC:        p.BC.String(),
+		QC:        p.QC.String(),
+		BuyPrice:  p.BestAsk,
+		SellPrice: p.BestBid,
+		FeeRate:   p.Fee,
+	}
+}
+
+type GetPairsToUserResponse struct {
+	Pairs []*Pair `json:"pairs"`
 }

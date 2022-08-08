@@ -28,16 +28,12 @@ func DFromEntity(d *entity.Deposit) *Deposit {
 }
 
 type SetTxIdRequest struct {
-	UserId    int64  `json:"user_id"`
 	OrderId   int64  `json:"order_id"`
 	DepositId int64  `json:"deposit_id"`
 	TxId      string `json:"tx_id"`
 }
 
 func (r *SetTxIdRequest) Validate() error {
-	if r.UserId == 0 {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("user_id is required"))
-	}
 	if r.OrderId == 0 {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order_id is required"))
 	}

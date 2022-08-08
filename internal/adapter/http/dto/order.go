@@ -8,7 +8,6 @@ import (
 
 type UserOrder struct {
 	Id          int64  `json:"id"`
-	UserId      int64  `json:"user_id"`
 	Status      string `json:"status"`
 	BaseCoin    string `json:"base_coin"`
 	QuoteCoin   string `json:"quote_coin"`
@@ -28,7 +27,6 @@ type UserOrder struct {
 func UOFromEntity(de *entity.UserOrder) *UserOrder {
 	d := &UserOrder{
 		Id:        de.Id,
-		UserId:    de.UserId,
 		BaseCoin:  de.BC.String(),
 		QuoteCoin: de.QC.String(),
 		Side:      de.Side,
@@ -97,8 +95,6 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 }
 
 type CreateOrderRequest struct {
-	UserId int64 `json:"user_id"`
-
 	BC     string `json:"base_coin"`
 	BChain string `json:"base_chain"`
 
@@ -111,9 +107,6 @@ type CreateOrderRequest struct {
 }
 
 func (r *CreateOrderRequest) Validate() error {
-	if r.UserId == 0 {
-		return errors.Wrap(errors.NewMesssage("user_id is required"))
-	}
 	if r.Address == "" {
 		return errors.Wrap(errors.NewMesssage("address is required"))
 	}

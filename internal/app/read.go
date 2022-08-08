@@ -43,9 +43,9 @@ func readUserOrder(r entity.OrderRepo, c entity.OrderCache, userId, orderId int6
 		ord, er2 = r.Get(userId, orderId)
 		if er2 != nil {
 			if errors.ErrorCode(er2) == errors.ErrNotFound {
-				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %s not found", orderId, userId)))
+				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %d not found", orderId, userId)))
 			}
-			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )", er1, er2)), fmt.Sprintf("order %d for user %s", orderId, userId))
+			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )", er1, er2)), fmt.Sprintf("order %d for user %d", orderId, userId))
 		}
 	}
 	return ord, nil

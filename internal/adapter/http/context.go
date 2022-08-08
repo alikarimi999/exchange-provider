@@ -9,4 +9,5 @@ type Context interface {
 	GetKey(key string) (interface{}, bool)
 	SetKey(key string, value interface{})
 	Request() *http.Request
+	GetHeader(string) string
 }

@@ -39,3 +39,7 @@ type Pair struct {
 func (p *PairCoin) String() string {
 	return p.CoinId + "-" + p.ChainId
 }
+
+func (p *Pair) String() string {
+	return p.BC.String() + "/" + p.QC.String()
+}

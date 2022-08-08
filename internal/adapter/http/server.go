@@ -7,7 +7,6 @@ import (
 	"order_service/internal/app"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
-	"strconv"
 
 	"order_service/pkg/errors"
 )
@@ -25,7 +24,8 @@ func NewServer(app *app.OrderUseCase, l logger.Logger) *Server {
 }
 
 func (s *Server) NewUserOrder(ctx Context) {
-
+	const agent = "NewUserOrder"
+	userId, _ := ctx.GetKey("user_id")
 	req := dto.CreateOrderRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
@@ -37,6 +37,8 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
+	s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
+
 	bc := &entity.Coin{CoinId: req.BC, ChainId: req.BChain}
 	qc := &entity.Coin{CoinId: req.QC, ChainId: req.QChain}
 
@@ -46,7 +48,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	o, err := s.app.NewUserOrder(req.UserId, req.Address, bc, qc, req.Side, ex)
+	o, err := s.app.NewUserOrder(userId.(int64), req.Address, bc, qc, req.Side, ex)
 
 	if err != nil {
 		handlerErr(ctx, err)
@@ -63,11 +65,8 @@ func (s *Server) NewUserOrder(ctx Context) {
 }
 
 func (s *Server) GetPaginatedForUser(ctx Context) {
-	userId, err := strconv.Atoi(ctx.Param("userId"))
-	if err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid user id")))
-		return
-	}
+
+	userId, _ := ctx.GetKey("user_id")
 
 	pa := &dto.PaginatedUserOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
@@ -75,8 +74,8 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 		return
 	}
 
-	if err := pa.Validate(int64(userId)); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+	if err := pa.Validate(userId.(int64)); err != nil {
+		handlerErr(ctx, err)
 		return
 	}
 
@@ -116,6 +115,7 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 }
 
 func (s *Server) SetTxId(ctx Context) {
+	userId, _ := ctx.GetKey("user_id")
 	r := &dto.SetTxIdRequest{}
 	if err := ctx.Bind(r); err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
@@ -127,7 +127,7 @@ func (s *Server) SetTxId(ctx Context) {
 		return
 	}
 
-	if err := s.app.SetTxId(r.UserId, r.OrderId, r.DepositId, r.TxId); err != nil {
+	if err := s.app.SetTxId(userId.(int64), r.OrderId, r.DepositId, r.TxId); err != nil {
 		handlerErr(ctx, err)
 		return
 	}

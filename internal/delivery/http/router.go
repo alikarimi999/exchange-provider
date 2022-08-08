@@ -12,6 +12,7 @@ import (
 type Router struct {
 	gin *gin.Engine
 	srv *http.Server
+	l   logger.Logger
 }
 
 func (r *Router) Run(addr ...string) {
@@ -25,6 +26,7 @@ func NewRouter(app *app.OrderUseCase, l logger.Logger) *Router {
 	router := &Router{
 		gin: engine,
 		srv: http.NewServer(app, l),
+		l:   l,
 	}
 	router.orderSrvGrpV0()
 	return router
@@ -34,18 +36,29 @@ func (o *Router) orderSrvGrpV0() {
 	v0 := o.gin.Group("/orders")
 	{
 
-		v0.POST("/:userId", func(ctx *gin.Context) {
-			o.srv.GetPaginatedForUser(newContext(ctx))
-		})
+		v0.POST("/get", CheckAccess("orders", "read", o.l),
+			func(ctx *gin.Context) {
+				o.srv.GetPaginatedForUser(newContext(ctx))
+			})
 
-		v0.POST("", func(ctx *gin.Context) {
-			o.srv.NewUserOrder(newContext(ctx))
-		})
+		v0.POST("/create", CheckAccess("orders", "write", o.l),
+			func(ctx *gin.Context) {
+				o.srv.NewUserOrder(newContext(ctx))
+			})
 
-		v0.POST("/set_tx_id", func(ctx *gin.Context) {
-			o.srv.SetTxId(newContext(ctx))
-		})
+		v0.POST("/set_tx_id", CheckAccess("orders", "write", o.l),
+			func(ctx *gin.Context) {
+				o.srv.SetTxId(newContext(ctx))
+			})
 
+	}
+
+	p := o.gin.Group("/pairs")
+	{
+		p.POST("/get", CheckAccess("orders", "read", o.l),
+			func(ctx *gin.Context) {
+				o.srv.GetPairsToUser(newContext(ctx))
+			})
 	}
 
 	a := o.gin.Group("/admin")
