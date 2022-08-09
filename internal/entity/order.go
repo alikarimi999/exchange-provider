@@ -29,15 +29,16 @@ type UserOrder struct {
 	UserId        int64
 	CreatedAt     int64
 	Status        OrderStatus
-	Deposite      *Deposit
 	Exchange      string
-	Withdrawal    *Withdrawal
 	BC            *Coin
 	QC            *Coin
 	Side          string // buy or sell
 	Size          string
 	Funds         string
+	SpreadRate    string
+	Deposite      *Deposit
 	ExchangeOrder *ExchangeOrder
+	Withdrawal    *Withdrawal
 	Broken        bool
 	BreakReason   string
 }

@@ -29,9 +29,8 @@ func (r *ChangeExchangeStatusResponse) FromEntity(e *app.ChangeExchangeStatus) {
 	r.RemovedPairs = make([]*PairsErr, 0, len(e.Removed))
 	for _, p := range e.Removed {
 		r.RemovedPairs = append(r.RemovedPairs, &PairsErr{
-			BC:  p.BC.String(),
-			QC:  p.QC.String(),
-			Err: p.Err.Error(),
+			Pair: p.String(),
+			Err:  p.Err.Error(),
 		})
 	}
 

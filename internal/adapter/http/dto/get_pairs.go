@@ -1,18 +1,19 @@
 package dto
 
 import (
+	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"strings"
 )
 
 type GetAllPairsRequest struct {
-	Exchanges []string `json:"exchange_names"`
+	Names []string `json:"exchange_names"`
 }
 
 type Exchange struct {
-	Status string  `json:"status"`
-	Pairs  []*Pair `json:"pairs"`
+	Status string       `json:"status"`
+	Pairs  []*AdminPair `json:"pairs"`
 }
 
 type GetAllPairsResponse struct {
@@ -57,23 +58,29 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 }
 
 type UserPair struct {
-	BC        string `json:"base_coin"`
-	QC        string `json:"quote_coin"`
-	BuyPrice  string `json:"buy_price"`
-	SellPrice string `json:"sell_price"`
-	FeeRate   string `json:"fee_rate"`
+	BC                  string  `json:"base_coin"`
+	QC                  string  `json:"quote_coin"`
+	BuyPrice            string  `json:"buy_price"`
+	SellPrice           string  `json:"sell_price"`
+	FeeRate             string  `json:"fee_rate"`
+	BuyTransferFee      string  `json:"buy_transfer_fee"`
+	SellTransferFee     string  `json:"sell_transfer_fee"`
+	MinBaseCoinDeposit  float64 `json:"min_base_coin_deposit"`
+	MinQuoteCoinDeposit float64 `json:"min_quote_coin_deposit"`
 }
 
 func EntityPairToUserRequest(p *entity.Pair) *UserPair {
 	return &UserPair{
-		BC:        p.BC.String(),
-		QC:        p.QC.String(),
-		BuyPrice:  p.BestAsk,
-		SellPrice: p.BestBid,
-		FeeRate:   p.Fee,
+		BC:              p.BC.String(),
+		QC:              p.QC.String(),
+		BuyPrice:        p.BestAsk,
+		SellPrice:       p.BestBid,
+		FeeRate:         p.FeeRate,
+		BuyTransferFee:  fmt.Sprintf("%s/%s", p.BC.WithdrawalMinFee, p.BC.String()),
+		SellTransferFee: fmt.Sprintf("%s/%s", p.QC.WithdrawalMinFee, p.QC.String()),
 	}
 }
 
 type GetPairsToUserResponse struct {
-	Pairs []*Pair `json:"pairs"`
+	Pairs []*AdminPair `json:"pairs"`
 }

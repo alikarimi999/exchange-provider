@@ -37,6 +37,20 @@ func (s *Server) AddPairs(ctx Context) {
 			eps[ex] = append(eps[ex], p)
 		}
 
+		// set spread_rate
+		if p.SpreadRate > 0 && p.SpreadRate < 1 {
+			if err := s.app.ChangePairSpread(bc, qc, p.SpreadRate); err != nil {
+				handlerErr(ctx, err)
+				return
+			}
+		}
+
+		// set min deposit
+		if err := s.app.ChangeMinDeposit(bc, qc, p.BC.MinDeposit, p.QC.MinDeposit); err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
 	}
 
 	resp := &dto.AddPairsResponse{
@@ -77,7 +91,7 @@ func (s *Server) AddPairs(ctx Context) {
 func (s *Server) GetExchangesPairs(ctx Context) {
 	req := &dto.GetAllPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+		handlerErr(ctx, err)
 		return
 	}
 
@@ -86,7 +100,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 	}
 
 	var exs []*app.Exchange
-	if len(req.Exchanges) == 1 && req.Exchanges[0] == "*" {
+	if len(req.Names) == 1 && req.Names[0] == "*" {
 		for _, ex := range s.app.AllExchanges() {
 			if ex.CurrentStatus == app.ExchangeStatusDisable {
 				continue
@@ -94,8 +108,8 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 			exs = append(exs, ex)
 		}
 	} else {
-		for _, ex := range s.app.AllExchanges(req.Exchanges...) {
-			fmt.Println(req.Exchanges)
+		for _, ex := range s.app.AllExchanges(req.Names...) {
+			fmt.Println(req.Names)
 			fmt.Println(ex.Name())
 			if ex.CurrentStatus == app.ExchangeStatusDisable {
 				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' is %s", ex.NID(), ex.CurrentStatus))
@@ -106,7 +120,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 	}
 
 	for _, ex := range exs {
-		ps, err := s.app.GetAllPairs(ex)
+		ps, err := s.app.GetAllPairsByExchange(ex)
 		if err != nil {
 			resp.Messages = append(resp.Messages, err.Error())
 			continue
@@ -116,7 +130,8 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 			Status: ex.CurrentStatus,
 		}
 		for _, p := range ps {
-			resp.Exchanges[ex.NID()].Pairs = append(resp.Exchanges[ex.NID()].Pairs, dto.PairDTO(p))
+			dp := dto.PairDTO(p)
+			resp.Exchanges[ex.NID()].Pairs = append(resp.Exchanges[ex.NID()].Pairs, dp)
 		}
 	}
 

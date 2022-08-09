@@ -6,24 +6,35 @@ import (
 	"strings"
 
 	"github.com/Kucoin/kucoin-go-sdk"
-	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder) (*kucoin.CreateOrderModel, error) {
+func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder, sr entity.PairConfigs) (*kucoin.CreateOrderModel, error) {
 
 	p, err := k.exchangePairs.get(o.BC, o.QC)
 	if err != nil {
 		return nil, err
 	}
 
-	return &kucoin.CreateOrderModel{
-		ClientOid: uuid.New().String(),
-		Symbol:    p.symbol,
-		Type:      "market",
-		Side:      o.Side,
-		Size:      trim(o.Size, p.bc.orderPrecision),
-		Funds:     trim(o.Funds, p.qc.orderPrecision),
-	}, nil
+	if o.Side == "buy" {
+		vol, rate, err := sr.ApplySpread(o.BC, o.QC, o.Size)
+		if err != nil {
+			return nil, err
+		}
+		o.SpreadRate = rate
+		return &kucoin.CreateOrderModel{
+			Symbol: p.symbol,
+			Side:   o.Side,
+			Type:   "market",
+			Size:   trim(vol, p.bc.orderPrecision),
+		}, nil
+	} else {
+		return &kucoin.CreateOrderModel{
+			Symbol: p.symbol,
+			Side:   o.Side,
+			Type:   "market",
+			Funds:  trim(o.Funds, p.qc.orderPrecision),
+		}, nil
+	}
 
 }
 

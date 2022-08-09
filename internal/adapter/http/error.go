@@ -6,18 +6,24 @@ import (
 )
 
 func handlerErr(ctx Context, err error) {
+	var msg string
+	if errors.ErrorMsg(err) != "" {
+		msg = errors.ErrorMsg(err)
+	} else {
+		msg = err.Error()
+	}
 	switch errors.ErrorCode(err) {
 	case errors.ErrNotFound:
-		ctx.JSON(http.StatusNotFound, errors.ErrorMsg(err))
+		ctx.JSON(http.StatusNotFound, msg)
 		return
 	case errors.ErrBadRequest:
-		ctx.JSON(http.StatusBadRequest, errors.ErrorMsg(err))
+		ctx.JSON(http.StatusBadRequest, msg)
 		return
 	case errors.ErrForbidden:
-		ctx.JSON(http.StatusForbidden, errors.ErrorMsg(err))
+		ctx.JSON(http.StatusForbidden, msg)
 		return
 	default:
-		ctx.JSON(http.StatusInternalServerError, errors.ErrorMsg(err))
+		ctx.JSON(http.StatusInternalServerError, msg)
 		return
 	}
 }

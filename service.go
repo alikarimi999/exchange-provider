@@ -46,9 +46,10 @@ func production() {
 	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
 	s := storage.NewStorage(db, rc, l)
 
-	ss := services.WrapServices(&services.Config{
+	ss, err := services.WrapServices(&services.Config{
 		DepositeServiceURL: os.Getenv("DEPOSITE_SERVICE_URL"),
 		FeeServiceURL:      "http://localhost:8083/fee",
+		DB:                 db,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
@@ -67,7 +68,7 @@ func production() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -112,9 +113,10 @@ func test() {
 	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
 	s := storage.NewStorage(db, rc, l)
 
-	ss := services.WrapServices(&services.Config{
+	ss, err := services.WrapServices(&services.Config{
 		DepositeServiceURL: "http://localhost:8080",
 		FeeServiceURL:      "http://localhost:8083/fee",
+		DB:                 db,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
@@ -133,7 +135,7 @@ func test() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 

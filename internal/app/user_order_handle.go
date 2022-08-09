@@ -20,9 +20,9 @@ type orderHandler struct {
 	repo entity.OrderRepo
 
 	ouc *OrderUseCase
-
-	oc entity.OrderCache
-	wc entity.WithdrawalCache
+	sr  entity.PairConfigs
+	oc  entity.OrderCache
+	wc  entity.WithdrawalCache
 	*exStore
 	eTracker *exOrderTracker
 	oCh      chan *entity.UserOrder
@@ -31,12 +31,12 @@ type orderHandler struct {
 	l logger.Logger
 }
 
-func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
+func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, sr entity.PairConfigs, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
 	oh := &orderHandler{
 		repo: repo,
 
-		ouc: ouc,
-
+		ouc:      ouc,
+		sr:       sr,
 		oc:       oc,
 		wc:       wc,
 		exStore:  exs,
@@ -69,7 +69,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ex := exc.Exchange
 
 				// 1. open a new order in exchange to exchange user provided coin to requested coin
-				id, err := ex.Exchange(ord)
+				id, err := ex.Exchange(ord, o.sr)
 				if err != nil {
 
 					ord.Broken = true
@@ -117,8 +117,20 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 							wc = ord.BC
 
 						case "sell":
-							ord.Withdrawal.Total = ord.ExchangeOrder.Funds
 							wc = ord.QC
+
+							t, rate, err := o.sr.ApplySpread(ord.BC, ord.QC, ord.ExchangeOrder.Funds)
+							if err != nil {
+								ord.Broken = true
+								ord.BreakReason = fmt.Sprintf("unable to apply spread: %s", err.Error())
+								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+								if err := o.ouc.write(ord); err != nil {
+									o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+								}
+								return
+							}
+							ord.SpreadRate = rate
+							ord.Withdrawal.Total = t
 						}
 
 						r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)

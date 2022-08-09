@@ -6,15 +6,16 @@ import (
 )
 
 type Coin struct {
-	CoinId              string `json:"coin_id"`
-	ChainId             string `json:"chain_id"`
-	MinOrderSize        string `json:"min_order_size,omitempty"`
-	MaxOrderSize        string `json:"max_order_size,omitempty"`
-	MinWithdrawalSize   string `json:"min_withdrawal_size,omitempty"`
-	MinWithdrawalFee    string `json:"min_withdrawal_fee,omitempty"`
-	OrderPrecision      int    `json:"order_precision,omitempty"`
-	WithdrawalPrecision int    `json:"withdrawal_precision,omitempty"`
-	SetChain            bool   `json:"set_chain,omitempty"`
+	CoinId              string  `json:"coin_id"`
+	ChainId             string  `json:"chain_id"`
+	MinDeposit          float64 `json:"min_deposit,omitempty"`
+	MinOrderSize        string  `json:"min_order_size,omitempty"`
+	MaxOrderSize        string  `json:"max_order_size,omitempty"`
+	MinWithdrawalSize   string  `json:"min_withdrawal_size,omitempty"`
+	MinWithdrawalFee    string  `json:"min_withdrawal_fee,omitempty"`
+	OrderPrecision      int     `json:"order_precision,omitempty"`
+	WithdrawalPrecision int     `json:"withdrawal_precision,omitempty"`
+	SetChain            bool    `json:"set_chain,omitempty"`
 }
 type coinConfig struct {
 	WithdrawalPrecision int `json:"withdrawal_precision,omitempty"`
@@ -25,9 +26,10 @@ type ExchangeConfig struct {
 	QC *coinConfig `json:"quote_coin"`
 }
 type exPair struct {
-	BC        *Coin                      `json:"base_coin"`
-	QC        *Coin                      `json:"quote_coin"`
-	Exchanges map[string]*ExchangeConfig `json:"exchange_config"`
+	BC         *Coin                      `json:"base_coin"`
+	QC         *Coin                      `json:"quote_coin"`
+	SpreadRate float64                    `json:"spread_rate,omitempty"`
+	Exchanges  map[string]*ExchangeConfig `json:"exchange_config"`
 }
 
 type AddPairsRequest struct {
@@ -43,6 +45,17 @@ func (r *AddPairsRequest) Validate() error {
 		}
 		if p.QC.CoinId == "" || p.QC.ChainId == "" {
 			return errors.Wrap(errors.ErrBadRequest, "quote coin must have id")
+		}
+
+		if p.SpreadRate >= 1 {
+			return errors.Wrap(errors.ErrBadRequest, "spread rate must be less than 1")
+		}
+
+		if p.BC.MinDeposit == 0 {
+			return errors.Wrap(errors.ErrBadRequest, "base coin must have min deposit")
+		}
+		if p.QC.MinDeposit == 0 {
+			return errors.Wrap(errors.ErrBadRequest, "quote coin must have min deposit")
 		}
 
 		if len(p.Exchanges) == 0 {
@@ -101,7 +114,7 @@ func (req *exPair) ExchangePairs(bc, qc *entity.Coin) map[string]*entity.Pair {
 	return exchangePairs
 }
 
-type Pair struct {
+type AdminPair struct {
 	BC *Coin `json:"base_coin"`
 	QC *Coin `json:"quote_coin"`
 
@@ -110,13 +123,15 @@ type Pair struct {
 	FeeCurrency          string `json:"fee_currency,omitempty"`
 	ExchangeOrderFeeRate string `json:"exchange_order_fee_rate,omitempty"`
 	FeeRate              string `json:"fee_rate,omitempty"`
+	SpreadRate           string `json:"spread_rate,omitempty"`
 }
 
-func PairDTO(p *entity.Pair) *Pair {
-	return &Pair{
+func PairDTO(p *entity.Pair) *AdminPair {
+	return &AdminPair{
 		BC: &Coin{
 			CoinId:              p.BC.Coin.CoinId,
 			ChainId:             p.BC.Coin.ChainId,
+			MinDeposit:          p.BC.MinDeposit,
 			MinOrderSize:        p.BC.MinOrderSize,
 			MaxOrderSize:        p.BC.MaxOrderSize,
 			MinWithdrawalSize:   p.BC.MinWithdrawalSize,
@@ -128,6 +143,7 @@ func PairDTO(p *entity.Pair) *Pair {
 		QC: &Coin{
 			CoinId:              p.QC.Coin.CoinId,
 			ChainId:             p.QC.Coin.ChainId,
+			MinDeposit:          p.QC.MinDeposit,
 			MinOrderSize:        p.QC.MinOrderSize,
 			MaxOrderSize:        p.QC.MaxOrderSize,
 			MinWithdrawalSize:   p.QC.MinWithdrawalSize,
@@ -138,41 +154,39 @@ func PairDTO(p *entity.Pair) *Pair {
 		},
 		BestAskPrice:         p.BestAsk,
 		BestBidPrice:         p.BestBid,
+		SpreadRate:           p.SpreadRate,
 		FeeCurrency:          p.FeeCurrency,
 		ExchangeOrderFeeRate: p.OrderFeeRate,
-		FeeRate:              p.Fee,
 	}
 }
 
 type PairsErr struct {
-	BC  string `json:"base_coin"`
-	QC  string `json:"quote_coin"`
-	Err string `json:"error"`
+	Pair string `json:"pair"`
+	Err  string `json:"error"`
 }
 type AddPairsResult struct {
-	Addedd []*Pair     `json:"added_pairs"`
-	Exs    []*Pair     `json:"existed_pairs"`
+	Addedd []string    `json:"added_pairs"`
+	Exs    []string    `json:"existed_pairs"`
 	Failed []*PairsErr `json:"failed_pairs"`
 	Error  string      `json:"error"`
 }
 
 func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 	res := &AddPairsResult{
-		Addedd: []*Pair{},
-		Exs:    []*Pair{},
+		Addedd: []string{},
+		Exs:    []string{},
 		Failed: []*PairsErr{},
 	}
 	for _, p := range r.Added {
-		res.Addedd = append(res.Addedd, PairDTO(p))
+		res.Addedd = append(res.Addedd, p.String())
 	}
 	for _, p := range r.Existed {
-		res.Exs = append(res.Exs, PairDTO(p))
+		res.Exs = append(res.Exs, p.String())
 	}
 	for _, p := range r.Failed {
 		res.Failed = append(res.Failed, &PairsErr{
-			BC:  p.BC.String(),
-			QC:  p.QC.String(),
-			Err: p.Err.Error(),
+			Pair: p.String(),
+			Err:  p.Err.Error(),
 		})
 	}
 	return res

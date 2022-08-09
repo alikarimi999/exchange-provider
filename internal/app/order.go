@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
+	"strconv"
 	"sync"
 
 	"order_service/pkg/errors"
@@ -14,6 +15,7 @@ import (
 type OrderUseCase struct {
 	repo  entity.OrderRepo
 	cache entity.OrderCache
+	sr    entity.PairConfigs
 	rc    *redis.Client
 	ds    entity.DepositeService
 	oh    *orderHandler
@@ -24,7 +26,7 @@ type OrderUseCase struct {
 	l   logger.Logger
 }
 
-func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCache,
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, sr entity.PairConfigs, oc entity.OrderCache,
 	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
@@ -32,13 +34,14 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, oc entity.OrderCac
 		cache: oc,
 		rc:    rc,
 		ds:    depo,
+		sr:    sr,
 		exs:   newExStore(l),
 		fs:    fee,
 
 		l: l,
 	}
 
-	o.oh = newOrderHandler(o, repo, oc, oc, fee, o.exs, l)
+	o.oh = newOrderHandler(o, repo, oc, sr, oc, fee, o.exs, l)
 	o.wh = newWithdrawalHandler(o, repo, oc, oc, o.exs, l)
 	return o
 }
@@ -284,10 +287,40 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	o.Deposite.Id = depositeId
 	o.Deposite.Volume = vol
 
+	minBc, minQc := u.sr.PairMinDeposit(o.BC, o.QC)
+	vf, err := strconv.ParseFloat(vol, 64)
+	if err != nil {
+		return errors.Wrap(err, op, &ErrMsg{msg: "invalid volume"})
+	}
 	switch o.Side {
 	case "buy":
+		if vf < minQc {
+			o.Broken = true
+			o.BreakReason = fmt.Sprintf("volume: %s is less than min quantity: %f", vol, minQc)
+			u.l.Info(string(op), o.BreakReason)
+
+			if err := u.write(o); err != nil {
+				u.l.Error(string(op), err.Error())
+				return err
+			}
+			return nil
+		}
+
 		o.Funds = vol
 	case "sell":
+
+		if vf < minBc {
+			o.Broken = true
+			o.BreakReason = fmt.Sprintf("volume: %s is less than min quantity: %f", vol, minBc)
+			u.l.Info(string(op), o.BreakReason)
+
+			if err := u.write(o); err != nil {
+				u.l.Error(string(op), err.Error())
+				return err
+			}
+			return nil
+		}
+
 		o.Size = vol
 	default:
 		return errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("order side is %s not supported", o.Side)))

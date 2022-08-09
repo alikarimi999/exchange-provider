@@ -16,6 +16,7 @@ func (c *Coin) String() string {
 type PairCoin struct {
 	*Coin
 
+	MinDeposit          float64
 	MinOrderSize        string
 	MaxOrderSize        string
 	MinWithdrawalSize   string
@@ -29,11 +30,13 @@ type Pair struct {
 	BC *PairCoin
 	QC *PairCoin
 
+	MinDeposit   float64
 	BestAsk      string
 	BestBid      string
 	FeeCurrency  string
 	OrderFeeRate string
-	Fee          string
+	SpreadRate   string
+	FeeRate      string
 }
 
 func (p *PairCoin) String() string {

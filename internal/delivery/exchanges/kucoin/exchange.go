@@ -25,10 +25,10 @@ func (k *kucoinExchange) AccountId() string {
 	return k.accountId
 }
 
-func (k *kucoinExchange) Exchange(o *entity.UserOrder) (string, error) {
+func (k *kucoinExchange) Exchange(o *entity.UserOrder, sr entity.PairConfigs) (string, error) {
 	const op = errors.Op("Kucoin.Exchange")
 
-	req, err := k.createOrderRequest(o)
+	req, err := k.createOrderRequest(o, sr)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}

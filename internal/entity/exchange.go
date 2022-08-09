@@ -35,7 +35,7 @@ type Exchange interface {
 	AccountId() string
 	NID() string
 
-	Exchange(o *UserOrder) (string, error)
+	Exchange(o *UserOrder, sr PairConfigs) (string, error)
 	TrackOrder(o *ExchangeOrder, done chan<- struct{}, err chan<- error)
 
 	Withdrawal(coin *Coin, address string, vol string) (string, error)
