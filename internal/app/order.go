@@ -15,7 +15,7 @@ import (
 type OrderUseCase struct {
 	repo  entity.OrderRepo
 	cache entity.OrderCache
-	sr    entity.PairConfigs
+	pc    entity.PairConfigs
 	rc    *redis.Client
 	ds    entity.DepositeService
 	oh    *orderHandler
@@ -26,7 +26,7 @@ type OrderUseCase struct {
 	l   logger.Logger
 }
 
-func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo, sr entity.PairConfigs, oc entity.OrderCache,
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo, pc entity.PairConfigs, oc entity.OrderCache,
 	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
@@ -34,13 +34,13 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRep
 		cache: oc,
 		rc:    rc,
 		ds:    depo,
-		sr:    sr,
+		pc:    pc,
 		exs:   newExStore(l, exRepo),
 		fs:    fee,
 		l:     l,
 	}
 
-	o.oh = newOrderHandler(o, repo, oc, sr, oc, fee, o.exs, l)
+	o.oh = newOrderHandler(o, repo, oc, pc, oc, fee, o.exs, l)
 	o.wh = newWithdrawalHandler(o, repo, oc, oc, o.exs, l)
 	return o
 }
@@ -66,12 +66,6 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 
 }
 
-// user request an order
-// steps:
-// 1. create an order
-// 2. send a request to the deposite service to create a deposite
-// 3. get the deposite id as response and add it to the order
-// 4. add the order to the cache
 func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity.Coin, side, ex string) (*entity.UserOrder, error) {
 	const op = errors.Op("Order-Usecase.NewUserOrder")
 
@@ -120,113 +114,10 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 		return nil, err
 	}
 
-	// if err = u.cache.Add(o); err != nil {
-	// 	err = errors.Wrap(err, fmt.Sprintf("userId: '%d'", userId), op, &ErrMsg{msg: "create order failed, internal error"})
-	// 	u.l.Error(string(op), err.Error())
-	// 	return nil, err
-	// }
 	u.l.Debug(string(op), fmt.Sprintf("userId: '%d', orderId: '%d'. depositeId: '%d' created", o.UserId, o.Id, o.Deposite.Id))
 	return o, nil
 }
 
-// retrieve the order from the cache
-// if retrive from cache failed try permenant db
-func (u *OrderUseCase) GetUserOrder(userId, orderId int64) (*entity.UserOrder, error) {
-	const op = errors.Op("Order-UseCase.GetUserOrder")
-	o, err := u.cache.Get(userId, orderId)
-	if err != nil {
-		switch errors.ErrorCode(err) {
-		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, &ErrMsg{msg: "order not found"})
-			u.l.Debug(string(op), err.Error())
-		default:
-			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d' , orderId: '%d' ", userId, orderId), &ErrMsg{msg: "get order failed, internal error"})
-			u.l.Error(string(op), err.Error())
-		}
-
-		o, err = u.repo.Get(userId, orderId)
-		if err != nil {
-			switch errors.ErrorCode(err) {
-			case errors.ErrNotFound:
-				err = errors.Wrap(err, op, &ErrMsg{msg: "order not found"})
-				u.l.Debug(string(op), err.Error())
-				return nil, err
-			default:
-				err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d' , orderId: '%d' ", userId, orderId),
-					&ErrMsg{msg: "get order failed, internal error"})
-				u.l.Error(string(op), err.Error())
-				return nil, err
-			}
-		}
-	}
-	return o, nil
-}
-
-func (u *OrderUseCase) GetAllUserOrders(userId int64) ([]*entity.UserOrder, error) {
-	const op = errors.Op("Order-UseCase.GetAllUserOrders")
-
-	os := []*entity.UserOrder{{UserId: userId}}
-	if err := u.read(&os); err != nil {
-		switch errors.ErrorCode(err) {
-		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
-			u.l.Debug(string(op), err.Error())
-		default:
-			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d'", userId), &ErrMsg{msg: "get orders failed, internal error"})
-			u.l.Error(string(op), err.Error())
-		}
-
-		return nil, err
-	}
-	return os, nil
-
-}
-
-func (u *OrderUseCase) GetAllClosedUserOrders(userId int64) ([]*entity.UserOrder, error) {
-	const op = errors.Op("Order-UseCase.GetAllUserOrders")
-
-	os := []*entity.UserOrder{{UserId: userId}}
-	if err := u.read(userId); err != nil {
-		switch errors.ErrorCode(err) {
-		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
-			u.l.Debug(string(op), err.Error())
-		default:
-			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d'", userId), &ErrMsg{msg: "get orders failed, internal error"})
-			u.l.Error(string(op), err.Error())
-		}
-
-		return nil, err
-	}
-	return os, nil
-}
-
-// retrieve all orders from the cache
-func (u *OrderUseCase) GetAllPendingUserOrders(userId int64) ([]*entity.UserOrder, error) {
-	const op = errors.Op("Order-UseCase.GetAllPendingUserOrders")
-	os := []*entity.UserOrder{}
-	err := u.read(userId)
-	if err != nil {
-		switch errors.ErrorCode(err) {
-		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, &ErrMsg{msg: "orders not found"})
-			u.l.Debug(string(op), err.Error())
-		default:
-			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d'", userId), &ErrMsg{msg: "get orders failed, internal error"})
-			u.l.Error(string(op), err.Error())
-		}
-
-		return nil, err
-	}
-	return os, nil
-}
-
-// it will be called after the `deposite.confirmed` event is received
-// steps:
-// 1. retrive the order from the cache
-// 2. update the order's deposite volume and status
-// 3. update the order's state on the cache.
-// 4. send the order to the order handler
 func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol string) error {
 	const op = errors.Op("Order-UseCase.SetDepositeVolume")
 
@@ -286,7 +177,7 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	o.Deposite.Id = depositeId
 	o.Deposite.Volume = vol
 
-	minBc, minQc := u.sr.PairMinDeposit(o.BC, o.QC)
+	minBc, minQc := u.pc.PairMinDeposit(o.BC, o.QC)
 	vf, err := strconv.ParseFloat(vol, 64)
 	if err != nil {
 		return errors.Wrap(err, op, &ErrMsg{msg: "invalid volume"})
@@ -305,7 +196,6 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 			return nil
 		}
 
-		o.Funds = vol
 	case "sell":
 
 		if vf < minBc {
@@ -320,7 +210,6 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 			return nil
 		}
 
-		o.Size = vol
 	default:
 		return errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("order side is %s not supported", o.Side)))
 	}

@@ -85,12 +85,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 						o.Withdrawal.Executed = w.Executed
 						o.Withdrawal.TxId = w.TxId
 
-						if o.Side == "buy" {
-							o.Size = w.Executed
-						} else {
-							o.Funds = w.Executed
-						}
-
 						if err := t.ouc.write(o); err != nil {
 							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
 							proccessedCh <- false

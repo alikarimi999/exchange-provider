@@ -100,23 +100,24 @@ func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
 	return nil
 }
 
-func (r *PairConfigs) ApplySpread(bc, qc *entity.Coin, size string) (remainder, rate string, err error) {
+func (r *PairConfigs) ApplySpread(bc, qc *entity.Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
-	if rate, ok := r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]; ok {
-		t, err := strconv.ParseFloat(size, 64)
-		if err != nil {
-			return "", "", err
-		}
-
-		ff := t * rate
-		re := t - ff
-
-		return strconv.FormatFloat(re, 'f', -1, 64), strconv.FormatFloat(rate, 'f', -1, 64), nil
+	var rate float64
+	rate, ok := r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]
+	if !ok {
+		rate = r.defaultSpread
 	}
-	r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())] = 0.01
 
-	return r.ApplySpread(bc, qc, size)
+	total, err := strconv.ParseFloat(vol, 64)
+	if err != nil {
+		return "", "", "", errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
+	}
+
+	aVol := total * (1 - rate)
+	sVol := total - aVol
+	return strconv.FormatFloat(aVol, 'f', -1, 64), strconv.FormatFloat(sVol, 'f', -1, 64), strconv.FormatFloat(rate, 'f', -1, 64), nil
+
 }
 
 func (r *PairConfigs) GetAllPairsSpread() map[string]float64 {

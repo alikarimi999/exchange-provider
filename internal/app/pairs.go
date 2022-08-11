@@ -16,8 +16,8 @@ func (o *OrderUseCase) GetAllPairsByExchange(ex *Exchange) ([]*entity.Pair, erro
 	ps := ex.GetAllPairs()
 	// set spread_rate
 	for _, p := range ps {
-		p.BC.MinDeposit, p.QC.MinDeposit = o.sr.PairMinDeposit(p.BC.Coin, p.QC.Coin)
-		p.SpreadRate = o.sr.GetPairSpread(p.BC.Coin, p.QC.Coin)
+		p.BC.MinDeposit, p.QC.MinDeposit = o.pc.PairMinDeposit(p.BC.Coin, p.QC.Coin)
+		p.SpreadRate = o.pc.GetPairSpread(p.BC.Coin, p.QC.Coin)
 	}
 
 	return ps, nil

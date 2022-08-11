@@ -6,27 +6,27 @@ import (
 )
 
 func (o *OrderUseCase) GetDefaultSpread() string {
-	return o.sr.GetDefaultSpread()
+	return o.pc.GetDefaultSpread()
 }
 
 func (o *OrderUseCase) ChangeDefaultSpread(s float64) error {
-	return o.sr.ChangeDefaultSpread(s)
+	return o.pc.ChangeDefaultSpread(s)
 }
 
 func (o *OrderUseCase) GetPairSpread(bc, qc *entity.Coin) string {
-	return o.sr.GetPairSpread(bc, qc)
+	return o.pc.GetPairSpread(bc, qc)
 }
 
 func (o *OrderUseCase) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
-	return o.sr.ChangePairSpread(bc, qc, s)
+	return o.pc.ChangePairSpread(bc, qc, s)
 }
 
 func (o *OrderUseCase) GetAllPairsSpread() map[string]float64 {
-	return o.sr.GetAllPairsSpread()
+	return o.pc.GetAllPairsSpread()
 }
 
 func (o *OrderUseCase) ApplySpread(p *entity.Pair) *entity.Pair {
-	rate := o.sr.GetPairSpread(p.BC.Coin, p.QC.Coin)
+	rate := o.pc.GetPairSpread(p.BC.Coin, p.QC.Coin)
 
 	r, _ := strconv.ParseFloat(rate, 64)
 	bestAsk, _ := strconv.ParseFloat(p.BestAsk, 64)

@@ -25,10 +25,10 @@ func (k *kucoinExchange) AccountId() string {
 	return k.accountId
 }
 
-func (k *kucoinExchange) Exchange(o *entity.UserOrder, sr entity.PairConfigs) (string, error) {
+func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string) (string, error) {
 	const op = errors.Op("Kucoin.Exchange")
 
-	req, err := k.createOrderRequest(o, sr)
+	req, err := k.createOrderRequest(bc, qc, side, size, funds)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
@@ -38,19 +38,19 @@ func (k *kucoinExchange) Exchange(o *entity.UserOrder, sr entity.PairConfigs) (s
 	// if it's a sell order, we transfer the base coin from main account to trade account
 	switch req.Side {
 	case "buy":
-		k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Funds, o.QC.CoinId))
-		res, err := k.api.InnerTransferV2(uuid.New().String(), o.QC.CoinId, "main", "trade", req.Funds)
+		k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Funds, qc.CoinId))
+		res, err := k.api.InnerTransferV2(uuid.New().String(), qc.CoinId, "main", "trade", req.Funds)
 		if err = handleSDKErr(err, res); err != nil {
 			return "", errors.Wrap(err, op, errors.ErrBadRequest)
 		}
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Funds, o.QC.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Funds, qc.CoinId))
 	case "sell":
-		k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Size, o.BC.CoinId))
-		res, err := k.api.InnerTransferV2(uuid.New().String(), o.BC.CoinId, "main", "trade", req.Size)
+		k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Size, bc.CoinId))
+		res, err := k.api.InnerTransferV2(uuid.New().String(), bc.CoinId, "main", "trade", req.Size)
 		if err = handleSDKErr(err, res); err != nil {
 			return "", errors.Wrap(err, op, errors.ErrBadRequest)
 		}
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Size, o.BC.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Size, bc.CoinId))
 	}
 
 	// create order, after transfer is done

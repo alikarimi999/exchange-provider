@@ -20,7 +20,7 @@ type orderHandler struct {
 	repo entity.OrderRepo
 
 	ouc *OrderUseCase
-	sr  entity.PairConfigs
+	pc  entity.PairConfigs
 	oc  entity.OrderCache
 	wc  entity.WithdrawalCache
 	*exStore
@@ -31,12 +31,12 @@ type orderHandler struct {
 	l logger.Logger
 }
 
-func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, sr entity.PairConfigs, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
+func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, pc entity.PairConfigs, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
 	oh := &orderHandler{
 		repo: repo,
 
 		ouc:      ouc,
-		sr:       sr,
+		pc:       pc,
 		oc:       oc,
 		wc:       wc,
 		exStore:  exs,
@@ -68,8 +68,27 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				}
 				ex := exc.Exchange
 
+				var size string
+				var funds string
+				if ord.Side == "buy" {
+					aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.Deposite.Volume)
+					if err != nil {
+						ord.Broken = true
+						ord.BreakReason = err.Error()
+						o.l.Error(string(op), fmt.Sprintf("failed to apply spread for order: '%d' due to error: ( %s )", ord.Id, err.Error()))
+						if err := o.ouc.write(ord); err != nil {
+							o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
+						}
+						return
+					}
+					funds = aVol
+					ord.SpreadVol = sVol
+					ord.SpreadRate = rate
+				} else {
+					size = ord.Deposite.Volume
+				}
 				// 1. open a new order in exchange to exchange user provided coin to requested coin
-				id, err := ex.Exchange(ord, o.sr)
+				id, err := ex.Exchange(ord.BC, ord.QC, ord.Side, size, funds)
 				if err != nil {
 
 					ord.Broken = true
@@ -78,7 +97,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 
 					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
 					}
 					return
 
@@ -119,7 +138,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						case "sell":
 							wc = ord.QC
 
-							t, rate, err := o.sr.ApplySpread(ord.BC, ord.QC, ord.ExchangeOrder.Funds)
+							aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.ExchangeOrder.Funds)
 							if err != nil {
 								ord.Broken = true
 								ord.BreakReason = fmt.Sprintf("unable to apply spread: %s", err.Error())
@@ -130,7 +149,8 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 								return
 							}
 							ord.SpreadRate = rate
-							ord.Withdrawal.Total = t
+							ord.Withdrawal.Total = aVol
+							ord.SpreadVol = sVol
 						}
 
 						r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)

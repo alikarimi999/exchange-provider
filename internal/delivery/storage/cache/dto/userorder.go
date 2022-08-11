@@ -18,7 +18,11 @@ type UserOrder struct {
 	QC         string
 	QChain     string
 
-	Side          string
+	Side string
+
+	SpreadRate string
+	SpreadVol  string
+
 	ExchangeOrder *exchangeOrder
 	Broken        bool
 	BreakeReason  string
@@ -26,18 +30,22 @@ type UserOrder struct {
 
 func ToDTO(u *entity.UserOrder) *UserOrder {
 	return &UserOrder{
-		Id:            u.Id,
-		UserId:        u.UserId,
-		CreatedAt:     u.CreatedAt,
-		Status:        string(u.Status),
-		Deposite:      dToDto(u.Deposite),
-		Exchange:      u.Exchange,
-		Withdrawal:    OWToDTO(u.Withdrawal),
-		BC:            u.BC.CoinId,
-		BChain:        u.BC.ChainId,
-		QC:            u.QC.CoinId,
-		QChain:        u.QC.ChainId,
-		Side:          u.Side,
+		Id:         u.Id,
+		UserId:     u.UserId,
+		CreatedAt:  u.CreatedAt,
+		Status:     string(u.Status),
+		Deposite:   dToDto(u.Deposite),
+		Exchange:   u.Exchange,
+		Withdrawal: OWToDTO(u.Withdrawal),
+		BC:         u.BC.CoinId,
+		BChain:     u.BC.ChainId,
+		QC:         u.QC.CoinId,
+		QChain:     u.QC.ChainId,
+		Side:       u.Side,
+
+		SpreadRate: u.SpreadRate,
+		SpreadVol:  u.SpreadVol,
+
 		ExchangeOrder: eoToDto(u.ExchangeOrder),
 		Broken:        u.Broken,
 		BreakeReason:  u.BreakReason,
@@ -62,7 +70,12 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 			CoinId:  u.QC,
 			ChainId: u.QChain,
 		},
-		Side:          u.Side,
+
+		Side: u.Side,
+
+		SpreadRate: u.SpreadRate,
+		SpreadVol:  u.SpreadVol,
+
 		ExchangeOrder: u.ExchangeOrder.ToEntity(),
 		Broken:        u.Broken,
 		BreakReason:   u.BreakeReason,

@@ -85,6 +85,13 @@ func (o *Router) adminRoutes() {
 			})
 			es.POST("/add_account/:id", func(ctx *gin.Context) { o.srv.AddExchange(newContext(ctx)) })
 		}
+
+		dep := a.Group("/deposit")
+		{
+			dep.POST("/set_vol", func(ctx *gin.Context) {
+				o.srv.SetDepositVol(newContext(ctx))
+			})
+		}
 	}
 
 }

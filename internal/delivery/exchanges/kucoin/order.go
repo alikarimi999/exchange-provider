@@ -8,33 +8,20 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder, sr entity.PairConfigs) (*kucoin.CreateOrderModel, error) {
+func (k *kucoinExchange) createOrderRequest(bc, qc *entity.Coin, side, size, funds string) (*kucoin.CreateOrderModel, error) {
 
-	p, err := k.exchangePairs.get(o.BC, o.QC)
+	p, err := k.exchangePairs.get(bc, qc)
 	if err != nil {
 		return nil, err
 	}
 
-	if o.Side == "buy" {
-		vol, rate, err := sr.ApplySpread(o.BC, o.QC, o.Size)
-		if err != nil {
-			return nil, err
-		}
-		o.SpreadRate = rate
-		return &kucoin.CreateOrderModel{
-			Symbol: p.Symbol,
-			Side:   o.Side,
-			Type:   "market",
-			Size:   trim(vol, p.Bc.orderPrecision),
-		}, nil
-	} else {
-		return &kucoin.CreateOrderModel{
-			Symbol: p.Symbol,
-			Side:   o.Side,
-			Type:   "market",
-			Funds:  trim(o.Funds, p.Qc.orderPrecision),
-		}, nil
-	}
+	return &kucoin.CreateOrderModel{
+		Symbol: p.Symbol,
+		Side:   side,
+		Type:   "market",
+		Size:   trim(size, p.Bc.orderPrecision),
+		Funds:  trim(funds, p.Qc.orderPrecision),
+	}, nil
 
 }
 

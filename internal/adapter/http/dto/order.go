@@ -17,6 +17,7 @@ type UserOrder struct {
 	FilledPrice string `json:"filled_price"`
 	FeeCurrency string `json:"fee_currency"`
 	Fee         string `json:"fee"`
+	TransferFee string `json:"transfer_fee"`
 
 	DepositAddress    string `json:"deposit_address"`
 	WithdrawalAddress string `json:"withdrawal_address"`
@@ -33,6 +34,7 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 
 		Status:            string(de.Status),
 		Fee:               de.Withdrawal.Fee,
+		TransferFee:       de.Withdrawal.ExchangeFee,
 		DepositAddress:    de.Deposite.Address,
 		WithdrawalAddress: de.Withdrawal.Address,
 		WithdrawalTxId:    de.Withdrawal.TxId,
@@ -49,10 +51,10 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 		d.FeeCurrency = de.QC.String()
 	}
 
-	if d.FinalSize != "" && d.FinalFunds != "" {
+	if de.Withdrawal.Total != "" && de.Deposite.Volume != "" {
 
-		s, _ := strconv.ParseFloat(d.FinalSize, 64)
-		f, _ := strconv.ParseFloat(d.FinalFunds, 64)
+		s, _ := strconv.ParseFloat(de.Withdrawal.Total, 64)
+		f, _ := strconv.ParseFloat(de.Deposite.Volume, 64)
 		d.FilledPrice = strconv.FormatFloat(f/s, 'f', 8, 64)
 	}
 
@@ -60,13 +62,18 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 }
 
 type AdminUserOrder struct {
-	Id        int64  `json:"order_id"`
-	UserId    int64  `json:"user_id"`
-	Status    string `json:"status"`
-	BaseCoin  string `json:"base_coin"`
-	QuoteCoin string `json:"quote_coin"`
-	Side      string `json:"side"`
-	Exchange  string `json:"exchange"`
+	Id         int64  `json:"order_id"`
+	UserId     int64  `json:"user_id"`
+	Status     string `json:"status"`
+	BaseCoin   string `json:"base_coin"`
+	QuoteCoin  string `json:"quote_coin"`
+	Side       string `json:"side"`
+	Size       string `json:"size"`
+	Funds      string `json:"funds"`
+	SpreadRate string `json:"spread_rate"`
+	SpreadVol  string `json:"spread_vol"`
+
+	Exchange string `json:"exchange"`
 
 	Deposit       *Deposit       `json:"deposit"`
 	ExchangeOrder *ExchangeOrder `json:"exchange_order"`
@@ -78,16 +85,20 @@ type AdminUserOrder struct {
 
 func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 	return &AdminUserOrder{
-		Id:            o.Id,
-		UserId:        o.UserId,
-		CreatedAt:     o.CreatedAt,
-		Status:        string(o.Status),
-		Deposit:       DFromEntity(o.Deposite),
-		Exchange:      o.Exchange,
-		Withdrawal:    WFromEntity(o.Withdrawal),
-		BaseCoin:      o.BC.String(),
-		QuoteCoin:     o.QC.String(),
-		Side:          o.Side,
+		Id:         o.Id,
+		UserId:     o.UserId,
+		CreatedAt:  o.CreatedAt,
+		Status:     string(o.Status),
+		Deposit:    DFromEntity(o.Deposite),
+		Exchange:   o.Exchange,
+		Withdrawal: WFromEntity(o.Withdrawal),
+		BaseCoin:   o.BC.String(),
+		QuoteCoin:  o.QC.String(),
+		Side:       o.Side,
+
+		SpreadRate: o.SpreadRate,
+		SpreadVol:  o.SpreadVol,
+
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
 		Broken:        o.Broken,
 		BreakReason:   o.BreakReason,

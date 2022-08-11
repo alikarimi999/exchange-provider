@@ -6,7 +6,7 @@ type PairConfigs interface {
 	GetPairSpread(bc, qc *Coin) string
 	ChangePairSpread(bc, qc *Coin, s float64) error
 	GetAllPairsSpread() map[string]float64
-	ApplySpread(bc, qc *Coin, size string) (remainder, rate string, err error)
+	ApplySpread(bc, qc *Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error)
 
 	PairMinDeposit(bc, qc *Coin) (minBc, minQc float64)
 

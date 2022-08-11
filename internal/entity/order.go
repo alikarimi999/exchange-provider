@@ -25,16 +25,16 @@ const (
 )
 
 type UserOrder struct {
-	Id            int64
-	UserId        int64
-	CreatedAt     int64
-	Status        OrderStatus
-	Exchange      string
-	BC            *Coin
-	QC            *Coin
-	Side          string // buy or sell
-	Size          string
-	Funds         string
+	Id        int64
+	UserId    int64
+	CreatedAt int64
+	Status    OrderStatus
+	Exchange  string
+	BC        *Coin
+	QC        *Coin
+	Side      string // buy or sell
+
+	SpreadVol     string
 	SpreadRate    string
 	Deposite      *Deposit
 	ExchangeOrder *ExchangeOrder
