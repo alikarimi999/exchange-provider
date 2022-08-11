@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
+	"order_service/pkg/logger"
 	"strconv"
 	"sync"
 
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
+)
+
+const (
+	dsr = "default_spread_rate"
 )
 
 type PairSpread struct {
@@ -16,26 +22,30 @@ type PairSpread struct {
 }
 
 type PairConfigs struct {
+	v *viper.Viper
+
 	sMux          *sync.Mutex
 	spreadCache   map[string]float64
 	defaultSpread float64
 	db            *gorm.DB
 
-	dMux             *sync.Mutex
-	minDpositCache   map[string]*PairDepositLimit
-	defaultMinDposit float64
+	dMux           *sync.Mutex
+	minDpositCache map[string]*PairDepositLimit
+
+	l logger.Logger
 }
 
-func NewPairConfigs(db *gorm.DB) (entity.PairConfigs, error) {
+func NewPairConfigs(db *gorm.DB, v *viper.Viper, l logger.Logger) (entity.PairConfigs, error) {
 	s := &PairConfigs{
+		v:             v,
+		l:             l,
 		sMux:          &sync.Mutex{},
 		spreadCache:   make(map[string]float64),
 		db:            db,
 		defaultSpread: 0.00,
 
-		dMux:             &sync.Mutex{},
-		minDpositCache:   make(map[string]*PairDepositLimit),
-		defaultMinDposit: 0.00,
+		dMux:           &sync.Mutex{},
+		minDpositCache: make(map[string]*PairDepositLimit),
 	}
 
 	if err := s.retriveSpreads(); err != nil {
@@ -58,6 +68,11 @@ func (r *PairConfigs) GetDefaultSpread() string {
 func (r *PairConfigs) ChangeDefaultSpread(s float64) error {
 	if s >= 1 {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("spread rate must be less than 1"))
+	}
+
+	r.v.Set(dsr, s)
+	if err := r.v.WriteConfig(); err != nil {
+		return errors.Wrap(errors.NewMesssage(err.Error()))
 	}
 
 	r.sMux.Lock()
@@ -111,12 +126,39 @@ func (r *PairConfigs) GetAllPairsSpread() map[string]float64 {
 }
 
 func (r *PairConfigs) retriveSpreads() error {
-	pairs := []PairSpread{}
-	if err := r.db.Find(&pairs).Error; err != nil {
+
+	if err := r.retriveDefaultSpread(); err != nil {
 		return err
 	}
+
+	pairs := []PairSpread{}
+	if err := r.db.Find(&pairs).Error; err != nil {
+		return errors.Wrap(errors.NewMesssage(err.Error()))
+	}
 	for _, p := range pairs {
+		if p.Spread <= 0 || p.Spread >= 1 {
+			p.Spread = r.defaultSpread
+		}
+
+		if err := r.db.Save(&p).Error; err != nil {
+			return errors.Wrap(errors.NewMesssage(err.Error()))
+		}
 		r.spreadCache[p.Pair] = p.Spread
+	}
+	return nil
+}
+
+func (r *PairConfigs) retriveDefaultSpread() error {
+	sr := r.v.GetFloat64(dsr)
+	if sr <= 0 || sr >= 1 {
+		r.v.Set(dsr, 0.001)
+		if err := r.v.WriteConfig(); err != nil {
+			return errors.Wrap(errors.NewMesssage(err.Error()))
+		}
+
+		r.defaultSpread = 0.001
+	} else {
+		r.defaultSpread = sr
 	}
 	return nil
 }

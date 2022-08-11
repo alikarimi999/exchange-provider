@@ -9,8 +9,7 @@ type PairConfigs interface {
 	ApplySpread(bc, qc *Coin, size string) (remainder, rate string, err error)
 
 	PairMinDeposit(bc, qc *Coin) (minBc, minQc float64)
-	ChangeDefaultMinDeposit(d float64) error
-	GetDefaultMinDeposit() float64
+
 	ChangeMinDeposit(bc, qc *Coin, minBc, minQc float64) error
 	AllMinDeposit() []*PairMinDeposit
 }

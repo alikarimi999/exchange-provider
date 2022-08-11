@@ -141,7 +141,7 @@ func (k *kucoinExchange) ping() error {
 
 	resp, err := k.api.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
-		return errors.Wrap(err, op)
+		return errors.Wrap(op, errors.NewMesssage(err.Error()))
 	}
 
 	return nil

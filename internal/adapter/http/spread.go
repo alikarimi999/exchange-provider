@@ -83,7 +83,7 @@ func (s *Server) ChangeDefaultSpread(ctx Context) {
 	}
 
 	if err := s.app.ChangeDefaultSpread(req.Spread); err != nil {
-		ctx.JSON(500, err.Error())
+		handlerErr(ctx, err)
 		return
 	}
 

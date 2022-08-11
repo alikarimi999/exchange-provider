@@ -45,36 +45,6 @@ func (s *Server) GetAllMinDeposit(ctx Context) {
 	ctx.JSON(200, s.app.AllMinDeposit())
 }
 
-func (s *Server) ChangeDefaultMinDeposit(ctx Context) {
-	req := struct {
-		D float64 `json:"default_min_deposit"`
-	}{}
-
-	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
-		return
-	}
-
-	if err := s.app.ChangeDefaultMinDeposit(req.D); err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	ctx.JSON(200, struct {
-		D float64 `json:"default_min_deposit"`
-	}{
-		D: req.D,
-	})
-}
-
-func (s *Server) GetDefaultMinDeposit(ctx Context) {
-	ctx.JSON(200, struct {
-		D float64 `json:"default_min_deposit"`
-	}{
-		D: s.app.GetDefaultMinDeposit(),
-	})
-}
-
 func (s *Server) ChangeMinDeposit(ctx Context) {
 	req := struct {
 		Bc    string  `json:"base_coin"`

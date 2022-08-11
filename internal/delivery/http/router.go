@@ -7,6 +7,8 @@ import (
 	"order_service/internal/app"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v9"
+	"github.com/spf13/viper"
 )
 
 type Router struct {
@@ -19,13 +21,13 @@ func (r *Router) Run(addr ...string) {
 	r.gin.Run(addr...)
 }
 
-func NewRouter(app *app.OrderUseCase, l logger.Logger) *Router {
+func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
 	router := &Router{
 		gin: engine,
-		srv: http.NewServer(app, l),
+		srv: http.NewServer(app, v, rc, l),
 		l:   l,
 	}
 	router.orderSrvGrpV0()

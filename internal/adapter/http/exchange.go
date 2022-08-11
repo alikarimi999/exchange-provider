@@ -18,17 +18,17 @@ func (s *Server) AddExchange(ctx Context) {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		ex, err := kucoin.NewKucoinExchange(cfg)
+		ex, err := kucoin.NewKucoinExchange(cfg, s.rc, s.v, s.l, false)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, err)
+			handlerErr(ctx, err)
 			return
 		}
 
 		if err := s.app.AddExchange(ex); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			handlerErr(ctx, err)
 			return
 		}
-		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s with accountId %s added!", id, ex.NID()))
+		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.NID()))
 		return
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))

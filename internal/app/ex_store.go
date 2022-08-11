@@ -25,6 +25,7 @@ type Exchange struct {
 type exStore struct {
 	mux *sync.Mutex
 
+	repo      ExchangeRepo
 	actives   map[string]*Exchange
 	deactives map[string]*Exchange
 	disableds map[string]*Exchange
@@ -34,10 +35,10 @@ type exStore struct {
 	l logger.Logger
 }
 
-func newExStore(l logger.Logger) *exStore {
+func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	return &exStore{
-		mux: &sync.Mutex{},
-
+		mux:       &sync.Mutex{},
+		repo:      exRepo,
 		actives:   make(map[string]*Exchange),
 		deactives: make(map[string]*Exchange),
 		disableds: make(map[string]*Exchange),
@@ -45,6 +46,7 @@ func newExStore(l logger.Logger) *exStore {
 		addCh: make(chan *Exchange),
 		l:     l,
 	}
+
 }
 
 func (a *exStore) activate(nid string) error {
@@ -58,19 +60,27 @@ func (a *exStore) activate(nid string) error {
 	case ExchangeStatusActive:
 		return errors.Wrap(errors.NewMesssage(fmt.Sprintf("exchange %s already active", nid)))
 	case ExchangeStatusDeactive:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusActive); err != nil {
+			return err
+		}
+
 		delete(a.deactives, nid)
 		ex.PreviousStatus = ex.CurrentStatus
 		ex.CurrentStatus = ExchangeStatusActive
 		ex.LastChangeTime = time.Now()
 
-		a.actives[nid] = ex
+		a.addCh <- ex
 		return nil
 	case ExchangeStatusDisable:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusActive); err != nil {
+			return err
+		}
+
 		delete(a.disableds, nid)
 		ex.PreviousStatus = ex.CurrentStatus
 		ex.CurrentStatus = ExchangeStatusActive
 		ex.LastChangeTime = time.Now()
-		a.add(ex)
+		a.addCh <- ex
 	}
 
 	return nil
@@ -86,6 +96,10 @@ func (a *exStore) deactivate(nid string) error {
 	defer a.mux.Unlock()
 	switch ex.CurrentStatus {
 	case ExchangeStatusActive:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusDeactive); err != nil {
+			return err
+		}
+
 		delete(a.actives, nid)
 		ex.PreviousStatus = ex.CurrentStatus
 		ex.CurrentStatus = ExchangeStatusDeactive
@@ -95,11 +109,15 @@ func (a *exStore) deactivate(nid string) error {
 	case ExchangeStatusDeactive:
 		return errors.Wrap(errors.NewMesssage(fmt.Sprintf("exchange %s already inactive", nid)))
 	case ExchangeStatusDisable:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusDeactive); err != nil {
+			return err
+		}
+
 		delete(a.disableds, nid)
 		ex.PreviousStatus = ex.CurrentStatus
 		ex.CurrentStatus = ExchangeStatusDeactive
 		ex.LastChangeTime = time.Now()
-		a.add(ex)
+		a.addCh <- ex
 	}
 
 	return nil
@@ -115,6 +133,10 @@ func (a *exStore) disable(nid string) error {
 	defer a.mux.Unlock()
 	switch ex.CurrentStatus {
 	case ExchangeStatusActive:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusDisable); err != nil {
+			return err
+		}
+
 		delete(a.actives, nid)
 		ex.Stop()
 		ex.PreviousStatus = ex.CurrentStatus
@@ -123,6 +145,10 @@ func (a *exStore) disable(nid string) error {
 		a.disableds[nid] = ex
 		return nil
 	case ExchangeStatusDeactive:
+		if err := a.repo.UpdateStatus(ex.Exchange, ExchangeStatusDisable); err != nil {
+			return err
+		}
+
 		delete(a.deactives, nid)
 		ex.Stop()
 		ex.PreviousStatus = ex.CurrentStatus
@@ -188,33 +214,57 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 	defer wg.Done()
 	a.l.Debug(agent, "started")
 
-	for {
-		select {
-		case ex := <-a.addCh:
+	go func() {
+		for {
+			select {
+			case ex := <-a.addCh:
 
-			a.mux.Lock()
-			switch ex.CurrentStatus {
-			case ExchangeStatusActive:
-				a.actives[ex.NID()] = ex
-			case ExchangeStatusDeactive:
-				a.deactives[ex.NID()] = ex
-			case ExchangeStatusDisable:
-				a.disableds[ex.NID()] = ex
-				continue
-			default:
-				continue
+				switch ex.CurrentStatus {
+				case ExchangeStatusActive:
+					a.mux.Lock()
+					a.actives[ex.NID()] = ex
+					a.mux.Unlock()
+					a.l.Info(agent, fmt.Sprintf("exchange %s activated", ex.NID()))
+				case ExchangeStatusDeactive:
+					a.mux.Lock()
+					a.deactives[ex.NID()] = ex
+					a.mux.Unlock()
+					a.l.Info(agent, fmt.Sprintf("exchange %s deactivated", ex.NID()))
+				case ExchangeStatusDisable:
+					a.mux.Lock()
+					a.disableds[ex.NID()] = ex
+					a.mux.Unlock()
+					a.l.Info(agent, fmt.Sprintf("exchange %s disabled", ex.NID()))
+					continue
+				default:
+					continue
+				}
+
+				wg.Add(1)
+				go ex.Run(wg)
+				a.l.Info(agent, fmt.Sprintf("exchange %s started", ex.NID()))
 			}
-
-			a.mux.Unlock()
-			wg.Add(1)
-			go ex.Run(wg)
-			a.l.Info(agent, fmt.Sprintf("exchange %s started", ex.NID()))
 		}
-	}
+	}()
+
+	go func() {
+		exs, err := a.repo.GetAll()
+		if err != nil {
+			a.l.Error(agent, err.Error())
+			return
+		}
+		for _, ex := range exs {
+			a.addCh <- ex
+		}
+	}()
 }
 
-func (a *exStore) add(ex *Exchange) {
+func (a *exStore) add(ex *Exchange) error {
+	if err := a.repo.Add(ex); err != nil {
+		return errors.Wrap(errors.NewMesssage(err.Error()))
+	}
 	a.addCh <- ex
+	return nil
 }
 
 func (a *exStore) exists(nid string) (bool, string) {
@@ -313,19 +363,31 @@ func (a *exStore) remove(nid string) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	_, ok := a.actives[nid]
+	ex, ok := a.actives[nid]
 	if ok {
+		if err := a.repo.Remove(ex.Exchange); err != nil {
+			return err
+		}
+
 		delete(a.actives, nid)
 		return nil
 	}
 
-	_, ok = a.deactives[nid]
+	ex, ok = a.deactives[nid]
 	if ok {
+		if err := a.repo.Remove(ex.Exchange); err != nil {
+			return err
+		}
+
 		delete(a.deactives, nid)
 		return nil
 	}
-	_, ok = a.disableds[nid]
+	ex, ok = a.disableds[nid]
 	if ok {
+		if err := a.repo.Remove(ex.Exchange); err != nil {
+			return err
+		}
+
 		delete(a.disableds, nid)
 		return nil
 	}

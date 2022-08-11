@@ -1,7 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"order_service/internal/app"
 	"order_service/internal/delivery/event"
@@ -14,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/go-redis/redis/v9"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -28,6 +33,23 @@ func production() {
 	agent := "main"
 
 	l := logger.NewLogger("./order_service.json", true)
+
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("json")
+	v.AddConfigPath("./")
+	if err := v.ReadInConfig(); err != nil {
+		// create config file if not exists
+		if err := v.WriteConfigAs("config.json"); err != nil {
+			l.Error(agent, err.Error())
+			os.Exit(1)
+		}
+	}
+
+	prv, err := getPrivateKey(v)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	rc := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR")})
@@ -50,6 +72,10 @@ func production() {
 		DepositeServiceURL: os.Getenv("DEPOSITE_SERVICE_URL"),
 		FeeServiceURL:      "http://localhost:8083/fee",
 		DB:                 db,
+		V:                  v,
+		L:                  l,
+		RC:                 rc,
+		PrvKey:             prv,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
@@ -68,7 +94,7 @@ func production() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -84,7 +110,7 @@ func production() {
 	wg.Add(1)
 	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
 
-	http.NewRouter(ou, l).Run(":8000")
+	http.NewRouter(ou, v, rc, l).Run(":8000")
 
 	wg.Wait()
 
@@ -95,6 +121,22 @@ func test() {
 	agent := "main"
 
 	l := logger.NewLogger("./order_service.json", true)
+
+	v := viper.New()
+	v.SetConfigName("config")
+	v.SetConfigType("json")
+	v.AddConfigPath("./")
+	if err := v.ReadInConfig(); err != nil {
+		// create config file if not exists
+		if err := v.WriteConfigAs("config.json"); err != nil {
+			l.Fatal(agent, err.Error())
+		}
+	}
+
+	prv, err := getPrivateKey(v)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	rc := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_ADDR")})
@@ -117,6 +159,10 @@ func test() {
 		DepositeServiceURL: "http://localhost:8080",
 		FeeServiceURL:      "http://localhost:8083/fee",
 		DB:                 db,
+		V:                  v,
+		L:                  l,
+		RC:                 rc,
+		PrvKey:             prv,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
@@ -135,7 +181,7 @@ func test() {
 	// exs := make(map[string]entity.Exchange)
 	// exs["kucoin"] = kucoin
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -152,8 +198,34 @@ func test() {
 	wg.Add(1)
 	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
 
-	http.NewRouter(ou, l).Run(":8081")
+	http.NewRouter(ou, v, rc, l).Run(":8081")
 
 	wg.Wait()
 
+}
+
+func getPrivateKey(v *viper.Viper) (*rsa.PrivateKey, error) {
+	prf := v.GetString("private_key_file")
+	if prf == "" {
+		prf = "./private_key.pem"
+	}
+	privateKeyFile, err := os.Open(prf)
+	if err != nil {
+		return nil, err
+	}
+
+	pemfileinfo, _ := privateKeyFile.Stat()
+	var size int64 = pemfileinfo.Size()
+	pembytes := make([]byte, size)
+	buffer := bufio.NewReader(privateKeyFile)
+	_, err = buffer.Read(pembytes)
+	data, _ := pem.Decode([]byte(pembytes))
+	privateKeyFile.Close()
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
 }

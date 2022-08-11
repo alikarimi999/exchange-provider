@@ -26,7 +26,7 @@ type OrderUseCase struct {
 	l   logger.Logger
 }
 
-func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, sr entity.PairConfigs, oc entity.OrderCache,
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo, sr entity.PairConfigs, oc entity.OrderCache,
 	depo entity.DepositeService, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
@@ -35,10 +35,9 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, sr entity.PairConf
 		rc:    rc,
 		ds:    depo,
 		sr:    sr,
-		exs:   newExStore(l),
+		exs:   newExStore(l, exRepo),
 		fs:    fee,
-
-		l: l,
+		l:     l,
 	}
 
 	o.oh = newOrderHandler(o, repo, oc, sr, oc, fee, o.exs, l)

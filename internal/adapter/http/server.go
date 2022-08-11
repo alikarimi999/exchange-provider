@@ -9,17 +9,24 @@ import (
 	"order_service/pkg/logger"
 
 	"order_service/pkg/errors"
+
+	"github.com/go-redis/redis/v9"
+	"github.com/spf13/viper"
 )
 
 type Server struct {
 	app *app.OrderUseCase
 	l   logger.Logger
+	v   *viper.Viper
+	rc  *redis.Client
 }
 
-func NewServer(app *app.OrderUseCase, l logger.Logger) *Server {
+func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
 	return &Server{
 		app: app,
 		l:   l,
+		v:   v,
+		rc:  rc,
 	}
 }
 

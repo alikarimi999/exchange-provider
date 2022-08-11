@@ -22,17 +22,17 @@ func (k *kucoinExchange) createOrderRequest(o *entity.UserOrder, sr entity.PairC
 		}
 		o.SpreadRate = rate
 		return &kucoin.CreateOrderModel{
-			Symbol: p.symbol,
+			Symbol: p.Symbol,
 			Side:   o.Side,
 			Type:   "market",
-			Size:   trim(vol, p.bc.orderPrecision),
+			Size:   trim(vol, p.Bc.orderPrecision),
 		}, nil
 	} else {
 		return &kucoin.CreateOrderModel{
-			Symbol: p.symbol,
+			Symbol: p.Symbol,
 			Side:   o.Side,
 			Type:   "market",
-			Funds:  trim(o.Funds, p.qc.orderPrecision),
+			Funds:  trim(o.Funds, p.Qc.orderPrecision),
 		}, nil
 	}
 

@@ -8,23 +8,18 @@ import (
 	"time"
 )
 
-func (o *OrderUseCase) AddExchange(exc entity.Exchange) error {
+func (o *OrderUseCase) AddExchange(ex entity.Exchange) error {
 	const op = errors.Op("OrderUseCase.AddExchange")
-	exists, status := o.exs.exists(exc.NID())
+	exists, status := o.exs.exists(ex.NID())
 	if !exists {
-		ex, err := exc.Setup(o.rc, o.l)
-		if err != nil {
-			return errors.Wrap(op, errors.New(fmt.Sprintf("exchange %s (err: %s )", exc.NID(), err.Error())))
-		}
 
-		o.exs.add(&Exchange{
+		return o.exs.add(&Exchange{
 			Exchange:       ex,
 			CurrentStatus:  ExchangeStatusActive,
 			LastChangeTime: time.Now(),
 		})
-		return nil
 	}
-	return errors.Wrap(errors.ErrBadRequest, errors.New(fmt.Sprintf("exchange %s with accountId %s already exists and it's status is %s", exc.Name(), exc.AccountId(), status)))
+	return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("exchange %s  already exists and it's status is %s", ex.NID(), status)))
 
 }
 

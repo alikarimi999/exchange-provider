@@ -30,14 +30,6 @@ func (o *Router) adminRoutes() {
 				o.srv.GetAllMinDeposit(newContext(ctx))
 			})
 
-			ps.POST("/change_default_min", func(ctx *gin.Context) {
-				o.srv.ChangeDefaultMinDeposit(newContext(ctx))
-			})
-
-			ps.GET("/get_default_min", func(ctx *gin.Context) {
-				o.srv.GetDefaultMinDeposit(newContext(ctx))
-			})
-
 			ps.DELETE("", func(ctx *gin.Context) {
 				o.srv.RemovePair(newContext(ctx))
 			})

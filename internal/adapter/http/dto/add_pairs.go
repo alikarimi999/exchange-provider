@@ -41,32 +41,32 @@ type AddPairsRequest struct {
 func (r *AddPairsRequest) Validate() error {
 	for _, p := range r.Pairs {
 		if p.BC.CoinId == "" || p.BC.ChainId == "" {
-			return errors.Wrap(errors.ErrBadRequest, "base coin must have id")
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin must have id"))
 		}
 		if p.QC.CoinId == "" || p.QC.ChainId == "" {
-			return errors.Wrap(errors.ErrBadRequest, "quote coin must have id")
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin must have id"))
 		}
 
-		if p.SpreadRate >= 1 {
-			return errors.Wrap(errors.ErrBadRequest, "spread rate must be less than 1")
+		if p.SpreadRate <= 0 || p.SpreadRate >= 1 {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("spread rate must be between 0 and 1"))
 		}
 
 		if p.BC.MinDeposit == 0 {
-			return errors.Wrap(errors.ErrBadRequest, "base coin must have min deposit")
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin must have min deposit"))
 		}
 		if p.QC.MinDeposit == 0 {
-			return errors.Wrap(errors.ErrBadRequest, "quote coin must have min deposit")
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin must have min deposit"))
 		}
 
 		if len(p.Exchanges) == 0 {
-			return errors.Wrap(errors.ErrBadRequest, "at least one exchange must be set")
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("at least one exchange must be set"))
 		}
 		for _, conf := range p.Exchanges {
 			if conf.BC.WithdrawalPrecision == 0 {
-				return errors.Wrap(errors.ErrBadRequest, "base coin withdrawal precision must be set")
+				return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin withdrawal precision must be set"))
 			}
 			if conf.QC.WithdrawalPrecision == 0 {
-				return errors.Wrap(errors.ErrBadRequest, "quote coin withdrawal precision must be set")
+				return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin withdrawal precision must be set"))
 			}
 
 		}

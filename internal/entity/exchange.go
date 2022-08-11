@@ -1,10 +1,7 @@
 package entity
 
 import (
-	"order_service/pkg/logger"
 	"sync"
-
-	"github.com/go-redis/redis/v9"
 )
 
 type ExOrderStatus string
@@ -48,7 +45,6 @@ type ExchangeManager interface {
 	Stop()
 	StartAgain() (*StartAgainResult, error)
 	ChangeAccount(cfgi interface{}) error
-	Setup(rc *redis.Client, l logger.Logger) (Exchange, error)
 
 	Run(wg *sync.WaitGroup)
 	Configs() interface{}

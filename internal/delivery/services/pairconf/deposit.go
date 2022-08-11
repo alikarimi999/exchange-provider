@@ -18,7 +18,7 @@ func (c *PairConfigs) PairMinDeposit(bc, qc *entity.Coin) (minBc, minQc float64)
 	if v, ok := c.minDpositCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]; ok {
 		return v.MinBc, v.MinQc
 	}
-	return c.defaultMinDposit, c.defaultMinDposit
+	return 0, 0
 }
 
 func (c *PairConfigs) ChangeMinDeposit(bc, qc *entity.Coin, minBc, minQc float64) error {
@@ -39,19 +39,6 @@ func (c *PairConfigs) ChangeMinDeposit(bc, qc *entity.Coin, minBc, minQc float64
 	return nil
 }
 
-func (r *PairConfigs) GetDefaultMinDeposit() float64 {
-	r.dMux.Lock()
-	defer r.dMux.Unlock()
-	return r.defaultMinDposit
-}
-
-func (r *PairConfigs) ChangeDefaultMinDeposit(d float64) error {
-	r.dMux.Lock()
-	defer r.dMux.Unlock()
-	r.defaultMinDposit = d
-	return nil
-}
-
 func (r *PairConfigs) AllMinDeposit() []*entity.PairMinDeposit {
 	r.dMux.Lock()
 	defer r.dMux.Unlock()
@@ -68,12 +55,12 @@ func (r *PairConfigs) AllMinDeposit() []*entity.PairMinDeposit {
 }
 
 func (r *PairConfigs) retriveMinDeposits() error {
-	var pairs []*PairSpread
+	var pairs []*PairDepositLimit
 	if err := r.db.Find(&pairs).Error; err != nil {
 		return err
 	}
 	for _, v := range pairs {
-		r.spreadCache[v.Pair] = v.Spread
+		r.minDpositCache[v.Pair] = v
 	}
 	return nil
 }

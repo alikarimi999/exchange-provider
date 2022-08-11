@@ -64,7 +64,6 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 		}
 
 	case ExchangeStatusDeactive:
-
 		switch ex.CurrentStatus {
 		case ExchangeStatusActive:
 			if err := o.exs.deactivate(nid); err != nil {
