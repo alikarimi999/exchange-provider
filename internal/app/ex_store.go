@@ -210,7 +210,7 @@ func (a *exStore) getDeactives() []*Exchange {
 }
 
 func (a *exStore) start(wg *sync.WaitGroup) {
-	const agent = "Exchange-Sotore.start"
+	const agent = "exStore.start"
 	defer wg.Done()
 	a.l.Debug(agent, "started")
 
@@ -223,11 +223,19 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 				case ExchangeStatusActive:
 					a.mux.Lock()
 					a.actives[ex.NID()] = ex
+					if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
+						wg.Add(1)
+						go ex.Run(wg)
+					}
 					a.mux.Unlock()
 					a.l.Info(agent, fmt.Sprintf("exchange %s activated", ex.NID()))
 				case ExchangeStatusDeactive:
 					a.mux.Lock()
 					a.deactives[ex.NID()] = ex
+					if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
+						wg.Add(1)
+						go ex.Run(wg)
+					}
 					a.mux.Unlock()
 					a.l.Info(agent, fmt.Sprintf("exchange %s deactivated", ex.NID()))
 				case ExchangeStatusDisable:
@@ -240,9 +248,6 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 					continue
 				}
 
-				wg.Add(1)
-				go ex.Run(wg)
-				a.l.Info(agent, fmt.Sprintf("exchange %s started", ex.NID()))
 			}
 		}
 	}()

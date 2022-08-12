@@ -14,13 +14,15 @@ import (
 )
 
 type withdrawalCache struct {
+	k   *kucoinExchange
 	r   *redis.Client
 	ctx context.Context
 	l   logger.Logger
 }
 
-func newWithdrawalCache(r *redis.Client, l logger.Logger) *withdrawalCache {
+func newWithdrawalCache(k *kucoinExchange, r *redis.Client, l logger.Logger) *withdrawalCache {
 	return &withdrawalCache{
+		k:   k,
 		r:   r,
 		ctx: context.Background(),
 		l:   l,
@@ -28,8 +30,7 @@ func newWithdrawalCache(r *redis.Client, l logger.Logger) *withdrawalCache {
 }
 
 func (c *withdrawalCache) recordWithdrawal(w *dto.Withdrawal) error {
-	const op = errors.Op("Kucoin.WithdrawalCache.recordWithdrawal")
-
+	op := errors.Op(fmt.Sprintf("%s.WithdrawalCache.recordWithdrawal", c.k.NID()))
 	key := fmt.Sprintf("kucoin:withdrawals:%s", w.Id)
 	if err := c.r.Set(c.ctx, key, w, time.Duration(24*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
@@ -38,7 +39,7 @@ func (c *withdrawalCache) recordWithdrawal(w *dto.Withdrawal) error {
 }
 
 func (c *withdrawalCache) getWithdrawal(id string) (*dto.Withdrawal, error) {
-	const op = errors.Op("Kucoin.WithdrawalCache.getWithdrawal")
+	op := errors.Op(fmt.Sprintf("%s.WithdrawalCache.getWithdrawal", c.k.NID()))
 
 	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
 	v, err := c.r.Get(c.ctx, key).Result()
@@ -60,7 +61,7 @@ func (c *withdrawalCache) getWithdrawal(id string) (*dto.Withdrawal, error) {
 }
 
 func (c *withdrawalCache) delWithdrawal(id string) error {
-	const op = errors.Op("Kucoin.WithdrawalCache.delWithdrawal")
+	op := errors.Op(fmt.Sprintf("%s.WithdrawalCache.delWithdrawal", c.k.NID()))
 
 	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
 	if err := c.r.Del(c.ctx, key).Err(); err != nil {
@@ -70,7 +71,7 @@ func (c *withdrawalCache) delWithdrawal(id string) error {
 }
 
 func (c *withdrawalCache) proccessedWithdrawal(id string) error {
-	const op = errors.Op("Kucoin.WithdrawalCache.proccessedWithdrawal")
+	op := errors.Op(fmt.Sprintf("%s.WithdrawalCache.proccessedWithdrawal", c.k.NID()))
 
 	key := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
 	if err := c.r.Set(c.ctx, key, "", time.Duration(2*time.Hour)).Err(); err != nil {
@@ -81,7 +82,7 @@ func (c *withdrawalCache) proccessedWithdrawal(id string) error {
 
 // check if withdrawal is processed
 func (c *withdrawalCache) isAddable(id string) (bool, error) {
-	const op = errors.Op("Kucoin.WithdrawalCache.isWithdrawalProcessed")
+	op := errors.Op(fmt.Sprintf("%s.WithdrawalCache.isAddable", c.k.NID()))
 
 	key1 := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
 	key2 := fmt.Sprintf("kucoin:withdrawals:%s", id)

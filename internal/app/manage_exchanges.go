@@ -185,7 +185,7 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 }
 
 func (o *OrderUseCase) RemoveExchange(nid string, force bool) error {
-	op := "DepositeUsecase.RemoveExchange"
+	op := "OrderUseCase.RemoveExchange"
 	ex, err := o.exs.get(nid)
 	if err != nil {
 		return errors.Wrap(op, err)

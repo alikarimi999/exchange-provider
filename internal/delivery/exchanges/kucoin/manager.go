@@ -8,7 +8,7 @@ import (
 )
 
 func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult, error) {
-
+	agent := fmt.Sprintf("%s.AddPairs", k.NID())
 	res := &entity.AddPairsResult{}
 
 	ps := []*pair{}
@@ -46,10 +46,12 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 
 		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.NID(), pa.Id), pa)
 		if err := k.v.WriteConfig(); err != nil {
+			k.l.Error(agent, err.Error())
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p,
 				Err:  err,
 			})
+			continue
 		}
 		ps = append(ps, pa)
 		res.Added = append(res.Added, p)
@@ -119,7 +121,7 @@ func (k *kucoinExchange) Support(bc, qc *entity.Coin) bool {
 }
 
 func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
-	const op = errors.Op("Kucoin-Exchange.StartAgain")
+	op := errors.Op(fmt.Sprintf("%s.StartAgain", k.NID()))
 	k.stopCh = make(chan struct{})
 
 	k.l.Debug(string(op), "starting again")
@@ -188,9 +190,9 @@ func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
 	k.exchangePairs.add(newPs)
 	k.withdrawalCoins.add(newCs)
 
-	k.l.Debug(string(op), fmt.Sprintf("%d pairs were added", len(newPs)))
-	k.l.Debug(string(op), fmt.Sprintf("%d pairs were removed", len(ps)-len(newPs)))
-	k.l.Debug(string(op), fmt.Sprintf("exchange %s started again successfully", k.NID()))
+	k.l.Info(string(op), fmt.Sprintf("%d pairs were added", len(newPs)))
+	k.l.Info(string(op), fmt.Sprintf("%d pairs were removed", len(ps)-len(newPs)))
+	k.l.Info(string(op), fmt.Sprintf("exchange %s started again successfully", k.NID()))
 
 	return res, nil
 }

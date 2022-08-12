@@ -1,6 +1,7 @@
 package kucoin
 
 import (
+	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
@@ -18,21 +19,23 @@ type wtFeed struct {
 }
 
 type withdrawalTracker struct {
+	k      *kucoinExchange
 	feedCh chan *wtFeed
 	l      logger.Logger
 	c      *withdrawalCache
 }
 
-func newWithdrawalTracker(r *redis.Client, l logger.Logger) *withdrawalTracker {
+func newWithdrawalTracker(k *kucoinExchange, r *redis.Client, l logger.Logger) *withdrawalTracker {
 	return &withdrawalTracker{
+		k:      k,
 		feedCh: make(chan *wtFeed, 1024),
 		l:      l,
-		c:      newWithdrawalCache(r, l),
+		c:      newWithdrawalCache(k, r, l),
 	}
 }
 
 func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	const op = errors.Op("Kucoin.WithdrawalTracker.run")
+	op := errors.Op(fmt.Sprintf("%s.withdrawalTracker.run", t.k.NID()))
 	t.l.Debug(string(op), "started")
 
 	defer wg.Done()

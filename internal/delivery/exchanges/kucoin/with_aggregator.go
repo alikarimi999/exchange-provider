@@ -15,6 +15,7 @@ import (
 )
 
 type withdrawalAggregator struct {
+	k          *kucoinExchange
 	api        *kucoin.ApiService
 	l          logger.Logger
 	c          *withdrawalCache
@@ -23,11 +24,12 @@ type withdrawalAggregator struct {
 	windowSize time.Duration
 }
 
-func newWithdrawalAggregator(api *kucoin.ApiService, l logger.Logger, r *redis.Client) *withdrawalAggregator {
+func newWithdrawalAggregator(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger, r *redis.Client) *withdrawalAggregator {
 	return &withdrawalAggregator{
+		k:          k,
 		api:        api,
 		l:          l,
-		c:          newWithdrawalCache(r, l),
+		c:          newWithdrawalCache(k, r, l),
 		params:     make(map[string]string),
 		ticker:     time.NewTicker(time.Minute * 2),
 		windowSize: time.Hour * 1,
@@ -35,7 +37,7 @@ func newWithdrawalAggregator(api *kucoin.ApiService, l logger.Logger, r *redis.C
 }
 
 func (wa *withdrawalAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	const op = errors.Op("Kucoin.WithdrawalAggregator.run")
+	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.run", wa.k.NID()))
 	wa.l.Debug(string(op), "started")
 
 	defer wg.Done()
@@ -88,7 +90,7 @@ start:
 }
 
 func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) ([]*dto.Withdrawal, error) {
-	const op = errors.Op("Kucoin.WithdrawalAggregator.aggregate")
+	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.aggregate", wa.k.NID()))
 	wa.params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
 	wa.params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
 	wa.params["status"] = status

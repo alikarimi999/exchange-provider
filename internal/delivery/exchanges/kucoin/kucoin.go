@@ -85,15 +85,14 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 	}
 	k.l.Debug(string(op), fmt.Sprintf("ping was successful"))
 
-	k.ot = newOrderTracker(k.api, l)
-	k.wt = newWithdrawalTracker(rc, l)
-	k.wa = newWithdrawalAggregator(k.api, l, rc)
-	k.pls = newPairList(k.api, l)
-
-	k.l.Debug(string(op), fmt.Sprintf("Kucoin-Exchange was created"))
-	k.l.Debug(string(op), fmt.Sprintf("retriving pairs from config file %s", k.v.ConfigFileUsed()))
+	k.ot = newOrderTracker(k, k.api, l)
+	k.wt = newWithdrawalTracker(k, rc, l)
+	k.wa = newWithdrawalAggregator(k, k.api, l, rc)
+	k.pls = newPairList(k, k.api, l)
 
 	if readConfig {
+		k.l.Debug(string(op), fmt.Sprintf("retriving pairs from config file %s", k.v.ConfigFileUsed()))
+
 		i := k.v.Get(fmt.Sprintf("%s.pairs", k.NID()))
 		if i != nil {
 			if err := k.pls.download(); err != nil {
@@ -161,9 +160,9 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 			k.exchangePairs.add(newPs)
 			k.withdrawalCoins.add(newCs)
 
-			k.l.Debug(string(op), fmt.Sprintf("%d pairs were added", len(newPs)))
-			k.l.Debug(string(op), fmt.Sprintf("%d pairs were removed", len(ps)-len(newPs)))
-			k.l.Debug(string(op), fmt.Sprintf("exchange %s started again successfully", k.NID()))
+			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
+			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
+			k.l.Info(string(op), fmt.Sprintf("exchange %s started again successfully", k.NID()))
 
 		}
 	}

@@ -44,7 +44,6 @@ type Exchange interface {
 type ExchangeManager interface {
 	Stop()
 	StartAgain() (*StartAgainResult, error)
-	ChangeAccount(cfgi interface{}) error
 
 	Run(wg *sync.WaitGroup)
 	Configs() interface{}

@@ -12,6 +12,7 @@ import (
 )
 
 type pairList struct {
+	k     *kucoinExchange
 	mux   *sync.Mutex
 	api   *kucoin.ApiService
 	pairs []*kucoin.SymbolModel
@@ -19,8 +20,9 @@ type pairList struct {
 	l logger.Logger
 }
 
-func newPairList(api *kucoin.ApiService, l logger.Logger) *pairList {
+func newPairList(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *pairList {
 	return &pairList{
+		k:     k,
 		mux:   &sync.Mutex{},
 		api:   api,
 		pairs: make([]*kucoin.SymbolModel, 0),
@@ -29,7 +31,7 @@ func newPairList(api *kucoin.ApiService, l logger.Logger) *pairList {
 }
 
 func (p *pairList) download() error {
-	const op = errors.Op("Kucoin-Exchange.PairList.Download")
+	op := errors.Op(fmt.Sprintf("%s.pairList.download", p.k.NID()))
 
 	res, err := p.api.Symbols("")
 	if err := handleSDKErr(err, res); err != nil {
@@ -50,8 +52,9 @@ func (p *pairList) download() error {
 }
 
 func (pl *pairList) support(p *entity.Pair) (bool, error) {
+	agent := fmt.Sprintf("%s.pairList.support", pl.k.NID())
 	if len(pl.pairs) == 0 {
-		pl.l.Debug("Kucoin-Exchange.PairList.Support", "pairs not downloaded yet")
+		pl.l.Debug(agent, "pairs not downloaded yet")
 		if err := pl.download(); err != nil {
 			return false, err
 		}

@@ -1,6 +1,7 @@
 package kucoin
 
 import (
+	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
@@ -17,13 +18,15 @@ type trackerFedd struct {
 }
 
 type orderTracker struct {
+	k      *kucoinExchange
 	feedCh chan *trackerFedd
 	api    *kucoin.ApiService
 	l      logger.Logger
 }
 
-func newOrderTracker(api *kucoin.ApiService, l logger.Logger) *orderTracker {
+func newOrderTracker(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *orderTracker {
 	return &orderTracker{
+		k:      k,
 		feedCh: make(chan *trackerFedd, 1024),
 		api:    api,
 		l:      l,
@@ -31,7 +34,7 @@ func newOrderTracker(api *kucoin.ApiService, l logger.Logger) *orderTracker {
 }
 
 func (t *orderTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	const op = errors.Op("Kucoin.orderTracker.run")
+	op := errors.Op(fmt.Sprintf("%s.orderTracker.run", t.k.NID()))
 
 	t.l.Debug(string(op), "started")
 

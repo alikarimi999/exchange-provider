@@ -26,7 +26,7 @@ func (k *kucoinExchange) AccountId() string {
 }
 
 func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string) (string, error) {
-	const op = errors.Op("Kucoin.Exchange")
+	op := errors.Op(fmt.Sprintf("%s.Exchange", k.NID()))
 
 	req, err := k.createOrderRequest(bc, qc, side, size, funds)
 	if err != nil {
@@ -70,7 +70,7 @@ func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string)
 }
 
 func (k *kucoinExchange) Withdrawal(coin *entity.Coin, addr, vol string) (string, error) {
-	const op = errors.Op("Kucoin.Withdrawal")
+	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.NID()))
 
 	opts, err := k.withdrawalOpts(coin)
 	if err != nil {
@@ -137,7 +137,7 @@ func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struc
 }
 
 func (k *kucoinExchange) ping() error {
-	const op = errors.Op("Kucoin.ping")
+	op := errors.Op(fmt.Sprintf("%s.ping", k.NID()))
 
 	resp, err := k.api.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
