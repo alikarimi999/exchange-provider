@@ -179,12 +179,13 @@ func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
 	w.Add(1)
 	go k.wa.run(w, k.stopCh)
 
-	k.l.Debug("Kucoin-Exchange.Run", "started")
+	k.l.Debug(fmt.Sprintf("%s.Run", k.NID()), "started")
 	w.Wait()
 }
 
 func (k *kucoinExchange) Stop() {
+	op := fmt.Sprintf("%s.Stop", k.NID())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
-	k.l.Debug("Kucoin-Exchange", "stopped")
+	k.l.Debug(string(op), "stopped")
 }
