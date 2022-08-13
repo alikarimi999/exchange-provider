@@ -51,11 +51,11 @@ func (r *AddPairsRequest) Validate() error {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("spread rate must be between 0 and 1"))
 		}
 
-		if p.BC.MinDeposit == 0 {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin must have min deposit"))
+		if p.BC.MinDeposit <= 0 {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin min deposit must be greater than 0"))
 		}
-		if p.QC.MinDeposit == 0 {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin must have min deposit"))
+		if p.QC.MinDeposit <= 0 {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin min deposit must be greater than 0"))
 		}
 
 		if len(p.Exchanges) == 0 {

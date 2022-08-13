@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Kucoin/kucoin-go-sdk"
+	"github.com/google/uuid"
 )
 
 func (k *kucoinExchange) createOrderRequest(bc, qc *entity.Coin, side, size, funds string) (*kucoin.CreateOrderModel, error) {
@@ -16,11 +17,12 @@ func (k *kucoinExchange) createOrderRequest(bc, qc *entity.Coin, side, size, fun
 	}
 
 	return &kucoin.CreateOrderModel{
-		Symbol: p.Symbol,
-		Side:   side,
-		Type:   "market",
-		Size:   trim(size, p.Bc.orderPrecision),
-		Funds:  trim(funds, p.Qc.orderPrecision),
+		ClientOid: uuid.New().String(),
+		Symbol:    p.Symbol,
+		Side:      side,
+		Type:      "market",
+		Size:      trim(size, p.Bc.orderPrecision),
+		Funds:     trim(funds, p.Qc.orderPrecision),
 	}, nil
 
 }

@@ -114,7 +114,7 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 		return nil, err
 	}
 
-	u.l.Debug(string(op), fmt.Sprintf("userId: '%d', orderId: '%d'. depositeId: '%d' created", o.UserId, o.Id, o.Deposite.Id))
+	u.l.Debug(string(op), fmt.Sprintf("order %s  created", o.String()))
 	return o, nil
 }
 
@@ -213,6 +213,8 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	default:
 		return errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("order side is %s not supported", o.Side)))
 	}
+
+	o.Status = entity.OrderStatusDepositeConfimred
 
 	if err := u.write(o); err != nil {
 		err = errors.Wrap(err, o.String(), op, errors.ErrInternal)

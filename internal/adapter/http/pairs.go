@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
 	"order_service/internal/entity"
@@ -91,7 +92,7 @@ func (s *Server) AddPairs(ctx Context) {
 func (s *Server) GetExchangesPairs(ctx Context) {
 	req := &dto.GetAllPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -100,7 +101,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 	}
 
 	var exs []*app.Exchange
-	if len(req.Names) == 1 && req.Names[0] == "*" {
+	if len(req.Es) == 0 || len(req.Es) == 1 && req.Es[0] == "*" {
 		for _, ex := range s.app.AllExchanges() {
 			if ex.CurrentStatus == app.ExchangeStatusDisable {
 				continue
@@ -108,11 +109,14 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 			exs = append(exs, ex)
 		}
 	} else {
-		for _, ex := range s.app.AllExchanges(req.Names...) {
-			fmt.Println(req.Names)
-			fmt.Println(ex.Name())
+		for _, nid := range req.Es {
+			ex, err := s.app.GetExchange(nid)
+			if err != nil {
+				resp.Messages = append(resp.Messages, err.Error())
+				continue
+			}
 			if ex.CurrentStatus == app.ExchangeStatusDisable {
-				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange '%s' is %s", ex.NID(), ex.CurrentStatus))
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange %s is %s", ex.NID(), ex.CurrentStatus))
 				continue
 			}
 			exs = append(exs, ex)

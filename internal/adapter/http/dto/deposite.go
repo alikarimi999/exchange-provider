@@ -7,9 +7,9 @@ import (
 
 type Deposit struct {
 	Id         int64  `json:"deposit_id"`
-	UserId     int64  `json:"user_id"`
-	OrderId    int64  `json:"order_id"`
-	Exchange   string `json:"exchange"`
+	UserId     int64  `json:"user_id,omitempty"`
+	OrderId    int64  `json:"order_id,omitempty"`
+	Exchange   string `json:"exchange,omitempty"`
 	Volume     string `json:"volume"`
 	Fullfilled bool   `json:"fullfilled"`
 	Address    string `json:"address"`
@@ -17,10 +17,8 @@ type Deposit struct {
 
 func DFromEntity(d *entity.Deposit) *Deposit {
 	return &Deposit{
-		Id:         d.Id,
-		UserId:     d.UserId,
-		OrderId:    d.OrderId,
-		Exchange:   d.Exchange,
+		Id: d.Id,
+
 		Volume:     d.Volume,
 		Fullfilled: d.Fullfilled,
 		Address:    d.Address,

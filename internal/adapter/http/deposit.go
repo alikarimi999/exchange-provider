@@ -51,6 +51,7 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 		MinBc float64 `json:"min_base_coin"`
 		Qc    string  `json:"quote_coin"`
 		MinQc float64 `json:"min_quote_coin"`
+		Msg   string  `json:"message,omitempty"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -58,6 +59,10 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 		return
 	}
 
+	if req.MinBc <= 0 || req.MinQc <= 0 {
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("min deposit must be greater than 0")))
+		return
+	}
 	bc, err := dto.ParseCoin(req.Bc)
 	if err != nil {
 		handlerErr(ctx, err)
@@ -75,7 +80,8 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 		return
 	}
 
-	ctx.JSON(200, fmt.Sprintf("min deposit for %s/%s changed to %f/%f", bc.String(), qc.String(), req.MinBc, req.MinQc))
+	req.Msg = fmt.Sprintf("change was successful")
+	ctx.JSON(200, req)
 }
 
 func (s *Server) SetDepositVol(ctx Context) {

@@ -5,9 +5,9 @@ import "order_service/internal/entity"
 type Withdrawal struct {
 	Id       uint64 `json:"id"`
 	WId      string `json:"exchange_withdrawal_id"`
-	OrderId  int64
-	UserId   int64
-	Exchange string
+	OrderId  int64  `json:"order_id,omitempty"`
+	UserId   int64  `json:"user_id,omitempty"`
+	Exchange string `json:"exchange,omitempty"`
 
 	Address string
 
@@ -25,13 +25,10 @@ type Withdrawal struct {
 
 func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 	return &Withdrawal{
-		Id:      w.Id,
-		WId:     w.WId,
-		OrderId: w.OrderId,
-		UserId:  w.UserId,
-		Address: w.Address,
+		Id:  w.Id,
+		WId: w.WId,
 
-		Exchange: w.Exchange,
+		Address: w.Address,
 
 		Total:       w.Total,
 		Fee:         w.Fee,

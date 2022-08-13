@@ -15,8 +15,8 @@ type UserOrder struct {
 	FinalSize   string `json:"final_size"`
 	FinalFunds  string `json:"final_funds"`
 	FilledPrice string `json:"filled_price"`
-	FeeCurrency string `json:"fee_currency"`
 	Fee         string `json:"fee"`
+	FeeCurrency string `json:"fee_currency"`
 	TransferFee string `json:"transfer_fee"`
 
 	DepositAddress    string `json:"deposit_address"`
@@ -53,23 +53,27 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 
 	if de.Withdrawal.Total != "" && de.Deposite.Volume != "" {
 
-		s, _ := strconv.ParseFloat(de.Withdrawal.Total, 64)
-		f, _ := strconv.ParseFloat(de.Deposite.Volume, 64)
-		d.FilledPrice = strconv.FormatFloat(f/s, 'f', 8, 64)
+		wt, _ := strconv.ParseFloat(de.Withdrawal.Total, 64)
+		dt, _ := strconv.ParseFloat(de.Deposite.Volume, 64)
+		if d.Side == "buy" {
+			d.FilledPrice = strconv.FormatFloat(dt/wt, 'f', 8, 64)
+		} else {
+			d.FilledPrice = strconv.FormatFloat(wt/dt, 'f', 8, 64)
+		}
+
 	}
 
 	return d
 }
 
 type AdminUserOrder struct {
-	Id         int64  `json:"order_id"`
-	UserId     int64  `json:"user_id"`
-	Status     string `json:"status"`
-	BaseCoin   string `json:"base_coin"`
-	QuoteCoin  string `json:"quote_coin"`
-	Side       string `json:"side"`
-	Size       string `json:"size"`
-	Funds      string `json:"funds"`
+	Id        int64  `json:"order_id"`
+	UserId    int64  `json:"user_id"`
+	Status    string `json:"status"`
+	BaseCoin  string `json:"base_coin"`
+	QuoteCoin string `json:"quote_coin"`
+	Side      string `json:"side"`
+
 	SpreadRate string `json:"spread_rate"`
 	SpreadVol  string `json:"spread_vol"`
 
@@ -143,10 +147,12 @@ func (r *CreateOrderRequest) Validate() error {
 }
 
 type CreateOrderResponse struct {
-	OrderId         int64  `json:"order_id"`
-	DepositeId      int64  `json:"deposit_id"`
-	DepositeAddress string `json:"deposit_address"`
-	AddressTag      string `json:"address_tag"`
+	OrderId         int64   `json:"order_id"`
+	DepositeId      int64   `json:"deposit_id"`
+	DC              string  `json:"deposit_coin"`
+	MinDeposit      float64 `json:"min_deposit"`
+	DepositeAddress string  `json:"deposit_address"`
+	AddressTag      string  `json:"address_tag"`
 }
 
 type GetOrderResponse struct {

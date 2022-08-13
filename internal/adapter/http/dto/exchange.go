@@ -8,7 +8,8 @@ type Account struct {
 }
 
 type GetAllExchangesResponse struct {
-	Exchanges map[string]*Account `json:"exchanges"`
+	Exchanges map[string]*Account `json:"exchanges,omitempty"`
+	Msgs      []string            `json:"messages"`
 }
 
 type ChangeExchangeStatusResponse struct {

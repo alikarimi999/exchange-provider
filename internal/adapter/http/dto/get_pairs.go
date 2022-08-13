@@ -8,7 +8,7 @@ import (
 )
 
 type GetAllPairsRequest struct {
-	Names []string `json:"exchange_names"`
+	Es []string `json:"exchanges"`
 }
 
 type Exchange struct {

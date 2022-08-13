@@ -39,7 +39,7 @@ func (s *Server) AddExchange(ctx Context) {
 
 func (s *Server) GetExchangeList(ctx Context) {
 	req := struct {
-		Es []string `json:"exchange_names"`
+		Es []string `json:"exchanges"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -47,15 +47,22 @@ func (s *Server) GetExchangeList(ctx Context) {
 		return
 	}
 
-	exs := []*app.Exchange{}
-	if len(req.Es) == 1 && req.Es[0] == "*" {
-		exs = s.app.AllExchanges()
-	} else {
-		exs = s.app.AllExchanges(req.Es...)
-	}
-
 	res := &dto.GetAllExchangesResponse{
 		Exchanges: make(map[string]*dto.Account),
+	}
+	exs := []*app.Exchange{}
+	if len(req.Es) == 0 || len(req.Es) == 1 && req.Es[0] == "*" {
+		exs = s.app.AllExchanges()
+	} else {
+		for _, e := range req.Es {
+			ex, err := s.app.GetExchange(e)
+			if err != nil {
+				res.Msgs = append(res.Msgs, err.Error())
+				continue
+			}
+
+			exs = append(exs, ex)
+		}
 	}
 
 	for _, ex := range exs {

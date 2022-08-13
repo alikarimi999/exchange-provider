@@ -62,9 +62,21 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
+	var dc string
+	var minD float64
+	if o.Side == "buy" {
+		dc = o.QC.String()
+		_, minD = s.app.GetMinPairDeposit(o.BC, o.QC)
+	} else {
+		dc = o.BC.String()
+		minD, _ = s.app.GetMinPairDeposit(o.BC, o.QC)
+	}
+
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
 		OrderId:         o.Id,
 		DepositeId:      o.Deposite.Id,
+		DC:              dc,
+		MinDeposit:      minD,
 		DepositeAddress: o.Deposite.Address,
 		AddressTag:      o.Deposite.Tag,
 	})
@@ -77,7 +89,7 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 
 	pa := &dto.PaginatedUserOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, err.Error()))
 		return
 	}
 

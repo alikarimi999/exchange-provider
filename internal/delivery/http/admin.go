@@ -22,11 +22,15 @@ func (o *Router) adminRoutes() {
 				o.srv.GetExchangesPairs(newContext(ctx))
 			})
 
-			ps.POST("/get_min", func(ctx *gin.Context) {
+			ps.POST("/get_min_deposit", func(ctx *gin.Context) {
 				o.srv.GetMinPairDeposit(newContext(ctx))
 			})
 
-			ps.POST("/get_all_min", func(ctx *gin.Context) {
+			ps.POST("/change_min_deposit", func(ctx *gin.Context) {
+				o.srv.ChangeMinDeposit(newContext(ctx))
+			})
+
+			ps.POST("/get_all_min_deposit", func(ctx *gin.Context) {
 				o.srv.GetAllMinDeposit(newContext(ctx))
 			})
 
