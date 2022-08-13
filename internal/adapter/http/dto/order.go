@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"order_service/internal/app"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 type UserOrder struct {
 	Id          int64  `json:"id"`
 	Status      string `json:"status"`
+	BreakReason string `json:"break_reason,omitempty"`
 	BaseCoin    string `json:"base_coin"`
 	QuoteCoin   string `json:"quote_coin"`
 	Side        string `json:"side"`
@@ -32,13 +34,28 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 		QuoteCoin: de.QC.String(),
 		Side:      de.Side,
 
-		Status:            string(de.Status),
 		Fee:               de.Withdrawal.Fee,
 		TransferFee:       de.Withdrawal.ExchangeFee,
 		DepositAddress:    de.Deposite.Address,
 		WithdrawalAddress: de.Withdrawal.Address,
 		WithdrawalTxId:    de.Withdrawal.TxId,
 		CreatedAt:         de.CreatedAt,
+	}
+
+	if !de.Broken {
+		if de.Status != entity.OrderStatusSucceed && de.Status != entity.OrderStatusFailed {
+			d.Status = "pending"
+		} else {
+			d.Status = string(de.Status)
+		}
+	} else {
+		d.Status = "broken"
+		if de.BreakReason == app.BR_InsufficientDepositVolume {
+			de.BreakReason = "insufficient deposit volume"
+		} else {
+			de.BreakReason = "system error"
+		}
+
 	}
 
 	if de.Side == "buy" {

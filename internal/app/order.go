@@ -186,7 +186,7 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 	case "buy":
 		if vf < minQc {
 			o.Broken = true
-			o.BreakReason = fmt.Sprintf("volume: %s is less than min quantity: %f", vol, minQc)
+			o.BreakReason = BR_InsufficientDepositVolume
 			u.l.Info(string(op), o.BreakReason)
 
 			if err := u.write(o); err != nil {
@@ -200,7 +200,7 @@ func (u *OrderUseCase) SetDepositeVolume(userId, orderId, depositeId int64, vol 
 
 		if vf < minBc {
 			o.Broken = true
-			o.BreakReason = fmt.Sprintf("volume: %s is less than min quantity: %f", vol, minBc)
+			o.BreakReason = BR_InsufficientDepositVolume
 			u.l.Info(string(op), o.BreakReason)
 
 			if err := u.write(o); err != nil {
