@@ -69,13 +69,12 @@ func production() {
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
-		DepositeServiceURL: os.Getenv("DEPOSITE_SERVICE_URL"),
-		FeeServiceURL:      "http://localhost:8083/fee",
-		DB:                 db,
-		V:                  v,
-		L:                  l,
-		RC:                 rc,
-		PrvKey:             prv,
+		FeeServiceURL: "http://localhost:8083/fee",
+		DB:            db,
+		V:             v,
+		L:             l,
+		RC:            rc,
+		PrvKey:        prv,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
@@ -156,13 +155,12 @@ func test() {
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
-		DepositeServiceURL: "http://localhost:8080",
-		FeeServiceURL:      "http://localhost:8083/fee",
-		DB:                 db,
-		V:                  v,
-		L:                  l,
-		RC:                 rc,
-		PrvKey:             prv,
+		FeeServiceURL: "http://localhost:8083/fee",
+		DB:            db,
+		V:             v,
+		L:             l,
+		RC:            rc,
+		PrvKey:        prv,
 	})
 
 	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{

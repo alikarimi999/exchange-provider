@@ -17,7 +17,7 @@ type OrderUseCase struct {
 	cache entity.OrderCache
 	pc    entity.PairConfigs
 	rc    *redis.Client
-	ds    entity.DepositeService
+	DS    entity.DepositeService
 	oh    *orderHandler
 	wh    *withdrawalHandler
 	fs    entity.FeeService
@@ -33,7 +33,7 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRep
 		repo:  repo,
 		cache: oc,
 		rc:    rc,
-		ds:    depo,
+		DS:    depo,
 		pc:    pc,
 		exs:   newExStore(l, exRepo),
 		fs:    fee,
@@ -82,7 +82,7 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 		dc = bc
 	}
 
-	d, err := u.ds.New(userId, o.Id, dc, ex)
+	d, err := u.DS.New(userId, o.Id, dc, ex)
 	if err != nil {
 		switch errors.ErrorCode(err) {
 		case errors.ErrNotFound:

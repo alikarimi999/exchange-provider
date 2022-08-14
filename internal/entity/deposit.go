@@ -13,6 +13,8 @@ type Deposit struct {
 }
 
 type DepositeService interface {
+	Configs() interface{}
+	ChangeConfigs(cfg interface{}) error
 	New(userId, orderId int64, coin *Coin, exchange string) (*Deposit, error)
 	SetTxId(userId, orderId, depositeId int64, txId string) error
 }

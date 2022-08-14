@@ -20,7 +20,7 @@ func (o *OrderUseCase) SetTxId(userId, orderId, depositeId int64, txId string) e
 		return errors.Wrap(errors.ErrInternal)
 	}
 
-	if err := o.ds.SetTxId(userId, orderId, depositeId, txId); err != nil {
+	if err := o.DS.SetTxId(userId, orderId, depositeId, txId); err != nil {
 		o.l.Error(string(op), err.Error())
 		return errors.Wrap(errors.ErrInternal)
 	}

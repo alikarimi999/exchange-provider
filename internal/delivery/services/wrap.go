@@ -16,13 +16,12 @@ import (
 )
 
 type Config struct {
-	DepositeServiceURL string
-	FeeServiceURL      string
-	DB                 *gorm.DB
-	V                  *viper.Viper
-	L                  logger.Logger
-	RC                 *redis.Client
-	PrvKey             *rsa.PrivateKey
+	FeeServiceURL string
+	DB            *gorm.DB
+	V             *viper.Viper
+	L             logger.Logger
+	RC            *redis.Client
+	PrvKey        *rsa.PrivateKey
 }
 
 type Services struct {
@@ -34,7 +33,7 @@ type Services struct {
 
 func WrapServices(cfg *Config) (*Services, error) {
 	ss := &Services{
-		Deposite: deposite.NewDepositeService(cfg.DepositeServiceURL),
+		Deposite: deposite.NewDepositeService(cfg.V, cfg.L),
 		ExRepo:   exrepo.NewExchangeRepo(cfg.DB, cfg.V, cfg.RC, cfg.L, cfg.PrvKey),
 	}
 

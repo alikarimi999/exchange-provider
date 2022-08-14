@@ -5,6 +5,13 @@ import "github.com/gin-gonic/gin"
 func (o *Router) adminRoutes() {
 	a := o.gin.Group("/admin")
 	{
+
+		ss := a.Group("/services")
+		{
+			ss.GET("", func(ctx *gin.Context) { o.GetServicesConfig(ctx) })
+			ss.POST("/:service", func(ctx *gin.Context) { o.ChangeSerivcesConfig(ctx) })
+		}
+
 		os := a.Group("/orders")
 		{
 			os.POST("/", func(ctx *gin.Context) {

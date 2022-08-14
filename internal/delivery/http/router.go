@@ -16,6 +16,9 @@ type Router struct {
 	srv *http.Server
 	l   logger.Logger
 	v   *viper.Viper
+
+	auth *authService
+
 	col *rateLimiter
 	gls *limiters
 }
@@ -34,8 +37,7 @@ func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 		l:   l,
 		v:   v,
 	}
-	router.NewLimiters()
-	router.orderSrvGrpV0()
+	router.setup()
 	return router
 }
 

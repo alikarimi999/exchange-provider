@@ -25,7 +25,7 @@ type CheckAccessResp struct {
 	Msg       string `json:"msg"`
 }
 
-func CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
+func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
 	const agent = "CheckAccess"
 	return func(ctx *gin.Context) {
 
@@ -41,24 +41,28 @@ func CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
 			ID:       token,
 			Resource: resource,
 			Action:   action,
-			CheckIp:  true,
+			CheckIp:  a.checkIP(),
 			Ip:       ctx.ClientIP(),
 		}
 
 		respBody, _ := json.Marshal(ca)
-		bytes.NewReader(respBody)
-
-		req, _ := http.NewRequest("POST", "http://localhost:9091/actores/access", bytes.NewReader(respBody))
-		req.Header.Set("Content-Type", "application/json")
-
+		req, err := a.request(bytes.NewReader(respBody))
+		if err != nil {
+			l.Error(agent, err.Error())
+			ctx.JSON(http.StatusInternalServerError, "internal server error")
+			ctx.Abort()
+			return
+		}
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "")
+			l.Error(agent, err.Error())
+			ctx.JSON(http.StatusInternalServerError, "internal server error")
 			ctx.Abort()
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			ctx.JSON(http.StatusInternalServerError, "")
+			l.Error(agent, fmt.Sprintf("status code: %d", resp.StatusCode))
+			ctx.JSON(http.StatusInternalServerError, "internal server error")
 			ctx.Abort()
 			return
 		}
@@ -66,7 +70,8 @@ func CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
 		defer resp.Body.Close()
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, "")
+			l.Error(agent, err.Error())
+			ctx.JSON(http.StatusInternalServerError, "internal server error")
 			ctx.Abort()
 			return
 		}
@@ -74,8 +79,8 @@ func CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
 		cr := &CheckAccessResp{}
 		err = json.Unmarshal(b, cr)
 		if err != nil {
-			fmt.Println(err)
-			ctx.JSON(http.StatusInternalServerError, "")
+			l.Error(agent, err.Error())
+			ctx.JSON(http.StatusInternalServerError, "internal server error")
 			ctx.Abort()
 			return
 		}

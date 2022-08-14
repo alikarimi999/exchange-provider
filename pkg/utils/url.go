@@ -1,6 +1,6 @@
-package deposite
+package utils
 
-func joinUrl(url, path string) string {
+func JoinSafe(url, path string) string {
 
 	if url[len(url)-1] == '/' {
 		url = url[:len(url)-1]
