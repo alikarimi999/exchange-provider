@@ -54,6 +54,7 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rabbitmq/amqp091-go v1.3.4
+	github.com/sethvargo/go-limiter v0.7.2
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/viper v1.12.0
 	go.uber.org/zap v1.21.0

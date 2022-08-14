@@ -96,6 +96,42 @@ func (o *Router) adminRoutes() {
 				o.srv.SetDepositVol(newContext(ctx))
 			})
 		}
+
+		limiter := a.Group("/limiter")
+		{
+			limiter.GET("", func(ctx *gin.Context) {
+				res := struct {
+					GL struct {
+						Max    uint64
+						Period string
+					} `json:"general_limiter"`
+					Col struct {
+						Max    uint64
+						Period string
+					} `json:"create_order_limiter"`
+				}{
+					GL: struct {
+						Max    uint64
+						Period string
+					}{
+						Max:    o.gls.conf.Max,
+						Period: o.gls.conf.Period.String(),
+					},
+					Col: struct {
+						Max    uint64
+						Period string
+					}{
+						Max:    o.col.conf.Max,
+						Period: o.col.conf.Period.String(),
+					},
+				}
+				ctx.JSON(200, res)
+			})
+
+			limiter.POST("", func(ctx *gin.Context) {
+				o.changeLimitersConf(ctx)
+			})
+		}
 	}
 
 }

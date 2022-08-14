@@ -30,13 +30,8 @@ func CheckAccess(resource, action string, l logger.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		token := ctx.GetHeader("X-API-Key")
-		if token == "" {
-			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is required"))
-			ctx.Abort()
-			return
-		}
 
-		if token[:8] != "api_key_" {
+		if len(token) > 9 && token[:8] != "api_key_" {
 			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is invalid"))
 			ctx.Abort()
 			return
