@@ -21,8 +21,7 @@ func (o *OrderUseCase) SetTxId(userId, orderId, depositeId int64, txId string) e
 	}
 
 	if err := o.DS.SetTxId(userId, orderId, depositeId, txId); err != nil {
-		o.l.Error(string(op), err.Error())
-		return errors.Wrap(errors.ErrInternal)
+		return err
 	}
 	return nil
 }

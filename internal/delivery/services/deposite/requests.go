@@ -29,7 +29,7 @@ func (d *depositeService) newDepositRequest(body io.Reader) (*http.Request, erro
 }
 
 func request(url, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(http.MethodGet, utils.JoinSafe(url, path), body)
+	req, err := http.NewRequest(http.MethodPost, utils.JoinSafe(url, path), body)
 	if err != nil {
 		return nil, errors.Wrap(errors.NewMesssage(err.Error()))
 	}

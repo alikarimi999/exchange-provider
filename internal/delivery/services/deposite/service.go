@@ -94,8 +94,13 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 	}
 
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		d.l.Error(string(op), fmt.Sprintf("%d:%s", resp.StatusCode, err))
+	if err != nil {
+		d.l.Error(string(op), err.Error())
+		return nil, errors.Wrap(errors.ErrInternal)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		d.l.Error(string(op), fmt.Sprintf("status code: %d", resp.StatusCode))
 		return nil, errors.Wrap(errors.ErrInternal)
 	}
 
@@ -108,7 +113,6 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 	}
 
 	cResp := CreateDepositeResp{}
-
 	if err = json.Unmarshal(bod, &cResp); err != nil {
 		d.l.Error(string(op), err.Error())
 		return nil, errors.Wrap(errors.ErrInternal)
@@ -135,8 +139,13 @@ func (d *depositeService) SetTxId(userId, orderId, depositeId int64, txId string
 	}
 
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		d.l.Error(string(op), fmt.Sprintf("%d:%s", resp.StatusCode, err))
+	if err != nil {
+		d.l.Error(string(op), err.Error())
+		return errors.Wrap(errors.ErrInternal)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		d.l.Error(string(op), fmt.Sprintf("status code: %d", resp.StatusCode))
 		return errors.Wrap(errors.ErrInternal)
 	}
 

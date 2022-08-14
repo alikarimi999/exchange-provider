@@ -72,6 +72,11 @@ func (s *Server) GetExchangeList(ctx Context) {
 		}
 	}
 
+	if len(res.Exchanges) == 0 {
+		ctx.JSON(http.StatusNotFound, "no exchange found")
+		return
+	}
+
 	ctx.JSON(http.StatusOK, res)
 }
 

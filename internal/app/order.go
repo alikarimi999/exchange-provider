@@ -84,22 +84,7 @@ func (u *OrderUseCase) NewUserOrder(userId int64, address string, bc, qc *entity
 
 	d, err := u.DS.New(userId, o.Id, dc, ex)
 	if err != nil {
-		switch errors.ErrorCode(err) {
-		case errors.ErrNotFound:
-			err = errors.Wrap(err, op, errors.NewMesssage(fmt.Sprintf("coin %s  not found in deposit service", dc.String())))
-			u.l.Debug(string(op), err.Error())
-			return nil, err
-		default:
-			err = errors.Wrap(err, op, fmt.Sprintf("userId: '%d',quote_coin: %+v , base_oin: %+v ", userId, bc, qc),
-				&ErrMsg{msg: "create deposite failed, internal error"})
-			u.l.Error(string(op), err.Error())
-
-			// remove the order from the cache
-			if err := u.cache.Delete(userId, o.Id); err != nil {
-				u.l.Error(string(op), fmt.Sprintf("orderId: '%d' userId: '%d'", o.Id, o.UserId))
-			}
-			return nil, err
-		}
+		return nil, err
 	}
 
 	o.Deposite = d
