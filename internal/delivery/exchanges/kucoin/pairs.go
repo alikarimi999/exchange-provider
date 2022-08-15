@@ -128,7 +128,6 @@ func (sp *exPairs) exists(bc, qc *entity.Coin) bool {
 func (sp *exPairs) get(bc, qc *entity.Coin) (*pair, error) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
-
 	p, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
 	if exist {
 		return p, nil

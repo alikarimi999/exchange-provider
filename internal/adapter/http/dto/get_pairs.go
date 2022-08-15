@@ -21,29 +21,6 @@ type GetAllPairsResponse struct {
 	Messages  []string             `json:"messages"`
 }
 
-type GetPairsToUserRequest struct {
-	BC string `json:"base_coin"`  // combined with chain id  ex: BTC-BTC
-	QC string `json:"quote_coin"` // combined with chain id  ex: USDT-TRC20
-}
-
-func (r *GetPairsToUserRequest) Parse() (bc, qc *entity.Coin, err error) {
-
-	if r.BC == "" || r.QC == "" {
-		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin and quote coin must be set"))
-	}
-	bc, err = ParseCoin(r.BC)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	qc, err = ParseCoin(r.QC)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return bc, qc, nil
-}
-
 func ParseCoin(coin string) (*entity.Coin, error) {
 	parts := strings.Split(coin, "-")
 	if len(parts) != 2 {
@@ -60,13 +37,14 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 type UserPair struct {
 	BC                  string  `json:"base_coin"`
 	QC                  string  `json:"quote_coin"`
-	BuyPrice            string  `json:"buy_price"`
-	SellPrice           string  `json:"sell_price"`
-	FeeRate             string  `json:"fee_rate"`
-	BuyTransferFee      string  `json:"buy_transfer_fee"`
-	SellTransferFee     string  `json:"sell_transfer_fee"`
-	MinBaseCoinDeposit  float64 `json:"min_base_coin_deposit"`
-	MinQuoteCoinDeposit float64 `json:"min_quote_coin_deposit"`
+	BuyPrice            string  `json:"buy_price,omitempty"`
+	SellPrice           string  `json:"sell_price,omitempty"`
+	FeeRate             string  `json:"fee_rate,omitempty"`
+	BuyTransferFee      string  `json:"buy_transfer_fee,omitempty"`
+	SellTransferFee     string  `json:"sell_transfer_fee,omitempty"`
+	MinBaseCoinDeposit  float64 `json:"min_base_coin_deposit,omitempty"`
+	MinQuoteCoinDeposit float64 `json:"min_quote_coin_deposit,omitempty"`
+	Msg                 string  `json:"message,omitempty"`
 }
 
 func EntityPairToUserRequest(p *entity.Pair) *UserPair {
@@ -82,5 +60,37 @@ func EntityPairToUserRequest(p *entity.Pair) *UserPair {
 }
 
 type GetPairsToUserResponse struct {
-	Pairs []*AdminPair `json:"pairs"`
+	Pairs []*UserPair `json:"pairs"`
+}
+
+type Pair struct {
+	BC *entity.Coin
+	QC *entity.Coin
+}
+
+func (p *Pair) String() string {
+	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
+}
+
+type GetPairsToUserRequest struct {
+	Pairs []*UserPair `json:"pairs"`
+}
+
+func (r *GetPairsToUserRequest) Parse() ([]*Pair, error) {
+	pairs := []*Pair{}
+	for _, p := range r.Pairs {
+		bc, err := ParseCoin(p.BC)
+		if err != nil {
+			return nil, err
+		}
+		qc, err := ParseCoin(p.QC)
+		if err != nil {
+			return nil, err
+		}
+		pairs = append(pairs, &Pair{
+			BC: bc,
+			QC: qc,
+		})
+	}
+	return pairs, nil
 }

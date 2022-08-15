@@ -24,8 +24,8 @@ import (
 )
 
 func main() {
-	//test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -145,7 +145,7 @@ func test() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		"root", "123", "localhost:3306", "order_service")
+		"root", "root_c0d92de67d7634d2acc285670141d25e", "localhost:3306", "order_service")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

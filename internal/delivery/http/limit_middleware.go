@@ -11,7 +11,13 @@ func Limiter(l *rateLimiter) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		token := ctx.GetHeader("X-API-Key")
 
-		if len(token) > 9 && token[:8] != "api_key_" {
+		if len(token) == 0 {
+			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is missing"))
+			ctx.Abort()
+			return
+		}
+
+		if len(token) != 40 || token[:8] != "api_key_" {
 			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is invalid"))
 			ctx.Abort()
 			return

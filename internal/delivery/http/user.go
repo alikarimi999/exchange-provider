@@ -26,7 +26,7 @@ func (o *Router) userRoutes() {
 
 	p := o.gin.Group("/pairs")
 	{
-		p.GET("", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+		p.POST("", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
 			func(ctx *gin.Context) {
 				o.srv.GetPairsToUser(newContext(ctx))
 			})
