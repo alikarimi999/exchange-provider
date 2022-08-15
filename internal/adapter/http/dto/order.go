@@ -10,7 +10,7 @@ import (
 type UserOrder struct {
 	Id          int64  `json:"id"`
 	Status      string `json:"status"`
-	BreakReason string `json:"break_reason,omitempty"`
+	FailReason  string `json:"fail_reason,omitempty"`
 	BaseCoin    string `json:"base_coin"`
 	QuoteCoin   string `json:"quote_coin"`
 	Side        string `json:"side"`
@@ -49,11 +49,11 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 			d.Status = string(de.Status)
 		}
 	} else {
-		d.Status = "broken"
+		d.Status = "failed"
 		if de.BreakReason == app.BR_InsufficientDepositVolume {
-			de.BreakReason = "insufficient deposit volume"
+			d.FailReason = "insufficient deposit volume"
 		} else {
-			de.BreakReason = "system error"
+			d.FailReason = "system error"
 		}
 
 	}

@@ -100,7 +100,12 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		d.l.Error(string(op), fmt.Sprintf("status code: %d", resp.StatusCode))
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			d.l.Error(string(op), fmt.Sprintf("status code: %d\nerror ( %s )", resp.StatusCode, err.Error()))
+			return nil, errors.Wrap(errors.ErrInternal)
+		}
+		d.l.Error(string(op), fmt.Sprintf("status code: %d\nbody ( %s )", resp.StatusCode, string(b)))
 		return nil, errors.Wrap(errors.ErrInternal)
 	}
 
@@ -145,7 +150,12 @@ func (d *depositeService) SetTxId(userId, orderId, depositeId int64, txId string
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		d.l.Error(string(op), fmt.Sprintf("status code: %d", resp.StatusCode))
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			d.l.Error(string(op), fmt.Sprintf("status code: %d\nerror ( %s )", resp.StatusCode, err.Error()))
+			return errors.Wrap(errors.ErrInternal)
+		}
+		d.l.Error(string(op), fmt.Sprintf("status code: %d\nbody ( %s )", resp.StatusCode, string(b)))
 		return errors.Wrap(errors.ErrInternal)
 	}
 

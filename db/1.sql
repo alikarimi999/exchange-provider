@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS `order_service`.`orders` (
   `quote_coin` VARCHAR(45) NULL DEFAULT NULL,
   `quote_chain` VARCHAR(45) NULL DEFAULT NULL,
   `side` VARCHAR(45) NULL DEFAULT NULL,
+  `spread_rate` VARCHAR(45) NULL DEFAULT NULL,
+  `spread_vol` VARCHAR(45) NULL DEFAULT NULL,
   `created_at` TIMESTAMP NULL DEFAULT NULL,
   `updated_at` TIMESTAMP NULL DEFAULT NULL,
   `deleted_at` TIMESTAMP NULL DEFAULT NULL,
@@ -37,7 +39,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`orders` (
   `break_reason` TEXT NULL DEFAULT NULL,
   PRIMARY KEY (`id`, `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 24
+AUTO_INCREMENT = 90
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -87,7 +89,59 @@ CREATE TABLE IF NOT EXISTS `order_service`.`exchange_orders` (
     FOREIGN KEY (`order_id` , `user_id`)
     REFERENCES `order_service`.`orders` (`id` , `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 10
+AUTO_INCREMENT = 78
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `order_service`.`kucoin_exchanges`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `order_service`.`kucoin_exchanges` (
+  `id` VARCHAR(512) NOT NULL,
+  `api_key` VARCHAR(512) NULL DEFAULT NULL,
+  `api_secret` VARCHAR(512) NULL DEFAULT NULL,
+  `api_passphrase` VARCHAR(512) NULL DEFAULT NULL,
+  `status` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `order_service`.`pair_deposit_limits`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `order_service`.`pair_deposit_limits` (
+  `pair` VARCHAR(50) NOT NULL,
+  `min_bc` FLOAT NULL DEFAULT NULL,
+  `min_qc` FLOAT NULL DEFAULT NULL,
+  PRIMARY KEY (`pair`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `order_service`.`pair_spreads`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `order_service`.`pair_spreads` (
+  `pair` VARCHAR(50) NOT NULL,
+  `spread` FLOAT NULL DEFAULT NULL,
+  PRIMARY KEY (`pair`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `order_service`.`user_fees`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `order_service`.`user_fees` (
+  `user_id` INT NOT NULL,
+  `fee` FLOAT NULL DEFAULT NULL,
+  PRIMARY KEY (`user_id`))
+ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -117,7 +171,7 @@ CREATE TABLE IF NOT EXISTS `order_service`.`withdrawals` (
     FOREIGN KEY (`order_id` , `user_id`)
     REFERENCES `order_service`.`orders` (`id` , `user_id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 42
+AUTO_INCREMENT = 108
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

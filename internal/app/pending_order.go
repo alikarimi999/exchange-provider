@@ -17,11 +17,17 @@ func (o *OrderUseCase) totalPendingOrders(ex entity.Exchange, fs ...*entity.Filt
 		Values:   []interface{}{"succeed", "failed"},
 	}
 
+	f3 := &entity.Filter{
+		Param:    "broken",
+		Operator: entity.FilterOperatorEqual,
+		Values:   []interface{}{false},
+	}
+
 	pa := &entity.PaginatedUserOrders{
 		Page:    1,
 		PerPage: 1,
 		Total:   0,
-		Filters: []*entity.Filter{f1, f2},
+		Filters: []*entity.Filter{f1, f2, f3},
 		Orders:  []*entity.UserOrder{},
 	}
 
