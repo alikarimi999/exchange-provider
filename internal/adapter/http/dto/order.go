@@ -29,7 +29,7 @@ type UserOrder struct {
 
 func UOFromEntity(de *entity.UserOrder) *UserOrder {
 	d := &UserOrder{
-		Id:        de.Id,
+		Id:        de.Seq,
 		BaseCoin:  de.BC.String(),
 		QuoteCoin: de.QC.String(),
 		Side:      de.Side,
@@ -86,6 +86,7 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 type AdminUserOrder struct {
 	Id        int64  `json:"order_id"`
 	UserId    int64  `json:"user_id"`
+	Seq       int64  `json:"seq"`
 	Status    string `json:"status"`
 	BaseCoin  string `json:"base_coin"`
 	QuoteCoin string `json:"quote_coin"`
@@ -108,6 +109,7 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 	return &AdminUserOrder{
 		Id:         o.Id,
 		UserId:     o.UserId,
+		Seq:        o.Seq,
 		CreatedAt:  o.CreatedAt,
 		Status:     string(o.Status),
 		Deposit:    DFromEntity(o.Deposite),
@@ -165,7 +167,6 @@ func (r *CreateOrderRequest) Validate() error {
 
 type CreateOrderResponse struct {
 	OrderId         int64   `json:"order_id"`
-	DepositeId      int64   `json:"deposit_id"`
 	DC              string  `json:"deposit_coin"`
 	MinDeposit      float64 `json:"min_deposit"`
 	DepositeAddress string  `json:"deposit_address"`

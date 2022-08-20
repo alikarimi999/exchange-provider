@@ -30,10 +30,34 @@ func (c *OrderCache) Add(order *entity.UserOrder) error {
 
 	o := dto.ToDTO(order)
 	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
-	if err := c.r.Set(c.ctx, key, o, time.Duration(24*time.Hour)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, key, o, time.Duration(4*time.Hour)).Err(); err != nil {
+		return errors.Wrap(err, op, errors.ErrInternal)
+	}
+	return c.saveOrderSeq(o.UserId, o.Id, o.Seq)
+}
+
+func (c *OrderCache) saveOrderSeq(uId, oId, seq int64) error {
+	const op = errors.Op("OrderCache.saveOrderSeq")
+
+	key := fmt.Sprintf("user:%d:seq:%d", uId, seq)
+	if err := c.r.Set(c.ctx, key, oId, time.Duration(4*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
+}
+
+func (c *OrderCache) getOrderIdBySeq(uId, seq int64) (int64, error) {
+	const op = errors.Op("OrderCache.getOrderIdBySeq")
+
+	key := fmt.Sprintf("user:%d:seq:%d", uId, seq)
+	oId, err := c.r.Get(c.ctx, key).Int64()
+	if err != nil {
+		if err == redis.Nil {
+			return 0, errors.Wrap(err, op, errors.ErrNotFound)
+		}
+		return 0, errors.Wrap(err, op, errors.ErrInternal)
+	}
+	return oId, nil
 }
 
 func (c *OrderCache) Get(userId, id int64) (*entity.UserOrder, error) {
@@ -53,6 +77,17 @@ func (c *OrderCache) Get(userId, id int64) (*entity.UserOrder, error) {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return o.ToEntity(), nil
+}
+
+func (c *OrderCache) GetBySeq(uId, seq int64) (*entity.UserOrder, error) {
+	const op = errors.Op("OrderCache.GetBySeq")
+
+	oId, err := c.getOrderIdBySeq(uId, seq)
+	if err != nil {
+		return nil, errors.Wrap(err, op)
+	}
+	return c.Get(uId, oId)
+
 }
 
 func (c *OrderCache) GetAll(userId int64) ([]*entity.UserOrder, error) {

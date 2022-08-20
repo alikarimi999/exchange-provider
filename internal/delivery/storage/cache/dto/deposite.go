@@ -10,6 +10,7 @@ type deposite struct {
 	UserId     int64
 	OrderId    int64
 	Exchange   string
+	TxId       string
 	Volume     string
 	Fullfilled bool
 	Address    string
@@ -22,6 +23,7 @@ func dToDto(d *entity.Deposit) *deposite {
 		UserId:     d.UserId,
 		OrderId:    d.OrderId,
 		Exchange:   d.Exchange,
+		TxId:       d.TxId,
 		Volume:     d.Volume,
 		Fullfilled: d.Fullfilled,
 		Address:    d.Address,
@@ -35,6 +37,7 @@ func (d *deposite) ToEntity() *entity.Deposit {
 		UserId:     d.UserId,
 		OrderId:    d.OrderId,
 		Exchange:   d.Exchange,
+		TxId:       d.TxId,
 		Volume:     d.Volume,
 		Fullfilled: d.Fullfilled,
 		Address:    d.Address,

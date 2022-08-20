@@ -99,8 +99,6 @@ func (r *GetSupportedCoinsResponse) Parse() map[string][]*entity.Depositcoin {
 }
 
 type SetTxIdRequest struct {
-	UserId     int64  `json:"user_id"`
-	OrderId    int64  `json:"order_id"`
 	DepositeId int64  `json:"deposit_id"`
 	TxId       string `json:"tx_id"`
 }

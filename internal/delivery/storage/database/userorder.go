@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"order_service/internal/delivery/storage/database/dto"
 	"order_service/internal/entity"
 
@@ -24,11 +25,19 @@ func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	const op = errors.Op("MySqlDB.Add")
 
 	od := dto.UoToDto(order)
+	// get last seq
+	var lastSeq int64
+	if err := m.db.Model(&dto.Order{}).Select("seq").Where("user_id = ?", order.UserId).Order("seq desc").Limit(1).Scan(&lastSeq).Error; err != nil {
+		return errors.Wrap(op, err, errors.ErrInternal)
+	}
+	fmt.Println(lastSeq)
+	od.Seq = lastSeq + 1
 	err := m.db.Omit("Deposite", "ExchangeOrder").Create(od).Error
 	if err != nil {
 		err = errors.Wrap(err, op, errors.ErrInternal)
 	}
 	order.Id = int64(od.ID)
+	order.Seq = od.Seq
 	order.Withdrawal.Id = od.Withdrawal.Id
 	order.Withdrawal.OrderId = int64(od.ID)
 	order.ExchangeOrder.Id = od.ExchangeOrder.Id
@@ -41,6 +50,23 @@ func (m *MySqlDB) Get(userId, id int64) (*entity.UserOrder, error) {
 
 	o := &dto.Order{}
 	if err := m.db.Where("id = ? and user_id = ?", id, userId).
+		Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+		First(o).Error; err != nil {
+
+		if err == gorm.ErrRecordNotFound {
+			return nil, errors.Wrap(err, op, errors.ErrNotFound)
+		}
+		return nil, errors.Wrap(err, op, errors.ErrInternal)
+
+	}
+	return o.ToEntity(), nil
+}
+
+func (m *MySqlDB) GetBySeq(uId, seq int64) (*entity.UserOrder, error) {
+	const op = errors.Op("MySqlDB.GetBySeq")
+
+	o := &dto.Order{}
+	if err := m.db.Where("seq = ? and user_id = ?", seq, uId).
 		Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
 		First(o).Error; err != nil {
 
@@ -89,4 +115,19 @@ func (m *MySqlDB) UpdateWithdrawal(w *entity.Withdrawal) error {
 		return errors.Wrap(op, err, errors.ErrInternal)
 	}
 	return nil
+}
+
+// check if any deposit has this tx_id
+func (m *MySqlDB) CheckTxId(txId string) (bool, error) {
+	const op = errors.Op("MySqlDB.CheckTxId")
+
+	o := &dto.Deposite{}
+	if err := m.db.Where("tx_id = ?", txId).First(o).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+		return false, errors.Wrap(op, err, errors.ErrInternal)
+	}
+	fmt.Println(o.Id)
+	return true, nil
 }

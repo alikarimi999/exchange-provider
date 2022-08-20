@@ -39,6 +39,11 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 				}
 				return nil
 			}
+			// change param id with seq if exists
+			if f.Param == "id" {
+				f.Param = "seq"
+			}
+
 		}
 
 		r.Fs = append(r.Fs, &Filter{

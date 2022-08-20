@@ -11,7 +11,15 @@ func (o *OrderUseCase) read(v interface{}) error {
 
 	switch d := v.(type) {
 	case *entity.UserOrder:
-		dd, err := readUserOrder(o.repo, o.cache, d.UserId, d.Id)
+		var dd *entity.UserOrder
+		var err error
+		if d.Id > 0 && d.UserId > 0 {
+			dd, err = readOrder(o.repo, o.cache, d.UserId, d.Id)
+		} else if d.Seq > 0 && d.UserId > 0 {
+			dd, err = readOrderBySeq(o.repo, o.cache, d.UserId, d.Seq)
+		} else {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order id or seq or userId not found"))
+		}
 		if err != nil {
 			return err
 		}
@@ -36,7 +44,7 @@ func (o *OrderUseCase) read(v interface{}) error {
 
 	return errors.Wrap(errors.New("unsupported type"))
 }
-func readUserOrder(r entity.OrderRepo, c entity.OrderCache, userId, orderId int64) (*entity.UserOrder, error) {
+func readOrder(r entity.OrderRepo, c entity.OrderCache, userId, orderId int64) (*entity.UserOrder, error) {
 	ord, er1 := c.Get(userId, orderId)
 	if er1 != nil {
 		var er2 error
@@ -46,6 +54,21 @@ func readUserOrder(r entity.OrderRepo, c entity.OrderCache, userId, orderId int6
 				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %d not found", orderId, userId)))
 			}
 			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )", er1, er2)), fmt.Sprintf("order %d for user %d", orderId, userId))
+		}
+	}
+	return ord, nil
+}
+
+func readOrderBySeq(r entity.OrderRepo, c entity.OrderCache, userId int64, seq int64) (*entity.UserOrder, error) {
+	ord, er1 := c.GetBySeq(userId, seq)
+	if er1 != nil {
+		var er2 error
+		ord, er2 = r.GetBySeq(userId, seq)
+		if er2 != nil {
+			if errors.ErrorCode(er2) == errors.ErrNotFound {
+				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %d not found", seq, userId)))
+			}
+			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )", er1, er2)), fmt.Sprintf("order %d for user %d", seq, userId))
 		}
 	}
 	return ord, nil

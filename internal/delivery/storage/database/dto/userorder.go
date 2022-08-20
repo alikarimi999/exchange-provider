@@ -10,6 +10,7 @@ import (
 type Order struct {
 	gorm.Model
 	UserId     int64
+	Seq        int64
 	Status     string
 	Deposite   *Deposite `gorm:"foreignKey:OrderId"`
 	Exchange   string
@@ -42,6 +43,7 @@ func UoToDto(uo *entity.UserOrder) *Order {
 			CreatedAt: time.Unix(uo.CreatedAt, 0),
 		},
 		UserId:     uo.UserId,
+		Seq:        uo.Seq,
 		Status:     string(uo.Status),
 		Deposite:   DToDto(uo.Deposite),
 		Exchange:   uo.Exchange,
@@ -70,6 +72,7 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		Id:         int64(o.ID),
 		CreatedAt:  o.CreatedAt.Unix(),
 		UserId:     o.UserId,
+		Seq:        o.Seq,
 		Status:     entity.OrderStatus(o.Status),
 		Deposite:   o.Deposite.ToEntity(),
 		Exchange:   o.Exchange,

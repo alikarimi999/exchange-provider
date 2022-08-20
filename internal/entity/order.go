@@ -27,6 +27,7 @@ const (
 type UserOrder struct {
 	Id        int64
 	UserId    int64
+	Seq       int64
 	CreatedAt int64
 	Status    OrderStatus
 	Exchange  string

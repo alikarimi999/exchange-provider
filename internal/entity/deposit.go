@@ -5,6 +5,7 @@ type Deposit struct {
 	UserId   int64
 	OrderId  int64
 	Exchange string
+	TxId     string
 	Volume   string
 
 	Fullfilled bool
@@ -16,7 +17,7 @@ type DepositeService interface {
 	Configs() interface{}
 	ChangeConfigs(cfg interface{}) error
 	New(userId, orderId int64, coin *Coin, exchange string) (*Deposit, error)
-	SetTxId(userId, orderId, depositeId int64, txId string) error
+	SetTxId(depositeId int64, txId string) error
 }
 
 type Depositcoin struct {

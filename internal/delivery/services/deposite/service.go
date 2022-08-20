@@ -127,12 +127,10 @@ func (d *depositeService) New(userId, orderId int64, coin *entity.Coin, exchange
 
 }
 
-func (d *depositeService) SetTxId(userId, orderId, depositeId int64, txId string) error {
+func (d *depositeService) SetTxId(depositeId int64, txId string) error {
 	const op = errors.Op("DepositeService.SetTxId")
 
 	r := &SetTxIdRequest{
-		UserId:     userId,
-		OrderId:    orderId,
 		DepositeId: depositeId,
 		TxId:       txId,
 	}

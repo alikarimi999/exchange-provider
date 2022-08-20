@@ -26,18 +26,15 @@ func DFromEntity(d *entity.Deposit) *Deposit {
 }
 
 type SetTxIdRequest struct {
-	OrderId   int64  `json:"order_id"`
-	DepositId int64  `json:"deposit_id"`
-	TxId      string `json:"tx_id"`
+	Seq  int64  `json:"order_id"`
+	TxId string `json:"tx_id"`
 }
 
 func (r *SetTxIdRequest) Validate() error {
-	if r.OrderId == 0 {
+	if r.Seq == 0 {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order_id is required"))
 	}
-	if r.DepositId == 0 {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("deposit_id is required"))
-	}
+
 	if r.TxId == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tx_id is required"))
 	}

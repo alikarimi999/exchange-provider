@@ -73,8 +73,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 	}
 
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
-		OrderId:         o.Id,
-		DepositeId:      o.Deposite.Id,
+		OrderId:         o.Seq,
 		DC:              dc,
 		MinDeposit:      minD,
 		DepositeAddress: o.Deposite.Address,
@@ -146,10 +145,10 @@ func (s *Server) SetTxId(ctx Context) {
 		return
 	}
 
-	if err := s.app.SetTxId(userId.(int64), r.OrderId, r.DepositId, r.TxId); err != nil {
+	if err := s.app.SetTxId(userId.(int64), r.Seq, r.TxId); err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, fmt.Sprintf("txId %s set for order %d", r.TxId, r.OrderId))
+	ctx.JSON(http.StatusOK, fmt.Sprintf("txId `%s` set for order `%d`", r.TxId, r.Seq))
 }

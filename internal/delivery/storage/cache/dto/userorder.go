@@ -8,6 +8,7 @@ import (
 type UserOrder struct {
 	Id         int64
 	UserId     int64
+	Seq        int64
 	CreatedAt  int64
 	Status     string
 	Deposite   *deposite
@@ -32,6 +33,7 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 	return &UserOrder{
 		Id:         u.Id,
 		UserId:     u.UserId,
+		Seq:        u.Seq,
 		CreatedAt:  u.CreatedAt,
 		Status:     string(u.Status),
 		Deposite:   dToDto(u.Deposite),
@@ -56,6 +58,7 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 	return &entity.UserOrder{
 		Id:         u.Id,
 		UserId:     u.UserId,
+		Seq:        u.Seq,
 		CreatedAt:  u.CreatedAt,
 		Status:     entity.OrderStatus(u.Status),
 		Deposite:   u.Deposite.ToEntity(),

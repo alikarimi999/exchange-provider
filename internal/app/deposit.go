@@ -5,12 +5,12 @@ import (
 	"order_service/pkg/errors"
 )
 
-func (o *OrderUseCase) SetTxId(userId, orderId, depositeId int64, txId string) error {
+func (o *OrderUseCase) SetTxId(userId, seq int64, txId string) error {
 	const op = errors.Op("OrderUseCase.SetTxId")
 
 	ord := &entity.UserOrder{
 		UserId: userId,
-		Id:     orderId,
+		Seq:    seq,
 	}
 	if err := o.read(ord); err != nil {
 		if errors.ErrorCode(err) == errors.ErrNotFound {
@@ -20,8 +20,26 @@ func (o *OrderUseCase) SetTxId(userId, orderId, depositeId int64, txId string) e
 		return errors.Wrap(errors.ErrInternal)
 	}
 
-	if err := o.DS.SetTxId(userId, orderId, depositeId, txId); err != nil {
+	if ord.Deposite.TxId != "" {
+		return errors.Wrap(errors.NewMesssage("order already has tx id"))
+	}
+
+	exist, err := o.repo.CheckTxId(txId)
+	if err != nil {
+		return errors.Wrap(err, op, errors.ErrInternal)
+	}
+	if exist {
+		return errors.Wrap(errors.NewMesssage("tx_id used before"), op, errors.ErrBadRequest)
+	}
+
+	ord.Deposite.TxId = txId
+	if err := o.write(ord); err != nil {
 		return err
 	}
+
+	if err := o.DS.SetTxId(ord.Deposite.Id, txId); err != nil {
+		return err
+	}
+
 	return nil
 }

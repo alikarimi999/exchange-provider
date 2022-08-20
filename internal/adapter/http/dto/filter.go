@@ -75,6 +75,16 @@ func (r *PaginatedUserOrdersRequest) ValidateFiltersForUser(f *Filter) error {
 			f.Values[i] = n
 		}
 
+	case "seq":
+		for i, v := range f.Values {
+			n, ok := v.(float64)
+			if !ok {
+				return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(
+					fmt.Sprintf("invalid value type for param : %s, expected number, but got %T", f.Param, v)))
+			}
+			f.Values[i] = n
+		}
+
 	case "status":
 
 		for i, v := range f.Values {
