@@ -5,88 +5,53 @@ import (
 	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
+	kdto "order_service/internal/delivery/exchanges/kucoin/dto"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 )
 
 func (s *Server) AddPairs(ctx Context) {
-	req := &dto.AddPairsRequest{}
-	if err := ctx.Bind(req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+	nid := ctx.Param("id")
+
+	ex, err := s.app.GetExchange(nid)
+	if err != nil {
+		handlerErr(ctx, err)
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+	if ex.CurrentStatus == app.ExchangeStatusDisable {
+		ctx.JSON(404, "exchange is disable")
 		return
 	}
 
-	eps := map[string][]*entity.Pair{}
-	for _, p := range req.Pairs {
-		bc, err := p.BaseCoin()
+	res := &entity.AddPairsResult{}
+
+	switch ex.Name() {
+	case "kucoin":
+		req := &dto.KucoinAddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			return
+		}
+
+		if err := req.Validate(); err != nil {
+			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			return
+		}
+
+		kps := &kdto.AddPairsRequest{}
+		for _, p := range req.Pairs {
+			kps.Pairs = append(kps.Pairs, p.Map())
+		}
+
+		res, err = s.app.AddPairs(ex, kps)
 		if err != nil {
 			handlerErr(ctx, err)
 			return
 		}
-		qc, err := p.QuoteCoin()
-		if err != nil {
-			handlerErr(ctx, err)
-			return
-		}
-
-		for ex, p := range p.ExchangePairs(bc, qc) {
-			eps[ex] = append(eps[ex], p)
-		}
-
-		// set spread_rate
-		if p.SpreadRate > 0 && p.SpreadRate < 1 {
-			if err := s.app.ChangePairSpread(bc, qc, p.SpreadRate); err != nil {
-				handlerErr(ctx, err)
-				return
-			}
-		}
-
-		// set min deposit
-		if err := s.app.ChangeMinDeposit(bc, qc, p.BC.MinDeposit, p.QC.MinDeposit); err != nil {
-			handlerErr(ctx, err)
-			return
-		}
-
 	}
 
-	resp := &dto.AddPairsResponse{
-		Exchanges: make(map[string]*dto.AddPairsResult),
-	}
-
-	// add pairs to the exchange
-	for nid, pairs := range eps {
-		ex, err := s.app.GetExchange(nid)
-		if err != nil {
-			resp.Exchanges[nid] = &dto.AddPairsResult{
-				Error: errors.ErrorMsg(err),
-			}
-			continue
-		}
-		if ex.CurrentStatus == app.ExchangeStatusDisable {
-			resp.Exchanges[nid] = &dto.AddPairsResult{
-				Error: fmt.Sprintf("exchange '%s' is %s", nid, ex.CurrentStatus),
-			}
-			continue
-		}
-
-		res, err := s.app.AddPairs(ex, pairs)
-		if err != nil {
-			handlerErr(ctx, err)
-			return
-		}
-
-		resp.Exchanges[nid] = dto.FromEntity(res)
-
-	}
-
-	// add pair's coins to the supported coins
-
-	ctx.JSON(200, resp)
+	ctx.JSON(200, dto.FromEntity(res))
 }
 
 func (s *Server) GetExchangesPairs(ctx Context) {

@@ -83,29 +83,3 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 	req.Msg = fmt.Sprintf("change was successful")
 	ctx.JSON(200, req)
 }
-
-func (s *Server) SetDepositVol(ctx Context) {
-	req := struct {
-		UId int64  `json:"user_id"`
-		OId int64  `json:"order_id"`
-		DId int64  `json:"deposit_id"`
-		Vol string `json:"volume"`
-	}{}
-
-	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
-		return
-	}
-
-	if req.UId == 0 || req.OId == 0 || req.DId == 0 || req.Vol == "" {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
-		return
-	}
-
-	if err := s.app.SetDepositeVolume(req.UId, req.OId, req.DId, req.Vol); err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	ctx.JSON(200, fmt.Sprintf("deposit volume for %d/%d/%d changed to %s", req.UId, req.OId, req.DId, req.Vol))
-}

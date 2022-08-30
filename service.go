@@ -8,12 +8,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"order_service/internal/app"
-	"order_service/internal/delivery/event"
 	"order_service/internal/delivery/http"
 	"order_service/internal/delivery/services"
 	"order_service/internal/delivery/storage"
 	"order_service/pkg/logger"
-	"order_service/pkg/queue"
 	"os"
 	"sync"
 
@@ -32,7 +30,7 @@ func production() {
 
 	agent := "main"
 
-	l := logger.NewLogger("./order_service.json", true)
+	l := logger.NewLogger("./service.log", true)
 
 	v := viper.New()
 	v.SetConfigName("config")
@@ -69,45 +67,22 @@ func production() {
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
-		FeeServiceURL: "http://localhost:8083/fee",
-		DB:            db,
-		V:             v,
-		L:             l,
-		RC:            rc,
-		PrvKey:        prv,
+		DB:     db,
+		V:      v,
+		L:      l,
+		RC:     rc,
+		PrvKey: prv,
 	})
 
-	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
-	// 	ApiKey:        os.Getenv("KUCOIN_API_KEY"),
-	// 	ApiSecret:     os.Getenv("KUCOIN_API_SECRET"),
-	// 	ApiPassphrase: os.Getenv("KUCOIN_API_PASSPHRASE"),
-	// 	ApiVersion:    "2",
-	// 	ApiUrl:        "https://api.kucoin.com",
-	// }, r, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	wg := &sync.WaitGroup{}
 
-	// wg.Add(1)
-	// go kucoin.Run(wg)
-
-	// exs := make(map[string]entity.Exchange)
-	// exs["kucoin"] = kucoin
-
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
-
-	//
-	sub := queue.NewSubscriber(fmt.Sprintf("amqp://%s:%s@%s/", os.Getenv("RABBITMQ_USER"), os.Getenv("RABBITMQ_PASS"), os.Getenv("RABBITMQ_HOST")), "order_service",
-		[]*queue.Topic{
-			{Exchange: "deposites", RoutingKey: "deposite.confirmed"},
-		})
-
-	wg.Add(1)
-	go sub.Run(wg)
-
-	wg.Add(1)
-	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
 
 	http.NewRouter(ou, v, rc, l).Run(":8000")
 
@@ -119,7 +94,7 @@ func test() {
 
 	agent := "main"
 
-	l := logger.NewLogger("./order_service.json", true)
+	l := logger.NewLogger("./service.log", true)
 
 	v := viper.New()
 	v.SetConfigName("config")
@@ -145,7 +120,7 @@ func test() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		"root", "root_c0d92de67d7634d2acc285670141d25e", "localhost:3306", "order_service")
+		"root", "123", "localhost:3306", "order_service")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -155,46 +130,22 @@ func test() {
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
-		FeeServiceURL: "http://localhost:8083/fee",
-		DB:            db,
-		V:             v,
-		L:             l,
-		RC:            rc,
-		PrvKey:        prv,
+		DB:     db,
+		V:      v,
+		L:      l,
+		RC:     rc,
+		PrvKey: prv,
 	})
 
-	// kucoin := kucoin.NewKucoinExchange(&kucoin.Configs{
-	// 	ApiKey:        "62b9e1232b968a0001539730",
-	// 	ApiSecret:     "dfcbb3c0-c417-498f-a139-c5961e912426",
-	// 	ApiPassphrase: "77103121",
-	// 	ApiVersion:    "2",
-	// 	ApiUrl:        "https://openapi-sandbox.kucoin.com",
-	// }, r, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	wg := &sync.WaitGroup{}
 
-	// wg.Add(1)
-	// go kucoin.Run(wg)
-
-	// exs := make(map[string]entity.Exchange)
-	// exs["kucoin"] = kucoin
-
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Deposite, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Fee, l)
 	wg.Add(1)
 	go ou.Run(wg)
-
-	//
-	sub := queue.NewSubscriber(fmt.Sprintf("amqp://%s:%s@%s/", "user_0",
-		"user_0a3l3b3qmqnb83rj", "localhost:5672"), "order_service",
-		[]*queue.Topic{
-			{Exchange: "deposites", RoutingKey: "deposite.confirmed"},
-		})
-
-	wg.Add(1)
-	go sub.Run(wg)
-
-	wg.Add(1)
-	go event.NewConsumer(ou, sub, l, []string{"deposite.confirmed"}).Run(wg)
 
 	http.NewRouter(ou, v, rc, l).Run(":8081")
 
@@ -212,11 +163,18 @@ func getPrivateKey(v *viper.Viper) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
-	pemfileinfo, _ := privateKeyFile.Stat()
+	pemfileinfo, err := privateKeyFile.Stat()
+	if err != nil {
+		return nil, err
+	}
 	var size int64 = pemfileinfo.Size()
 	pembytes := make([]byte, size)
 	buffer := bufio.NewReader(privateKeyFile)
 	_, err = buffer.Read(pembytes)
+	if err != nil {
+		return nil, err
+	}
+
 	data, _ := pem.Decode([]byte(pembytes))
 	privateKeyFile.Close()
 

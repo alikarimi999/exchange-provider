@@ -69,20 +69,20 @@ func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string)
 
 }
 
-func (k *kucoinExchange) Withdrawal(coin *entity.Coin, addr, vol string) (string, error) {
+func (k *kucoinExchange) Withdrawal(coin *entity.Coin, a *entity.Address, vol string) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.NID()))
 
-	opts, err := k.withdrawalOpts(coin)
+	opts, err := k.withdrawalOpts(coin, a.Tag)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	wc, err := k.withdrawalCoins.get(coin.CoinId, coin.ChainId)
+	wc, err := k.supportedCoins.get(coin.CoinId, coin.ChainId)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	vol = trim(vol, wc.precision)
+	vol = trim(vol, wc.WithdrawalPrecision)
 
 	// first transfer from trade account to main account
 	k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from trade account to main account", vol, coin.CoinId))
@@ -95,7 +95,7 @@ func (k *kucoinExchange) Withdrawal(coin *entity.Coin, addr, vol string) (string
 
 	// then withdraw from main account
 	k.l.Debug(string(op), fmt.Sprintf("withdrawing %s `%s` from main account", vol, coin.CoinId))
-	res, err = k.api.ApplyWithdrawal(coin.CoinId, addr, vol, opts)
+	res, err = k.api.ApplyWithdrawal(coin.CoinId, a.Addr, vol, opts)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
@@ -119,7 +119,7 @@ func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{
 	}
 
 	k.ot.track(feed)
-	return
+
 }
 
 func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
@@ -145,4 +145,37 @@ func (k *kucoinExchange) ping() error {
 	}
 
 	return nil
+}
+
+func (k *kucoinExchange) TrackDeposit(d *entity.Deposit, done chan<- struct{}, er chan<- error,
+	proccessed <-chan bool) {
+
+	c, err := k.supportedCoins.get(d.CoinId, d.ChainId)
+	if err != nil {
+		d.Status = entity.DepositFailed
+		d.FailedDesc = err.Error()
+		return
+	}
+
+	f := &dtFeed{
+		d:         d,
+		blockTime: c.BlockTime,
+		confirms:  c.ConfirmBlocks,
+		done:      done,
+		pCh:       proccessed,
+	}
+
+	k.dt.fCh <- f
+}
+
+func (k *kucoinExchange) GetAddress(c *entity.Coin) (*entity.Address, error) {
+	kc, err := k.supportedCoins.get(c.CoinId, c.ChainId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.Address{
+		Addr: kc.address,
+		Tag:  kc.tag,
+	}, nil
 }

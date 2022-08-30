@@ -21,8 +21,8 @@ func (k *kucoinExchange) createOrderRequest(bc, qc *entity.Coin, side, size, fun
 		Symbol:    p.Symbol,
 		Side:      side,
 		Type:      "market",
-		Size:      trim(size, p.Bc.orderPrecision),
-		Funds:     trim(funds, p.Qc.orderPrecision),
+		Size:      trim(size, p.BC.orderPrecision),
+		Funds:     trim(funds, p.QC.orderPrecision),
 	}, nil
 
 }

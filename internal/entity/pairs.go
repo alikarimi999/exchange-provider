@@ -1,8 +1,6 @@
 package entity
 
-type Chain struct {
-	Id string
-}
+import "time"
 
 type Coin struct {
 	CoinId  string
@@ -16,6 +14,10 @@ func (c *Coin) String() string {
 type PairCoin struct {
 	*Coin
 
+	BlockTime           time.Duration
+	ConfirmBlocks       int64
+	Address             string
+	Tag                 string
 	MinDeposit          float64
 	MinOrderSize        string
 	MaxOrderSize        string

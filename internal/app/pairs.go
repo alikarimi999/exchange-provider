@@ -6,9 +6,8 @@ import (
 	"order_service/pkg/errors"
 )
 
-func (o *OrderUseCase) AddPairs(ex *Exchange, pairs []*entity.Pair) (*entity.AddPairsResult, error) {
-
-	return ex.AddPairs(pairs)
+func (o *OrderUseCase) AddPairs(ex *Exchange, data interface{}) (*entity.AddPairsResult, error) {
+	return ex.AddPairs(data)
 }
 
 func (o *OrderUseCase) GetAllPairsByExchange(ex *Exchange) ([]*entity.Pair, error) {

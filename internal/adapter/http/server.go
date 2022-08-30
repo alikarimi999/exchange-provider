@@ -55,7 +55,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	o, err := s.app.NewUserOrder(userId.(int64), req.Address, bc, qc, req.Side, ex)
+	o, err := s.app.NewUserOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, bc, qc, req.Side, ex)
 
 	if err != nil {
 		handlerErr(ctx, err)
@@ -76,8 +76,8 @@ func (s *Server) NewUserOrder(ctx Context) {
 		OrderId:         o.Seq,
 		DC:              dc,
 		MinDeposit:      minD,
-		DepositeAddress: o.Deposite.Address,
-		AddressTag:      o.Deposite.Tag,
+		DepositeAddress: o.Deposit.Addr,
+		AddressTag:      o.Deposit.Tag,
 	})
 	return
 }

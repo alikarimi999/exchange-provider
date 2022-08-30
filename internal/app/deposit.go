@@ -20,7 +20,7 @@ func (o *OrderUseCase) SetTxId(userId, seq int64, txId string) error {
 		return errors.Wrap(errors.ErrInternal)
 	}
 
-	if ord.Deposite.TxId != "" {
+	if ord.Deposit.TxId != "" {
 		return errors.Wrap(errors.NewMesssage("order already has tx id"))
 	}
 
@@ -32,14 +32,12 @@ func (o *OrderUseCase) SetTxId(userId, seq int64, txId string) error {
 		return errors.Wrap(errors.NewMesssage("tx_id used before"), op, errors.ErrBadRequest)
 	}
 
-	ord.Deposite.TxId = txId
+	ord.Deposit.TxId = txId
 	if err := o.write(ord); err != nil {
 		return err
 	}
 
-	if err := o.DS.SetTxId(ord.Deposite.Id, txId); err != nil {
-		return err
-	}
+	o.dh.dCh <- ord.Deposit
 
 	return nil
 }

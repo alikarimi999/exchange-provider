@@ -10,6 +10,7 @@ type Withdrawal struct {
 	Exchange string `json:"exchange,omitempty"`
 
 	Address string
+	Tag     string
 
 	Coin  string
 	Chain string
@@ -28,7 +29,8 @@ func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 		Id:  w.Id,
 		WId: w.WId,
 
-		Address: w.Address,
+		Address: w.Addr,
+		Tag:     w.Tag,
 
 		Total:       w.Total,
 		Fee:         w.Fee,

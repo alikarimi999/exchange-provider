@@ -36,7 +36,7 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 		Seq:        u.Seq,
 		CreatedAt:  u.CreatedAt,
 		Status:     string(u.Status),
-		Deposite:   dToDto(u.Deposite),
+		Deposite:   DToDto(u.Deposit),
 		Exchange:   u.Exchange,
 		Withdrawal: OWToDTO(u.Withdrawal),
 		BC:         u.BC.CoinId,
@@ -61,7 +61,7 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 		Seq:        u.Seq,
 		CreatedAt:  u.CreatedAt,
 		Status:     entity.OrderStatus(u.Status),
-		Deposite:   u.Deposite.ToEntity(),
+		Deposit:    u.Deposite.ToEntity(),
 		Exchange:   u.Exchange,
 		Withdrawal: u.Withdrawal.ToEntity(),
 		BC: &entity.Coin{

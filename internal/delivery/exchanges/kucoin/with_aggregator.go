@@ -11,25 +11,22 @@ import (
 	"order_service/pkg/errors"
 
 	"github.com/Kucoin/kucoin-go-sdk"
-	"github.com/go-redis/redis/v9"
 )
 
 type withdrawalAggregator struct {
 	k          *kucoinExchange
-	api        *kucoin.ApiService
 	l          logger.Logger
-	c          *withdrawalCache
+	c          *cache
 	ticker     *time.Ticker
 	params     map[string]string
 	windowSize time.Duration
 }
 
-func newWithdrawalAggregator(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger, r *redis.Client) *withdrawalAggregator {
+func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator {
 	return &withdrawalAggregator{
 		k:          k,
-		api:        api,
-		l:          l,
-		c:          newWithdrawalCache(k, r, l),
+		l:          k.l,
+		c:          c,
 		params:     make(map[string]string),
 		ticker:     time.NewTicker(time.Minute * 2),
 		windowSize: time.Hour * 1,
@@ -101,7 +98,7 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 	}
 	for {
 
-		res, err := wa.api.Withdrawals(wa.params, paginate)
+		res, err := wa.k.api.Withdrawals(wa.params, paginate)
 		if err = handleSDKErr(err, res); err != nil {
 			return nil, errors.Wrap(err, op)
 		}

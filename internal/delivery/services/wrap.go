@@ -3,7 +3,6 @@ package services
 import (
 	"crypto/rsa"
 	"order_service/internal/app"
-	"order_service/internal/delivery/services/deposite"
 	"order_service/internal/delivery/services/exrepo"
 	"order_service/internal/delivery/services/fee"
 	"order_service/internal/delivery/services/pairconf"
@@ -16,25 +15,22 @@ import (
 )
 
 type Config struct {
-	FeeServiceURL string
-	DB            *gorm.DB
-	V             *viper.Viper
-	L             logger.Logger
-	RC            *redis.Client
-	PrvKey        *rsa.PrivateKey
+	DB     *gorm.DB
+	V      *viper.Viper
+	L      logger.Logger
+	RC     *redis.Client
+	PrvKey *rsa.PrivateKey
 }
 
 type Services struct {
 	Fee      entity.FeeService
 	PairConf entity.PairConfigs
-	Deposite entity.DepositeService
 	ExRepo   app.ExchangeRepo
 }
 
 func WrapServices(cfg *Config) (*Services, error) {
 	ss := &Services{
-		Deposite: deposite.NewDepositeService(cfg.V, cfg.L),
-		ExRepo:   exrepo.NewExchangeRepo(cfg.DB, cfg.V, cfg.RC, cfg.L, cfg.PrvKey),
+		ExRepo: exrepo.NewExchangeRepo(cfg.DB, cfg.V, cfg.RC, cfg.L, cfg.PrvKey),
 	}
 
 	f, err := fee.NewFeeService(cfg.DB, cfg.V)

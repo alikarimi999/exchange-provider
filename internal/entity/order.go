@@ -2,17 +2,17 @@ package entity
 
 import (
 	"encoding/json"
-	"order_service/pkg/utils"
 	"time"
 )
 
 type OrderStatus string
 
 const (
-	OrderStatusOpen OrderStatus = "open"
+	OrderStatusOpen OrderStatus = ""
 
 	OrderStatusWaitForDepositeConfirm OrderStatus = "wait_for_deposite_confirm"
 	OrderStatusDepositeConfimred      OrderStatus = "deposite_confirmed"
+	OsDepositFailed                   OrderStatus = "deposit_failed"
 
 	OrderStatusWaitForExchangeOrderConfirm OrderStatus = "wait_for_exchange_order_confirm"
 	OrderStatusExchangeOrderConfirmed      OrderStatus = "exchange_order_confirmed"
@@ -37,14 +37,14 @@ type UserOrder struct {
 
 	SpreadVol     string
 	SpreadRate    string
-	Deposite      *Deposit
+	Deposit       *Deposit
 	ExchangeOrder *ExchangeOrder
 	Withdrawal    *Withdrawal
 	Broken        bool
 	BreakReason   string
 }
 
-func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *UserOrder {
+func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side string, ex string) *UserOrder {
 	w := &UserOrder{
 		UserId:    userId,
 		CreatedAt: time.Now().Unix(),
@@ -53,7 +53,13 @@ func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *User
 		BC:        bc,
 		QC:        qc,
 		Side:      side,
-		Deposite:  &Deposit{},
+		Deposit: &Deposit{
+			UserId:   userId,
+			Status:   "",
+			Exchange: ex,
+			Address:  dAddress,
+		},
+
 		ExchangeOrder: &ExchangeOrder{
 			UserId:   userId,
 			Status:   "",
@@ -61,33 +67,21 @@ func NewOrder(userId int64, address string, bc, qc *Coin, side, ex string) *User
 		},
 		Withdrawal: &Withdrawal{
 			UserId:   userId,
-			Address:  address,
+			Address:  wAddress,
 			Exchange: ex,
 			Status:   "",
 		},
 	}
 
+	if side == "buy" {
+		w.Deposit.Coin = qc
+	} else {
+		w.Deposit.Coin = bc
+	}
+
 	w.Withdrawal.OrderId = w.Id
 	w.ExchangeOrder.OrderId = w.Id
 	return w
-}
-
-func (o *UserOrder) AddDepositeConfirm(id int64, vol string) {
-	o.Status = OrderStatusDepositeConfimred
-	o.Deposite = &Deposit{
-		Id:         id,
-		UserId:     o.UserId,
-		OrderId:    o.Id,
-		Exchange:   o.Exchange,
-		Volume:     vol,
-		Fullfilled: true,
-		Address:    "",
-	}
-
-}
-
-func genOrderId(l int) int64 {
-	return utils.RandInt64(l)
 }
 
 // implement stringer interface

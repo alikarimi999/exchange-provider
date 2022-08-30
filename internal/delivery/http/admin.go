@@ -21,7 +21,7 @@ func (o *Router) adminRoutes() {
 
 		ps := a.Group("/pairs")
 		{
-			ps.POST("/add", func(ctx *gin.Context) {
+			ps.POST("/add/:id", func(ctx *gin.Context) {
 				o.srv.AddPairs(newContext(ctx))
 			})
 
@@ -95,13 +95,6 @@ func (o *Router) adminRoutes() {
 				o.srv.ChangeStatus(newContext(ctx))
 			})
 			es.POST("/add_account/:id", func(ctx *gin.Context) { o.srv.AddExchange(newContext(ctx)) })
-		}
-
-		dep := a.Group("/deposit")
-		{
-			dep.POST("/set_vol", func(ctx *gin.Context) {
-				o.srv.SetDepositVol(newContext(ctx))
-			})
 		}
 
 		limiter := a.Group("/limiter")

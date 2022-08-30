@@ -21,10 +21,14 @@ type UserOrder struct {
 	FeeCurrency string `json:"fee_currency"`
 	TransferFee string `json:"transfer_fee"`
 
-	DepositAddress    string `json:"deposit_address"`
+	DepositAddress string `json:"deposit_address"`
+	DepositTag     string `json:"deposit_tag"`
+
 	WithdrawalAddress string `json:"withdrawal_address"`
-	WithdrawalTxId    string `json:"withdrawal_tx_id"`
-	CreatedAt         int64  `json:"created_at"`
+	WithdrawalTag     string `json:"withdrawal_tag"`
+
+	WithdrawalTxId string `json:"withdrawal_tx_id"`
+	CreatedAt      int64  `json:"created_at"`
 }
 
 func UOFromEntity(de *entity.UserOrder) *UserOrder {
@@ -34,12 +38,16 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 		QuoteCoin: de.QC.String(),
 		Side:      de.Side,
 
-		Fee:               de.Withdrawal.Fee,
-		TransferFee:       de.Withdrawal.ExchangeFee,
-		DepositAddress:    de.Deposite.Address,
-		WithdrawalAddress: de.Withdrawal.Address,
-		WithdrawalTxId:    de.Withdrawal.TxId,
-		CreatedAt:         de.CreatedAt,
+		Fee:            de.Withdrawal.Fee,
+		TransferFee:    de.Withdrawal.ExchangeFee,
+		DepositAddress: de.Deposit.Addr,
+		DepositTag:     de.Deposit.Tag,
+
+		WithdrawalAddress: de.Withdrawal.Addr,
+		WithdrawalTag:     de.Withdrawal.Tag,
+
+		WithdrawalTxId: de.Withdrawal.TxId,
+		CreatedAt:      de.CreatedAt,
 	}
 
 	if !de.Broken {
@@ -60,18 +68,18 @@ func UOFromEntity(de *entity.UserOrder) *UserOrder {
 
 	if de.Side == "buy" {
 		d.FinalSize = de.Withdrawal.Executed
-		d.FinalFunds = de.Deposite.Volume
+		d.FinalFunds = de.Deposit.Volume
 		d.FeeCurrency = de.BC.String()
 	} else {
-		d.FinalSize = de.Deposite.Volume
+		d.FinalSize = de.Deposit.Volume
 		d.FinalFunds = de.Withdrawal.Executed
 		d.FeeCurrency = de.QC.String()
 	}
 
-	if de.Withdrawal.Total != "" && de.Deposite.Volume != "" {
+	if de.Withdrawal.Total != "" && de.Deposit.Volume != "" {
 
 		wt, _ := strconv.ParseFloat(de.Withdrawal.Total, 64)
-		dt, _ := strconv.ParseFloat(de.Deposite.Volume, 64)
+		dt, _ := strconv.ParseFloat(de.Deposit.Volume, 64)
 		if d.Side == "buy" {
 			d.FilledPrice = strconv.FormatFloat(dt/wt, 'f', 8, 64)
 		} else {
@@ -112,7 +120,7 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 		Seq:        o.Seq,
 		CreatedAt:  o.CreatedAt,
 		Status:     string(o.Status),
-		Deposit:    DFromEntity(o.Deposite),
+		Deposit:    DFromEntity(o.Deposit),
 		Exchange:   o.Exchange,
 		Withdrawal: WFromEntity(o.Withdrawal),
 		BaseCoin:   o.BC.String(),
@@ -138,6 +146,7 @@ type CreateOrderRequest struct {
 	Side string `json:"side"`
 
 	Address string `json:"address"`
+	Tag     string `json:"tag"`
 }
 
 func (r *CreateOrderRequest) Validate() error {

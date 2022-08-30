@@ -2,6 +2,7 @@ package kucoin
 
 import (
 	"fmt"
+	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"strings"
 	"sync"
@@ -13,12 +14,6 @@ import (
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
-
-type kucoinAdress struct {
-	Address  string
-	Chain    string
-	Currency string
-}
 
 type Configs struct {
 	ApiKey        string `json:"api_key"`
@@ -39,20 +34,22 @@ type kucoinExchange struct {
 	// ws   *webSocket
 	ot  *orderTracker
 	wt  *withdrawalTracker
+	da  *depositAggregator
+	dt  *depositTracker
 	wa  *withdrawalAggregator
 	pls *pairList
 
 	v *viper.Viper
 	l logger.Logger
 
-	exchangePairs   *exPairs
-	withdrawalCoins *withdrawalCoins
+	exchangePairs  *exPairs
+	supportedCoins *supportedCoins
 
 	stopCh   chan struct{}
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l logger.Logger, readConfig bool) (*kucoinExchange, error) {
+func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l logger.Logger, readConfig bool) (entity.Exchange, error) {
 	const op = errors.Op("Kucoin-Exchange.NewKucoinExchange")
 
 	cfg, err := validateConfigs(cfgi)
@@ -72,10 +69,10 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 			kucoin.ApiPassPhraseOption(cfg.ApiPassphrase),
 			kucoin.ApiKeyVersionOption(cfg.ApiVersion),
 		),
-		exchangePairs:   newExPairs(),
-		withdrawalCoins: newWithdrawalCoins(),
-		v:               v,
-		l:               l,
+		exchangePairs:  newExPairs(),
+		supportedCoins: newSupportedCoins(),
+		v:              v,
+		l:              l,
 
 		stopCh: make(chan struct{}),
 	}
@@ -83,11 +80,13 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 	if err := k.ping(); err != nil {
 		return nil, err
 	}
-	k.l.Debug(string(op), fmt.Sprintf("ping was successful"))
-
+	k.l.Debug(string(op), "ping was successful")
+	c := newCache(k, rc, k.l)
 	k.ot = newOrderTracker(k, k.api, l)
-	k.wt = newWithdrawalTracker(k, rc, l)
-	k.wa = newWithdrawalAggregator(k, k.api, l, rc)
+	k.wt = newWithdrawalTracker(k, c)
+	k.da = newDepositAggregator(k, c)
+	k.dt = newDepositTracker(k, c)
+	k.wa = newWithdrawalAggregator(k, c)
 	k.pls = newPairList(k, k.api, l)
 
 	if readConfig {
@@ -109,15 +108,19 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 					Symbol: p["symbol"].(string),
 				}
 				if p["bc"] != nil && p["qc"] != nil {
-					pc.Bc = &kuCoin{
+					pc.BC = &kuCoin{
 						CoinId:              p["bc"].(map[string]interface{})["coin_id"].(string),
 						ChainId:             p["bc"].(map[string]interface{})["chain_id"].(string),
+						BlockTime:           time.Duration(p["bc"].(map[string]interface{})["block_time"].(float64)),
+						ConfirmBlocks:       int64(p["bc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["bc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
-					pc.Qc = &kuCoin{
+					pc.QC = &kuCoin{
 						CoinId:              p["qc"].(map[string]interface{})["coin_id"].(string),
 						ChainId:             p["qc"].(map[string]interface{})["chain_id"].(string),
+						BlockTime:           time.Duration(p["qc"].(map[string]interface{})["block_time"].(float64)),
+						ConfirmBlocks:       int64(p["qc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["qc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
@@ -126,12 +129,11 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 			}
 
 			newPs := []*pair{}
-			newCs := map[string]*withdrawalCoin{}
+			newCs := map[string]*kuCoin{}
 			for _, p := range ps {
-				pe := p.toEntity()
-				ok, _ := k.pls.support(pe)
+				ok, _ := k.pls.support(p)
 				if !ok {
-					k.l.Debug(string(op), fmt.Sprintf("pair %s is not supported by kucoin anymore", pe.String()))
+					k.l.Debug(string(op), fmt.Sprintf("pair %s is not supported by kucoin anymore", p.String()))
 					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id))
 					if err := k.v.WriteConfig(); err != nil {
 						k.l.Error(string(op), err.Error())
@@ -139,26 +141,19 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 					continue
 				}
 
-				if err := k.setInfos(pe); err != nil {
-					k.l.Error(string(op), fmt.Sprintf("failed to set infos for pair %s du to error (%s)", pe.String(), err.Error()))
+				if err := k.setInfos(p); err != nil {
+					k.l.Error(string(op), fmt.Sprintf("failed to set infos for pair %s du to error (%s)", p.String(), err.Error()))
 					continue
 				}
 
-				newPs = append(newPs, fromEntity(pe))
-				newCs[pe.BC.CoinId+pe.BC.ChainId] = &withdrawalCoin{
-					precision: p.Bc.WithdrawalPrecision,
-					needChain: pe.BC.SetChain,
-				}
-
-				newCs[pe.QC.CoinId+pe.QC.ChainId] = &withdrawalCoin{
-					precision: p.Qc.WithdrawalPrecision,
-					needChain: pe.QC.SetChain,
-				}
+				newPs = append(newPs, p)
+				newCs[p.BC.CoinId+p.BC.ChainId] = p.BC.snapshot()
+				newCs[p.QC.CoinId+p.QC.ChainId] = p.QC.snapshot()
 
 			}
 
-			k.exchangePairs.add(newPs)
-			k.withdrawalCoins.add(newCs)
+			k.exchangePairs.add(newPs...)
+			k.supportedCoins.add(newCs)
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
@@ -176,6 +171,10 @@ func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
 	go k.ot.run(w, k.stopCh)
 	w.Add(1)
 	go k.wt.run(w, k.stopCh)
+	w.Add(1)
+	go k.da.run(w, k.stopCh)
+	wg.Add(1)
+	go k.dt.run(w, k.stopCh)
 	w.Add(1)
 	go k.wa.run(w, k.stopCh)
 

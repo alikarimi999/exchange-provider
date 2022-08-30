@@ -4,6 +4,7 @@ import "time"
 
 type OrderCache interface {
 	Add(order *UserOrder) error
+	UpdateDeposit(d *Deposit) error
 	Get(userId, id int64) (*UserOrder, error)
 	GetAll(userId int64) ([]*UserOrder, error)
 	GetBySeq(uId, seq int64) (*UserOrder, error)

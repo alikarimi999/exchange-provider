@@ -71,7 +71,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				var size string
 				var funds string
 				if ord.Side == "buy" {
-					aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.Deposite.Volume)
+					aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.Deposit.Volume)
 					if err != nil {
 						ord.Broken = true
 						ord.BreakReason = err.Error()
@@ -85,7 +85,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					ord.SpreadVol = sVol
 					ord.SpreadRate = rate
 				} else {
-					size = ord.Deposite.Volume
+					size = ord.Deposit.Volume
 				}
 				// 1. open a new order in exchange to exchange user provided coin to requested coin
 				id, err := ex.Exchange(ord.BC, ord.QC, ord.Side, size, funds)

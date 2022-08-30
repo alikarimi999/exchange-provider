@@ -34,8 +34,9 @@ type Exchange interface {
 
 	Exchange(bc, qc *Coin, side, size, funds string) (string, error)
 	TrackOrder(o *ExchangeOrder, done chan<- struct{}, err chan<- error)
+	TrackDeposit(d *Deposit, done chan<- struct{}, err chan<- error, proccessed <-chan bool)
 
-	Withdrawal(coin *Coin, address string, vol string) (string, error)
+	Withdrawal(coin *Coin, address *Address, vol string) (string, error)
 	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, err chan<- error, proccessedCh <-chan bool) error
 
 	ExchangeManager
@@ -49,7 +50,7 @@ type ExchangeManager interface {
 	Configs() interface{}
 
 	// add pairs to the exchange, if pair exist ignore it
-	AddPairs(pairs []*Pair) (*AddPairsResult, error)
+	AddPairs(data interface{}) (*AddPairsResult, error)
 	// get all pairs from the exchange
 	GetAllPairs() []*Pair
 	GetPair(bc, qc *Coin) (*Pair, error)
@@ -58,17 +59,19 @@ type ExchangeManager interface {
 
 	// check if the exchange support a pair with combination of two coins
 	Support(bc, qc *Coin) bool
+
+	GetAddress(c *Coin) (*Address, error)
 }
 
 type AddPairsResult struct {
-	Added   []*Pair
-	Existed []*Pair
+	Added   []string
+	Existed []string
 	Failed  []*PairsErr
 }
 
 type PairsErr struct {
-	*Pair
-	Err error
+	Pair string
+	Err  error
 }
 
 type StartAgainResult struct {

@@ -12,7 +12,7 @@ type Order struct {
 	UserId     int64
 	Seq        int64
 	Status     string
-	Deposite   *Deposite `gorm:"foreignKey:OrderId"`
+	Deposit    *Deposit `gorm:"foreignKey:OrderId"`
 	Exchange   string
 	Withdrawal *Withdrawal `gorm:"foreignKey:OrderId"`
 
@@ -45,7 +45,7 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		UserId:     uo.UserId,
 		Seq:        uo.Seq,
 		Status:     string(uo.Status),
-		Deposite:   DToDto(uo.Deposite),
+		Deposit:    DToDto(uo.Deposit),
 		Exchange:   uo.Exchange,
 		Withdrawal: WToDto(uo.Withdrawal),
 		BaseCoin:   uo.BC.CoinId,
@@ -74,7 +74,7 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		UserId:     o.UserId,
 		Seq:        o.Seq,
 		Status:     entity.OrderStatus(o.Status),
-		Deposite:   o.Deposite.ToEntity(),
+		Deposit:    o.Deposit.ToEntity(),
 		Exchange:   o.Exchange,
 		Withdrawal: o.Withdrawal.ToEntity(),
 		BC:         &entity.Coin{CoinId: o.BaseCoin, ChainId: o.BaseChain},

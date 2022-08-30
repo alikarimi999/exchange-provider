@@ -1,9 +1,12 @@
 package kucoin
 
 import (
+	"fmt"
+	"order_service/internal/delivery/exchanges/kucoin/dto"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"sync"
+	"time"
 )
 
 const (
@@ -13,6 +16,10 @@ const (
 type kuCoin struct {
 	CoinId              string `json:"coin_id"`
 	ChainId             string `json:"chain_id"`
+	address             string
+	tag                 string
+	BlockTime           time.Duration `json:"block_time"`
+	ConfirmBlocks       int64         `json:"confirm_blocks"`
 	minOrderSize        string
 	maxOrderSize        string
 	minWithdrawalSize   string
@@ -23,72 +30,100 @@ type kuCoin struct {
 	needChain bool
 }
 
+func (k *kuCoin) String() string {
+	return fmt.Sprintf("%s-%s", k.CoinId, k.ChainId)
+}
+
+func coinFromEntity(c *entity.Coin) *kuCoin {
+	return &kuCoin{
+		CoinId:  c.CoinId,
+		ChainId: c.ChainId,
+	}
+}
+
+func (k *kuCoin) snapshot() *kuCoin {
+	return &kuCoin{
+		CoinId:              k.CoinId,
+		ChainId:             k.ChainId,
+		address:             k.address,
+		tag:                 k.tag,
+		BlockTime:           k.BlockTime,
+		ConfirmBlocks:       k.ConfirmBlocks,
+		minOrderSize:        k.maxOrderSize,
+		maxOrderSize:        k.maxOrderSize,
+		minWithdrawalSize:   k.minWithdrawalSize,
+		minWithdrawalFee:    k.minWithdrawalFee,
+		WithdrawalPrecision: k.WithdrawalPrecision,
+		orderPrecision:      k.orderPrecision,
+		needChain:           k.needChain,
+	}
+}
+
+func (k *kuCoin) toEntityCoin() *entity.PairCoin {
+	return &entity.PairCoin{
+
+		Coin: &entity.Coin{
+			CoinId:  k.CoinId,
+			ChainId: k.ChainId,
+		},
+		Address:             k.address,
+		Tag:                 k.tag,
+		BlockTime:           k.BlockTime,
+		MinOrderSize:        k.minOrderSize,
+		MaxOrderSize:        k.maxOrderSize,
+		MinWithdrawalSize:   k.minWithdrawalSize,
+		WithdrawalMinFee:    k.minWithdrawalFee,
+		WithdrawalPrecision: k.WithdrawalPrecision,
+		OrderPrecision:      k.orderPrecision,
+		SetChain:            k.needChain,
+	}
+}
+
 type pair struct {
 	Id          string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
 	Symbol      string  // base.id + pairDelimiter + quote.id
-	Bc          *kuCoin // base coin
-	Qc          *kuCoin // quote coin
+	BC          *kuCoin // base coin
+	QC          *kuCoin // quote coin
 	feeCurrency string
 }
 
-func fromEntity(ep *entity.Pair) *pair {
+func (p *pair) String() string {
+	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
+}
+
+func (p *pair) snapshot() *pair {
 	return &pair{
-		Id:     ep.BC.CoinId + ep.BC.ChainId + ep.QC.CoinId + ep.QC.ChainId,
-		Symbol: ep.BC.CoinId + pairDelimiter + ep.QC.CoinId,
-		Bc: &kuCoin{
-			CoinId:              ep.BC.CoinId,
-			ChainId:             ep.BC.ChainId,
-			minOrderSize:        ep.BC.MinOrderSize,
-			maxOrderSize:        ep.BC.MaxOrderSize,
-			minWithdrawalSize:   ep.BC.MinWithdrawalSize,
-			minWithdrawalFee:    ep.BC.WithdrawalMinFee,
-			WithdrawalPrecision: ep.BC.WithdrawalPrecision,
-			orderPrecision:      ep.BC.OrderPrecision,
-			needChain:           ep.BC.SetChain,
+		Id:          p.Id,
+		Symbol:      p.Symbol,
+		BC:          p.BC.snapshot(),
+		QC:          p.QC.snapshot(),
+		feeCurrency: p.feeCurrency,
+	}
+}
+
+func fromDto(p *dto.Pair) *pair {
+	return &pair{
+		Id:     p.BC.CoinId + p.BC.ChainId + p.QC.CoinId + p.QC.ChainId,
+		Symbol: p.BC.CoinId + pairDelimiter + p.QC.CoinId,
+		BC: &kuCoin{
+			CoinId:              p.BC.CoinId,
+			ChainId:             p.BC.ChainId,
+			BlockTime:           p.BC.BlockTime,
+			WithdrawalPrecision: p.BC.WithdrawalPrecision,
 		},
-		Qc: &kuCoin{
-			CoinId:              ep.QC.CoinId,
-			ChainId:             ep.QC.ChainId,
-			minOrderSize:        ep.QC.MinOrderSize,
-			maxOrderSize:        ep.QC.MaxOrderSize,
-			minWithdrawalSize:   ep.QC.MinWithdrawalSize,
-			minWithdrawalFee:    ep.QC.WithdrawalMinFee,
-			WithdrawalPrecision: ep.QC.WithdrawalPrecision,
-			orderPrecision:      ep.QC.OrderPrecision,
-			needChain:           ep.QC.SetChain,
+		QC: &kuCoin{
+			CoinId:              p.QC.CoinId,
+			ChainId:             p.QC.ChainId,
+			BlockTime:           p.QC.BlockTime,
+			WithdrawalPrecision: p.QC.WithdrawalPrecision,
 		},
-		feeCurrency: ep.FeeCurrency,
 	}
 }
 
 func (p *pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		BC: &entity.PairCoin{
-			Coin: &entity.Coin{
-				CoinId:  p.Bc.CoinId,
-				ChainId: p.Bc.ChainId,
-			},
-			MinOrderSize:        p.Bc.minOrderSize,
-			MaxOrderSize:        p.Bc.maxOrderSize,
-			MinWithdrawalSize:   p.Bc.minWithdrawalSize,
-			WithdrawalMinFee:    p.Bc.minWithdrawalFee,
-			WithdrawalPrecision: p.Bc.WithdrawalPrecision,
-			OrderPrecision:      p.Bc.orderPrecision,
-			SetChain:            p.Bc.needChain,
-		},
-		QC: &entity.PairCoin{
-			Coin: &entity.Coin{
-				CoinId:  p.Qc.CoinId,
-				ChainId: p.Qc.ChainId,
-			},
-			MinOrderSize:        p.Qc.minOrderSize,
-			MaxOrderSize:        p.Qc.maxOrderSize,
-			MinWithdrawalSize:   p.Qc.minWithdrawalSize,
-			WithdrawalMinFee:    p.Qc.minWithdrawalFee,
-			WithdrawalPrecision: p.Qc.WithdrawalPrecision,
-			OrderPrecision:      p.Qc.orderPrecision,
-			SetChain:            p.Qc.needChain,
-		},
+		BC:          p.BC.toEntityCoin(),
+		QC:          p.QC.toEntityCoin(),
 		FeeCurrency: p.feeCurrency,
 	}
 }
@@ -105,15 +140,15 @@ func newExPairs() *exPairs {
 	}
 }
 
-func (sp *exPairs) add(pairs []*pair) {
+func (sp *exPairs) add(pairs ...*pair) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 	for _, p := range pairs {
-		sp.pairs[p.Id] = p
+		sp.pairs[p.Id] = p.snapshot()
 	}
 }
 
-func (sp *exPairs) exists(bc, qc *entity.Coin) bool {
+func (sp *exPairs) exists(bc, qc *kuCoin) bool {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
@@ -130,7 +165,7 @@ func (sp *exPairs) get(bc, qc *entity.Coin) (*pair, error) {
 	defer sp.mux.Unlock()
 	p, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
 	if exist {
-		return p, nil
+		return p.snapshot(), nil
 	}
 
 	return nil, errors.New("pair not found")
@@ -154,7 +189,7 @@ func (sp *exPairs) snapshot() []*pair {
 
 	pairs := make([]*pair, 0)
 	for _, p := range sp.pairs {
-		pairs = append(pairs, p)
+		pairs = append(pairs, p.snapshot())
 	}
 	return pairs
 }

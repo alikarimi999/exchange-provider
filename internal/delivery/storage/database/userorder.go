@@ -32,12 +32,13 @@ func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	}
 	fmt.Println(lastSeq)
 	od.Seq = lastSeq + 1
-	err := m.db.Omit("Deposite", "ExchangeOrder").Create(od).Error
+	err := m.db.Omit("ExchangeOrder").Create(od).Error
 	if err != nil {
 		err = errors.Wrap(err, op, errors.ErrInternal)
 	}
 	order.Id = int64(od.ID)
 	order.Seq = od.Seq
+	order.Deposit.Id = od.Deposit.Id
 	order.Withdrawal.Id = od.Withdrawal.Id
 	order.Withdrawal.OrderId = int64(od.ID)
 	order.ExchangeOrder.Id = od.ExchangeOrder.Id
@@ -50,7 +51,7 @@ func (m *MySqlDB) Get(userId, id int64) (*entity.UserOrder, error) {
 
 	o := &dto.Order{}
 	if err := m.db.Where("id = ? and user_id = ?", id, userId).
-		Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+		Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
 		First(o).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
@@ -67,7 +68,7 @@ func (m *MySqlDB) GetBySeq(uId, seq int64) (*entity.UserOrder, error) {
 
 	o := &dto.Order{}
 	if err := m.db.Where("seq = ? and user_id = ?", seq, uId).
-		Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+		Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
 		First(o).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
@@ -83,7 +84,7 @@ func (m *MySqlDB) GetAll(UserId int64) ([]*entity.UserOrder, error) {
 	const op = errors.Op("MySqlDB.GetAll")
 
 	osDTO := []*dto.Order{}
-	if err := m.db.Where("user_id = ?", UserId).Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+	if err := m.db.Where("user_id = ?", UserId).Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
 		Find(&osDTO).Error; err != nil {
 		return nil, errors.Wrap(op, err, errors.ErrInternal)
 	}
@@ -108,6 +109,11 @@ func (m *MySqlDB) Update(order *entity.UserOrder) error {
 	return nil
 }
 
+func (m *MySqlDB) UpdateDeposit(d *entity.Deposit) error {
+	dd := dto.DToDto(d)
+	return m.db.Save(dd).Error
+}
+
 func (m *MySqlDB) UpdateWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("MySqlDB.UpdateWithdrawal")
 
@@ -121,7 +127,7 @@ func (m *MySqlDB) UpdateWithdrawal(w *entity.Withdrawal) error {
 func (m *MySqlDB) CheckTxId(txId string) (bool, error) {
 	const op = errors.Op("MySqlDB.CheckTxId")
 
-	o := &dto.Deposite{}
+	o := &dto.Deposit{}
 	if err := m.db.Where("tx_id = ?", txId).First(o).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return false, nil

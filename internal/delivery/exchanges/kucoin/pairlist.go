@@ -2,7 +2,6 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"order_service/pkg/logger"
 	"strings"
@@ -51,7 +50,7 @@ func (p *pairList) download() error {
 	return nil
 }
 
-func (pl *pairList) support(p *entity.Pair) (bool, error) {
+func (pl *pairList) support(p *pair) (bool, error) {
 	agent := fmt.Sprintf("%s.pairList.support", pl.k.NID())
 	if len(pl.pairs) == 0 {
 		pl.l.Debug(agent, "pairs not downloaded yet")
@@ -65,14 +64,14 @@ func (pl *pairList) support(p *entity.Pair) (bool, error) {
 
 	for _, pair := range pl.pairs {
 		if pair.BaseCurrency == p.BC.CoinId && pair.QuoteCurrency == p.QC.CoinId {
-			p.BC.MinOrderSize = pair.BaseMinSize
-			p.BC.MaxOrderSize = pair.BaseMaxSize
-			p.BC.OrderPrecision = calcPrecision(pair.BaseIncrement)
-			p.QC.MinOrderSize = pair.QuoteMinSize
-			p.QC.MaxOrderSize = pair.QuoteMaxSize
-			p.QC.OrderPrecision = calcPrecision(pair.QuoteIncrement)
+			p.BC.minOrderSize = pair.BaseMinSize
+			p.BC.maxOrderSize = pair.BaseMaxSize
+			p.BC.orderPrecision = calcPrecision(pair.BaseIncrement)
+			p.QC.minOrderSize = pair.QuoteMinSize
+			p.QC.maxOrderSize = pair.QuoteMaxSize
+			p.QC.orderPrecision = calcPrecision(pair.QuoteIncrement)
 
-			p.FeeCurrency = pair.FeeCurrency
+			p.feeCurrency = pair.FeeCurrency
 
 			return true, nil
 		}

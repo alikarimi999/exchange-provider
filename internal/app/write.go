@@ -29,6 +29,8 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 			return o.repo.Add(d)
 		}
 		return o.repo.Update(d)
+	case *entity.Deposit:
+		return o.repo.UpdateDeposit(d)
 	default:
 		return nil
 	}
@@ -38,7 +40,7 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 func (o *OrderUseCase) writeToCache(data interface{}) error {
 	switch d := data.(type) {
 	case *entity.UserOrder:
-		if d.Status == entity.OrderStatusSucceed || d.Status == entity.OrderStatusFailed {
+		if d.Status == entity.OrderStatusSucceed || d.Status == entity.OrderStatusFailed || d.Status == entity.OsDepositFailed {
 			return nil
 		}
 
@@ -48,6 +50,8 @@ func (o *OrderUseCase) writeToCache(data interface{}) error {
 			return o.cache.AddPendingWithdrawal(d)
 		}
 		return nil
+	case *entity.Deposit:
+		return o.cache.UpdateDeposit(d)
 	default:
 		return nil
 	}

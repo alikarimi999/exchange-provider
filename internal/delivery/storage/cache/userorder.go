@@ -26,16 +26,34 @@ func NewOrderCache(c *redis.Client) entity.OrderCache {
 }
 
 func (c *OrderCache) Add(order *entity.UserOrder) error {
-	const op = errors.Op("OrderCache.Add")
 
 	o := dto.ToDTO(order)
-	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
-	if err := c.r.Set(c.ctx, key, o, time.Duration(4*time.Hour)).Err(); err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
+	if err := c.save(o); err != nil {
+		return err
 	}
 	return c.saveOrderSeq(o.UserId, o.Id, o.Seq)
 }
 
+func (c *OrderCache) UpdateDeposit(d *entity.Deposit) error {
+
+	o, err := c.get(d.UserId, d.OrderId)
+	if err != nil {
+		return err
+	}
+
+	o.Deposite = dto.DToDto(d)
+	return c.save(o)
+}
+
+func (c *OrderCache) save(o *dto.UserOrder) error {
+	const op = errors.Op("OrderCache.save")
+
+	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
+	if err := c.r.Set(c.ctx, key, o, time.Duration(4*time.Hour)).Err(); err != nil {
+		return errors.Wrap(err, op, errors.ErrInternal)
+	}
+	return nil
+}
 func (c *OrderCache) saveOrderSeq(uId, oId, seq int64) error {
 	const op = errors.Op("OrderCache.saveOrderSeq")
 
@@ -61,7 +79,16 @@ func (c *OrderCache) getOrderIdBySeq(uId, seq int64) (int64, error) {
 }
 
 func (c *OrderCache) Get(userId, id int64) (*entity.UserOrder, error) {
-	const op = errors.Op("OrderCache.Get")
+
+	o, err := c.get(userId, id)
+	if err != nil {
+		return nil, err
+	}
+	return o.ToEntity(), nil
+}
+
+func (c *OrderCache) get(userId, id int64) (*dto.UserOrder, error) {
+	const op = errors.Op("OrderCache.get")
 
 	key := fmt.Sprintf("user:%d:order:%d", userId, id)
 	o := &dto.UserOrder{}
@@ -76,7 +103,7 @@ func (c *OrderCache) Get(userId, id int64) (*entity.UserOrder, error) {
 	if err = json.Unmarshal(b, o); err != nil {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
-	return o.ToEntity(), nil
+	return o, nil
 }
 
 func (c *OrderCache) GetBySeq(uId, seq int64) (*entity.UserOrder, error) {

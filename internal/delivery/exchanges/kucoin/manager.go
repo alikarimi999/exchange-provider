@@ -2,22 +2,32 @@ package kucoin
 
 import (
 	"fmt"
+	"order_service/internal/delivery/exchanges/kucoin/dto"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"strings"
 )
 
-func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult, error) {
+func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	agent := fmt.Sprintf("%s.AddPairs", k.NID())
+
+	req, ok := data.(*dto.AddPairsRequest)
+	if !ok {
+		return nil, errors.Wrap(agent, errors.ErrBadRequest)
+	}
+
 	res := &entity.AddPairsResult{}
-
+	cs := map[string]*kuCoin{}
 	ps := []*pair{}
-	cs := map[string]*withdrawalCoin{}
+	for _, p := range req.Pairs {
+		ps = append(ps, fromDto(p))
+	}
 
-	for _, p := range pairs {
+	aps := []*pair{}
+	for _, p := range ps {
 
-		if k.exchangePairs.exists(p.BC.Coin, p.QC.Coin) {
-			res.Existed = append(res.Existed, p)
+		if k.exchangePairs.exists(p.BC, p.QC) {
+			res.Existed = append(res.Existed, p.String())
 			continue
 		}
 
@@ -27,60 +37,59 @@ func (k *kucoinExchange) AddPairs(pairs []*entity.Pair) (*entity.AddPairsResult,
 		}
 		if !ok {
 			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p,
+				Pair: p.String(),
 				Err:  errors.Wrap(errors.ErrBadRequest, errors.New("pair not supported")),
 			})
 			continue
 		}
 
-		err = k.setInfos(p)
-		if err != nil {
+		if err := k.setInfos(p); err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p,
+				Pair: p.String(),
 				Err:  err,
 			})
 			continue
 		}
 
-		pa := fromEntity(p)
-
-		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.NID(), pa.Id), pa)
+		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.NID(), p.Id), p)
 		if err := k.v.WriteConfig(); err != nil {
 			k.l.Error(agent, err.Error())
 			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p,
+				Pair: p.String(),
 				Err:  err,
 			})
 			continue
 		}
-		ps = append(ps, pa)
-		res.Added = append(res.Added, p)
-		cs[p.BC.CoinId+p.BC.ChainId] = &withdrawalCoin{
-			precision: p.BC.WithdrawalPrecision,
-			needChain: p.BC.SetChain,
-		}
+		aps = append(aps, p)
+		res.Added = append(res.Added, p.String())
+		cs[p.BC.CoinId+p.BC.ChainId] = p.BC.snapshot()
 
-		cs[p.QC.CoinId+p.QC.ChainId] = &withdrawalCoin{
-			precision: p.QC.WithdrawalPrecision,
-			needChain: p.QC.SetChain,
-		}
+		cs[p.QC.CoinId+p.QC.ChainId] = p.QC.snapshot()
 	}
 
-	k.exchangePairs.add(ps)
-	k.withdrawalCoins.add(cs)
+	k.exchangePairs.add(aps...)
+	k.supportedCoins.add(cs)
 
 	return res, nil
 
 }
 
 func (k *kucoinExchange) GetAllPairs() []*entity.Pair {
+	agent := fmt.Sprintf("%s.GetAllPairs", k.NID())
+
 	pairs := []*entity.Pair{}
 	ps := k.exchangePairs.snapshot()
 
 	for _, p := range ps {
 		pe := p.toEntity()
-		k.setPrice(pe)
-		k.setOrderFeeRate(pe)
+		if err := k.setPrice(pe); err != nil {
+			k.l.Error(agent, err.Error())
+			continue
+		}
+		if err := k.setOrderFeeRate(pe); err != nil {
+			k.l.Error(agent, err.Error())
+			continue
+		}
 
 		pairs = append(pairs, pe)
 	}
@@ -99,11 +108,12 @@ func (k *kucoinExchange) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 	if err := k.setOrderFeeRate(pe); err != nil {
 		return nil, err
 	}
+
 	return pe, nil
 }
 
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Coin) error {
-	if k.exchangePairs.exists(bc, qc) {
+	if k.exchangePairs.exists(coinFromEntity(bc), coinFromEntity(qc)) {
 		id := bc.CoinId + bc.ChainId + qc.CoinId + qc.ChainId
 		delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(id))
 		if err := k.v.WriteConfig(); err != nil {
@@ -117,7 +127,7 @@ func (k *kucoinExchange) RemovePair(bc, qc *entity.Coin) error {
 }
 
 func (k *kucoinExchange) Support(bc, qc *entity.Coin) bool {
-	return k.exchangePairs.exists(bc, qc)
+	return k.exchangePairs.exists(coinFromEntity(bc), coinFromEntity(qc))
 }
 
 func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
@@ -131,7 +141,7 @@ func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
 	if err := k.ping(); err != nil {
 		return nil, errors.Wrap(string(op), err)
 	}
-	k.l.Debug(string(op), fmt.Sprintf("ping was successful"))
+	k.l.Debug(string(op), "ping was successful")
 
 	k.l.Debug(string(op), "downloading pairs list from kucoin")
 
@@ -144,13 +154,12 @@ func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
 	// check if current pairs are still supported by kucoin
 	ps := k.exchangePairs.snapshot()
 	k.exchangePairs.purge()
-	cs := k.withdrawalCoins.snapshot()
-	k.withdrawalCoins.purge()
+	cs := k.supportedCoins.snapshot()
+	k.supportedCoins.purge()
 	newPs := []*pair{}
-	newCs := map[string]*withdrawalCoin{}
+	newCs := map[string]*kuCoin{}
 	for _, p := range ps {
-		pe := p.toEntity()
-		ok, err := k.pls.support(pe)
+		ok, err := k.pls.support(p)
 		if err != nil {
 			return nil, errors.Wrap(string(op), err)
 		}
@@ -161,34 +170,27 @@ func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
 				k.l.Error(string(op), err.Error())
 			}
 			res.Removed = append(res.Removed, &entity.PairsErr{
-				Pair: pe,
+				Pair: p.String(),
 				Err:  fmt.Errorf("pair is not supported by kucoin anymore so it will be removed"),
 			})
 			continue
 		}
 
-		if err := k.setInfos(pe); err != nil {
+		if err := k.setInfos(p); err != nil {
 			res.Removed = append(res.Removed, &entity.PairsErr{
-				Pair: pe,
+				Pair: p.String(),
 				Err:  fmt.Errorf("retrieving infos for pair failed due to error ( %s ) so it well be removed", err.Error()),
 			})
 			continue
 		}
-		newPs = append(newPs, fromEntity(pe))
-		newCs[pe.BC.CoinId+pe.BC.ChainId] = &withdrawalCoin{
-			precision: cs[pe.BC.CoinId+pe.BC.ChainId].precision,
-			needChain: pe.BC.SetChain,
-		}
-
-		newCs[pe.QC.CoinId+pe.QC.ChainId] = &withdrawalCoin{
-			precision: cs[pe.QC.CoinId+pe.QC.ChainId].precision,
-			needChain: pe.QC.SetChain,
-		}
+		newPs = append(newPs, p)
+		newCs[p.BC.CoinId+p.BC.ChainId] = cs[p.BC.CoinId+p.BC.ChainId].snapshot()
+		newCs[p.QC.CoinId+p.QC.ChainId] = cs[p.QC.CoinId+p.QC.ChainId].snapshot()
 
 	}
 
-	k.exchangePairs.add(newPs)
-	k.withdrawalCoins.add(newCs)
+	k.exchangePairs.add(newPs...)
+	k.supportedCoins.add(newCs)
 
 	k.l.Info(string(op), fmt.Sprintf("%d pairs were added", len(newPs)))
 	k.l.Info(string(op), fmt.Sprintf("%d pairs were removed", len(ps)-len(newPs)))

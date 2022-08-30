@@ -12,7 +12,7 @@ func (m *MySqlDB) GetPaginated(p *entity.PaginatedUserOrders) error {
 	const op = errors.Op("MySqlDB.GetAllPaging")
 
 	osDTO := []*dto.Order{}
-	if err := setClauses(m.db, p.Filters).Scopes(paginate(p.Page, p.PerPage)).Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+	if err := setClauses(m.db, p.Filters).Scopes(paginate(p.Page, p.PerPage)).Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
 		Find(&osDTO).Error; err != nil {
 		return errors.Wrap(op, err, errors.ErrInternal)
 	}
@@ -35,7 +35,7 @@ func (m *MySqlDB) GetPaginatedByParams(page, perPage int, params map[string]stri
 	const op = errors.Op("MySqlDB.GetPaging")
 
 	osDTO := []*dto.Order{}
-	if err := m.db.Where(params).Preload("Deposite").Preload("Withdrawal").Preload("ExchangeOrder").
+	if err := m.db.Where(params).Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
 		Offset(page * perPage).Limit(perPage).Find(&osDTO).Error; err != nil {
 		return nil, errors.Wrap(op, err, errors.ErrInternal)
 	}

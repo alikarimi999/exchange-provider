@@ -6,42 +6,61 @@ import (
 )
 
 type deposite struct {
-	Id         int64
-	UserId     int64
-	OrderId    int64
-	Exchange   string
-	TxId       string
-	Volume     string
-	Fullfilled bool
+	Id       int64
+	UserId   int64
+	OrderId  int64
+	Status   string
+	Exchange string
+
+	CoinId  string
+	ChainId string
+
+	TxId   string
+	Volume string
+
 	Address    string
 	Tag        string
+	FailedDesc string
 }
 
-func dToDto(d *entity.Deposit) *deposite {
+func DToDto(d *entity.Deposit) *deposite {
 	return &deposite{
-		Id:         d.Id,
-		UserId:     d.UserId,
-		OrderId:    d.OrderId,
-		Exchange:   d.Exchange,
-		TxId:       d.TxId,
-		Volume:     d.Volume,
-		Fullfilled: d.Fullfilled,
-		Address:    d.Address,
-		Tag:        d.Tag,
+		Id:       d.Id,
+		UserId:   d.UserId,
+		OrderId:  d.OrderId,
+		Status:   d.Status,
+		Exchange: d.Exchange,
+
+		CoinId:  d.CoinId,
+		ChainId: d.ChainId,
+
+		TxId:   d.TxId,
+		Volume: d.Volume,
+
+		Address: d.Addr,
+		Tag:     d.Tag,
+
+		FailedDesc: d.FailedDesc,
 	}
 }
 
 func (d *deposite) ToEntity() *entity.Deposit {
 	return &entity.Deposit{
-		Id:         d.Id,
-		UserId:     d.UserId,
-		OrderId:    d.OrderId,
-		Exchange:   d.Exchange,
-		TxId:       d.TxId,
-		Volume:     d.Volume,
-		Fullfilled: d.Fullfilled,
-		Address:    d.Address,
-		Tag:        d.Tag,
+		Id:      d.Id,
+		UserId:  d.UserId,
+		OrderId: d.OrderId,
+
+		Status:   d.Status,
+		Exchange: d.Exchange,
+
+		Coin: &entity.Coin{CoinId: d.CoinId, ChainId: d.ChainId},
+
+		TxId:   d.TxId,
+		Volume: d.Volume,
+
+		Address: &entity.Address{Addr: d.Address, Tag: d.Tag},
+
+		FailedDesc: d.FailedDesc,
 	}
 }
 

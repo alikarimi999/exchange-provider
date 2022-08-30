@@ -21,8 +21,7 @@ type UserFee struct {
 }
 
 type feeService struct {
-	url string
-	db  *gorm.DB
+	db *gorm.DB
 
 	mux        *sync.Mutex
 	defaultFee float64

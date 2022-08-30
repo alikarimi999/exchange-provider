@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"order_service/pkg/errors"
-
-	"github.com/go-redis/redis/v9"
 )
 
 type wtFeed struct {
@@ -22,15 +20,15 @@ type withdrawalTracker struct {
 	k      *kucoinExchange
 	feedCh chan *wtFeed
 	l      logger.Logger
-	c      *withdrawalCache
+	c      *cache
 }
 
-func newWithdrawalTracker(k *kucoinExchange, r *redis.Client, l logger.Logger) *withdrawalTracker {
+func newWithdrawalTracker(k *kucoinExchange, c *cache) *withdrawalTracker {
 	return &withdrawalTracker{
 		k:      k,
 		feedCh: make(chan *wtFeed, 1024),
-		l:      l,
-		c:      newWithdrawalCache(k, r, l),
+		l:      k.l,
+		c:      c,
 	}
 }
 

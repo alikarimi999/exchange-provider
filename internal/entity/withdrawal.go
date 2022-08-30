@@ -17,7 +17,7 @@ type Withdrawal struct {
 	WId     string
 	OrderId int64
 	UserId  int64
-	Address string
+	*Address
 
 	Exchange string
 

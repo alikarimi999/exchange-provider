@@ -1,0 +1,108 @@
+{"level":"fatal","ts":"2022-08-30T16:13:12.033+0430","caller":"order_service_2/service.go:112","msg":"[main] open ./private_key.pem: no such file or directory","stacktrace":"main.test\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:112\nmain.main\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:25\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:250"}
+{"level":"fatal","ts":"2022-08-30T17:04:16.349+0430","caller":"order_service_2/service.go:112","msg":"[main] open ./private_key.pem: no such file or directory","stacktrace":"main.test\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:112\nmain.main\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:25\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:250"}
+{"level":"fatal","ts":"2022-08-30T17:27:46.231+0430","caller":"order_service_2/service.go:127","msg":"[main] failed to connect to root:root_c0d92de67d7634d2acc285670141d25e@tcp(localhost:3306)/order_service?charset=utf8mb4&parseTime=True&loc=Local","stacktrace":"main.test\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:127\nmain.main\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:25\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:250"}
+{"level":"info","ts":"2022-08-30T20:42:12.797+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T21:36:30.617+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T21:36:30.617+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T21:36:30.617+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T21:36:30.617+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T21:55:08.720+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T21:55:08.722+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T21:55:08.722+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T21:55:08.722+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T21:57:31.797+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T21:57:31.798+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T21:57:31.798+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T21:57:31.798+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T22:04:20.385+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T22:04:20.386+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T22:04:20.386+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T22:04:20.386+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T22:15:23.376+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T22:15:23.376+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T22:15:23.376+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T22:15:23.376+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"error","ts":"2022-08-30T22:38:58.523+0430","caller":"kucoin/deposit_aggregate.go:46","msg":"[kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.depositAggregator.run] kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.depositAggregator.aggregate: Get \"https://api.kucoin.com/api/v1/deposits?currentPage=1&endAt=1661882648088&pageSize=100&startAt=1661879048088&status=SUCCESS\": read tcp 192.168.43.213:56642->172.64.151.241:443: read: connection reset by peer related to (kucoin-sdk) ","stacktrace":"order_service/internal/delivery/exchanges/kucoin.(*depositAggregator).run\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/internal/delivery/exchanges/kucoin/deposit_aggregate.go:46"}
+{"level":"error","ts":"2022-08-30T22:38:58.523+0430","caller":"kucoin/with_aggregator.go:48","msg":"[kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.withdrawalAggregator.run] kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.withdrawalAggregator.run: kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.withdrawalAggregator.aggregate: Get \"https://api.kucoin.com/api/v1/withdrawals?currentPage=1&endAt=1661882938410&pageSize=100&startAt=1661879338410&status=SUCCESS\": read tcp 192.168.43.213:56642->172.64.151.241:443: read: connection reset by peer related to (kucoin-sdk) ","stacktrace":"order_service/internal/delivery/exchanges/kucoin.(*withdrawalAggregator).run\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/internal/delivery/exchanges/kucoin/with_aggregator.go:48"}
+{"level":"info","ts":"2022-08-30T22:47:16.006+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T22:47:16.007+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T22:47:16.007+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T22:47:16.007+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T22:50:30.155+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T22:50:30.156+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T22:50:30.156+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T22:50:30.156+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T22:58:27.213+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T22:58:27.214+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T22:58:27.214+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T22:58:27.214+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:15:40.584+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:15:40.585+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:15:40.585+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:15:40.585+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:17:19.194+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:17:19.195+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:17:19.195+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:17:19.195+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:18:05.377+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:18:05.379+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:18:05.379+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:18:05.379+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:18:37.019+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:18:37.019+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:18:37.019+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:18:37.019+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:18:58.626+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:18:58.626+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:18:58.626+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:18:58.626+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:19:24.430+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:19:24.431+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:19:24.431+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:19:24.431+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:19:58.015+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:19:58.017+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:19:58.017+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:19:58.017+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:23:57.224+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:23:57.225+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:23:57.225+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:23:57.225+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:35:21.152+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:35:21.153+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:35:21.153+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:35:21.153+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:49:33.196+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:49:33.199+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:49:33.199+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:49:33.199+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-30T23:52:29.016+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-30T23:52:29.019+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-30T23:52:29.019+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-30T23:52:29.019+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"fatal","ts":"2022-08-31T00:36:44.990+0430","caller":"order_service_2/service.go:119","msg":"[main] failed to ping redis: dial tcp [::1]:6379: connect: connection refused","stacktrace":"main.test\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:119\nmain.main\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/service.go:25\nruntime.main\n\t/usr/local/go/src/runtime/proc.go:250"}
+{"level":"info","ts":"2022-08-31T00:38:49.739+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-31T00:38:49.739+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-31T00:38:49.739+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-31T00:38:49.739+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T00:47:12.135+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-31T00:47:12.136+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-31T00:47:12.136+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-31T00:47:12.136+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T00:49:57.916+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 1 pairs loaded"}
+{"level":"info","ts":"2022-08-31T00:49:57.916+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-31T00:49:57.917+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-31T00:49:57.917+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"error","ts":"2022-08-31T00:54:07.102+0430","caller":"kucoin/deposit_aggregate.go:46","msg":"[kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.depositAggregator.run] kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981.depositAggregator.aggregate: Get \"https://api.kucoin.com/api/v1/deposits?currentPage=1&endAt=1661890979903&pageSize=100&startAt=1661887379903&status=SUCCESS\": read tcp 192.168.43.213:58918->172.64.151.241:443: read: connection reset by peer related to (kucoin-sdk) ","stacktrace":"order_service/internal/delivery/exchanges/kucoin.(*depositAggregator).run\n\t/Users/alikarimi/go/src/github.com/alikarimi999/order_service_2/internal/delivery/exchanges/kucoin/deposit_aggregate.go:46"}
+{"level":"info","ts":"2022-08-31T00:59:49.004+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 3 pairs loaded"}
+{"level":"info","ts":"2022-08-31T00:59:49.004+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-31T00:59:49.004+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-31T00:59:49.005+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T01:00:14.376+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T01:05:09.441+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T01:05:57.357+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T01:10:36.714+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}
+{"level":"info","ts":"2022-08-31T01:15:55.402+0430","caller":"kucoin/kucoin.go:158","msg":"[Kucoin-Exchange.NewKucoinExchange] 3 pairs loaded"}
+{"level":"info","ts":"2022-08-31T01:15:55.403+0430","caller":"kucoin/kucoin.go:159","msg":"[Kucoin-Exchange.NewKucoinExchange] 0 pairs couldn't be loaded"}
+{"level":"info","ts":"2022-08-31T01:15:55.404+0430","caller":"kucoin/kucoin.go:160","msg":"[Kucoin-Exchange.NewKucoinExchange] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 started again successfully"}
+{"level":"info","ts":"2022-08-31T01:15:55.404+0430","caller":"app/ex_store.go:231","msg":"[exStore.start] exchange kucoin-f2ff338be44a36f92ac5ce1a830c0c7d8fc26981 activated"}

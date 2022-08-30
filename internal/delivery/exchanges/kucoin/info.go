@@ -48,8 +48,8 @@ func (k *kucoinExchange) setOrderFeeRate(p *entity.Pair) error {
 
 }
 
-func (k *kucoinExchange) setBCWithdrawalLimit(p *entity.Pair) error {
-	res, err := k.api.CurrencyV2(p.BC.Coin.CoinId, "")
+func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
+	res, err := k.api.CurrencyV2(p.BC.CoinId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -62,8 +62,9 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *entity.Pair) error {
 
 	for _, c := range m.Chains {
 		if c.ChainName == p.BC.ChainId {
-			p.BC.MinWithdrawalSize = c.WithdrawalMinSize
-			p.BC.WithdrawalMinFee = c.WithdrawalMinFee
+			p.BC.ConfirmBlocks = c.Confirms
+			p.BC.minWithdrawalSize = c.WithdrawalMinSize
+			p.BC.minWithdrawalFee = c.WithdrawalMinFee
 			return nil
 		}
 	}
@@ -74,11 +75,12 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *entity.Pair) error {
 	}
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
-		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v", p.BC.Coin.CoinId, p.BC.ChainId, p.BC.CoinId, ch)))
+		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
+			p.BC.CoinId, p.BC.ChainId, p.BC.CoinId, ch)))
 }
 
-func (k *kucoinExchange) setQCWithdrawalLimit(p *entity.Pair) error {
-	res, err := k.api.CurrencyV2(p.QC.Coin.CoinId, "")
+func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
+	res, err := k.api.CurrencyV2(p.QC.CoinId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -91,8 +93,9 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *entity.Pair) error {
 
 	for _, c := range m.Chains {
 		if c.ChainName == p.QC.ChainId {
-			p.QC.MinWithdrawalSize = c.WithdrawalMinSize
-			p.QC.WithdrawalMinFee = c.WithdrawalMinFee
+			p.QC.ConfirmBlocks = c.Confirms
+			p.QC.minWithdrawalSize = c.WithdrawalMinSize
+			p.QC.minWithdrawalFee = c.WithdrawalMinFee
 			return nil
 		}
 	}
@@ -103,14 +106,15 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *entity.Pair) error {
 	}
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
-		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v", p.QC.Coin.CoinId, p.QC.ChainId, p.QC.CoinId, ch)))
+		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
+			p.QC.CoinId, p.QC.ChainId, p.QC.CoinId, ch)))
 }
 
-func (k *kucoinExchange) setChain(pc *entity.PairCoin) error {
+func (k *kucoinExchange) setAddress(pc *kuCoin) error {
 	op := errors.Op(fmt.Sprintf("%s.setChain", k.NID()))
 	var coin string
 	var chain string
-	if pc.SetChain {
+	if pc.needChain {
 		coin = pc.CoinId
 		chain = pc.ChainId
 	} else {
@@ -119,10 +123,18 @@ func (k *kucoinExchange) setChain(pc *entity.PairCoin) error {
 	}
 
 	res, err := k.api.DepositAddresses(coin, chain)
-	if pc.SetChain && res != nil && res.Code == "900014" && res.Message == "Invalid chainId" {
-		pc.SetChain = false
-		return k.setChain(pc)
+	if pc.needChain && res != nil && res.Code == "900014" && res.Message == "Invalid chainId" {
+		pc.needChain = false
+		return k.setAddress(pc)
 	}
+	a := &kucoin.DepositAddressModel{}
+	if err := res.ReadData(a); err != nil {
+		return err
+	}
+	pc.address = a.Address
+	pc.tag = a.Memo
+
+	k.l.Debug(string(op), fmt.Sprintf("`%s` address downloaded `%s:%s`", pc.String(), pc.address, pc.tag))
 
 	if err = handleSDKErr(err, res); err != nil {
 		return errors.Wrap(err, op)
@@ -131,30 +143,20 @@ func (k *kucoinExchange) setChain(pc *entity.PairCoin) error {
 	return nil
 }
 
-func (k *kucoinExchange) setInfos(p *entity.Pair) error {
+func (k *kucoinExchange) setInfos(p *pair) error {
 
-	p.BC.SetChain = true
-	p.QC.SetChain = true
+	p.BC.needChain = true
+	p.QC.needChain = true
 
-	if err := k.setChain(p.BC); err != nil {
+	if err := k.setAddress(p.BC); err != nil {
 		return err
 	}
 
-	if err := k.setChain(p.QC); err != nil {
+	if err := k.setAddress(p.QC); err != nil {
 		return err
 	}
 
-	err := k.setPrice(p)
-	if err != nil {
-		return err
-	}
-
-	err = k.setOrderFeeRate(p)
-	if err != nil {
-		return err
-	}
-
-	err = k.setBCWithdrawalLimit(p)
+	err := k.setBCWithdrawalLimit(p)
 	if err != nil {
 		return err
 	}

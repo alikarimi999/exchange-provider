@@ -1,27 +1,30 @@
 package entity
 
+const (
+	DepositTxIdSet   string = "tx_id_set"
+	DepositConfirmed string = "confirmed"
+	DepositFailed    string = "failed"
+)
+
+type Address struct {
+	Addr string
+	Tag  string
+}
+
 type Deposit struct {
-	Id       int64
-	UserId   int64
-	OrderId  int64
+	Id      int64
+	UserId  int64
+	OrderId int64
+
+	Status   string
 	Exchange string
-	TxId     string
-	Volume   string
 
-	Fullfilled bool
-	Address    string
-	Tag        string
-}
+	*Coin
 
-type DepositeService interface {
-	Configs() interface{}
-	ChangeConfigs(cfg interface{}) error
-	New(userId, orderId int64, coin *Coin, exchange string) (*Deposit, error)
-	SetTxId(depositeId int64, txId string) error
-}
+	TxId   string
+	Volume string
 
-type Depositcoin struct {
-	CoinId   string
-	ChainId  string
-	SetChain bool
+	*Address
+
+	FailedDesc string
 }

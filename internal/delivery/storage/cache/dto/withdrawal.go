@@ -10,7 +10,9 @@ type Withdrawal struct {
 	WId     string
 	OrderId int64
 	UserId  int64
+
 	Address string
+	Tag     string
 
 	Coin     string
 	Chain    string
@@ -31,7 +33,9 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 		WId:     w.WId,
 		OrderId: w.OrderId,
 		UserId:  w.UserId,
-		Address: w.Address,
+
+		Address: w.Addr,
+		Tag:     w.Tag,
 
 		Exchange:    w.Exchange,
 		Total:       w.Total,
@@ -45,11 +49,13 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 
 func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 	return &entity.Withdrawal{
-		Id:          w.Id,
-		WId:         w.WId,
-		OrderId:     w.OrderId,
-		UserId:      w.UserId,
-		Address:     w.Address,
+		Id:      w.Id,
+		WId:     w.WId,
+		OrderId: w.OrderId,
+		UserId:  w.UserId,
+
+		Address: &entity.Address{Addr: w.Address, Tag: w.Tag},
+
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
