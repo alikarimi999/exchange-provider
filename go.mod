@@ -2,13 +2,15 @@ module order_service
 
 go 1.18
 
-require (
-	github.com/Kucoin/kucoin-go-sdk v1.2.12
-	github.com/luci/go-render v0.0.0-20160219211803-9a04cc21af0f
-)
+require github.com/Kucoin/kucoin-go-sdk v1.2.12
 
 require (
+	github.com/btcsuite/btcd v0.21.0-beta // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
+	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -34,6 +36,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
+	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef // indirect
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
@@ -47,13 +50,14 @@ require (
 )
 
 require (
+	github.com/ethereum/go-ethereum v1.10.23
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis/v9 v9.0.0-beta.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
+	github.com/pkg/errors v0.9.1
 	github.com/rabbitmq/amqp091-go v1.3.4
 	github.com/sethvargo/go-limiter v0.7.2
 	github.com/sirupsen/logrus v1.8.1 // indirect
