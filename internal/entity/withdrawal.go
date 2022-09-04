@@ -17,6 +17,9 @@ type Withdrawal struct {
 	WId     string
 	OrderId int64
 	UserId  int64
+
+	Status WithdrawalStatus
+
 	*Address
 
 	Exchange string
@@ -26,8 +29,8 @@ type Withdrawal struct {
 	ExchangeFee string
 	Executed    string
 
-	TxId   string
-	Status WithdrawalStatus
+	TxId       string
+	FailedDesc string
 }
 
 func (w *Withdrawal) String() string {

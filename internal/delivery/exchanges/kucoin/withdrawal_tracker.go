@@ -12,7 +12,6 @@ import (
 type wtFeed struct {
 	w            *entity.Withdrawal
 	done         chan<- struct{}
-	err          chan<- error
 	proccessedCh <-chan bool
 }
 
@@ -43,7 +42,11 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 			func(f *wtFeed) {
 				wd, err := t.c.getWithdrawal(f.w.WId)
 				if err != nil {
-					f.err <- errors.Wrap(err, op)
+					t.l.Error(string(op), err.Error())
+					f.w.Status = entity.WithdrawalFailed
+					f.w.FailedDesc = err.Error()
+					f.done <- struct{}{}
+					<-f.proccessedCh
 					return
 				}
 				switch wd.Status {
@@ -52,13 +55,16 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					f.w.ExchangeFee = wd.Fee
 					f.w.Executed = wd.Amount
 					f.w.TxId = wd.FixTxId()
-					f.done <- struct{}{}
 				case "FAILURE":
 					f.w.Status = entity.WithdrawalFailed
-					f.done <- struct{}{}
+					f.w.FailedDesc = "failed by exchange"
 				default:
 					f.w.Status = entity.WithdrawalPending
+					f.done <- struct{}{}
+					<-f.proccessedCh
+					return
 				}
+				f.done <- struct{}{}
 
 				if <-f.proccessedCh {
 					if err := t.c.delWithdrawal(f.w.WId); err != nil {
@@ -67,9 +73,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					if err := t.c.proccessedWithdrawal(f.w.WId); err != nil {
 						t.l.Error(string(op), errors.Wrap(err, op).Error())
 					}
-					return
 				}
-
 			}(feed)
 
 		case <-stopCh:

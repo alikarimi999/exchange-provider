@@ -64,6 +64,7 @@ func readOrderBySeq(r entity.OrderRepo, c entity.OrderCache, userId int64, seq i
 	if er1 != nil {
 		var er2 error
 		ord, er2 = r.GetBySeq(userId, seq)
+
 		if er2 != nil {
 			if errors.ErrorCode(er2) == errors.ErrNotFound {
 				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %d not found", seq, userId)))

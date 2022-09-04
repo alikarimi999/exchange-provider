@@ -17,6 +17,7 @@ type ExchangeOrder struct {
 	ExId        string
 	UserId      int64
 	OrderId     int64
+	Status      ExOrderStatus // succed, failed
 	Exchange    string
 	Symbol      string
 	Side        string
@@ -24,7 +25,7 @@ type ExchangeOrder struct {
 	Size        string
 	Fee         string
 	FeeCurrency string
-	Status      ExOrderStatus // succed, failed
+	FailedDesc  string
 }
 
 type Exchange interface {
@@ -33,11 +34,11 @@ type Exchange interface {
 	NID() string
 
 	Exchange(bc, qc *Coin, side, size, funds string) (string, error)
-	TrackOrder(o *ExchangeOrder, done chan<- struct{}, err chan<- error)
-	TrackDeposit(d *Deposit, done chan<- struct{}, err chan<- error, proccessed <-chan bool)
+	TrackOrder(o *ExchangeOrder, done chan<- struct{}, proccessed <-chan bool)
+	TrackDeposit(d *Deposit, done chan<- struct{}, proccessed <-chan bool)
 
 	Withdrawal(coin *Coin, address *Address, vol string) (string, error)
-	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, err chan<- error, proccessedCh <-chan bool) error
+	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, proccessedCh <-chan bool) error
 
 	ExchangeManager
 }

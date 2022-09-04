@@ -1,7 +1,7 @@
 package entity
 
 const (
-	DepositTxIdSet   string = "tx_id_set"
+	DepositTxIdSet   string = "tx_id_setted"
 	DepositConfirmed string = "confirmed"
 	DepositFailed    string = "failed"
 )

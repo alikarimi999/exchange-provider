@@ -25,7 +25,7 @@ func (o *OrderUseCase) write(data interface{}) error {
 func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 	switch d := data.(type) {
 	case *entity.UserOrder:
-		if d.Status == entity.OrderStatusOpen {
+		if d.Status == entity.OSNew {
 			return o.repo.Add(d)
 		}
 		return o.repo.Update(d)
@@ -40,7 +40,7 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 func (o *OrderUseCase) writeToCache(data interface{}) error {
 	switch d := data.(type) {
 	case *entity.UserOrder:
-		if d.Status == entity.OrderStatusSucceed || d.Status == entity.OrderStatusFailed || d.Status == entity.OsDepositFailed {
+		if d.Status == entity.OSSucceed || d.Status == entity.OSFailed {
 			return nil
 		}
 

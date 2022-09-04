@@ -14,7 +14,7 @@ import (
 type trackerFedd struct {
 	eo   *entity.ExchangeOrder
 	done chan<- struct{}
-	err  chan<- error
+	pCh  <-chan bool
 }
 
 type orderTracker struct {
@@ -46,15 +46,24 @@ func (t *orderTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 				resp, err := t.api.Order(f.eo.ExId)
 				if err = handleSDKErr(err, resp); err != nil {
-					f.err <- errors.Wrap(err, op, errors.ErrInternal)
+					t.l.Error(string(op), err.Error())
+					f.eo.Status = entity.ExOrderFailed
+					f.eo.FailedDesc = err.Error()
+					f.done <- struct{}{}
+					<-f.pCh
 					return
 				}
 
 				order := &kucoin.OrderModel{}
 				if err = resp.ReadData(order); err != nil {
-					f.err <- errors.Wrap(err, op, errors.ErrInternal)
+					t.l.Error(string(op), err.Error())
+					f.eo.Status = entity.ExOrderFailed
+					f.eo.FailedDesc = err.Error()
+					f.done <- struct{}{}
+					<-f.pCh
 					return
 				}
+
 				f.eo.Symbol = order.Symbol
 				f.eo.Funds = order.DealFunds
 				f.eo.Size = order.DealSize
@@ -63,7 +72,7 @@ func (t *orderTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				f.eo.FeeCurrency = order.FeeCurrency
 				f.eo.Status = entity.ExOrderSucceed
 				f.done <- struct{}{}
-				return
+				<-f.pCh
 
 			}(feed)
 

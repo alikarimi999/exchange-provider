@@ -29,8 +29,8 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 	}
 
 	return &entity.Coin{
-		CoinId:  parts[0],
-		ChainId: parts[1],
+		CoinId:  strings.ToUpper(parts[0]),
+		ChainId: strings.ToUpper(parts[1]),
 	}, nil
 }
 

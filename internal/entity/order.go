@@ -8,20 +8,26 @@ import (
 type OrderStatus string
 
 const (
-	OrderStatusOpen OrderStatus = ""
+	OSNew OrderStatus = ""
 
-	OrderStatusWaitForDepositeConfirm OrderStatus = "wait_for_deposite_confirm"
-	OrderStatusDepositeConfimred      OrderStatus = "deposite_confirmed"
-	OsDepositFailed                   OrderStatus = "deposit_failed"
+	OSTxIdSetted        OrderStatus = "txId_setted"
+	OSDepositeConfimred OrderStatus = "deposite_confirmed"
 
-	OrderStatusWaitForExchangeOrderConfirm OrderStatus = "wait_for_exchange_order_confirm"
-	OrderStatusExchangeOrderConfirmed      OrderStatus = "exchange_order_confirmed"
+	OSWaitForExchangeOrderConfirm OrderStatus = "wait_for_exchange_order_confirm"
+	OSExchangeOrderConfirmed      OrderStatus = "exchange_order_confirmed"
 
-	OrderStatusWaitForWithdrawalConfirm OrderStatus = "wait_for_withdrawal_confirm"
-	OrderStatusWithdrawalConfirmed      OrderStatus = "withdrawal_confirmed"
+	OSWaitForWithdrawalConfirm OrderStatus = "wait_for_withdrawal_confirm"
+	OSWithdrawalConfirmed      OrderStatus = "withdrawal_confirmed"
 
-	OrderStatusSucceed OrderStatus = "succeed"
-	OrderStatusFailed  OrderStatus = "failed"
+	OSSucceed OrderStatus = "succeed"
+	OSFailed  OrderStatus = "failed"
+)
+
+const (
+	FCInternalError int64 = iota + 1
+	FCDepositFailed
+	FCExOrdFailed
+	FCWithdFailed
 )
 
 type UserOrder struct {
@@ -40,15 +46,15 @@ type UserOrder struct {
 	Deposit       *Deposit
 	ExchangeOrder *ExchangeOrder
 	Withdrawal    *Withdrawal
-	Broken        bool
-	BreakReason   string
+	FailedCode    int64
+	FailedDesc    string
 }
 
 func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side string, ex string) *UserOrder {
 	w := &UserOrder{
 		UserId:    userId,
 		CreatedAt: time.Now().Unix(),
-		Status:    OrderStatusOpen,
+		Status:    OSNew,
 		Exchange:  ex,
 		BC:        bc,
 		QC:        qc,

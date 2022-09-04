@@ -38,19 +38,16 @@ func (wh *withdrawalHandler) handle(wg *sync.WaitGroup) {
 	const op = errors.Op("chainTicker.tick")
 
 	defer wg.Done()
-	for {
-		select {
-		case t := <-wh.ticker.C:
-			ws, err := wh.cache.GetPendingWithdrawals(t.Add(-wh.windowsSize))
-			if err != nil {
-				wh.l.Error(string(op), errors.Wrap(err, op, "pending withdrawals").Error())
-				continue
-			}
-			for _, w := range ws {
-				wh.tracker.track(w)
-			}
-
+	for t := range wh.ticker.C {
+		ws, err := wh.cache.GetPendingWithdrawals(t.Add(-wh.windowsSize))
+		if err != nil {
+			wh.l.Error(string(op), errors.Wrap(err, op, "pending withdrawals").Error())
+			continue
 		}
+		for _, w := range ws {
+			wh.tracker.track(w)
+		}
+
 	}
 
 }

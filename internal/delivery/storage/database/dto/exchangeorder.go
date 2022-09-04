@@ -5,10 +5,12 @@ import (
 )
 
 type ExchangeOrder struct {
-	Id          uint64 `gorm:"primary_key"`
-	ExId        string
-	UserId      int64
-	OrderId     int64
+	Id      uint64 `gorm:"primary_key"`
+	ExId    string
+	UserId  int64
+	OrderId int64
+	Status  string
+
 	Symbol      string
 	Exchange    string
 	Side        string
@@ -16,7 +18,8 @@ type ExchangeOrder struct {
 	Size        string
 	Fee         string
 	FeeCurrency string
-	Status      string
+
+	FailedDesc string
 }
 
 func EToDto(eo *entity.ExchangeOrder) *ExchangeOrder {
@@ -37,6 +40,8 @@ func EToDto(eo *entity.ExchangeOrder) *ExchangeOrder {
 		Fee:         eo.Fee,
 		FeeCurrency: eo.FeeCurrency,
 		Status:      string(eo.Status),
+
+		FailedDesc: eo.FailedDesc,
 	}
 }
 
@@ -57,6 +62,8 @@ func (eo *ExchangeOrder) ToEntity() *entity.ExchangeOrder {
 		Fee:         eo.Fee,
 		FeeCurrency: eo.FeeCurrency,
 		Status:      entity.ExOrderStatus(eo.Status),
+
+		FailedDesc: eo.FailedDesc,
 	}
 
 }

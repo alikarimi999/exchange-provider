@@ -25,8 +25,9 @@ type UserOrder struct {
 	SpreadVol  string
 
 	ExchangeOrder *exchangeOrder
-	Broken        bool
-	BreakeReason  string
+
+	FaileCode  int64
+	FailedDesc string
 }
 
 func ToDTO(u *entity.UserOrder) *UserOrder {
@@ -49,8 +50,9 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 		SpreadVol:  u.SpreadVol,
 
 		ExchangeOrder: eoToDto(u.ExchangeOrder),
-		Broken:        u.Broken,
-		BreakeReason:  u.BreakReason,
+
+		FaileCode:  u.FailedCode,
+		FailedDesc: u.FailedDesc,
 	}
 }
 
@@ -80,8 +82,9 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 		SpreadVol:  u.SpreadVol,
 
 		ExchangeOrder: u.ExchangeOrder.ToEntity(),
-		Broken:        u.Broken,
-		BreakReason:   u.BreakeReason,
+
+		FailedCode: u.FaileCode,
+		FailedDesc: u.FailedDesc,
 	}
 }
 

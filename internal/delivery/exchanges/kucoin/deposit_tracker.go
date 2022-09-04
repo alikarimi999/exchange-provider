@@ -50,7 +50,7 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						if !d.MatchCurrency(f.d) {
 							f.d.Status = entity.DepositFailed
 							f.d.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ", f.d.CoinId, d.Currency)
-
+							f.done <- struct{}{}
 							return false, nil
 						}
 						f.d.Status = entity.DepositConfirmed
@@ -69,10 +69,8 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 				if err != nil {
 					t.l.Debug(agent, err.Error())
-
 					f.d.Status = entity.DepositFailed
 					f.d.FailedDesc = err.Error()
-
 					f.done <- struct{}{}
 				}
 				// remove the deposit from the cache if tracker's signal successfuly proccessed by consumer.

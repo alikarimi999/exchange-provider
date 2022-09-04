@@ -11,6 +11,7 @@ type Withdrawal struct {
 	OrderId int64
 	UserId  int64
 
+	Status  string
 	Address string
 	Tag     string
 
@@ -23,8 +24,8 @@ type Withdrawal struct {
 	ExchangeFee string
 	Executed    string
 
-	TxId   string
-	Status string
+	TxId       string
+	FailedDesc string
 }
 
 func OWToDTO(w *entity.Withdrawal) *Withdrawal {
@@ -44,6 +45,7 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 		Executed:    w.Executed,
 		TxId:        w.TxId,
 		Status:      string(w.Status),
+		FailedDesc:  w.FailedDesc,
 	}
 }
 
@@ -63,6 +65,7 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 		Executed:    w.Executed,
 		TxId:        w.TxId,
 		Status:      entity.WithdrawalStatus(w.Status),
+		FailedDesc:  w.FailedDesc,
 	}
 }
 

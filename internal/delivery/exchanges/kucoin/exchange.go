@@ -109,13 +109,11 @@ func (k *kucoinExchange) Withdrawal(coin *entity.Coin, a *entity.Address, vol st
 	return w.WithdrawalId, nil
 }
 
-func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{},
-	err chan<- error) {
-
+func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{}, p <-chan bool) {
 	feed := &trackerFedd{
 		eo:   o,
 		done: done,
-		err:  err,
+		pCh:  p,
 	}
 
 	k.ot.track(feed)
@@ -123,12 +121,11 @@ func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{
 }
 
 func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
-	err chan<- error, proccessedCh <-chan bool) error {
+	proccessedCh <-chan bool) error {
 
 	feed := &wtFeed{
 		w:            w,
 		done:         done,
-		err:          err,
 		proccessedCh: proccessedCh,
 	}
 
@@ -147,7 +144,7 @@ func (k *kucoinExchange) ping() error {
 	return nil
 }
 
-func (k *kucoinExchange) TrackDeposit(d *entity.Deposit, done chan<- struct{}, er chan<- error,
+func (k *kucoinExchange) TrackDeposit(d *entity.Deposit, done chan<- struct{},
 	proccessed <-chan bool) {
 
 	c, err := k.supportedCoins.get(d.CoinId, d.ChainId)

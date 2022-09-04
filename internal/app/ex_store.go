@@ -215,41 +215,39 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 	a.l.Debug(agent, "started")
 
 	go func() {
-		for {
-			select {
-			case ex := <-a.addCh:
+		for ex := range a.addCh {
 
-				switch ex.CurrentStatus {
-				case ExchangeStatusActive:
-					a.mux.Lock()
-					a.actives[ex.NID()] = ex
-					if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
-						wg.Add(1)
-						go ex.Run(wg)
-					}
-					a.mux.Unlock()
-					a.l.Info(agent, fmt.Sprintf("exchange %s activated", ex.NID()))
-				case ExchangeStatusDeactive:
-					a.mux.Lock()
-					a.deactives[ex.NID()] = ex
-					if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
-						wg.Add(1)
-						go ex.Run(wg)
-					}
-					a.mux.Unlock()
-					a.l.Info(agent, fmt.Sprintf("exchange %s deactivated", ex.NID()))
-				case ExchangeStatusDisable:
-					a.mux.Lock()
-					a.disableds[ex.NID()] = ex
-					a.mux.Unlock()
-					a.l.Info(agent, fmt.Sprintf("exchange %s disabled", ex.NID()))
-					continue
-				default:
-					continue
+			switch ex.CurrentStatus {
+			case ExchangeStatusActive:
+				a.mux.Lock()
+				a.actives[ex.NID()] = ex
+				if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
+					wg.Add(1)
+					go ex.Run(wg)
 				}
-
+				a.mux.Unlock()
+				a.l.Info(agent, fmt.Sprintf("exchange %s activated", ex.NID()))
+			case ExchangeStatusDeactive:
+				a.mux.Lock()
+				a.deactives[ex.NID()] = ex
+				if ex.PreviousStatus == "" || ex.PreviousStatus == ExchangeStatusDisable {
+					wg.Add(1)
+					go ex.Run(wg)
+				}
+				a.mux.Unlock()
+				a.l.Info(agent, fmt.Sprintf("exchange %s deactivated", ex.NID()))
+			case ExchangeStatusDisable:
+				a.mux.Lock()
+				a.disableds[ex.NID()] = ex
+				a.mux.Unlock()
+				a.l.Info(agent, fmt.Sprintf("exchange %s disabled", ex.NID()))
+				continue
+			default:
+				continue
 			}
+
 		}
+
 	}()
 
 	go func() {

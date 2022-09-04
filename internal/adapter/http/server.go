@@ -44,10 +44,18 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
+	bc, err := dto.ParseCoin(req.BC)
+	if err != nil {
+		handlerErr(ctx, err)
+		return
+	}
+	qc, err := dto.ParseCoin(req.QC)
+	if err != nil {
+		handlerErr(ctx, err)
+		return
+	}
 
-	bc := &entity.Coin{CoinId: req.BC, ChainId: req.BChain}
-	qc := &entity.Coin{CoinId: req.QC, ChainId: req.QChain}
+	s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
 
 	ex, err := s.app.SelectExchangeByPair(bc, qc)
 	if err != nil {
@@ -79,11 +87,9 @@ func (s *Server) NewUserOrder(ctx Context) {
 		DepositeAddress: o.Deposit.Addr,
 		AddressTag:      o.Deposit.Tag,
 	})
-	return
 }
 
 func (s *Server) GetPaginatedForUser(ctx Context) {
-
 	userId, _ := ctx.GetKey("user_id")
 
 	pa := &dto.PaginatedUserOrdersRequest{}
@@ -105,7 +111,6 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 	r := &dto.PaginatedUserOrdersResponse{}
 	r.Map(pao, false)
 	ctx.JSON(http.StatusOK, r)
-	return
 }
 
 func (s *Server) GetPaginatedForAdmin(ctx Context) {
@@ -129,7 +134,6 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 	r := &dto.PaginatedUserOrdersResponse{}
 	r.Map(pao, true)
 	ctx.JSON(http.StatusOK, r)
-	return
 }
 
 func (s *Server) SetTxId(ctx Context) {
@@ -141,14 +145,17 @@ func (s *Server) SetTxId(ctx Context) {
 	}
 
 	if err := r.Validate(); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		r.Msg = errors.ErrorMsg(err)
+		ctx.JSON(http.StatusBadRequest, r)
 		return
 	}
 
 	if err := s.app.SetTxId(userId.(int64), r.Seq, r.TxId); err != nil {
-		handlerErr(ctx, err)
+		r.Msg = errors.ErrorMsg(err)
+		ctx.JSON(http.StatusBadRequest, r)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, fmt.Sprintf("txId `%s` set for order `%d`", r.TxId, r.Seq))
+	r.Msg = "transaction id setted successfully"
+	ctx.JSON(http.StatusOK, r)
 }

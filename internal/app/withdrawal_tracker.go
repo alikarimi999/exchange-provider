@@ -39,117 +39,107 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	const op = errors.Op("Withdrawal-Tracker.run")
 	defer wg.Done()
 
-	for {
-		select {
-		case wd := <-t.wCh:
-			go func(w *entity.Withdrawal) {
-				t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
+	for wd := range t.wCh {
+		go func(w *entity.Withdrawal) {
+			t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
 
-				ex, err := t.exs.get(w.Exchange)
-				if err != nil {
-					t.l.Error(string(op), errors.Wrap(err, op, "exchange not found").Error())
-					return
-				}
+			ex, err := t.exs.get(w.Exchange)
+			if err != nil {
+				t.l.Error(string(op), errors.Wrap(err, op, "exchange not found").Error())
+				return
+			}
 
-				done := make(chan struct{})
-				errCh := make(chan error)
-				proccessedCh := make(chan bool)
-				if err := ex.TrackWithdrawal(w, done, errCh, proccessedCh); err != nil {
+			done := make(chan struct{})
+			pCh := make(chan bool)
+			if err := ex.TrackWithdrawal(w, done, pCh); err != nil {
+				t.l.Error(string(op), errors.Wrap(err, op,
+					fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+				return
+			}
+
+			<-done
+			switch w.Status {
+			case entity.WithdrawalPending:
+				t.l.Debug(string(op), fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d' is pending yet", w.WId, w.OrderId, w.UserId))
+				pCh <- true
+				return
+			case entity.WithdrawalSucceed:
+
+				o := &entity.UserOrder{Id: w.OrderId, UserId: w.UserId}
+				if err := t.ouc.read(o); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+					pCh <- false
 					return
 				}
-				select {
-				case <-done:
 
-					switch w.Status {
-					case entity.WithdrawalPending:
-						t.l.Debug(string(op), fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d' is pending yet", w.WId, w.OrderId, w.UserId))
-						return
-					case entity.WithdrawalSucceed:
+				t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
+					w.WId, w.Status, w.OrderId, w.UserId))
 
-						o, err := t.oc.Get(w.UserId, w.OrderId)
-						if err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-							proccessedCh <- false
-							return
-						}
+				o.Status = entity.OSSucceed
+				o.Withdrawal.Status = w.Status
+				o.Withdrawal.ExchangeFee = w.ExchangeFee
+				o.Withdrawal.Executed = w.Executed
+				o.Withdrawal.TxId = w.TxId
 
-						t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
-							w.WId, w.Status, w.OrderId, w.UserId))
+				if err := t.ouc.write(o); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
+					pCh <- false
+					return
+				}
+				pCh <- true
 
-						o.Status = entity.OrderStatusSucceed
-						o.Withdrawal.Status = entity.WithdrawalSucceed
-						o.Withdrawal.ExchangeFee = w.ExchangeFee
-						o.Withdrawal.Executed = w.Executed
-						o.Withdrawal.TxId = w.TxId
-
-						if err := t.ouc.write(o); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
-							proccessedCh <- false
-							return
-						}
-						proccessedCh <- true
-
-						if err := t.wc.DelPendingWithdrawal(w); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-						}
-
-						if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-						}
-
-						if err := t.wc.DelPendingWithdrawal(w); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-						}
-
-						return
-
-					case entity.WithdrawalFailed:
-
-						o, err := t.oc.Get(w.UserId, w.OrderId)
-						if err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-							proccessedCh <- false
-							return
-						}
-
-						t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
-							w.WId, w.Status, w.OrderId, w.UserId))
-
-						o.Broken = true
-						o.BreakReason = "withdrawal failed"
-						o.Withdrawal.Status = entity.WithdrawalFailed
-
-						if err := t.ouc.write(o); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
-							proccessedCh <- false
-							return
-						}
-						proccessedCh <- true
-
-						if err := t.wc.DelPendingWithdrawal(w); err != nil {
-							t.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-						}
-						return
-
-					}
-
-				case err := <-errCh:
-					proccessedCh <- false
+				if err := t.wc.DelPendingWithdrawal(w); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-					return
-
 				}
-			}(wd)
-		}
+
+				if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op,
+						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+				}
+
+				if err := t.wc.DelPendingWithdrawal(w); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op,
+						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+				}
+
+				return
+
+			case entity.WithdrawalFailed:
+
+				o := &entity.UserOrder{Id: w.OrderId, UserId: w.UserId}
+				if err := t.ouc.read(o); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op,
+						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+					pCh <- false
+					return
+				}
+
+				t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
+					w.WId, w.Status, w.OrderId, w.UserId))
+
+				o.Status = entity.OSFailed
+				o.FailedCode = entity.FCWithdFailed
+				o.Withdrawal.Status = w.Status
+				o.Withdrawal.FailedDesc = w.FailedDesc
+
+				if err := t.ouc.write(o); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
+					pCh <- false
+					return
+				}
+				pCh <- true
+
+				if err := t.wc.DelPendingWithdrawal(w); err != nil {
+					t.l.Error(string(op), errors.Wrap(err, op,
+						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
+				}
+				return
+
+			}
+
+		}(wd)
 	}
 }
 

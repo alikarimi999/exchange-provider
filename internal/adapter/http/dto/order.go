@@ -31,64 +31,65 @@ type UserOrder struct {
 	CreatedAt      int64  `json:"created_at"`
 }
 
-func UOFromEntity(de *entity.UserOrder) *UserOrder {
-	d := &UserOrder{
-		Id:        de.Seq,
-		BaseCoin:  de.BC.String(),
-		QuoteCoin: de.QC.String(),
-		Side:      de.Side,
+func UOFromEntity(oe *entity.UserOrder) *UserOrder {
+	o := &UserOrder{
+		Id:        oe.Seq,
+		BaseCoin:  oe.BC.String(),
+		QuoteCoin: oe.QC.String(),
+		Side:      oe.Side,
 
-		Fee:            de.Withdrawal.Fee,
-		TransferFee:    de.Withdrawal.ExchangeFee,
-		DepositAddress: de.Deposit.Addr,
-		DepositTag:     de.Deposit.Tag,
+		Fee:            oe.Withdrawal.Fee,
+		TransferFee:    oe.Withdrawal.ExchangeFee,
+		DepositAddress: oe.Deposit.Addr,
+		DepositTag:     oe.Deposit.Tag,
 
-		WithdrawalAddress: de.Withdrawal.Addr,
-		WithdrawalTag:     de.Withdrawal.Tag,
+		WithdrawalAddress: oe.Withdrawal.Addr,
+		WithdrawalTag:     oe.Withdrawal.Tag,
 
-		WithdrawalTxId: de.Withdrawal.TxId,
-		CreatedAt:      de.CreatedAt,
+		WithdrawalTxId: oe.Withdrawal.TxId,
+		CreatedAt:      oe.CreatedAt,
 	}
 
-	if !de.Broken {
-		if de.Status != entity.OrderStatusSucceed && de.Status != entity.OrderStatusFailed {
-			d.Status = "pending"
-		} else {
-			d.Status = string(de.Status)
+	switch oe.Status {
+	case entity.OSDepositeConfimred:
+		o.Status = string(oe.Status)
+
+	case entity.OSFailed:
+		o.Status = string(oe.Status)
+
+		switch oe.FailedCode {
+		case entity.FCDepositFailed:
+			if oe.Deposit.FailedDesc == app.BR_InsufficientDepositVolume {
+				o.FailReason = app.BR_InsufficientDepositVolume
+			}
 		}
+	default:
+		o.Status = "pending"
+	}
+
+	if oe.Side == "buy" {
+		o.FinalSize = oe.Withdrawal.Executed
+		o.FinalFunds = oe.Deposit.Volume
+		o.FeeCurrency = oe.BC.String()
 	} else {
-		d.Status = "failed"
-		if de.BreakReason == app.BR_InsufficientDepositVolume {
-			d.FailReason = "insufficient deposit volume"
+		o.FinalSize = oe.Deposit.Volume
+		o.FinalFunds = oe.Withdrawal.Executed
+		o.FeeCurrency = oe.QC.String()
+	}
+
+	if oe.Withdrawal.Total != "" && oe.Deposit.Volume != "" {
+
+		wt, _ := strconv.ParseFloat(oe.Withdrawal.Total, 64)
+		dt, _ := strconv.ParseFloat(oe.Deposit.Volume, 64)
+		if o.Side == "buy" {
+			o.FilledPrice = strconv.FormatFloat(dt/wt, 'f', 8, 64)
 		} else {
-			d.FailReason = "system error"
+			o.FilledPrice = strconv.FormatFloat(wt/dt, 'f', 8, 64)
 		}
 
 	}
 
-	if de.Side == "buy" {
-		d.FinalSize = de.Withdrawal.Executed
-		d.FinalFunds = de.Deposit.Volume
-		d.FeeCurrency = de.BC.String()
-	} else {
-		d.FinalSize = de.Deposit.Volume
-		d.FinalFunds = de.Withdrawal.Executed
-		d.FeeCurrency = de.QC.String()
-	}
-
-	if de.Withdrawal.Total != "" && de.Deposit.Volume != "" {
-
-		wt, _ := strconv.ParseFloat(de.Withdrawal.Total, 64)
-		dt, _ := strconv.ParseFloat(de.Deposit.Volume, 64)
-		if d.Side == "buy" {
-			d.FilledPrice = strconv.FormatFloat(dt/wt, 'f', 8, 64)
-		} else {
-			d.FilledPrice = strconv.FormatFloat(wt/dt, 'f', 8, 64)
-		}
-
-	}
-
-	return d
+	return o
 }
 
 type AdminUserOrder struct {
@@ -109,8 +110,8 @@ type AdminUserOrder struct {
 	ExchangeOrder *ExchangeOrder `json:"exchange_order"`
 	Withdrawal    *Withdrawal    `json:"withdrawal"`
 	CreatedAt     int64          `json:"created_at"`
-	Broken        bool           `json:"broken"`
-	BreakReason   string         `json:"break_reason"`
+	FaileCode     int64          `json:"failed_code"`
+	FailedDesc    string         `json:"failed_desc"`
 }
 
 func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
@@ -131,20 +132,16 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 		SpreadVol:  o.SpreadVol,
 
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
-		Broken:        o.Broken,
-		BreakReason:   o.BreakReason,
+		FaileCode:     o.FailedCode,
+		FailedDesc:    o.FailedDesc,
 	}
 }
 
 type CreateOrderRequest struct {
-	BC     string `json:"base_coin"`
-	BChain string `json:"base_chain"`
+	BC string `json:"base_coin"`
+	QC string `json:"quote_coin"`
 
-	QC     string `json:"quote_coin"`
-	QChain string `json:"quote_chain"`
-
-	Side string `json:"side"`
-
+	Side    string `json:"side"`
 	Address string `json:"address"`
 	Tag     string `json:"tag"`
 }
@@ -156,15 +153,9 @@ func (r *CreateOrderRequest) Validate() error {
 	if r.BC == "" {
 		return errors.Wrap(errors.NewMesssage("base_coin is required"))
 	}
-	if r.BChain == "" {
-		return errors.Wrap(errors.NewMesssage("base_chain is required"))
-	}
 
 	if r.QC == "" {
 		return errors.Wrap(errors.NewMesssage("quote_coin is required"))
-	}
-	if r.QChain == "" {
-		return errors.Wrap(errors.NewMesssage("quote_chain is required"))
 	}
 
 	if r.Side != "buy" && r.Side != "sell" {

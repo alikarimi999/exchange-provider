@@ -55,185 +55,178 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 	go o.eTracker.run()
 
-	for {
-		select {
-		case order := <-o.oCh:
+	for order := range o.oCh {
 
-			go func(ord *entity.UserOrder) {
-				o.l.Debug(string(op), fmt.Sprintf("handle order: '%d' for user: '%d'", ord.Id, ord.UserId))
-				exc, err := o.exStore.get(ord.Exchange)
+		go func(ord *entity.UserOrder) {
+			o.l.Debug(string(op), fmt.Sprintf("handle order: '%d' for user: '%d'", ord.Id, ord.UserId))
+			exc, err := o.exStore.get(ord.Exchange)
+			if err != nil {
+				o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )", ord.Exchange, err.Error()))
+				return
+			}
+			ex := exc.Exchange
+
+			var size string
+			var funds string
+			if ord.Side == "buy" {
+				aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.Deposit.Volume)
 				if err != nil {
-					o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )", ord.Exchange, err.Error()))
-					return
-				}
-				ex := exc.Exchange
+					ord.Status = entity.OSFailed
+					ord.FailedCode = entity.FCInternalError
+					ord.FailedDesc = err.Error()
 
-				var size string
-				var funds string
-				if ord.Side == "buy" {
-					aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.Deposit.Volume)
-					if err != nil {
-						ord.Broken = true
-						ord.BreakReason = err.Error()
-						o.l.Error(string(op), fmt.Sprintf("failed to apply spread for order: '%d' due to error: ( %s )", ord.Id, err.Error()))
-						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
-						}
-						return
-					}
-					funds = aVol
-					ord.SpreadVol = sVol
-					ord.SpreadRate = rate
-				} else {
-					size = ord.Deposit.Volume
-				}
-				// 1. open a new order in exchange to exchange user provided coin to requested coin
-				id, err := ex.Exchange(ord.BC, ord.QC, ord.Side, size, funds)
-				if err != nil {
-
-					ord.Broken = true
-					ord.BreakReason = fmt.Sprintf("unable to create order in exchange: %s", err.Error())
-
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-
+					o.l.Error(string(op), err.Error())
 					if err := o.ouc.write(ord); err != nil {
 						o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
 					}
 					return
+				}
+				funds = aVol
+				ord.SpreadVol = sVol
+				ord.SpreadRate = rate
+			} else {
+				size = ord.Deposit.Volume
+			}
+			// 1. open a new order in exchange to exchange user provided coin to requested coin
+			id, err := ex.Exchange(ord.BC, ord.QC, ord.Side, size, funds)
+			if err != nil {
+				ord.Status = entity.OSFailed
+				ord.FailedCode = entity.FCExOrdFailed
+				ord.FailedDesc = err.Error()
+
+				o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+
+				if err := o.ouc.write(ord); err != nil {
+					o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
+				}
+				return
+
+			}
+
+			ord.ExchangeOrder.ExId = id
+			ord.Status = entity.OSWaitForExchangeOrderConfirm
+			if err = o.ouc.write(ord); err != nil {
+				o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+				return
+			}
+
+			ef := &exTrackerFeed{
+				eo:   ord.ExchangeOrder,
+				ex:   ex,
+				done: make(chan struct{}),
+				pCh:  make(chan bool),
+			}
+			go o.eTracker.track(ef)
+			o.l.Debug(string(op), fmt.Sprintf(" waiting for exchange order: '%s' confirmation", ord.ExchangeOrder.ExId))
+
+			<-ef.done
+			switch ord.ExchangeOrder.Status {
+			case entity.ExOrderSucceed:
+
+				ord.Status = entity.OSExchangeOrderConfirmed
+				o.l.Debug(string(op), fmt.Sprintf("exchange order: '%s' confirmed", ord.ExchangeOrder.ExId))
+				if err = o.ouc.write(ord); err != nil {
+					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					ef.pCh <- false
+					return
+				}
+				ef.pCh <- true
+
+				var wc *entity.Coin
+				switch ord.Side {
+				case "buy":
+					ord.Withdrawal.Total = ord.ExchangeOrder.Size
+					wc = ord.BC
+
+				case "sell":
+					wc = ord.QC
+
+					aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.ExchangeOrder.Funds)
+					if err != nil {
+						ord.Status = entity.OSFailed
+						ord.FailedCode = entity.FCInternalError
+						ord.FailedDesc = err.Error()
+
+						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						if err := o.ouc.write(ord); err != nil {
+							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						}
+						return
+					}
+					ord.SpreadRate = rate
+					ord.Withdrawal.Total = aVol
+					ord.SpreadVol = sVol
+				}
+
+				r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)
+				if err != nil {
+					ord.Status = entity.OSFailed
+					ord.FailedCode = entity.FCInternalError
+					ord.FailedDesc = err.Error()
+
+					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+
+					if err := o.ouc.write(ord); err != nil {
+						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					}
+					return
 
 				}
 
-				ord.ExchangeOrder.ExId = id
-				ord.Status = entity.OrderStatusWaitForExchangeOrderConfirm
+				o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, ord.BC, ord.Withdrawal.Address))
+				ord.Withdrawal.Fee = f
+				id, err = ex.Withdrawal(wc, ord.Withdrawal.Address, r)
+				if err != nil {
+					ord.Status = entity.OSFailed
+					ord.FailedCode = entity.FCInternalError
+					ord.FailedDesc = err.Error()
+
+					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+
+					if err := o.ouc.write(ord); err != nil {
+						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					}
+					return
+
+				}
+
+				ord.Withdrawal.WId = id
+				ord.Withdrawal.Status = entity.WithdrawalPending
+				ord.Status = entity.OSWaitForWithdrawalConfirm
+
+				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 					return
 				}
 
-				ef := &exTrackerFeed{
-					eo:      ord.ExchangeOrder,
-					ex:      ex,
-					succeed: make(chan bool),
+				// add to withdrawal cache
+				// and wait for withdrawal confirm
+				if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
+					o.l.Error(string(op), errors.Wrap(err, op, ord.Withdrawal.String()).Error())
 				}
-				go o.eTracker.track(ef)
-				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for exchange order: '%s' confirmation", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
-
-				if <-ef.succeed {
-					switch ord.ExchangeOrder.Status {
-					case entity.ExOrderSucceed:
-
-						ord.Status = entity.OrderStatusExchangeOrderConfirmed
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' confirmed", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
-						if err = o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-							return
-						}
-
-						var wc *entity.Coin
-						switch ord.Side {
-						case "buy":
-							ord.Withdrawal.Total = ord.ExchangeOrder.Size
-							wc = ord.BC
-
-						case "sell":
-							wc = ord.QC
-
-							aVol, sVol, rate, err := o.pc.ApplySpread(ord.BC, ord.QC, ord.ExchangeOrder.Funds)
-							if err != nil {
-								ord.Broken = true
-								ord.BreakReason = fmt.Sprintf("unable to apply spread: %s", err.Error())
-								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-								if err := o.ouc.write(ord); err != nil {
-									o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-								}
-								return
-							}
-							ord.SpreadRate = rate
-							ord.Withdrawal.Total = aVol
-							ord.SpreadVol = sVol
-						}
-
-						r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)
-						if err != nil {
-							ord.Broken = true
-							ord.BreakReason = fmt.Sprintf("unable to apply fee: %s", err.Error())
-
-							o.l.Error(string(op), errors.Wrap(err, op,
-								fmt.Sprintf("orderId: '%d', userId: '%d'", ord.Id, ord.UserId)).Error())
-
-							if err := o.ouc.write(ord); err != nil {
-								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-							}
-							return
-
-						}
-
-						o.l.Debug(string(op), fmt.Sprintf("order: %d user: %d , transferring '%s' %v to '%s'", ord.Id, ord.UserId, r, ord.BC, ord.Withdrawal.Address))
-						ord.Withdrawal.Fee = f
-						id, err = ex.Withdrawal(wc, ord.Withdrawal.Address, r)
-						if err != nil {
-							ord.Broken = true
-							ord.BreakReason = fmt.Sprintf("unable to create withdrawal in exchange: %s", err.Error())
-
-							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-
-							if err := o.ouc.write(ord); err != nil {
-								o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-							}
-							return
-
-						}
-
-						ord.Withdrawal.WId = id
-						ord.Withdrawal.Status = entity.WithdrawalPending
-						ord.Status = entity.OrderStatusWaitForWithdrawalConfirm
-
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
-						if err = o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-							return
-						}
-
-						// add to withdrawal cache
-						// and wait for withdrawal confirm
-						if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
-							o.l.Error(string(op), errors.Wrap(err, op, ord.Withdrawal.String()).Error())
-						}
-						o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
-						return
-
-					case entity.ExOrderPending:
-						o.handle(ord)
-						return
-
-					default:
-
-						ord.Broken = true
-						ord.BreakReason = "exchange order failed"
-
-						o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' has status: '%s'", ord.Id, ord.UserId, ord.ExchangeOrder.ExId, ord.ExchangeOrder.Status))
-
-						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-						}
-						return
-
-					}
-				}
-
-				ord.Broken = true
-				ord.BreakReason = "exchange order tracking failed"
-
-				o.l.Error(string(op), fmt.Sprintf("order: '%d' for user: '%d' exchange order: '%s' tracking failed for unknown reason.", ord.Id, ord.UserId, ord.ExchangeOrder.ExId))
-
-				if err := o.ouc.write(ord); err != nil {
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
-				}
+				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				return
 
-			}(order)
+			case entity.ExOrderPending:
+				ef.pCh <- true
+				o.handle(ord)
+				return
 
-		}
+			case entity.ExOrderFailed:
+				ord.Status = entity.OSFailed
+				ord.FailedCode = entity.FCExOrdFailed
+				if err := o.ouc.write(ord); err != nil {
+					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					ef.pCh <- false
+					return
+				}
+				ef.pCh <- true
+				return
+			}
+
+		}(order)
+
 	}
 
 }

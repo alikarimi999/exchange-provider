@@ -10,6 +10,7 @@ type Withdrawal struct {
 	UserId  int64
 	OrderId int64
 
+	Status  string
 	Address string
 	Tag     string
 
@@ -22,8 +23,8 @@ type Withdrawal struct {
 	ExchangeFee string
 	Executed    string
 
-	TxId   string
-	Status string
+	TxId       string
+	FailedDesc string
 }
 
 func WToDto(w *entity.Withdrawal) *Withdrawal {
@@ -48,8 +49,9 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 		ExchangeFee: w.ExchangeFee,
 		Executed:    w.Executed,
 
-		TxId:   w.TxId,
-		Status: string(w.Status),
+		TxId:       w.TxId,
+		Status:     string(w.Status),
+		FailedDesc: w.FailedDesc,
 	}
 }
 
@@ -69,7 +71,8 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 		ExchangeFee: w.ExchangeFee,
 		Executed:    w.Executed,
 
-		TxId:   w.TxId,
-		Status: entity.WithdrawalStatus(w.Status),
+		TxId:       w.TxId,
+		Status:     entity.WithdrawalStatus(w.Status),
+		FailedDesc: w.FailedDesc,
 	}
 }

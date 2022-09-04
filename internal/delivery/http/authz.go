@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/netip"
 	"order_service/pkg/logger"
 
 	"github.com/gin-gonic/gin"
@@ -31,15 +32,30 @@ func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.
 
 		token := ctx.GetHeader("X-API-Key")
 		if len(token) == 0 {
-			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is missing"))
+			ctx.JSON(http.StatusUnauthorized, "X-API-Key header is missing")
 			ctx.Abort()
 			return
 		}
 
 		if len(token) != 40 || token[:8] != "api_key_" {
-			ctx.JSON(http.StatusUnauthorized, fmt.Sprintf("X-API-Key header is invalid"))
+			ctx.JSON(http.StatusUnauthorized, "X-API-Key header is invalid")
 			ctx.Abort()
 			return
+		}
+
+		addr, _ := netip.ParseAddr(ctx.ClientIP())
+
+		if !addr.Is4() && !addr.IsLoopback() {
+			ctx.JSON(http.StatusUnauthorized, "only ipV4 supports")
+			ctx.Abort()
+			return
+		}
+
+		var ip string
+		if addr.Is6() && addr.IsLoopback() {
+			ip = "127.0.0.1"
+		} else {
+			ip = addr.String()
 		}
 
 		ca := &CheckAccessRequest{
@@ -47,7 +63,7 @@ func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.
 			Resource: resource,
 			Action:   action,
 			CheckIp:  a.checkIP(),
-			Ip:       ctx.ClientIP(),
+			Ip:       ip,
 		}
 
 		respBody, _ := json.Marshal(ca)
@@ -66,7 +82,8 @@ func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.
 			return
 		}
 		if resp.StatusCode != http.StatusOK {
-			l.Error(agent, fmt.Sprintf("status code: %d", resp.StatusCode))
+			b, err := io.ReadAll(resp.Body)
+			l.Error(agent, fmt.Sprintf("status code: %d, %s %s", resp.StatusCode, string(b), err))
 			ctx.JSON(http.StatusInternalServerError, "internal server error")
 			ctx.Abort()
 			return
@@ -105,6 +122,5 @@ func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.
 
 		ctx.Set("user_id", cr.UserId)
 		ctx.Next()
-		return
 	}
 }

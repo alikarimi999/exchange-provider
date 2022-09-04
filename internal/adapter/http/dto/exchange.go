@@ -34,6 +34,4 @@ func (r *ChangeExchangeStatusResponse) FromEntity(e *app.ChangeExchangeStatus) {
 			Err:  p.Err.Error(),
 		})
 	}
-
-	return
 }

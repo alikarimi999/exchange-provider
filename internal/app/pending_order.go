@@ -31,9 +31,7 @@ func (o *OrderUseCase) totalPendingOrders(ex entity.Exchange, fs ...*entity.Filt
 		Orders:  []*entity.UserOrder{},
 	}
 
-	for _, f := range fs {
-		pa.Filters = append(pa.Filters, f)
-	}
+	pa.Filters = append(pa.Filters, fs...)
 
 	if err = o.GetPaginated(pa); err != nil {
 		return 0, err

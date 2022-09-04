@@ -9,7 +9,7 @@ import (
 )
 
 func (o *OrderUseCase) AddExchange(ex entity.Exchange) error {
-	const op = errors.Op("OrderUseCase.AddExchange")
+
 	exists, status := o.exs.exists(ex.NID())
 	if !exists {
 

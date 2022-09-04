@@ -165,12 +165,9 @@ func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 		Exs:    []string{},
 		Failed: []*PairsErr{},
 	}
-	for _, p := range r.Added {
-		res.Addedd = append(res.Addedd, p)
-	}
-	for _, p := range r.Existed {
-		res.Exs = append(res.Exs, p)
-	}
+	res.Addedd = append(res.Addedd, r.Added...)
+	res.Exs = append(res.Exs, r.Existed...)
+
 	for _, p := range r.Failed {
 		res.Failed = append(res.Failed, &PairsErr{
 			Pair: p.Pair,

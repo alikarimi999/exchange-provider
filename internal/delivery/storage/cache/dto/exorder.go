@@ -10,14 +10,15 @@ type exchangeOrder struct {
 	ExId        string
 	UserId      int64
 	OrderId     int64
-	Symbol      string
+	Status      string
 	Exchange    string
+	Symbol      string
 	Side        string
 	Funds       string
 	Size        string
 	Fee         string
 	FeeCurrency string
-	Status      string
+	FailedDesc  string
 }
 
 func eoToDto(eo *entity.ExchangeOrder) *exchangeOrder {
@@ -34,6 +35,8 @@ func eoToDto(eo *entity.ExchangeOrder) *exchangeOrder {
 		Fee:         eo.Fee,
 		FeeCurrency: eo.FeeCurrency,
 		Status:      string(eo.Status),
+
+		FailedDesc: eo.FailedDesc,
 	}
 }
 
@@ -51,6 +54,7 @@ func (eo *exchangeOrder) ToEntity() *entity.ExchangeOrder {
 		Fee:         eo.Fee,
 		FeeCurrency: eo.FeeCurrency,
 		Status:      entity.ExOrderStatus(eo.Status),
+		FailedDesc:  eo.FailedDesc,
 	}
 }
 

@@ -42,6 +42,7 @@ func DFromEntity(d *entity.Deposit) *Deposit {
 type SetTxIdRequest struct {
 	Seq  int64  `json:"order_id"`
 	TxId string `json:"tx_id"`
+	Msg  string `json:"message"`
 }
 
 func (r *SetTxIdRequest) Validate() error {

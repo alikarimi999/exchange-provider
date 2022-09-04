@@ -29,10 +29,12 @@ func (o *OrderUseCase) SetTxId(userId, seq int64, txId string) error {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	if exist {
-		return errors.Wrap(errors.NewMesssage("tx_id used before"), op, errors.ErrBadRequest)
+		return errors.Wrap(errors.NewMesssage("tx id used before"), op, errors.ErrBadRequest)
 	}
 
 	ord.Deposit.TxId = txId
+	ord.Deposit.Status = entity.DepositTxIdSet
+	ord.Status = entity.OSTxIdSetted
 	if err := o.write(ord); err != nil {
 		return err
 	}

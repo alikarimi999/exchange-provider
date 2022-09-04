@@ -42,7 +42,6 @@ start:
 	for {
 		select {
 		case t := <-wa.ticker.C:
-			ws := []*dto.Withdrawal{}
 			wss, err := wa.aggregate("SUCCESS", t.Add(-wa.windowSize), t)
 			if err != nil {
 				wa.l.Error(string(op), errors.Wrap(err, op).Error())
@@ -55,14 +54,14 @@ start:
 
 			}
 
-			ws = append(wss, wsf...)
+			wss = append(wss, wsf...)
 
-			if l := len(ws); l > 0 {
+			if l := len(wss); l > 0 {
 				wa.l.Debug(string(op), fmt.Sprintf("aggregated '%d' withdrawals which occured from ( %s ) to ( %s ) ",
 					l, t.Add(-wa.windowSize).String(), t.String()))
 			}
 
-			for _, w := range ws {
+			for _, w := range wss {
 				p, err := wa.c.isAddable(w.Id)
 				if err != nil {
 					wa.l.Error(string(op), errors.Wrap(err, op).Error())

@@ -28,8 +28,8 @@ type Order struct {
 	SpreadVol     string
 	ExchangeOrder *ExchangeOrder `gorm:"foreignKey:OrderId"`
 
-	Broken      bool
-	BreakReason string
+	FailedCode int64
+	FailedDesc string
 }
 
 func UoToDto(uo *entity.UserOrder) *Order {
@@ -57,8 +57,9 @@ func UoToDto(uo *entity.UserOrder) *Order {
 		SpreadRate:    uo.SpreadRate,
 		SpreadVol:     uo.SpreadVol,
 		ExchangeOrder: EToDto(uo.ExchangeOrder),
-		Broken:        uo.Broken,
-		BreakReason:   uo.BreakReason,
+
+		FailedCode: uo.FailedCode,
+		FailedDesc: uo.FailedDesc,
 	}
 }
 
@@ -84,7 +85,8 @@ func (o *Order) ToEntity() *entity.UserOrder {
 		SpreadRate:    o.SpreadRate,
 		SpreadVol:     o.SpreadVol,
 		ExchangeOrder: o.ExchangeOrder.ToEntity(),
-		Broken:        o.Broken,
-		BreakReason:   o.BreakReason,
+
+		FailedCode: o.FailedCode,
+		FailedDesc: o.FailedDesc,
 	}
 }
