@@ -151,6 +151,8 @@ func (k *kucoinExchange) TrackDeposit(d *entity.Deposit, done chan<- struct{},
 	if err != nil {
 		d.Status = entity.DepositFailed
 		d.FailedDesc = err.Error()
+		done <- struct{}{}
+		<-proccessed
 		return
 	}
 

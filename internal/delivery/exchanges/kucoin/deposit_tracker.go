@@ -49,7 +49,8 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					if err == nil {
 						if !d.MatchCurrency(f.d) {
 							f.d.Status = entity.DepositFailed
-							f.d.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ", f.d.CoinId, d.Currency)
+							f.d.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ",
+								f.d.CoinId, d.Currency)
 							f.done <- struct{}{}
 							return false, nil
 						}
