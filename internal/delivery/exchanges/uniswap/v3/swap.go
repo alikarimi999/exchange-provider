@@ -4,40 +4,31 @@ import (
 	"log"
 	"math/big"
 	"order_service/pkg/utils/numbers"
-	"strconv"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) swap(tIn, tOut *token, value int, source, dest common.Address) (*types.Transaction, error) {
+func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Address) (*types.Transaction, error) {
 	pool, err := u.bestPool(tIn.address, tOut.address)
 	if err != nil {
 		return nil, err
 	}
 
-	prvKey, err := u.wallet.PrivateKey(source)
+	amount, err := numbers.FloatStringToBigInt(value, tIn.decimals)
 	if err != nil {
 		return nil, err
 	}
 
-	amount := numbers.FloatStringToBigInt(strconv.Itoa(value), tIn.decimals)
-
-	opts, err := bind.NewKeyedTransactorWithChainID(prvKey, u.chainId)
+	val := big.NewInt(0)
+	if tIn.isNative {
+		val = amount
+	}
+	opts, err := u.newKeyedTransactorWithChainID(source, val)
 	if err != nil {
 		return nil, err
 	}
-
-	n, err := u.wallet.Nonce(source)
-	if err != nil {
-		return nil, err
-	}
-
-	opts.Nonce = big.NewInt(int64(n))
-	opts.Value = big.NewInt(0)
-	opts.GasLimit = 0
 
 	data := [][]byte{}
 	abi, err := RouteMetaData.GetAbi()
@@ -67,5 +58,11 @@ func (u *UniSwapV3) swap(tIn, tOut *token, value int, source, dest common.Addres
 	data = append(data, es)
 
 	deadline := big.NewInt(time.Now().Add(time.Minute * time.Duration(30)).Unix())
-	return route.Multicall0(opts, deadline, data)
+	tx, err := route.Multicall0(opts, deadline, data)
+	if err != nil {
+		u.wallet.ReleaseNonce(source, opts.Nonce.Uint64())
+		return nil, err
+	}
+	u.wallet.BurnNonce(source, tx.Nonce())
+	return tx, err
 }

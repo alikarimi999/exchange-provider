@@ -25,9 +25,12 @@ func (k *kucoinExchange) AccountId() string {
 	return k.accountId
 }
 
-func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string) (string, error) {
+func (k *kucoinExchange) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Exchange", k.NID()))
 
+	bc := o.BC
+	qc := o.QC
+	side := o.Side
 	req, err := k.createOrderRequest(bc, qc, side, size, funds)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
@@ -69,7 +72,7 @@ func (k *kucoinExchange) Exchange(bc, qc *entity.Coin, side, size, funds string)
 
 }
 
-func (k *kucoinExchange) Withdrawal(coin *entity.Coin, a *entity.Address, vol string) (string, error) {
+func (k *kucoinExchange) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.NID()))
 
 	opts, err := k.withdrawalOpts(coin, a.Tag)
@@ -109,9 +112,9 @@ func (k *kucoinExchange) Withdrawal(coin *entity.Coin, a *entity.Address, vol st
 	return w.WithdrawalId, nil
 }
 
-func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{}, p <-chan bool) {
+func (k *kucoinExchange) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, p <-chan bool) {
 	feed := &trackerFedd{
-		eo:   o,
+		eo:   o.ExchangeOrder,
 		done: done,
 		pCh:  p,
 	}
@@ -121,7 +124,7 @@ func (k *kucoinExchange) TrackOrder(o *entity.ExchangeOrder, done chan<- struct{
 }
 
 func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
-	proccessedCh <-chan bool) error {
+	proccessedCh <-chan bool) {
 
 	feed := &wtFeed{
 		w:            w,
@@ -130,7 +133,6 @@ func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struc
 	}
 
 	k.wt.track(feed)
-	return nil
 }
 
 func (k *kucoinExchange) ping() error {

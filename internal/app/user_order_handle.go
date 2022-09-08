@@ -88,7 +88,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				size = ord.Deposit.Volume
 			}
 			// 1. open a new order in exchange to exchange user provided coin to requested coin
-			id, err := ex.Exchange(ord.BC, ord.QC, ord.Side, size, funds)
+			id, err := ex.Exchange(ord, size, funds)
 			if err != nil {
 				ord.Status = entity.OSFailed
 				ord.FailedCode = entity.FCExOrdFailed
@@ -111,7 +111,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 			}
 
 			ef := &exTrackerFeed{
-				eo:   ord.ExchangeOrder,
+				o:    ord,
 				ex:   ex,
 				done: make(chan struct{}),
 				pCh:  make(chan bool),
@@ -175,7 +175,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, ord.BC, ord.Withdrawal.Address))
 				ord.Withdrawal.Fee = f
-				id, err = ex.Withdrawal(wc, ord.Withdrawal.Address, r)
+				id, err = ex.Withdrawal(ord, wc, ord.Withdrawal.Address, r)
 				if err != nil {
 					ord.Status = entity.OSFailed
 					ord.FailedCode = entity.FCInternalError

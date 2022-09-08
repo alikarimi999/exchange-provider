@@ -23,6 +23,7 @@ type Configs struct {
 type UniSwapV3 struct {
 	mux *sync.Mutex
 
+	cfg       *Configs
 	accountId string
 
 	confirms  uint64
@@ -45,7 +46,8 @@ type UniSwapV3 struct {
 
 	graphUrl string
 
-	stopCh chan struct{}
+	stopCh    chan struct{}
+	stoppedAt time.Time
 }
 
 func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
@@ -56,6 +58,7 @@ func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
 	v3 := &UniSwapV3{
 		mux: &sync.Mutex{},
 
+		cfg:       cfg,
 		accountId: hash(hash(cfg.Wallet.Mnemonic())),
 
 		confirms:  cfg.ConfirmBlocks,

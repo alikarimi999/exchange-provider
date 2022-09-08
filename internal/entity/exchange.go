@@ -33,12 +33,12 @@ type Exchange interface {
 	AccountId() string
 	NID() string
 
-	Exchange(bc, qc *Coin, side, size, funds string) (string, error)
-	TrackOrder(o *ExchangeOrder, done chan<- struct{}, proccessed <-chan bool)
+	Exchange(o *UserOrder, size, funds string) (string, error)
+	TrackExchangeOrder(o *UserOrder, done chan<- struct{}, proccessed <-chan bool)
 	TrackDeposit(d *Deposit, done chan<- struct{}, proccessed <-chan bool)
 
-	Withdrawal(coin *Coin, address *Address, vol string) (string, error)
-	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, proccessedCh <-chan bool) error
+	Withdrawal(o *UserOrder, coin *Coin, address *Address, vol string) (string, error)
+	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, proccessedCh <-chan bool)
 
 	ExchangeManager
 }

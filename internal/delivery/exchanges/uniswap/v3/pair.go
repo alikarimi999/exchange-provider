@@ -6,13 +6,15 @@ import (
 	"sync"
 )
 
+var pairDelimiter string = "/"
+
 type pair struct {
 	BT *token
 	QT *token
 }
 
 func (p *pair) String() string {
-	return fmt.Sprintf("%s/%s", p.BT.String(), p.QT.String())
+	return fmt.Sprintf("%s%s%s", p.BT.String(), pairDelimiter, p.QT.String())
 }
 
 type supportedPairs struct {
@@ -30,10 +32,24 @@ func newSupportedPairs() *supportedPairs {
 func (s *supportedPairs) get(bt, qt string) (pair, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	id := fmt.Sprintf("%s/%s", bt, qt)
 
-	if p, exist := s.pairs[id]; exist {
+	if p, exist := s.pairs[pairId(bt, qt)]; exist {
 		return p, nil
 	}
 	return pair{}, errors.Wrap(errors.ErrNotFound)
+}
+
+func (s *supportedPairs) remove(bt, qt string) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	if _, exist := s.pairs[pairId(bt, qt)]; exist {
+		delete(s.pairs, pairId(bt, qt))
+		return nil
+	}
+
+	return errors.Wrap(errors.ErrNotFound)
+}
+
+func pairId(bt, qt string) string {
+	return fmt.Sprintf("%s%s%s", bt, pairDelimiter, qt)
 }

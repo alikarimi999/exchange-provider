@@ -6,7 +6,7 @@ import (
 )
 
 type exTrackerFeed struct {
-	eo   *entity.ExchangeOrder
+	o    *entity.UserOrder
 	ex   entity.Exchange
 	done chan struct{}
 	pCh  chan bool
@@ -34,7 +34,7 @@ func (h *exOrderTracker) run() {
 		go func(f *exTrackerFeed) {
 			done := make(chan struct{})
 			pCh := make(chan bool)
-			go f.ex.TrackOrder(f.eo, done, pCh)
+			go f.ex.TrackExchangeOrder(f.o, done, pCh)
 			<-done
 			f.done <- struct{}{}
 			pCh <- (<-f.pCh)

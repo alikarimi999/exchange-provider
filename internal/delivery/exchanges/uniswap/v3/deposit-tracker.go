@@ -52,10 +52,10 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 				destAddress := common.HexToAddress(f.d.Addr)
 				tf := &ttFeed{
-					txHash:      txHash,
-					token:       f.token,
-					destAddress: &destAddress,
-					doneCh:      doneCh,
+					txHash:   txHash,
+					receiver: &destAddress,
+					needTx:   f.token.isNative,
+					doneCh:   doneCh,
 				}
 
 				t.us.tt.push(tf)
@@ -100,6 +100,7 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						f.done <- struct{}{}
 						break
 					}
+					f.d.Status = numbers.BigIntToFloatString(tf.tx.Value(), f.token.decimals)
 					f.d.Status = entity.DepositConfirmed
 					f.done <- struct{}{}
 				}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"order_service/pkg/logger"
 	"sync"
 	"time"
@@ -24,15 +23,16 @@ const (
 var errTxNotFound = errors.New("not found")
 
 type ttFeed struct {
-	txHash      common.Hash
-	token       *token
-	destAddress *common.Address
-	value       *big.Int
-	status      int
-	faildesc    string
+	txHash   common.Hash
+	receiver *common.Address
+	needTx   bool
+
+	status   int
+	faildesc string
+	tx       *types.Transaction
 	*types.Receipt
 
-	doneCh chan struct{}
+	doneCh chan<- struct{}
 }
 
 type txTracker struct {
@@ -70,7 +70,7 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				err := try.Do(func(attempt int) (bool, error) {
 					tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
 
-					if f.token.isNative {
+					if f.needTx {
 						tx, pending, err := tr.c.TransactionByHash(tr.ctx, f.txHash)
 						if err != nil {
 							if err == errTxNotFound {
@@ -89,13 +89,13 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 							time.Sleep(tr.us.blockTime)
 							return true, errors.New("pending")
 						}
-						if tx.To() != f.destAddress {
+						if tx.To() != f.receiver {
 							f.status = txFailed
 							f.faildesc = fmt.Sprintf("invalid destination address `%s`", tx.To())
 							f.doneCh <- struct{}{}
 							return false, nil
 						}
-						f.value = tx.Value()
+						f.tx = tx
 					}
 
 					receipt, err := tr.c.TransactionReceipt(tr.ctx, f.txHash)

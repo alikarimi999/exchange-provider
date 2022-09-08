@@ -51,11 +51,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 
 			done := make(chan struct{})
 			pCh := make(chan bool)
-			if err := ex.TrackWithdrawal(w, done, pCh); err != nil {
-				t.l.Error(string(op), errors.Wrap(err, op,
-					fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-				return
-			}
+			go ex.TrackWithdrawal(w, done, pCh)
 
 			<-done
 			switch w.Status {

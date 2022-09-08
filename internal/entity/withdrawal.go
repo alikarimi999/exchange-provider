@@ -24,10 +24,16 @@ type Withdrawal struct {
 
 	Exchange string
 
+	*Coin
+
 	Total       string
 	Fee         string
-	ExchangeFee string
-	Executed    string
+	FeeCurrency string
+
+	ExchangeFee         string
+	ExchangeFeeCurrency string
+
+	Executed string
 
 	TxId       string
 	FailedDesc string
