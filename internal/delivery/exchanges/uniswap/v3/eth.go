@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) TransferEth(from, to common.Address, value *big.Int) (*types.Transaction, error) {
+func (u *UniSwapV3) transferEth(from, to common.Address, value *big.Int) (*types.Transaction, error) {
 
 	head, err := u.dp.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -65,6 +65,9 @@ func (u *UniSwapV3) TransferEth(from, to common.Address, value *big.Int) (*types
 		return nil, err
 	}
 	tx, err = types.SignTx(tx, types.NewLondonSigner(u.chainId), prvKey)
+	if err != nil {
+		return nil, err
+	}
 	err = u.dp.SendTransaction(context.Background(), tx)
 	if err != nil {
 		u.wallet.ReleaseNonce(from, nonce)

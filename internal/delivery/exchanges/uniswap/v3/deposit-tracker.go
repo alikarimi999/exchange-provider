@@ -38,7 +38,7 @@ func newDepositTracker(us *UniSwapV3) *depostiTracker {
 }
 
 func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	agent := fmt.Sprintf("%s.depostiTracker.run", t.us.NID())
+	agent := t.us.agent("depostiTracker.run")
 
 	defer wg.Done()
 

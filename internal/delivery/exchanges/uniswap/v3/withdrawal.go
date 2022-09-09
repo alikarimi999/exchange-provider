@@ -3,6 +3,7 @@ package uniswapv3
 import (
 	"fmt"
 	"math/big"
+	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"order_service/pkg/utils/numbers"
@@ -23,7 +24,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		return "", err
 	}
 
-	contract, err := NewMain(t.address, u.dp)
+	contract, err := contracts.NewMain(t.address, u.dp)
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +67,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 			o.Withdrawal.Executed = numbers.BigIntToFloatString(value, t.decimals)
 		}
 
-		tx, err = u.TransferEth(sender, reciever, value)
+		tx, err = u.transferEth(sender, reciever, value)
 		if err != nil {
 			return "", err
 		}

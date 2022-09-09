@@ -26,12 +26,12 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 	var tOut *token
 	var amount string
 	if side == entity.SideBuy {
-		tIn = pair.QT
-		tOut = pair.BT
+		tIn = pair.qt
+		tOut = pair.bt
 		amount = funds
 	} else {
-		tIn = pair.QT
-		tOut = pair.BT
+		tIn = pair.qt
+		tOut = pair.bt
 		amount = size
 	}
 
@@ -69,10 +69,10 @@ func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}
 			hashToAddress(log.Topics[2]) == common.HexToAddress(o.Deposit.Addr) {
 
 			if o.Side == entity.SideBuy {
-				d := pair.BT.decimals
+				d := pair.bt.decimals
 				o.ExchangeOrder.Size = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
 			} else {
-				d := pair.QT.decimals
+				d := pair.qt.decimals
 				o.ExchangeOrder.Funds = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
 			}
 			break

@@ -2,19 +2,29 @@ package uniswapv3
 
 import (
 	"fmt"
+	"math/big"
 	"order_service/pkg/errors"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var pairDelimiter string = "/"
 
 type pair struct {
-	BT *token
-	QT *token
+	address common.Address
+	bt      *token
+	qt      *token
+
+	baseIsZero bool
+
+	price     string
+	liquidity *big.Int
+	feeTier   *big.Int
 }
 
 func (p *pair) String() string {
-	return fmt.Sprintf("%s%s%s", p.BT.String(), pairDelimiter, p.QT.String())
+	return fmt.Sprintf("%s%s%s", p.bt.String(), pairDelimiter, p.qt.String())
 }
 
 type supportedPairs struct {

@@ -3,6 +3,7 @@ package uniswapv3
 import (
 	"log"
 	"math/big"
+	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/utils/numbers"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Address) (*types.Transaction, error) {
-	pool, err := u.bestPool(tIn.address, tOut.address)
+	pool, err := u.bestPool(tIn, tOut)
 	if err != nil {
 		return nil, err
 	}
@@ -31,20 +32,20 @@ func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Add
 	}
 
 	data := [][]byte{}
-	abi, err := RouteMetaData.GetAbi()
+	abi, err := contracts.RouteMetaData.GetAbi()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	route, err := NewRoute(routerV2, u.dp)
+	route, err := contracts.NewRoute(routerV2, u.dp)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	params := IV3SwapRouterExactInputSingleParams{
+	params := contracts.IV3SwapRouterExactInputSingleParams{
 		TokenIn:           tIn.address,
 		TokenOut:          tOut.address,
-		Fee:               big.NewInt(int64(pool.feeTier)),
+		Fee:               pool.feeTier,
 		Recipient:         dest,
 		AmountIn:          amount,
 		AmountOutMinimum:  big.NewInt(0),

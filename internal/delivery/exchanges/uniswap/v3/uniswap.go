@@ -3,6 +3,7 @@ package uniswapv3
 import (
 	"context"
 	"math/big"
+	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/logger"
 	"order_service/pkg/wallet/eth"
 	"sync"
@@ -33,6 +34,8 @@ type UniSwapV3 struct {
 	dp     *ethclient.Client //default provider
 	ps     []*ethclient.Client
 	wallet *eth.HDWallet
+
+	factory *contracts.Uniswapv3Factory
 
 	tokens *supportedTokens
 	pairs  *supportedPairs
@@ -85,6 +88,12 @@ func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
 	v3.chainId = chainId
 	v3.tt = newTxTracker(v3)
 	v3.dt = newDepositTracker(v3)
+
+	f, err := contracts.NewUniswapv3Factory(factory, v3.dp)
+	if err != nil {
+		return nil, err
+	}
+	v3.factory = f
 
 	return v3, nil
 }
