@@ -11,7 +11,7 @@ import (
 
 func (u *UniSwapV3) bestPool(bt, qt *token) (*pair, error) {
 
-	pool, err := u.highestLiquidPool(bt.address, qt.address)
+	pool, err := u.highestLiquidPool(bt, qt)
 	if err != nil {
 		return nil, err
 	}
@@ -35,33 +35,33 @@ func (u *UniSwapV3) bestPool(bt, qt *token) (*pair, error) {
 		return nil, err
 	}
 
-	pf, price := price(slot.SqrtPriceX96, bt.decimals, qt.decimals)
+	pf, price := price(slot.SqrtPriceX96, bt.Decimals, qt.Decimals)
 
-	if t0 == qt.address && t1 == bt.address {
+	if t0 == qt.Address && t1 == bt.Address {
 		price = new(big.Float).Quo(big.NewFloat(1), pf).Text('f', pricePrec)
 	} else {
 		pool.baseIsZero = true
 	}
 
-	pool.bt = bt
-	pool.qt = qt
 	pool.price = price
 
 	return pool, nil
 
 }
 
-func (u *UniSwapV3) highestLiquidPool(t0, t1 common.Address) (*pair, error) {
+func (u *UniSwapV3) highestLiquidPool(bt, qt *token) (*pair, error) {
 
 	f := u.factory
 
 	pool := &pair{
+		bt:        bt,
+		qt:        bt,
 		address:   common.HexToAddress("0"),
 		liquidity: big.NewInt(0),
 	}
 
 	for _, fee := range feeTiers {
-		a, err := f.GetPool(nil, t0, t1, fee)
+		a, err := f.GetPool(nil, bt.Address, qt.Address, fee)
 		if err != nil || a == common.HexToAddress("0") {
 			continue
 		}

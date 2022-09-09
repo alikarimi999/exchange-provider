@@ -14,6 +14,7 @@ const (
 	chainId     = "ERC20"
 	ethDecimals = 18
 	ether       = "ETH"
+	wrappedETH  = "WETH"
 )
 
 const (

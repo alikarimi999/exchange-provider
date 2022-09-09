@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
+	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"order_service/pkg/wallet/eth"
 	"sync"
@@ -19,6 +20,8 @@ type Configs struct {
 	Providers       []*ethclient.Client
 	DefaultProvider *ethclient.Client
 	ConfirmBlocks   uint64
+	TokensFile      string
+	TokensUrl       string
 }
 
 type UniSwapV3 struct {
@@ -47,14 +50,12 @@ type UniSwapV3 struct {
 	v  *viper.Viper
 	l  logger.Logger
 
-	graphUrl string
-
 	stopCh    chan struct{}
 	stoppedAt time.Time
 }
 
 func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
-	l logger.Logger, readConfig bool) (*UniSwapV3, error) {
+	l logger.Logger, readConfig bool) (entity.Exchange, error) {
 
 	// const op = errors.Op("UniSwapV3.NewExchange")
 
@@ -77,8 +78,7 @@ func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
 		v:  v,
 		l:  l,
 
-		graphUrl: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3",
-		stopCh:   make(chan struct{}),
+		stopCh: make(chan struct{}),
 	}
 
 	chainId, err := v3.dp.NetworkID(context.Background())

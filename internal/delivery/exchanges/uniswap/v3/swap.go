@@ -17,13 +17,13 @@ func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Add
 		return nil, err
 	}
 
-	amount, err := numbers.FloatStringToBigInt(value, tIn.decimals)
+	amount, err := numbers.FloatStringToBigInt(value, tIn.Decimals)
 	if err != nil {
 		return nil, err
 	}
 
 	val := big.NewInt(0)
-	if tIn.isNative {
+	if tIn.isNative() {
 		val = amount
 	}
 	opts, err := u.newKeyedTransactorWithChainID(source, val)
@@ -43,8 +43,8 @@ func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Add
 	}
 
 	params := contracts.IV3SwapRouterExactInputSingleParams{
-		TokenIn:           tIn.address,
-		TokenOut:          tOut.address,
+		TokenIn:           tIn.Address,
+		TokenOut:          tOut.Address,
 		Fee:               pool.feeTier,
 		Recipient:         dest,
 		AmountIn:          amount,

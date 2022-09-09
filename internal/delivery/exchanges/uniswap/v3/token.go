@@ -1,6 +1,7 @@
 package uniswapv3
 
 import (
+	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"sync"
 
@@ -8,14 +9,28 @@ import (
 )
 
 type token struct {
-	symbol   string
-	address  common.Address
-	isNative bool
-	decimals int
+	Name     string         `json:"name"`
+	Symbol   string         `json:"symbol"`
+	Address  common.Address `json:"address"`
+	Decimals int            `json:"decimals"`
+	ChainId  int64          `json:"chainId"`
+}
+
+func (t *token) isNative() bool {
+	return t.Symbol == ether
 }
 
 func (t *token) String() string {
-	return t.symbol
+	return t.Symbol
+}
+
+func (t *token) ToEntity() *entity.PairCoin {
+	return &entity.PairCoin{
+		Coin: &entity.Coin{
+			CoinId:  t.Symbol,
+			ChainId: chainId,
+		},
+	}
 }
 
 type supportedTokens struct {

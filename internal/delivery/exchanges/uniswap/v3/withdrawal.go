@@ -19,12 +19,12 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		return "", err
 	}
 
-	value, err := numbers.FloatStringToBigInt(vol, t.decimals)
+	value, err := numbers.FloatStringToBigInt(vol, t.Decimals)
 	if err != nil {
 		return "", err
 	}
 
-	contract, err := contracts.NewMain(t.address, u.dp)
+	contract, err := contracts.NewMain(t.Address, u.dp)
 	if err != nil {
 		return "", err
 	}
@@ -33,7 +33,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 	reciever := common.HexToAddress(o.Withdrawal.Addr)
 
 	// unwrap
-	if t.isNative {
+	if t.isNative() {
 		// TODO: check if it's wrapped before.
 		opts, err := u.newKeyedTransactorWithChainID(sender, value)
 		if err != nil {
@@ -42,15 +42,15 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 
 		tx, err := contract.Withdraw(opts, value)
 		if err != nil {
-			u.wallet.ReleaseNonce(t.address, opts.Nonce.Uint64())
+			u.wallet.ReleaseNonce(t.Address, opts.Nonce.Uint64())
 			return "", err
 		}
-		u.wallet.BurnNonce(t.address, tx.Nonce())
+		u.wallet.BurnNonce(t.Address, tx.Nonce())
 
 		done := make(chan struct{})
 		tf := &ttFeed{
 			txHash:   tx.Hash(),
-			receiver: &t.address,
+			receiver: &t.Address,
 			needTx:   true,
 
 			doneCh: done,
@@ -64,7 +64,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		case txSuccess:
 			o.Withdrawal.ExchangeFee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 			o.Withdrawal.ExchangeFeeCurrency = ether
-			o.Withdrawal.Executed = numbers.BigIntToFloatString(value, t.decimals)
+			o.Withdrawal.Executed = numbers.BigIntToFloatString(value, t.Decimals)
 		}
 
 		tx, err = u.transferEth(sender, reciever, value)

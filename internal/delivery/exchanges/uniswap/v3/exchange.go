@@ -69,10 +69,10 @@ func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}
 			hashToAddress(log.Topics[2]) == common.HexToAddress(o.Deposit.Addr) {
 
 			if o.Side == entity.SideBuy {
-				d := pair.bt.decimals
+				d := pair.bt.Decimals
 				o.ExchangeOrder.Size = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
 			} else {
-				d := pair.qt.decimals
+				d := pair.qt.Decimals
 				o.ExchangeOrder.Funds = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
 			}
 			break

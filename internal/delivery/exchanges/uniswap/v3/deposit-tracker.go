@@ -54,7 +54,7 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				tf := &ttFeed{
 					txHash:   txHash,
 					receiver: &destAddress,
-					needTx:   f.token.isNative,
+					needTx:   f.token.isNative(),
 					doneCh:   doneCh,
 				}
 
@@ -71,7 +71,7 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					f.d.FailedDesc = tf.faildesc
 					f.done <- struct{}{}
 				case txSuccess:
-					if !f.token.isNative {
+					if !f.token.isNative() {
 						if len(tf.Logs) != 1 {
 							f.d.Status = entity.DepositFailed
 							f.d.FailedDesc = fmt.Sprintf("invalid transaction with `%d` logs", len(tf.Logs))
@@ -95,12 +95,12 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						}
 
 						bn := new(big.Int).SetBytes(log.Data)
-						f.d.Volume = numbers.BigIntToFloatString(bn, int(f.token.decimals))
+						f.d.Volume = numbers.BigIntToFloatString(bn, int(f.token.Decimals))
 						f.d.Status = entity.DepositConfirmed
 						f.done <- struct{}{}
 						break
 					}
-					f.d.Status = numbers.BigIntToFloatString(tf.tx.Value(), f.token.decimals)
+					f.d.Status = numbers.BigIntToFloatString(tf.tx.Value(), f.token.Decimals)
 					f.d.Status = entity.DepositConfirmed
 					f.done <- struct{}{}
 				}
