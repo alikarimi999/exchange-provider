@@ -35,6 +35,24 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 		amount = size
 	}
 
+	// inputs is `eth` an ouput is `weth`
+	if tIn.isNative() && tOut.Symbol == wrappedETH {
+		tx, err := u.wrap(sAddr, tOut.Address, amount)
+		if err != nil {
+			return "", err
+		}
+		return tx.Hash().String(), nil
+	}
+
+	// input is `weth` an ouput is `eth`
+	if tOut.isNative() && tIn.Symbol == wrappedETH {
+		tx, err := u.unwrap(sAddr, tOut.Address, amount)
+		if err != nil {
+			return "", err
+		}
+		return tx.Hash().String(), nil
+	}
+
 	tx, pool, err := u.swap(tIn, tOut, amount, sAddr, sAddr)
 	if err != nil {
 		return "", err

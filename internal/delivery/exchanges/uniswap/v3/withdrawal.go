@@ -37,19 +37,11 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 
 		u.l.Debug(agent, fmt.Sprintf("unwrapping `%s` WETH", vol))
 		// TODO: check if it's wrapped before.
-		opts, err := u.newKeyedTransactorWithChainID(sender, big.NewInt(0))
+
+		tx, err := u.unwrap(sender, t.Address, vol)
 		if err != nil {
 			return "", err
 		}
-
-		tx, err := contract.Withdraw(opts, value)
-		if err != nil {
-			u.wallet.ReleaseNonce(t.Address, opts.Nonce.Uint64())
-			return "", err
-		}
-		u.wallet.BurnNonce(t.Address, tx.Nonce())
-
-		o.MetaData["unwrapWETH"] = tx.Hash().String()
 
 		done := make(chan struct{})
 		tf := &ttFeed{
