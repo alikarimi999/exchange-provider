@@ -106,12 +106,13 @@ type AdminUserOrder struct {
 
 	Exchange string `json:"exchange"`
 
-	Deposit       *Deposit       `json:"deposit"`
-	ExchangeOrder *ExchangeOrder `json:"exchange_order"`
-	Withdrawal    *Withdrawal    `json:"withdrawal"`
-	CreatedAt     int64          `json:"created_at"`
-	FaileCode     int64          `json:"failed_code"`
-	FailedDesc    string         `json:"failed_desc"`
+	Deposit         *Deposit       `json:"deposit"`
+	ExchangeOrder   *ExchangeOrder `json:"exchange_order"`
+	Withdrawal      *Withdrawal    `json:"withdrawal"`
+	CreatedAt       int64          `json:"created_at"`
+	FaileCode       int64          `json:"failed_code"`
+	FailedDesc      string         `json:"failed_desc"`
+	entity.MetaData `json:"meta_data"`
 }
 
 func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
@@ -134,6 +135,7 @@ func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
 		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
 		FaileCode:     o.FailedCode,
 		FailedDesc:    o.FailedDesc,
+		MetaData:      o.MetaData,
 	}
 }
 

@@ -75,7 +75,7 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						if err != nil {
 							if err.Error() == errTxNotFound {
 								tr.l.Debug(agent, err.Error())
-								if attempt == 1 {
+								if attempt <= 1 {
 									time.Sleep(tr.us.blockTime)
 									return true, err
 								}
@@ -107,7 +107,7 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					if err != nil {
 						if err.Error() == errTxNotFound {
 							tr.l.Debug(agent, err.Error())
-							if attempt == 1 {
+							if attempt <= 4 {
 								time.Sleep(tr.us.blockTime)
 								return true, err
 							}

@@ -48,6 +48,7 @@ type UserOrder struct {
 	Withdrawal    *Withdrawal
 	FailedCode    int64
 	FailedDesc    string
+	MetaData
 }
 
 func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side string, ex string) *UserOrder {
@@ -78,6 +79,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side stri
 			Exchange: ex,
 			Status:   "",
 		},
+		MetaData: make(MetaData),
 	}
 
 	if side == "buy" {

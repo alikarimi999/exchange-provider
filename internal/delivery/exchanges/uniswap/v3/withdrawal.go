@@ -49,6 +49,8 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		}
 		u.wallet.BurnNonce(t.Address, tx.Nonce())
 
+		o.MetaData["unwrapWETH"] = tx.Hash().String()
+
 		done := make(chan struct{})
 		tf := &ttFeed{
 			txHash:   tx.Hash(),

@@ -30,6 +30,7 @@ type Order struct {
 
 	FailedCode int64
 	FailedDesc string
+	MetaData   jsonb
 }
 
 func UoToDto(uo *entity.UserOrder) *Order {
@@ -60,13 +61,17 @@ func UoToDto(uo *entity.UserOrder) *Order {
 
 		FailedCode: uo.FailedCode,
 		FailedDesc: uo.FailedDesc,
+		MetaData:   jsonb(uo.MetaData),
 	}
 }
 
 func (o *Order) ToEntity() *entity.UserOrder {
-
 	if o == nil {
 		return &entity.UserOrder{}
+	}
+
+	if o.MetaData == nil {
+		o.MetaData = make(jsonb)
 	}
 
 	return &entity.UserOrder{
@@ -88,5 +93,6 @@ func (o *Order) ToEntity() *entity.UserOrder {
 
 		FailedCode: o.FailedCode,
 		FailedDesc: o.FailedDesc,
+		MetaData:   entity.MetaData(o.MetaData),
 	}
 }

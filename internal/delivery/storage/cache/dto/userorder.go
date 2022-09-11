@@ -28,6 +28,7 @@ type UserOrder struct {
 
 	FaileCode  int64
 	FailedDesc string
+	entity.MetaData
 }
 
 func ToDTO(u *entity.UserOrder) *UserOrder {
@@ -53,10 +54,14 @@ func ToDTO(u *entity.UserOrder) *UserOrder {
 
 		FaileCode:  u.FailedCode,
 		FailedDesc: u.FailedDesc,
+		MetaData:   u.MetaData,
 	}
 }
 
 func (u *UserOrder) ToEntity() *entity.UserOrder {
+	if u.MetaData == nil {
+		u.MetaData = make(entity.MetaData)
+	}
 	return &entity.UserOrder{
 		Id:         u.Id,
 		UserId:     u.UserId,
@@ -85,6 +90,7 @@ func (u *UserOrder) ToEntity() *entity.UserOrder {
 
 		FailedCode: u.FaileCode,
 		FailedDesc: u.FailedDesc,
+		MetaData:   u.MetaData,
 	}
 }
 

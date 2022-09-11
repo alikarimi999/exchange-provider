@@ -35,10 +35,12 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 		amount = size
 	}
 
-	tx, err := u.swap(tIn, tOut, amount, sAddr, sAddr)
+	tx, pool, err := u.swap(tIn, tOut, amount, sAddr, sAddr)
 	if err != nil {
 		return "", err
 	}
+
+	o.MetaData["swap-pool"] = pool.address.String()
 
 	o.ExchangeOrder.Funds = funds
 	o.ExchangeOrder.Size = size
@@ -90,7 +92,7 @@ start:
 		}
 
 		o.ExchangeOrder.Status = entity.ExOrderFailed
-		o.ExchangeOrder.FailedDesc = fmt.Sprintf("unable to parse tx logs")
+		o.ExchangeOrder.FailedDesc = "unable to parse tx logs"
 
 	case txFailed:
 		u.l.Debug(agent, fmt.Sprintf("track `%s` failed (%s)", tf.txHash.String(), tf.faildesc))

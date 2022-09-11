@@ -1,7 +1,7 @@
 package uniswapv3
 
 import (
-	"log"
+	"fmt"
 	"math/big"
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/utils/numbers"
@@ -11,15 +11,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, error) {
+func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
+	agent := u.agent("swap")
 	pool, err := u.setBestPrice(tIn, tOut)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	amount, err := numbers.FloatStringToBigInt(value, tIn.Decimals)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	val := big.NewInt(0)
@@ -28,18 +29,18 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	}
 	opts, err := u.newKeyedTransactorWithChainID(source, val)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	data := [][]byte{}
 	abi, err := contracts.RouteMetaData.GetAbi()
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	route, err := contracts.NewRoute(routerV2, u.dp)
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	params := contracts.IV3SwapRouterExactInputSingleParams{
@@ -53,7 +54,7 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	}
 	es, err := abi.Pack("exactInputSingle", params)
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	data = append(data, es)
@@ -62,8 +63,10 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	tx, err := route.Multicall0(opts, deadline, data)
 	if err != nil {
 		u.wallet.ReleaseNonce(source, opts.Nonce.Uint64())
-		return nil, err
+		return nil, nil, err
 	}
 	u.wallet.BurnNonce(source, tx.Nonce())
-	return tx, err
+
+	u.l.Debug(agent, fmt.Sprintf("swap `%+v`", params))
+	return tx, pool, err
 }
