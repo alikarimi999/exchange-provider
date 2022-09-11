@@ -61,6 +61,10 @@ func (hd *HDWallet) Mnemonic() string {
 	return hd.mnemonic
 }
 
+func (hd *HDWallet) String() string {
+	return hd.Mnemonic()
+}
+
 func (hd *HDWallet) AddAccount(index uint64) (accounts.Account, error) {
 	acc, err := hd.w.Derive(hd.getPath(index), true)
 	if err != nil {
@@ -130,7 +134,7 @@ func (hd *HDWallet) getAddress(index uint64) (common.Address, error) {
 func (hd *HDWallet) RandAddress() (common.Address, error) {
 	count := len(hd.w.Accounts())
 	if count == 0 {
-		return common.Address{}, errors.Wrap(errors.ErrNotFound)
+		return common.Address{}, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("address not found"))
 	}
 
 	s := rand.NewSource(time.Now().UnixNano())

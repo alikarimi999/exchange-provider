@@ -7,26 +7,48 @@ import (
 	"order_service/internal/app"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
+	"order_service/pkg/wallet/eth"
 
 	"order_service/pkg/errors"
 
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
 type Server struct {
 	app *app.OrderUseCase
-	l   logger.Logger
-	v   *viper.Viper
-	rc  *redis.Client
+
+	wallet   *eth.HDWallet
+	provider *entity.Provider
+	l        logger.Logger
+	v        *viper.Viper
+	rc       *redis.Client
 }
 
 func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
+
+	pUrl := "https://ropsten.infura.io/v3/c0b582082ea54b008c10cce420415c28"
+	cl, err := ethclient.Dial(pUrl)
+	if err != nil {
+		panic(err)
+	}
+	w, err := eth.NewWallet("laptop ski bridge oxygen cheap shine scrap stock lecture credit strike nominee", cl)
+	if err != nil {
+		panic(err)
+	}
 	return &Server{
 		app: app,
-		l:   l,
-		v:   v,
-		rc:  rc,
+
+		wallet: w,
+		provider: &entity.Provider{
+			Client: cl,
+			Url:    pUrl,
+		},
+
+		l:  l,
+		v:  v,
+		rc: rc,
 	}
 }
 
@@ -64,7 +86,6 @@ func (s *Server) NewUserOrder(ctx Context) {
 	}
 
 	o, err := s.app.NewUserOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, bc, qc, req.Side, ex)
-
 	if err != nil {
 		handlerErr(ctx, err)
 		return

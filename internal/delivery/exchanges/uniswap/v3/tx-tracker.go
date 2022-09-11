@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/matryer/try"
 )
 
@@ -20,7 +20,7 @@ const (
 	txNotFound
 )
 
-var errTxNotFound = errors.New("not found")
+var errTxNotFound = "not found"
 
 type ttFeed struct {
 	txHash   common.Hash
@@ -36,9 +36,9 @@ type ttFeed struct {
 }
 
 type txTracker struct {
-	us *UniSwapV3
-	c  *ethclient.Client
-	l  logger.Logger
+	us       *UniSwapV3
+	provider *entity.Provider
+	l        logger.Logger
 
 	maxRetries int
 
@@ -48,9 +48,9 @@ type txTracker struct {
 
 func newTxTracker(us *UniSwapV3) *txTracker {
 	return &txTracker{
-		us: us,
-		c:  us.dp,
-		l:  us.l,
+		us:       us,
+		provider: us.dp,
+		l:        us.l,
 
 		maxRetries: 4,
 		fCh:        make(chan *ttFeed),
@@ -71,9 +71,10 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
 
 					if f.needTx {
-						tx, pending, err := tr.c.TransactionByHash(tr.ctx, f.txHash)
+						tx, pending, err := tr.provider.TransactionByHash(tr.ctx, f.txHash)
 						if err != nil {
-							if err == errTxNotFound {
+							if err.Error() == errTxNotFound {
+								tr.l.Debug(agent, err.Error())
 								if attempt == 1 {
 									time.Sleep(tr.us.blockTime)
 									return true, err
@@ -83,13 +84,17 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 								return false, nil
 							}
 							tr.l.Error(agent, err.Error())
+							time.Sleep(tr.us.blockTime)
 							return true, err
 						}
 						if pending {
 							time.Sleep(tr.us.blockTime)
 							return true, errors.New("pending")
 						}
-						if tx.To() != f.receiver {
+
+						if *tx.To() != *f.receiver {
+							fmt.Println(tx.To())
+							fmt.Println(f.receiver)
 							f.status = txFailed
 							f.faildesc = fmt.Sprintf("invalid destination address `%s`", tx.To())
 							f.doneCh <- struct{}{}
@@ -98,10 +103,10 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						f.tx = tx
 					}
 
-					receipt, err := tr.c.TransactionReceipt(tr.ctx, f.txHash)
-
+					receipt, err := tr.provider.TransactionReceipt(tr.ctx, f.txHash)
 					if err != nil {
-						if err == errTxNotFound {
+						if err.Error() == errTxNotFound {
+							tr.l.Debug(agent, err.Error())
 							if attempt == 1 {
 								time.Sleep(tr.us.blockTime)
 								return true, err
@@ -111,19 +116,21 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 							return false, nil
 						}
 						tr.l.Error(agent, err.Error())
+						time.Sleep(tr.us.blockTime)
 						return true, err
 					}
 
 					f.Receipt = receipt
 					if receipt.Status == txSuccess {
 						bn := receipt.BlockNumber.Uint64()
-						cn, err := tr.c.BlockNumber(tr.ctx)
+						cn, err := tr.provider.BlockNumber(tr.ctx)
 						if err != nil {
 							tr.l.Error(agent, err.Error())
 							return true, err
 						}
 
 						confirmed := cn - bn
+						tr.l.Debug(agent, fmt.Sprintf("`%s` confirmed blocks %d/%d", f.txHash.String(), confirmed, tr.us.confirms))
 						if confirmed >= tr.us.confirms {
 							f.status = txSuccess
 							f.doneCh <- struct{}{}

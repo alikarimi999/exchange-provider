@@ -2,6 +2,7 @@ package uniswapv3
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"order_service/internal/delivery/exchanges/uniswap/v3/dto"
@@ -11,7 +12,7 @@ import (
 )
 
 type tokens struct {
-	Tokens []*token `json:"tokens"`
+	Tokens []token `json:"tokens"`
 }
 
 func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
@@ -50,24 +51,30 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 start:
 	for _, p := range req.Pairs {
+		var btIsNative bool
+		var qtIsNative bool
 		bt := p.BaseToken
 		qt := p.Quote_Token
-		if bt == ether {
-			bt = wrappedETH
-		}
-		if qt == ether {
-			qt = wrappedETH
-		}
 
 		if u.pairs.exist(bt, qt) {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
 
+		if bt == ether {
+			bt = wrappedETH
+			btIsNative = true
+		}
+		if qt == ether {
+			qt = wrappedETH
+			qtIsNative = true
+		}
+
 		for _, t0 := range ts.Tokens {
 			if t0.ChainId != u.chainId.Int64() {
 				continue
 			}
+
 			if t0.Symbol == bt {
 				for _, t1 := range ts.Tokens {
 					if t1.ChainId != u.chainId.Int64() {
@@ -80,16 +87,35 @@ start:
 								Pair: p.String(),
 								Err:  err,
 							})
-							break start
+							continue start
+						}
+
+						if btIsNative {
+							pair.bt.Symbol = ether
+						} else if qtIsNative {
+							pair.qt.Symbol = ether
 						}
 
 						u.pairs.add(*pair)
+						u.tokens.add(pair.bt, pair.qt)
 						res.Added = append(res.Added, pair.String())
-						break start
+						continue start
 					}
+
 				}
+				res.Failed = append(res.Failed, &entity.PairsErr{
+					Pair: p.String(),
+					Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
+						fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, u.chainId.Int64()))),
+				})
+				continue start
 			}
 		}
+		res.Failed = append(res.Failed, &entity.PairsErr{
+			Pair: p.String(),
+			Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
+				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, u.chainId.Int64()))),
+		})
 	}
 
 	return res, nil

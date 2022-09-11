@@ -70,6 +70,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side stri
 			UserId:   userId,
 			Status:   "",
 			Exchange: ex,
+			Side:     side,
 		},
 		Withdrawal: &Withdrawal{
 			UserId:   userId,
@@ -81,8 +82,10 @@ func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side stri
 
 	if side == "buy" {
 		w.Deposit.Coin = qc
+		w.Withdrawal.Coin = bc
 	} else {
 		w.Deposit.Coin = bc
+		w.Withdrawal.Coin = qc
 	}
 
 	w.Withdrawal.OrderId = w.Id

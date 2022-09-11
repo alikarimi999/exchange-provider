@@ -1,6 +1,7 @@
 package uniswapv3
 
 import (
+	"fmt"
 	"math/big"
 	"order_service/internal/entity"
 	"order_service/pkg/utils/numbers"
@@ -20,33 +21,34 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 	}
 
 	sAddr := common.HexToAddress(o.Deposit.Addr)
-	dAddr := common.HexToAddress(o.Deposit.Addr)
 
-	var tIn *token
-	var tOut *token
+	var tIn token
+	var tOut token
 	var amount string
 	if side == entity.SideBuy {
 		tIn = pair.qt
 		tOut = pair.bt
 		amount = funds
 	} else {
-		tIn = pair.qt
-		tOut = pair.bt
+		tIn = pair.bt
+		tOut = pair.qt
 		amount = size
 	}
 
-	tx, err := u.swap(tIn, tOut, amount, sAddr, dAddr)
+	tx, err := u.swap(tIn, tOut, amount, sAddr, sAddr)
 	if err != nil {
 		return "", err
 	}
 
+	o.ExchangeOrder.Funds = funds
+	o.ExchangeOrder.Size = size
 	o.ExchangeOrder.Symbol = pair.String()
 	return tx.Hash().String(), nil
 
 }
 
 func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, proccessed <-chan bool) {
-
+	agent := u.agent("TrackExchangeOrder")
 	pair, err := u.pairs.get(o.BC.CoinId, o.QC.CoinId)
 	if err != nil {
 		return
@@ -64,24 +66,37 @@ func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}
 
 	<-doneCh
 
-	for _, log := range tf.Receipt.Logs {
-		if len(log.Topics) == 3 && log.Topics[0] == erc20TransferSignature &&
-			hashToAddress(log.Topics[2]) == common.HexToAddress(o.Deposit.Addr) {
+start:
+	switch tf.status {
+	case txSuccess:
+		for _, log := range tf.Receipt.Logs {
+			if len(log.Topics) == 3 && log.Topics[0] == erc20TransferSignature &&
+				hashToAddress(log.Topics[2]) == common.HexToAddress(o.Deposit.Addr) {
 
-			if o.Side == entity.SideBuy {
-				d := pair.bt.Decimals
-				o.ExchangeOrder.Size = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
-			} else {
-				d := pair.qt.Decimals
-				o.ExchangeOrder.Funds = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
+				if o.Side == entity.SideBuy {
+					d := pair.bt.Decimals
+					o.ExchangeOrder.Size = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
+				} else {
+					d := pair.qt.Decimals
+					o.ExchangeOrder.Funds = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
+				}
+				o.ExchangeOrder.Status = entity.ExOrderSucceed
+				o.ExchangeOrder.Fee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
+				o.ExchangeOrder.FeeCurrency = "ETH"
+				u.l.Debug(agent, fmt.Sprintf("track `%+v` succeed ", o.ExchangeOrder))
+				break start
 			}
-			break
+
 		}
 
-	}
+		o.ExchangeOrder.Status = entity.ExOrderFailed
+		o.ExchangeOrder.FailedDesc = fmt.Sprintf("unable to parse tx logs")
 
-	o.ExchangeOrder.Fee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
-	o.ExchangeOrder.FeeCurrency = "ETH"
+	case txFailed:
+		u.l.Debug(agent, fmt.Sprintf("track `%s` failed (%s)", tf.txHash.String(), tf.faildesc))
+		o.ExchangeOrder.Status = entity.ExOrderFailed
+		o.ExchangeOrder.FailedDesc = fmt.Sprintf("failed to track `%s` (%s)", tf.txHash.String(), tf.faildesc)
+	}
 
 	done <- struct{}{}
 	<-proccessed

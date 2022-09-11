@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) swap(tIn, tOut *token, value string, source, dest common.Address) (*types.Transaction, error) {
-	pool, err := u.bestPool(tIn, tOut)
+func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, error) {
+	pool, err := u.setBestPrice(tIn, tOut)
 	if err != nil {
 		return nil, err
 	}

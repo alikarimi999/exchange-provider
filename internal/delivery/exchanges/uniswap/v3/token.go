@@ -24,12 +24,15 @@ func (t *token) String() string {
 	return t.Symbol
 }
 
-func (t *token) ToEntity() *entity.PairCoin {
+func (t *token) ToEntity(u *UniSwapV3) *entity.PairCoin {
 	return &entity.PairCoin{
 		Coin: &entity.Coin{
 			CoinId:  t.Symbol,
 			ChainId: chainId,
 		},
+		BlockTime:       u.blockTime,
+		ConfirmBlocks:   int64(u.confirms),
+		ContractAddress: t.Address.String(),
 	}
 }
 
@@ -45,6 +48,13 @@ func newSupportedTokens() *supportedTokens {
 	}
 }
 
+func (s *supportedTokens) add(ts ...token) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	for _, t := range ts {
+		s.tokens[t.Symbol] = t
+	}
+}
 func (s *supportedTokens) get(symbol string) (token, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()

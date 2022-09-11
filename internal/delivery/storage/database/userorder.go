@@ -32,7 +32,7 @@ func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	}
 	fmt.Println(lastSeq)
 	od.Seq = lastSeq + 1
-	err := m.db.Omit("ExchangeOrder").Create(od).Error
+	err := m.db.Create(od).Error
 	if err != nil {
 		err = errors.Wrap(err, op, errors.ErrInternal)
 	}

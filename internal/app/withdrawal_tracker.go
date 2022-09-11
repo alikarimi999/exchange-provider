@@ -41,6 +41,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 
 	for wd := range t.wCh {
 		go func(w *entity.Withdrawal) {
+			w0 := *w
 			t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
 
 			ex, err := t.exs.get(w.Exchange)
@@ -85,17 +86,12 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 				pCh <- true
 
-				if err := t.wc.DelPendingWithdrawal(w); err != nil {
-					t.l.Error(string(op), errors.Wrap(err, op,
-						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
-				}
-
 				if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
 				}
 
-				if err := t.wc.DelPendingWithdrawal(w); err != nil {
+				if err := t.wc.DelPendingWithdrawal(w0); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
 				}
@@ -127,7 +123,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 				pCh <- true
 
-				if err := t.wc.DelPendingWithdrawal(w); err != nil {
+				if err := t.wc.DelPendingWithdrawal(w0); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d'", w.WId, w.OrderId, w.UserId)).Error())
 				}

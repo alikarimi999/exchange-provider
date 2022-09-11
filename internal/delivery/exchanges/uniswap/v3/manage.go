@@ -18,11 +18,20 @@ func (u *UniSwapV3) Configs() interface{} {
 }
 
 func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
+	agent := u.agent("GetAllPairs")
+
 	ps := u.pairs.getAll()
 	pairs := []*entity.Pair{}
 
 	for _, p := range ps {
-		pairs = append(pairs, p.ToEntity())
+
+		p, err := u.setBestPrice(p.bt, p.qt)
+		if err != nil {
+			u.l.Error(agent, err.Error())
+			continue
+		}
+
+		pairs = append(pairs, p.ToEntity(u))
 	}
 
 	return pairs
@@ -42,5 +51,9 @@ func (u *UniSwapV3) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 		return nil, err
 	}
 
-	return p.ToEntity(), nil
+	p, err = u.setBestPrice(p.bt, p.qt)
+	if err != nil {
+		return nil, err
+	}
+	return p.ToEntity(u), nil
 }

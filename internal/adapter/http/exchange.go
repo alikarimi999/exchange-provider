@@ -6,6 +6,7 @@ import (
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
 	"order_service/internal/delivery/exchanges/kucoin"
+	uniswapv3 "order_service/internal/delivery/exchanges/uniswap/v3"
 )
 
 func (s *Server) AddExchange(ctx Context) {
@@ -30,6 +31,28 @@ func (s *Server) AddExchange(ctx Context) {
 		}
 		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.NID()))
 		return
+
+	case "uniswapv3":
+		cfg := &uniswapv3.Configs{
+			Wallet:          s.wallet,
+			DefaultProvider: s.provider,
+			ConfirmBlocks:   1,
+			TokensFile:      "./tokens.json",
+			TokensUrl:       "https://tokens.uniswap.org",
+		}
+
+		ex, err := uniswapv3.NewExchange(cfg, s.rc, s.v, s.l, false)
+		if err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
+		if err := s.app.AddExchange(ex); err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.NID()))
+
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))
 		return

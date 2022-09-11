@@ -6,6 +6,7 @@ import (
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
 	kdto "order_service/internal/delivery/exchanges/kucoin/dto"
+	udto "order_service/internal/delivery/exchanges/uniswap/v3/dto"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 )
@@ -49,6 +50,25 @@ func (s *Server) AddPairs(ctx Context) {
 			handlerErr(ctx, err)
 			return
 		}
+
+	case "uniswapv3":
+		req := &udto.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			return
+		}
+
+		if err := req.Validate(); err != nil {
+			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			return
+		}
+
+		res, err = s.app.AddPairs(ex, req)
+		if err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
 	}
 
 	ctx.JSON(200, dto.FromEntity(res))

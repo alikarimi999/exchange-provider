@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniSwapV3) bestPool(bt, qt *token) (*pair, error) {
+func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 
 	pool, err := u.highestLiquidPool(bt, qt)
 	if err != nil {
@@ -49,13 +49,13 @@ func (u *UniSwapV3) bestPool(bt, qt *token) (*pair, error) {
 
 }
 
-func (u *UniSwapV3) highestLiquidPool(bt, qt *token) (*pair, error) {
+func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 
 	f := u.factory
 
 	pool := &pair{
 		bt:        bt,
-		qt:        bt,
+		qt:        qt,
 		address:   common.HexToAddress("0"),
 		liquidity: big.NewInt(0),
 	}

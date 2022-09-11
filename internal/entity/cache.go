@@ -16,5 +16,5 @@ type OrderCache interface {
 type WithdrawalCache interface {
 	AddPendingWithdrawal(w *Withdrawal) error
 	GetPendingWithdrawals(end time.Time) ([]*Withdrawal, error)
-	DelPendingWithdrawal(w *Withdrawal) error
+	DelPendingWithdrawal(w Withdrawal) error
 }

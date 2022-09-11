@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"math/big"
+	"time"
+)
 
 type Coin struct {
 	CoinId  string
@@ -16,6 +19,7 @@ type PairCoin struct {
 
 	BlockTime           time.Duration
 	ConfirmBlocks       int64
+	ContractAddress     string
 	Address             string
 	Tag                 string
 	MinDeposit          float64
@@ -32,13 +36,16 @@ type Pair struct {
 	BC *PairCoin
 	QC *PairCoin
 
-	MinDeposit   float64
-	BestAsk      string
-	BestBid      string
-	FeeCurrency  string
-	OrderFeeRate string
-	SpreadRate   string
-	FeeRate      string
+	ContractAddress string
+	FeeTier         int64
+	Liquidity       *big.Int
+	MinDeposit      float64
+	BestAsk         string
+	BestBid         string
+	FeeCurrency     string
+	OrderFeeRate    string
+	SpreadRate      string
+	FeeRate         string
 }
 
 func (p *PairCoin) String() string {

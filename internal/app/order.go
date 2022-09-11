@@ -82,6 +82,8 @@ func (u *OrderUseCase) NewUserOrder(userId int64, wa *entity.Address, bc, qc *en
 		return nil, err
 	}
 
+	fmt.Println(da)
+
 	o := entity.NewOrder(userId, wa, da, bc, qc, side, ex.NID())
 
 	if err := u.write(o); err != nil {

@@ -15,7 +15,7 @@ func (u *UniSwapV3) Support(bc, qc *entity.Coin) bool {
 
 func (u *UniSwapV3) RemovePair(bc, qc *entity.Coin) error {
 	if bc.ChainId != chainId || qc.ChainId != chainId {
-		return errors.Wrap(errors.ErrNotFound)
+		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 
 	return u.pairs.remove(bc.CoinId, qc.CoinId)

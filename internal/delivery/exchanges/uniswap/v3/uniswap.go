@@ -10,15 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
 type Configs struct {
-	Wallet          *eth.HDWallet
-	Providers       []*ethclient.Client
-	DefaultProvider *ethclient.Client
+	Wallet *eth.HDWallet
+	// Providers       []*ethclient.Client `json:"providers,omitempty"`
+	DefaultProvider *entity.Provider `json:"provider"`
 	ConfirmBlocks   uint64
 	TokensFile      string
 	TokensUrl       string
@@ -34,8 +33,8 @@ type UniSwapV3 struct {
 	blockTime time.Duration
 	chainId   *big.Int
 
-	dp     *ethclient.Client //default provider
-	ps     []*ethclient.Client
+	dp *entity.Provider //default provider
+	// ps     []*ethclient.Client
 	wallet *eth.HDWallet
 
 	factory *contracts.Uniswapv3Factory
@@ -66,10 +65,12 @@ func NewExchange(cfg *Configs, rc *redis.Client, v *viper.Viper,
 		accountId: hash(hash(cfg.Wallet.Mnemonic())),
 
 		confirms:  cfg.ConfirmBlocks,
-		blockTime: time.Duration(20 * time.Second),
-		dp:        cfg.DefaultProvider,
-		ps:        cfg.Providers,
-		wallet:    cfg.Wallet,
+		blockTime: time.Duration(15 * time.Second),
+
+		// ps:     cfg.Providers,
+		wallet: cfg.Wallet,
+
+		dp: cfg.DefaultProvider,
 
 		tokens: newSupportedTokens(),
 		pairs:  newSupportedPairs(),

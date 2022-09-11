@@ -16,7 +16,7 @@ var prefix_pending_key = "pending_withdrawals"
 func (c *OrderCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("WithdrawalCache.AddPendingWithdrawal")
 
-	dto := dto.WToDTO(w)
+	dto := dto.OWToDTO(w)
 
 	if err := c.r.ZAdd(c.ctx, prefix_pending_key, redis.Z{
 		Score:  float64(time.Now().Unix()),
@@ -30,7 +30,7 @@ func (c *OrderCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
 func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal, error) {
 	const op = errors.Op("WithdrawalCache.GetPendingWithdrawals")
 
-	ws := []*dto.PendingWithdrawal{}
+	ws := []*dto.Withdrawal{}
 	err := c.r.ZRangeByScore(c.ctx, prefix_pending_key, &redis.ZRangeBy{
 		Min: "-inf",
 		Max: fmt.Sprintf("%d", end.Unix()),
@@ -50,10 +50,10 @@ func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal,
 	return ews, nil
 }
 
-func (c *OrderCache) DelPendingWithdrawal(w *entity.Withdrawal) error {
+func (c *OrderCache) DelPendingWithdrawal(w entity.Withdrawal) error {
 	const op = errors.Op("WithdrawalCache.DelPendingWithdrawal")
 
-	if err := c.r.ZRem(c.ctx, prefix_pending_key, dto.WToDTO(w)).Err(); err != nil {
+	if err := c.r.ZRem(c.ctx, prefix_pending_key, dto.OWToDTO(&w)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil

@@ -38,6 +38,9 @@ func OWToDTO(w *entity.Withdrawal) *Withdrawal {
 		Address: w.Addr,
 		Tag:     w.Tag,
 
+		Coin:  w.CoinId,
+		Chain: w.ChainId,
+
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -58,6 +61,8 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 
 		Address: &entity.Address{Addr: w.Address, Tag: w.Tag},
 
+		Coin: &entity.Coin{CoinId: w.Coin, ChainId: w.Chain},
+
 		Exchange:    w.Exchange,
 		Total:       w.Total,
 		Fee:         w.Fee,
@@ -74,44 +79,5 @@ func (w *Withdrawal) MarshalBinary() ([]byte, error) {
 }
 
 func (w *Withdrawal) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, w)
-}
-
-type PendingWithdrawal struct {
-	Id       uint64
-	WId      string
-	OrderId  int64
-	UserId   int64
-	Coin     string
-	Chain    string
-	Exchange string
-}
-
-func WToDTO(w *entity.Withdrawal) *PendingWithdrawal {
-	return &PendingWithdrawal{
-		Id:      w.Id,
-		WId:     w.WId,
-		OrderId: w.OrderId,
-		UserId:  w.UserId,
-
-		Exchange: w.Exchange,
-	}
-}
-
-func (w *PendingWithdrawal) ToEntity() *entity.Withdrawal {
-	return &entity.Withdrawal{
-		Id:       w.Id,
-		WId:      w.WId,
-		OrderId:  w.OrderId,
-		UserId:   w.UserId,
-		Exchange: w.Exchange,
-	}
-}
-
-func (w *PendingWithdrawal) MarshalBinary() ([]byte, error) {
-	return json.Marshal(w)
-}
-
-func (w *PendingWithdrawal) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, w)
 }

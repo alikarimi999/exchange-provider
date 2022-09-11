@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type dtFeed struct {
@@ -21,7 +20,7 @@ type dtFeed struct {
 }
 type depostiTracker struct {
 	us  *UniSwapV3
-	c   *ethclient.Client
+	c   *entity.Provider
 	l   logger.Logger
 	ctx context.Context
 	dCh chan *dtFeed
@@ -50,7 +49,12 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 				doneCh := make(chan struct{})
 
-				destAddress := common.HexToAddress(f.d.Addr)
+				destAddress := common.HexToAddress("0")
+				if f.token.isNative() {
+					destAddress = common.HexToAddress(f.d.Addr)
+				} else {
+					destAddress = f.token.Address
+				}
 				tf := &ttFeed{
 					txHash:   txHash,
 					receiver: &destAddress,
@@ -80,6 +84,14 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						}
 						log := tf.Logs[0]
 						topic := log.Topics[0]
+
+						if log.Address != f.token.Address {
+							f.d.Status = entity.DepositFailed
+							f.d.FailedDesc = fmt.Sprintf("contract address of this transaction's log is incorrect `%s`", log.Address)
+							f.done <- struct{}{}
+							break
+						}
+
 						if topic != erc20TransferSignature {
 							f.d.Status = entity.DepositFailed
 							f.d.FailedDesc = fmt.Sprintf("invalid transaction log topic `%s`", topic.String())
@@ -87,7 +99,7 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 							break
 						}
 						dAddress := hashToAddress(log.Topics[2])
-						if dAddress != destAddress {
+						if dAddress != common.HexToAddress(f.d.Addr) {
 							f.d.Status = entity.DepositFailed
 							f.d.FailedDesc = fmt.Sprintf("invalid destination address `%s`", dAddress)
 							f.done <- struct{}{}
@@ -100,9 +112,10 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						f.done <- struct{}{}
 						break
 					}
-					f.d.Status = numbers.BigIntToFloatString(tf.tx.Value(), f.token.Decimals)
+					f.d.Volume = numbers.BigIntToFloatString(tf.tx.Value(), f.token.Decimals)
 					f.d.Status = entity.DepositConfirmed
 					f.done <- struct{}{}
+
 				}
 				<-f.pCh
 			}(feed)

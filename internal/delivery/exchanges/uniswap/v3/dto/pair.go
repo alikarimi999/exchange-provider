@@ -1,9 +1,21 @@
 package dto
 
-import "fmt"
+import (
+	"fmt"
+	"order_service/pkg/errors"
+)
 
 type AddPairsRequest struct {
 	Pairs []*Pair `json:"pairs"`
+}
+
+func (req AddPairsRequest) Validate() error {
+	for _, p := range req.Pairs {
+		if p.BaseToken == "" || p.Quote_Token == "" {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("Invalid pair token"))
+		}
+	}
+	return nil
 }
 
 type Pair struct {

@@ -12,7 +12,7 @@ import (
 )
 
 func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Withdrawal", u.NID()))
+	agent := u.agent("Withdrawal")
 
 	t, err := u.tokens.get(coin.CoinId)
 	if err != nil {
@@ -34,8 +34,10 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 
 	// unwrap
 	if t.isNative() {
+
+		u.l.Debug(agent, fmt.Sprintf("unwrapping `%s` WETH", vol))
 		// TODO: check if it's wrapped before.
-		opts, err := u.newKeyedTransactorWithChainID(sender, value)
+		opts, err := u.newKeyedTransactorWithChainID(sender, big.NewInt(0))
 		if err != nil {
 			return "", err
 		}
@@ -60,17 +62,18 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 
 		switch tf.status {
 		case txFailed:
-			return "", errors.Wrap(op, errors.New(fmt.Sprintf("unwrapWETH tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
+			return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrapWETH tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
 		case txSuccess:
+			u.l.Debug(agent, fmt.Sprintf("unwrapping `%v` WETH was successful", vol))
 			o.Withdrawal.ExchangeFee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 			o.Withdrawal.ExchangeFeeCurrency = ether
-			o.Withdrawal.Executed = numbers.BigIntToFloatString(value, t.Decimals)
 		}
 
 		tx, err = u.transferEth(sender, reciever, value)
 		if err != nil {
 			return "", err
 		}
+		o.Withdrawal.Executed = numbers.BigIntToFloatString(tx.Value(), t.Decimals)
 		return tx.Hash().String(), nil
 	}
 
@@ -92,12 +95,21 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
-	// t, err := u.tokens.get(w.CoinId)
-	// if err != nil {
-	// 	return err
-	// }
+	t, err := u.tokens.get(w.CoinId)
+	if err != nil {
+		w.Status = entity.WithdrawalFailed
+		w.FailedDesc = err.Error()
+		done <- struct{}{}
+		<-proccessedCh
+		return
+	}
 
-	r := common.HexToAddress(w.Addr)
+	var r common.Address
+	if t.isNative() {
+		r = common.HexToAddress(w.Addr)
+	} else {
+		r = t.Address
+	}
 
 	doneCh := make(chan struct{})
 	tf := &ttFeed{
@@ -114,7 +126,7 @@ func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 		f := computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 		fee, _ := numbers.FloatStringToBigInt(f, ethDecimals)
 
-		var unwrapFee *big.Int
+		unwrapFee := new(big.Int)
 		var err error
 		if w.ExchangeFee != "" {
 			unwrapFee, err = numbers.FloatStringToBigInt(w.ExchangeFee, ethDecimals)
