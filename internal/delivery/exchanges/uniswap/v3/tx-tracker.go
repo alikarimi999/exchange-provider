@@ -49,7 +49,7 @@ type txTracker struct {
 func newTxTracker(us *UniSwapV3) *txTracker {
 	return &txTracker{
 		us:       us,
-		provider: us.dp,
+		provider: us.Provider,
 		l:        us.l,
 
 		maxRetries: 4,
@@ -68,13 +68,13 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 		case feed := <-tr.fCh:
 			go func(f *ttFeed) {
 				err := try.Do(func(attempt int) (bool, error) {
-					tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
+					// tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
 
 					if f.needTx {
 						tx, pending, err := tr.provider.TransactionByHash(tr.ctx, f.txHash)
 						if err != nil {
 							if err.Error() == errTxNotFound {
-								tr.l.Debug(agent, err.Error())
+								// tr.l.Debug(agent, err.Error())
 								if attempt <= 1 {
 									time.Sleep(tr.us.blockTime)
 									return true, err
@@ -106,7 +106,7 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 					receipt, err := tr.provider.TransactionReceipt(tr.ctx, f.txHash)
 					if err != nil {
 						if err.Error() == errTxNotFound {
-							tr.l.Debug(agent, err.Error())
+							// tr.l.Debug(agent, err.Error())
 							if attempt <= 4 {
 								time.Sleep(tr.us.blockTime)
 								return true, err

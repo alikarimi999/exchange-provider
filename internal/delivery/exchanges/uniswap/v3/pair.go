@@ -14,8 +14,8 @@ var pairDelimiter string = "/"
 
 type pair struct {
 	address common.Address
-	bt      token
-	qt      token
+	BT      token `json:"bt"`
+	QT      token `json:"qt"`
 
 	baseIsZero bool
 
@@ -25,14 +25,14 @@ type pair struct {
 }
 
 func (p *pair) String() string {
-	return fmt.Sprintf("%s%s%s", p.bt.String(), pairDelimiter, p.qt.String())
+	return fmt.Sprintf("%s%s%s", p.BT.String(), pairDelimiter, p.QT.String())
 }
 
 func (p *pair) ToEntity(u *UniSwapV3) *entity.Pair {
 
 	return &entity.Pair{
-		BC: p.bt.ToEntity(u),
-		QC: p.qt.ToEntity(u),
+		BC: p.BT.ToEntity(u),
+		QC: p.QT.ToEntity(u),
 
 		ContractAddress: p.address.String(),
 		FeeTier:         p.feeTier.Int64(),
@@ -58,7 +58,14 @@ func newSupportedPairs() *supportedPairs {
 func (s *supportedPairs) add(p pair) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	s.pairs[pairId(p.bt.Symbol, p.qt.Symbol)] = p
+
+	_, exist := s.pairs[pairId(p.BT.Symbol, p.QT.Symbol)]
+	if !exist {
+		_, exist = s.pairs[pairId(p.QT.Symbol, p.BT.Symbol)]
+	}
+	if !exist {
+		s.pairs[pairId(p.BT.Symbol, p.QT.Symbol)] = p
+	}
 }
 
 func (s *supportedPairs) get(bt, qt string) (*pair, error) {
@@ -71,14 +78,15 @@ func (s *supportedPairs) get(bt, qt string) (*pair, error) {
 	return &pair{}, errors.Wrap(errors.ErrNotFound)
 }
 
-func (s *supportedPairs) getAll() []*pair {
+func (s *supportedPairs) getAll() []pair {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	pairs := []*pair{}
+	pairs := []pair{}
 	for _, pair := range s.pairs {
-		pairs = append(pairs, &pair)
+		pairs = append(pairs, pair)
 	}
+
 	return pairs
 }
 

@@ -216,7 +216,6 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 
 	go func() {
 		for ex := range a.addCh {
-
 			switch ex.CurrentStatus {
 			case ExchangeStatusActive:
 				a.mux.Lock()

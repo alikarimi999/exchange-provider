@@ -38,7 +38,7 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 		return nil, nil, err
 	}
 
-	route, err := contracts.NewRoute(routerV2, u.dp)
+	route, err := contracts.NewRoute(routerV2, u.Provider)
 	if err != nil {
 		return nil, nil, err
 	}

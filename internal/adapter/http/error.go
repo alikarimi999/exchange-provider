@@ -7,7 +7,7 @@ import (
 
 func handlerErr(ctx Context, err error) {
 	var msg string
-	if errors.ErrorMsg(err) != "" {
+	if errors.ErrorMsg(err) != errors.InternalErrMsg {
 		msg = errors.ErrorMsg(err)
 	} else {
 		msg = err.Error()

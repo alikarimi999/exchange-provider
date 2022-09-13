@@ -15,6 +15,8 @@ const (
 	ErrInternal         = ErrCode("internal")
 	ErrBadRequest       = ErrCode("bad request")
 	ErrUnknown          = ErrCode("unknown error")
+
+	InternalErrMsg = "An internal error has occurred."
 )
 
 type Op string // Operation name

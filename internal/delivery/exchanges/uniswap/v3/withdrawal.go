@@ -24,7 +24,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		return "", err
 	}
 
-	contract, err := contracts.NewMain(t.Address, u.dp)
+	contract, err := contracts.NewMain(t.Address, u.Provider)
 	if err != nil {
 		return "", err
 	}

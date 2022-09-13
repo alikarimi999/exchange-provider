@@ -7,11 +7,9 @@ import (
 	"order_service/internal/app"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
-	"order_service/pkg/wallet/eth"
 
 	"order_service/pkg/errors"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
@@ -19,32 +17,14 @@ import (
 type Server struct {
 	app *app.OrderUseCase
 
-	wallet   *eth.HDWallet
-	provider *entity.Provider
-	l        logger.Logger
-	v        *viper.Viper
-	rc       *redis.Client
+	l  logger.Logger
+	v  *viper.Viper
+	rc *redis.Client
 }
 
 func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
-
-	pUrl := "https://ropsten.infura.io/v3/c0b582082ea54b008c10cce420415c28"
-	cl, err := ethclient.Dial(pUrl)
-	if err != nil {
-		panic(err)
-	}
-	w, err := eth.NewWallet("laptop ski bridge oxygen cheap shine scrap stock lecture credit strike nominee", cl)
-	if err != nil {
-		panic(err)
-	}
 	return &Server{
 		app: app,
-
-		wallet: w,
-		provider: &entity.Provider{
-			Client: cl,
-			Url:    pUrl,
-		},
 
 		l:  l,
 		v:  v,

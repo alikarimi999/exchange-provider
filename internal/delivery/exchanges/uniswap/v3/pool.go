@@ -1,7 +1,6 @@
 package uniswapv3
 
 import (
-	"math"
 	"math/big"
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/errors"
@@ -16,7 +15,7 @@ func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 		return nil, err
 	}
 
-	p, err := contracts.NewUniswapv3Pool(pool.address, u.dp)
+	p, err := contracts.NewUniswapv3Pool(pool.address, u.Provider)
 	if err != nil {
 		return nil, err
 	}
@@ -25,25 +24,25 @@ func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 		return nil, err
 	}
 
-	t0, err := p.Token0(nil)
+	at0, err := p.Token0(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	t1, err := p.Token1(nil)
+	at1, err := p.Token1(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	pf, price := price(slot.SqrtPriceX96, bt.Decimals, qt.Decimals)
+	price := NewPrice(bt, qt, Q192, new(big.Int).Mul(slot.SqrtPriceX96, slot.SqrtPriceX96))
 
-	if t0 == qt.Address && t1 == bt.Address {
-		price = new(big.Float).Quo(big.NewFloat(1), pf).Text('f', pricePrec)
+	if at0 == qt.Address && at1 == bt.Address {
+		price = NewPrice(bt, qt, new(big.Int).Mul(slot.SqrtPriceX96, slot.SqrtPriceX96), Q192)
 	} else {
 		pool.baseIsZero = true
 	}
 
-	pool.price = price
+	pool.price = price.ToSignificant(10)
 
 	return pool, nil
 
@@ -54,8 +53,8 @@ func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 	f := u.factory
 
 	pool := &pair{
-		bt:        bt,
-		qt:        qt,
+		BT:        bt,
+		QT:        qt,
 		address:   common.HexToAddress("0"),
 		liquidity: big.NewInt(0),
 	}
@@ -66,7 +65,7 @@ func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 			continue
 		}
 
-		p, err := contracts.NewUniswapv3Pool(a, u.dp)
+		p, err := contracts.NewUniswapv3Pool(a, u.Provider)
 		if err != nil {
 			continue
 		}
@@ -87,12 +86,4 @@ func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 	return pool, nil
-}
-
-func price(SqrtPriceX96 *big.Int, d0, d1 int) (*big.Float, string) {
-	dom := new(big.Int).Exp(SqrtPriceX96, big.NewInt(2), nil)
-	num := new(big.Int).Exp(big.NewInt(2), big.NewInt(192), nil)
-	price := new(big.Float).Quo(new(big.Float).SetInt(dom), new(big.Float).SetInt(num))
-	price = new(big.Float).Mul(price, big.NewFloat(math.Pow10(int(math.Abs(float64(d0-d1))))))
-	return price, price.Text('f', pricePrec)
 }

@@ -24,8 +24,7 @@ func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
 	pairs := []*entity.Pair{}
 
 	for _, p := range ps {
-
-		p, err := u.setBestPrice(p.bt, p.qt)
+		p, err := u.setBestPrice(p.BT, p.QT)
 		if err != nil {
 			u.l.Error(agent, err.Error())
 			continue
@@ -51,7 +50,7 @@ func (u *UniSwapV3) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 		return nil, err
 	}
 
-	p, err = u.setBestPrice(p.bt, p.qt)
+	p, err = u.setBestPrice(p.BT, p.QT)
 	if err != nil {
 		return nil, err
 	}

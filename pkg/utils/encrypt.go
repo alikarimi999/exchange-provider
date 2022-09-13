@@ -7,24 +7,60 @@ import (
 	"encoding/base64"
 )
 
-func RSA_OAEP_Encrypt(secretMessage string, key rsa.PublicKey) (string, error) {
+func RSA_OAEP_Encrypt(secretMessage string, public rsa.PublicKey) (string, error) {
 	label := []byte("OAEP Encrypted")
-	rng := rand.Reader
-	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rng, &key, []byte(secretMessage), label)
-	if err != nil {
-		return "", err
+	hash := sha256.New()
+	random := rand.Reader
 
+	msg := []byte(secretMessage)
+	msgLen := len(msg)
+	step := public.Size() - 2*hash.Size() - 2
+	var encryptedBytes []byte
+
+	for start := 0; start < msgLen; start += step {
+		finish := start + step
+		if finish > msgLen {
+			finish = msgLen
+		}
+
+		encryptedBlockBytes, err := rsa.EncryptOAEP(hash, random, &public, msg[start:finish], label)
+		if err != nil {
+			return "", err
+		}
+
+		encryptedBytes = append(encryptedBytes, encryptedBlockBytes...)
 	}
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+
+	return base64.StdEncoding.EncodeToString(encryptedBytes), nil
+
 }
 
-func RSA_OAEP_Decrypt(cipherText string, privKey rsa.PrivateKey) (string, error) {
-	ct, _ := base64.StdEncoding.DecodeString(cipherText)
+func RSA_OAEP_Decrypt(cipherText string, private rsa.PrivateKey) (string, error) {
 	label := []byte("OAEP Encrypted")
-	rng := rand.Reader
-	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, &privKey, ct, label)
+	hash := sha256.New()
+	random := rand.Reader
+
+	msg, err := base64.StdEncoding.DecodeString(cipherText)
 	if err != nil {
 		return "", err
 	}
-	return string(plaintext), nil
+	msgLen := len(msg)
+	step := private.PublicKey.Size()
+	var decryptedBytes []byte
+
+	for start := 0; start < msgLen; start += step {
+		finish := start + step
+		if finish > msgLen {
+			finish = msgLen
+		}
+
+		decryptedBlockBytes, err := rsa.DecryptOAEP(hash, random, &private, msg[start:finish], label)
+		if err != nil {
+			return "", err
+		}
+
+		decryptedBytes = append(decryptedBytes, decryptedBlockBytes...)
+	}
+
+	return string(decryptedBytes), nil
 }

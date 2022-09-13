@@ -19,7 +19,6 @@ func (s *Server) AddPairs(ctx Context) {
 		handlerErr(ctx, err)
 		return
 	}
-
 	if ex.CurrentStatus == app.ExchangeStatusDisable {
 		ctx.JSON(404, "exchange is disable")
 		return

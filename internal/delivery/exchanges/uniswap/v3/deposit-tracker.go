@@ -29,7 +29,7 @@ type depostiTracker struct {
 func newDepositTracker(us *UniSwapV3) *depostiTracker {
 	return &depostiTracker{
 		us:  us,
-		c:   us.dp,
+		c:   us.Provider,
 		l:   us.l,
 		ctx: context.Background(),
 		dCh: make(chan *dtFeed, 512),

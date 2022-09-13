@@ -120,6 +120,16 @@ func (hd *HDWallet) getAccountByAddress(address common.Address) (accounts.Accoun
 	return accounts.Account{}, errors.Wrap(errors.ErrNotFound)
 }
 
+func (hd *HDWallet) AllAddresses() ([]common.Address, error) {
+	acc := hd.w.Accounts()
+	addresses := []common.Address{}
+	for _, a := range acc {
+		addresses = append(addresses, a.Address)
+	}
+
+	return addresses, nil
+}
+
 func (hd *HDWallet) Address(index uint64) (common.Address, error) {
 	return hd.getAddress(index)
 }

@@ -5,9 +5,9 @@ import "github.com/ethereum/go-ethereum/ethclient"
 // web3 provider
 type Provider struct {
 	*ethclient.Client
-	Url string
+	URL string
 }
 
 func (p *Provider) String() string {
-	return p.Url
+	return p.URL
 }
