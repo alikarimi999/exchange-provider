@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
 	"time"
@@ -37,7 +36,7 @@ type ttFeed struct {
 
 type txTracker struct {
 	us       *UniSwapV3
-	provider *entity.Provider
+	provider *Provider
 	l        logger.Logger
 
 	maxRetries int
@@ -49,7 +48,7 @@ type txTracker struct {
 func newTxTracker(us *UniSwapV3) *txTracker {
 	return &txTracker{
 		us:       us,
-		provider: us.Provider,
+		provider: us.provider,
 		l:        us.l,
 
 		maxRetries: 4,

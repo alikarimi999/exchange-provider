@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"order_service/internal/adapter/http/dto"
 	"order_service/pkg/errors"
 )
@@ -80,6 +79,6 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 		return
 	}
 
-	req.Msg = fmt.Sprintf("change was successful")
+	req.Msg = "change was successful"
 	ctx.JSON(200, req)
 }

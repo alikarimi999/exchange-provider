@@ -12,21 +12,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	Id            string `json:"id,omitempty"`
-	ProviderURL   string
-	Mnemonic      string
-	Addresses     []common.Address
-	ConfirmBlocks uint64
-	TokensFile    string
-	TokensUrl     string
-	Msg           string
+	Id              string             `json:"id,omitempty"`
+	DefaultProvider string             `json:"default_provider,omitempty"`
+	BackupProviders []string           `json:"backup_providers,omitempty"`
+	Mnemonic        string             `json:"mnemonic,omitempty"`
+	AccountCount    uint64             `json:"account_count,omitempty"`
+	Accounts        []accounts.Account `json:"accounts,omitempty"`
+	ConfirmBlocks   uint64             `json:"confirm_blocks,omitempty"`
+	TokensFile      string             `json:"tokens_file,omitempty"`
+	TokensUrl       string             `json:"tokens_url,omitempty"`
+	Msg             string             `json:"msg,omitempty"`
 }
 
 type UniSwapV3 struct {
@@ -35,8 +37,9 @@ type UniSwapV3 struct {
 	cfg       *Config
 	accountId string
 
-	wallet   *eth.HDWallet
-	Provider *entity.Provider
+	wallet             *eth.HDWallet
+	provider           *Provider
+	backupProvidersURL []string
 
 	confirms  uint64
 	blockTime time.Duration
@@ -63,8 +66,8 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 	agent := "uniswapv3.NewExchange"
 
-	if cfg.ProviderURL == "" {
-		return nil, errors.Wrap("Provider URL must cannot be empty")
+	if cfg.DefaultProvider == "" && len(cfg.DefaultProvider) == 0 && !readConfig {
+		return nil, errors.Wrap(errors.NewMesssage("default provider and backup providers cannot by empty"))
 	}
 
 	if cfg.ConfirmBlocks == 0 {
@@ -77,36 +80,20 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 	if cfg.TokensUrl == "" {
 		cfg.TokensUrl = "https://tokens.uniswap.org"
 	}
-
-	client, err := ethclient.Dial(cfg.ProviderURL)
-	if err != nil {
-		return nil, err
+	if cfg.Mnemonic == "" {
+		cfg.Mnemonic, _ = eth.NewMnemonic(128)
 	}
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	w, err := eth.NewWallet(cfg.Mnemonic, client)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg.Mnemonic = w.Mnemonic()
 
 	v3 := &UniSwapV3{
 		mux: &sync.Mutex{},
 
-		wallet: w,
-		Provider: &entity.Provider{
-			Client: client,
-			URL:    cfg.ProviderURL,
+		provider: &Provider{
+			URL: cfg.DefaultProvider,
 		},
-		cfg: cfg,
 
-		chainId:   chainId,
-		accountId: hash(hash(w.Mnemonic())),
+		backupProvidersURL: cfg.BackupProviders,
+		accountId:          hash(hash(cfg.Mnemonic)),
+		cfg:                cfg,
 
 		confirms:  cfg.ConfirmBlocks,
 		blockTime: time.Duration(15 * time.Second),
@@ -125,16 +112,31 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 	v3.dt = newDepositTracker(v3)
 	v3.am = newApproveManager(v3)
 
-	f, err := contracts.NewUniswapv3Factory(factory, v3.Provider)
-	if err != nil {
-		return nil, err
-	}
-	v3.factory = f
-
 	if readConfig {
 		v3.l.Debug(agent, fmt.Sprintf("retriving pairs from config file %s", v3.v.ConfigFileUsed()))
+		acc, ok := v3.v.Get(fmt.Sprintf("%s.account_count", v3.NID())).(float64)
+		if ok {
+			v3.cfg.AccountCount = uint64(acc)
+		}
 
-		i := v3.v.Get(fmt.Sprintf("%s.pairs", v3.NID()))
+		i := v3.v.Get(fmt.Sprintf("%s.providers", v3.NID()))
+		if i != nil {
+			psi := i.(map[string]interface{})
+			for k, v := range psi {
+				if k == "default" {
+					v3.provider.URL = v.(string)
+					continue
+				}
+				v3.backupProvidersURL = append(v3.backupProvidersURL, v.(string))
+
+			}
+		}
+
+		if err := v3.generalSets(); err != nil {
+			return nil, err
+		}
+
+		i = v3.v.Get(fmt.Sprintf("%s.pairs", v3.NID()))
 		if i != nil {
 			psi := i.(map[string]interface{})
 			wg := &sync.WaitGroup{}
@@ -166,7 +168,7 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 								ChainId:  qChainId,
 							}
 
-							pair, err = v3.highestLiquidPool(pair.BT, pair.QT)
+							pair, err := v3.highestLiquidPool(pair.BT, pair.QT)
 							if err != nil {
 								v3.l.Error(agent, err.Error())
 								return
@@ -182,11 +184,18 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 			wg.Wait()
 		}
 
-	}
-
-	v3.cfg.Addresses, err = v3.wallet.AllAddresses()
-	if err != nil {
-		return nil, err
+	} else {
+		if err := v3.generalSets(); err != nil {
+			return nil, err
+		}
+		v3.v.Set(fmt.Sprintf("%s.providers.default", v3.NID()), v3.provider.URL)
+		v3.v.Set(fmt.Sprintf("%s.account_count", v3.NID()), v3.cfg.AccountCount)
+		for i, url := range v3.backupProvidersURL {
+			v3.v.Set(fmt.Sprintf("%s.providers.%d", v3.NID(), i), url)
+		}
+		if err := v3.v.WriteConfig(); err != nil {
+			return nil, err
+		}
 	}
 
 	return v3, nil
@@ -202,4 +211,13 @@ func (u *UniSwapV3) Run(wg *sync.WaitGroup) {
 	w.Add(1)
 	go u.dt.run(w, u.stopCh)
 
+}
+
+func (u *UniSwapV3) pingProvider() error {
+	agent := u.agent("pingProvider")
+	_, err := u.provider.BlockNumber(context.Background())
+	if err != nil {
+		return errors.Wrap(errors.Op(agent), err)
+	}
+	return nil
 }

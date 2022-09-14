@@ -47,6 +47,7 @@ func (a *amQueue) remove(t token, owner, spender common.Address) {
 	for i, id := range a.ts {
 		if uid == id {
 			a.ts = append(a.ts[:i], a.ts[i+1:]...)
+			break
 		}
 	}
 }

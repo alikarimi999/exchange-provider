@@ -6,6 +6,7 @@ import (
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/errors"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,8 +16,6 @@ import (
 type approveManager struct {
 	u *UniSwapV3
 
-	mux *sync.Mutex
-
 	pending  *amQueue
 	approved *amQueue
 }
@@ -24,25 +23,33 @@ type approveManager struct {
 func newApproveManager(u *UniSwapV3) *approveManager {
 	return &approveManager{
 		u:        u,
-		mux:      &sync.Mutex{},
 		pending:  newAMQueue(),
 		approved: newAMQueue(),
 	}
 }
 
 func (m *approveManager) exists(t token, owner, spender common.Address) bool {
-	m.mux.Lock()
-	defer m.mux.Unlock()
 	if m.pending.exists(t, owner, spender) || m.approved.exists(t, owner, spender) {
 		return true
 	}
 	return false
 }
 
-func (m *approveManager) add(t token, owner, spender common.Address, approved bool) {
-	m.mux.Lock()
-	defer m.mux.Unlock()
+func (am *approveManager) notifyApproved(t token, owner, spender common.Address) bool {
+	if am.approved.exists(t, owner, spender) {
+		return true
+	}
 
+	if am.pending.exists(t, owner, spender) {
+		time.Sleep(time.Second * 1)
+	} else {
+		return false
+	}
+
+	return am.notifyApproved(t, owner, spender)
+}
+
+func (m *approveManager) add(t token, owner, spender common.Address, approved bool) {
 	if approved {
 		m.approved.add(t, owner, spender)
 		return
@@ -51,9 +58,6 @@ func (m *approveManager) add(t token, owner, spender common.Address, approved bo
 }
 
 func (m *approveManager) remove(t token, owner, spender common.Address, fromPending bool) {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-
 	if fromPending {
 		m.pending.remove(t, owner, spender)
 		return
@@ -62,48 +66,41 @@ func (m *approveManager) remove(t token, owner, spender common.Address, fromPend
 }
 
 func (am *approveManager) infinitApproves(t token, spender common.Address, owners ...common.Address) []error {
-	agent := am.u.agent("approveManager.infinitApproves")
-	msgs := make(chan struct{ err error })
-
-	go func() {
-		wg := sync.WaitGroup{}
-		for _, owner := range owners {
-			if am.exists(t, owner, spender) {
-				am.u.l.Debug(agent, fmt.Sprintf("%s-%s-%s exists", t.Symbol, owner, spender))
-				continue
-			}
-
-			wg.Add(1)
-			go func(o common.Address) {
-				defer wg.Done()
-				am.add(t, o, spender, false)
-				err := am.infinitApprove(t, o, spender)
-				if err == nil {
-					am.add(t, o, spender, true)
-				}
-				am.remove(t, o, spender, true)
-
-				msgs <- struct{ err error }{err}
-			}(owner)
-		}
-		wg.Wait()
-		close(msgs)
-	}()
+	// agent := am.u.agent("approveManager.infinitApproves")
 
 	var errs []error
-	for msg := range msgs {
-		if msg.err != nil {
-			errs = append(errs, msg.err)
-		}
 
+	wg := &sync.WaitGroup{}
+	for _, owner := range owners {
+		wg.Add(1)
+		go func(o common.Address) {
+			defer wg.Done()
+			if am.exists(t, o, spender) {
+				if !am.notifyApproved(t, o, spender) {
+					errs = append(errs, fmt.Errorf("%s-%s didn't receive approval", t.Symbol, o))
+				}
+				return
+			}
+
+			am.add(t, o, spender, false)
+			err := am.infinitApprove(t, o, spender)
+			if err == nil {
+				am.add(t, o, spender, true)
+			}
+			am.remove(t, o, spender, true)
+
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}(owner)
 	}
-
+	wg.Wait()
 	return errs
 }
 
 func (am *approveManager) infinitApprove(t token, owner, spender common.Address) error {
 	agent := am.u.agent("approveManager.infinitApprove")
-	prefix := fmt.Sprintf("%s-%s-%s", t.Symbol, owner, spender)
+	prefix := fmt.Sprintf("%s-%s", t.Symbol, owner)
 
 	amount, err := am.allowance(t, owner, spender)
 	if err != nil {
@@ -147,7 +144,7 @@ func (am *approveManager) infinitApprove(t token, owner, spender common.Address)
 }
 
 func (am *approveManager) allowance(token token, owner, spender common.Address) (*big.Int, error) {
-	c, err := contracts.NewMain(token.Address, am.u.Provider.Client)
+	c, err := contracts.NewMain(token.Address, am.u.provider.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +153,7 @@ func (am *approveManager) allowance(token token, owner, spender common.Address) 
 }
 
 func (am *approveManager) approve(token token, owner, spender common.Address, amount *big.Int) (*types.Transaction, error) {
-	c, err := contracts.NewMain(token.Address, am.u.Provider.Client)
+	c, err := contracts.NewMain(token.Address, am.u.provider.Client)
 	if err != nil {
 		return nil, err
 	}

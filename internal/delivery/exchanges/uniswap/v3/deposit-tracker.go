@@ -20,7 +20,7 @@ type dtFeed struct {
 }
 type depostiTracker struct {
 	us  *UniSwapV3
-	c   *entity.Provider
+	c   *Provider
 	l   logger.Logger
 	ctx context.Context
 	dCh chan *dtFeed
@@ -29,7 +29,7 @@ type depostiTracker struct {
 func newDepositTracker(us *UniSwapV3) *depostiTracker {
 	return &depostiTracker{
 		us:  us,
-		c:   us.Provider,
+		c:   us.provider,
 		l:   us.l,
 		ctx: context.Background(),
 		dCh: make(chan *dtFeed, 512),
@@ -122,6 +122,7 @@ func (t *depostiTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 		case <-stopCh:
 			t.l.Info(agent, "stopped")
+			return
 		}
 	}
 }

@@ -47,10 +47,6 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		return kucoin.NewKucoinExchange(cfg, r.rc, r.v, r.l, true)
 
 	case "uniswapv3":
-		provider, ok := jb["provider"].(string)
-		if !ok {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have a provider", ex)))
-		}
 
 		m, ok := jb["mnemonic"].(string)
 		if !ok {
@@ -58,8 +54,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		}
 
 		cfg := &uniswapv3.Config{
-			Mnemonic:    m,
-			ProviderURL: provider,
+			Mnemonic: m,
 		}
 		return uniswapv3.NewExchange(cfg, r.rc, r.v, r.l, true)
 

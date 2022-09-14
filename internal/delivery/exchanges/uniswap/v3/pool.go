@@ -16,7 +16,7 @@ func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 		return nil, err
 	}
 
-	p, err := contracts.NewUniswapv3Pool(pool.address, u.Provider)
+	p, err := contracts.NewUniswapv3Pool(pool.address, u.provider)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 				return
 			}
 
-			p, err := contracts.NewUniswapv3Pool(a, u.Provider)
+			p, err := contracts.NewUniswapv3Pool(a, u.provider)
 			if err != nil {
 				u.l.Error(agent, err.Error())
 				return

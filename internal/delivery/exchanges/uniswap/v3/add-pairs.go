@@ -63,6 +63,7 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			qt := p.Quote_Token
 
 			if u.pairs.exist(bt, qt) {
+				u.l.Debug(agent, fmt.Sprintf("pair %s already exists", p.String()))
 				res.Existed = append(res.Existed, p.String())
 				return
 			}
@@ -159,9 +160,11 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 								})
 								return
 							}
+
 							u.pairs.add(*pair)
 							u.tokens.add(pair.BT, pair.QT)
 							res.Added = append(res.Added, pair.String())
+							u.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
 							return
 						}
 

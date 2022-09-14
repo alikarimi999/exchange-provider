@@ -100,6 +100,13 @@ func (s *supportedPairs) exist(bt, qt string) bool {
 	return exist
 }
 
+func (s *supportedPairs) existsExactly(bt, qt string) bool {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	_, exist := s.pairs[pairId(bt, qt)]
+	return exist
+}
+
 func (s *supportedPairs) remove(bt, qt string) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()

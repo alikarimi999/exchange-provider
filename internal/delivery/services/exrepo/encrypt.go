@@ -40,7 +40,6 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 		conf := ex.Configs().(*uniswapv3.Config)
 
 		jb["mnemonic"] = conf.Mnemonic
-		jb["provider"] = conf.ProviderURL
 
 	case "kucoin":
 		conf := ex.Configs().(*kucoin.Configs)

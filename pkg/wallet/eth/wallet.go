@@ -23,19 +23,23 @@ type HDWallet struct {
 	p        string
 }
 
-func NewWallet(mnemonic string, client *ethclient.Client) (*HDWallet, error) {
+func NewWallet(mnemonic string, client *ethclient.Client, count uint64) (*HDWallet, error) {
 	mn := mnemonic
 	var err error
 	if mnemonic == "" {
-		mn, err = hdwallet.NewMnemonic(256)
+		mn, err = hdwallet.NewMnemonic(128)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return walletFromMnemonic(mn, client)
+	return walletFromMnemonic(mn, client, count)
 }
 
-func walletFromMnemonic(mn string, c *ethclient.Client) (*HDWallet, error) {
+func NewMnemonic(bits int) (string, error) {
+	return hdwallet.NewMnemonic(bits)
+}
+
+func walletFromMnemonic(mn string, c *ethclient.Client, count uint64) (*HDWallet, error) {
 	hd := &HDWallet{
 		p:       ethPath,
 		client:  c,
@@ -51,7 +55,9 @@ func walletFromMnemonic(mn string, c *ethclient.Client) (*HDWallet, error) {
 	hd.mnemonic = mn
 	hd.w = w
 
-	hd.AddAccount(0)
+	for i := 0; i < int(count); i++ {
+		hd.AddAccount(uint64(i))
+	}
 	return hd, nil
 }
 
@@ -128,6 +134,10 @@ func (hd *HDWallet) AllAddresses() ([]common.Address, error) {
 	}
 
 	return addresses, nil
+}
+
+func (hd *HDWallet) AllAccounts() ([]accounts.Account, error) {
+	return hd.w.Accounts(), nil
 }
 
 func (hd *HDWallet) Address(index uint64) (common.Address, error) {

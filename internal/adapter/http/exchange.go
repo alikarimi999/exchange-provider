@@ -34,34 +34,16 @@ func (s *Server) AddExchange(ctx Context) {
 
 	case "uniswapv3":
 
-		conf := &struct {
-			Mnemonic      string `json:"mnemonic"`
-			Provider      string `json:"provider"`
-			ConfirmBlocks uint64 `json:"confirm_blocks"`
-			TokenFile     string `json:"token_file"`
-			TokenUrl      string `json:"token_url"`
-		}{}
+		cfg := &uniswapv3.Config{}
 
-		if err := ctx.Bind(conf); err != nil {
+		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		if conf.Provider == "" {
-			ctx.JSON(http.StatusBadRequest, "provider must be set")
+		if cfg.DefaultProvider == "" {
+			ctx.JSON(http.StatusBadRequest, "default provider must be set")
 			return
-		}
-		if conf.TokenFile == "" && conf.TokenUrl == "" {
-			ctx.JSON(http.StatusBadRequest, "token_file or token_url must be set")
-			return
-		}
-
-		cfg := &uniswapv3.Config{
-			Mnemonic:      conf.Mnemonic,
-			ProviderURL:   conf.Provider,
-			ConfirmBlocks: conf.ConfirmBlocks,
-			TokensFile:    conf.TokenFile,
-			TokensUrl:     conf.TokenUrl,
 		}
 
 		ex, err := uniswapv3.NewExchange(cfg, s.rc, s.v, s.l, false)

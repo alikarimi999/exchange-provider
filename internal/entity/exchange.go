@@ -47,6 +47,8 @@ type ExchangeManager interface {
 	Stop()
 	StartAgain() (*StartAgainResult, error)
 
+	Command(Command) (CommandResult, error)
+
 	Run(wg *sync.WaitGroup)
 	Configs() interface{}
 

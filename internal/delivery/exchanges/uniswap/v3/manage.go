@@ -3,6 +3,7 @@ package uniswapv3
 import (
 	"fmt"
 	"order_service/internal/entity"
+	"order_service/pkg/errors"
 	"sync"
 	"time"
 )
@@ -15,6 +16,10 @@ func (u *UniSwapV3) Stop() {
 }
 
 func (u *UniSwapV3) Configs() interface{} {
+	u.cfg.Id = u.accountId
+	u.cfg.Accounts, _ = u.wallet.AllAccounts()
+	u.cfg.DefaultProvider = u.provider.URL
+	u.cfg.BackupProviders = u.backupProvidersURL
 	return u.cfg
 }
 
@@ -44,6 +49,14 @@ func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
 }
 
 func (u *UniSwapV3) StartAgain() (*entity.StartAgainResult, error) {
+	agent := u.agent("StartAgain")
+	u.l.Debug(agent, "start again")
+
+	if err := u.pingProvider(); err != nil {
+		return nil, errors.Wrap(errors.Op(agent), err)
+	}
+
+	u.stopCh = make(chan struct{})
 	return &entity.StartAgainResult{}, nil
 }
 

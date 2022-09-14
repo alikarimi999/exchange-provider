@@ -23,7 +23,7 @@ func (u *UniSwapV3) wrap(from, contract common.Address, amount string) (*types.T
 		return nil, err
 	}
 
-	c, err := contracts.NewMain(contract, u.Provider)
+	c, err := contracts.NewMain(contract, u.provider)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (u *UniSwapV3) unwrap(from, contract common.Address, amount string) (*types
 		return nil, err
 	}
 
-	c, err := contracts.NewMain(contract, u.Provider)
+	c, err := contracts.NewMain(contract, u.provider)
 	if err != nil {
 		return nil, err
 	}

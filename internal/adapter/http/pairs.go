@@ -13,7 +13,6 @@ import (
 
 func (s *Server) AddPairs(ctx Context) {
 	nid := ctx.Param("id")
-
 	ex, err := s.app.GetExchange(nid)
 	if err != nil {
 		handlerErr(ctx, err)
