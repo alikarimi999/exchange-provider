@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/errors"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -49,38 +50,58 @@ func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 }
 
 func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
-
+	agent := u.agent("highestLiquidPool")
 	f := u.factory
+
+	pairs := []*pair{}
+	wg := &sync.WaitGroup{}
+	for _, fee := range feeTiers {
+		wg.Add(1)
+		go func(fee *big.Int) {
+			defer wg.Done()
+
+			a, err := f.GetPool(nil, bt.Address, qt.Address, fee)
+			if err != nil {
+				u.l.Error(agent, err.Error())
+				return
+			} else if a == common.HexToAddress("0") {
+				return
+			}
+
+			p, err := contracts.NewUniswapv3Pool(a, u.Provider)
+			if err != nil {
+				u.l.Error(agent, err.Error())
+				return
+			}
+
+			l, err := p.Liquidity(nil)
+			if err != nil {
+				u.l.Error(agent, err.Error())
+				return
+			}
+
+			pairs = append(pairs, &pair{
+				address:   a,
+				liquidity: l,
+				feeTier:   fee,
+			})
+		}(fee)
+	}
+	wg.Wait()
 
 	pool := &pair{
 		BT:        bt,
 		QT:        qt,
+		liquidity: common.Big0,
 		address:   common.HexToAddress("0"),
-		liquidity: big.NewInt(0),
 	}
 
-	for _, fee := range feeTiers {
-		a, err := f.GetPool(nil, bt.Address, qt.Address, fee)
-		if err != nil || a == common.HexToAddress("0") {
-			continue
+	for _, p := range pairs {
+		if p.liquidity.Cmp(pool.liquidity) == +1 {
+			pool.address = p.address
+			pool.liquidity = p.liquidity
+			pool.feeTier = p.feeTier
 		}
-
-		p, err := contracts.NewUniswapv3Pool(a, u.Provider)
-		if err != nil {
-			continue
-		}
-
-		l, err := p.Liquidity(nil)
-		if err != nil {
-			continue
-		}
-
-		if l.Cmp(pool.liquidity) == +1 {
-			pool.address = a
-			pool.liquidity = l
-			pool.feeTier = fee
-		}
-
 	}
 	if pool.address == common.HexToAddress("0") || pool.liquidity == big.NewInt(0) {
 		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))

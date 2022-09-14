@@ -3,6 +3,7 @@ package uniswapv3
 import (
 	"fmt"
 	"order_service/internal/entity"
+	"sync"
 	"time"
 )
 
@@ -23,16 +24,22 @@ func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
 	ps := u.pairs.getAll()
 	pairs := []*entity.Pair{}
 
+	wg := sync.WaitGroup{}
 	for _, p := range ps {
-		p, err := u.setBestPrice(p.BT, p.QT)
-		if err != nil {
-			u.l.Error(agent, err.Error())
-			continue
-		}
+		wg.Add(1)
+		go func(p pair) {
+			defer wg.Done()
+			newPair, err := u.setBestPrice(p.BT, p.QT)
+			if err != nil {
+				u.l.Error(agent, err.Error())
+				return
+			}
 
-		pairs = append(pairs, p.ToEntity(u))
+			pairs = append(pairs, newPair.ToEntity(u))
+		}(p)
 	}
 
+	wg.Wait()
 	return pairs
 }
 

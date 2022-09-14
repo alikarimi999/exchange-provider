@@ -137,45 +137,49 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 		i := v3.v.Get(fmt.Sprintf("%s.pairs", v3.NID()))
 		if i != nil {
 			psi := i.(map[string]interface{})
-
+			wg := &sync.WaitGroup{}
 			for _, v := range psi {
-				p := v.(map[string]interface{})
-				pair := &pair{}
+				wg.Add(1)
+				go func(v interface{}) {
+					defer wg.Done()
+					p := v.(map[string]interface{})
+					pair := &pair{}
 
-				if p["bt"] != nil && p["qt"] != nil {
-					bChainId := int64(p["bt"].(map[string]interface{})["chainid"].(float64))
-					qChainId := int64(p["qt"].(map[string]interface{})["chainid"].(float64))
+					if p["bt"] != nil && p["qt"] != nil {
+						bChainId := int64(p["bt"].(map[string]interface{})["chainid"].(float64))
+						qChainId := int64(p["qt"].(map[string]interface{})["chainid"].(float64))
 
-					if bChainId == qChainId && v3.chainId.Int64() == bChainId {
-						pair.BT = token{
-							Name:     p["bt"].(map[string]interface{})["name"].(string),
-							Symbol:   p["bt"].(map[string]interface{})["symbol"].(string),
-							Address:  common.HexToAddress(p["bt"].(map[string]interface{})["address"].(string)),
-							Decimals: int(p["bt"].(map[string]interface{})["decimals"].(float64)),
-							ChainId:  bChainId,
+						if bChainId == qChainId && v3.chainId.Int64() == bChainId {
+							pair.BT = token{
+								Name:     p["bt"].(map[string]interface{})["name"].(string),
+								Symbol:   p["bt"].(map[string]interface{})["symbol"].(string),
+								Address:  common.HexToAddress(p["bt"].(map[string]interface{})["address"].(string)),
+								Decimals: int(p["bt"].(map[string]interface{})["decimals"].(float64)),
+								ChainId:  bChainId,
+							}
+
+							pair.QT = token{
+								Name:     p["qt"].(map[string]interface{})["name"].(string),
+								Symbol:   p["qt"].(map[string]interface{})["symbol"].(string),
+								Address:  common.HexToAddress(p["qt"].(map[string]interface{})["address"].(string)),
+								Decimals: int(p["qt"].(map[string]interface{})["decimals"].(float64)),
+								ChainId:  qChainId,
+							}
+
+							pair, err = v3.highestLiquidPool(pair.BT, pair.QT)
+							if err != nil {
+								v3.l.Error(agent, err.Error())
+								return
+							}
+
+							v3.pairs.add(*pair)
+							v3.tokens.add(pair.BT, pair.QT)
+							v3.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
 						}
-
-						pair.QT = token{
-							Name:     p["qt"].(map[string]interface{})["name"].(string),
-							Symbol:   p["qt"].(map[string]interface{})["symbol"].(string),
-							Address:  common.HexToAddress(p["qt"].(map[string]interface{})["address"].(string)),
-							Decimals: int(p["qt"].(map[string]interface{})["decimals"].(float64)),
-							ChainId:  qChainId,
-						}
-
-						pair, err = v3.highestLiquidPool(pair.BT, pair.QT)
-						if err != nil {
-							v3.l.Error(agent, err.Error())
-							continue
-						}
-
-						v3.pairs.add(*pair)
-						v3.tokens.add(pair.BT, pair.QT)
-						v3.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
 					}
-				}
+				}(v)
 			}
-
+			wg.Wait()
 		}
 
 	}
