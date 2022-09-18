@@ -32,6 +32,8 @@ func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 		Address: w.Addr,
 		Tag:     w.Tag,
 
+		Coin:        w.CoinId,
+		Chain:       w.ChainId,
 		Total:       w.Total,
 		Fee:         w.Fee,
 		ExchangeFee: w.ExchangeFee,

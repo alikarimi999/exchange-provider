@@ -54,6 +54,8 @@ func UOFromEntity(oe *entity.UserOrder) *UserOrder {
 	case entity.OSDepositeConfimred:
 		o.Status = string(oe.Status)
 
+	case entity.OSSucceed:
+		o.Status = string(oe.Status)
 	case entity.OSFailed:
 		o.Status = string(oe.Status)
 

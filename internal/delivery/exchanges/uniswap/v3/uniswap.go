@@ -221,3 +221,7 @@ func (u *UniSwapV3) pingProvider() error {
 	}
 	return nil
 }
+
+func (u *UniSwapV3) Type() entity.ExType {
+	return entity.DEX
+}

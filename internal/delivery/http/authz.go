@@ -107,7 +107,7 @@ func (a *authService) CheckAccess(resource, action string, l logger.Logger) gin.
 			return
 		}
 
-		l.Debug(agent, fmt.Sprintf("CheckAccessResp: %+v", cr))
+		// l.Debug(agent, fmt.Sprintf("CheckAccessResp: %+v", cr))
 
 		if !cr.HasAccess {
 			ctx.JSON(http.StatusUnauthorized, cr.Msg)

@@ -1,7 +1,6 @@
 package uniswapv3
 
 import (
-	"fmt"
 	"math/big"
 	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
 	"order_service/pkg/utils/numbers"
@@ -12,7 +11,7 @@ import (
 )
 
 func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
-	agent := u.agent("swap")
+	// agent := u.agent("swap")
 	pool, err := u.setBestPrice(tIn, tOut)
 	if err != nil {
 		return nil, nil, err
@@ -67,6 +66,6 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	}
 	u.wallet.BurnNonce(source, tx.Nonce())
 
-	u.l.Debug(agent, fmt.Sprintf("swap `%+v`", params))
+	// u.l.Debug(agent, fmt.Sprintf("swap `%+v`", params))
 	return tx, pool, err
 }

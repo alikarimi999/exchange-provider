@@ -42,7 +42,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	for wd := range t.wCh {
 		go func(w *entity.Withdrawal) {
 			w0 := *w
-			t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
+			// t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
 
 			ex, err := t.exs.get(w.Exchange)
 			if err != nil {
@@ -57,7 +57,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 			<-done
 			switch w.Status {
 			case entity.WithdrawalPending:
-				t.l.Debug(string(op), fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d' is pending yet", w.WId, w.OrderId, w.UserId))
+				// t.l.Debug(string(op), fmt.Sprintf("withdrawalId: '%s' orderId: '%d', userId: '%d' is pending yet", w.WId, w.OrderId, w.UserId))
 				pCh <- true
 				return
 			case entity.WithdrawalSucceed:
@@ -70,8 +70,8 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 					return
 				}
 
-				t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
-					w.WId, w.Status, w.OrderId, w.UserId))
+				// t.l.Debug(string(op), fmt.Sprintf("withdrawal: '%s' status changed to: '%s' , order: %d user: %d",
+				// w.WId, w.Status, w.OrderId, w.UserId))
 
 				o.Status = entity.OSSucceed
 				o.Withdrawal.Status = w.Status

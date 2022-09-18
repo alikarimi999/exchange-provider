@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 	"order_service/internal/adapter/http/dto"
 	"order_service/internal/app"
@@ -57,7 +56,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
+	// s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
 
 	ex, err := s.app.SelectExchangeByPair(bc, qc)
 	if err != nil {

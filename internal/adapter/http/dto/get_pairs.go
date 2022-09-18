@@ -47,16 +47,19 @@ type UserPair struct {
 	Msg                 string  `json:"message,omitempty"`
 }
 
-func EntityPairToUserRequest(p *entity.Pair) *UserPair {
-	return &UserPair{
-		BC:              p.BC.String(),
-		QC:              p.QC.String(),
-		BuyPrice:        p.BestAsk,
-		SellPrice:       p.BestBid,
-		FeeRate:         p.FeeRate,
-		BuyTransferFee:  fmt.Sprintf("%s/%s", p.BC.WithdrawalMinFee, p.BC.String()),
-		SellTransferFee: fmt.Sprintf("%s/%s", p.QC.WithdrawalMinFee, p.QC.String()),
+func EntityPairToUserRequest(p *entity.Pair, exTyp entity.ExType) *UserPair {
+	pair := &UserPair{
+		BC:        p.BC.String(),
+		QC:        p.QC.String(),
+		BuyPrice:  p.BestAsk,
+		SellPrice: p.BestBid,
+		FeeRate:   p.FeeRate,
 	}
+	if exTyp == entity.CEX {
+		pair.BuyTransferFee = fmt.Sprintf("%s/%s", p.BC.WithdrawalMinFee, p.BC.String())
+		pair.SellTransferFee = fmt.Sprintf("%s/%s", p.QC.WithdrawalMinFee, p.QC.String())
+	}
+	return pair
 }
 
 type GetPairsToUserResponse struct {

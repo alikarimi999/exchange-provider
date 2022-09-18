@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"order_service/internal/delivery/storage/database/dto"
 	"order_service/internal/entity"
 
@@ -30,7 +29,7 @@ func (m *MySqlDB) Add(order *entity.UserOrder) error {
 	if err := m.db.Model(&dto.Order{}).Select("seq").Where("user_id = ?", order.UserId).Order("seq desc").Limit(1).Scan(&lastSeq).Error; err != nil {
 		return errors.Wrap(op, err, errors.ErrInternal)
 	}
-	fmt.Println(lastSeq)
+
 	od.Seq = lastSeq + 1
 	err := m.db.Create(od).Error
 	if err != nil {
@@ -135,6 +134,5 @@ func (m *MySqlDB) CheckTxId(txId string) (bool, error) {
 		}
 		return false, errors.Wrap(op, err, errors.ErrInternal)
 	}
-	fmt.Println(o.Id)
 	return true, nil
 }

@@ -42,7 +42,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 					continue
 				}
 
-				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p))
+				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
 				dp.MinBaseCoinDeposit, dp.MinQuoteCoinDeposit = s.app.GetMinPairDeposit(p.BC.Coin, p.QC.Coin)
 
@@ -67,7 +67,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 					continue
 				}
 
-				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(ep))
+				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(ep), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
 				dp.MinBaseCoinDeposit, dp.MinQuoteCoinDeposit = s.app.GetMinPairDeposit(p.BC, p.QC)
 				pairs[p.String()] = dp

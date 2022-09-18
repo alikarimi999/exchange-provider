@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	glogger "gorm.io/gorm/logger"
 )
 
 func main() {
@@ -126,6 +127,7 @@ func test() {
 	if err != nil {
 		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
 	}
+	db.Logger.LogMode(glogger.Silent)
 	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
 	s := storage.NewStorage(db, rc, l)
 

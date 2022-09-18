@@ -42,6 +42,8 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 		Address: w.Addr,
 		Tag:     w.Tag,
 
+		Coin:     w.CoinId,
+		Chain:    w.ChainId,
 		Exchange: w.Exchange,
 
 		Total:       w.Total,
@@ -64,6 +66,10 @@ func (w *Withdrawal) ToEntity() *entity.Withdrawal {
 
 		Address: &entity.Address{Addr: w.Address, Tag: w.Tag},
 
+		Coin: &entity.Coin{
+			CoinId:  w.Coin,
+			ChainId: w.Chain,
+		},
 		Exchange: w.Exchange,
 
 		Total:       w.Total,

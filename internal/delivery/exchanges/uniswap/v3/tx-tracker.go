@@ -51,7 +51,7 @@ func newTxTracker(us *UniSwapV3) *txTracker {
 		provider: us.provider,
 		l:        us.l,
 
-		maxRetries: 4,
+		maxRetries: 10,
 		fCh:        make(chan *ttFeed),
 		ctx:        context.Background(),
 	}
@@ -129,8 +129,8 @@ func (tr *txTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 						}
 
 						confirmed := cn - bn
-						tr.l.Debug(agent, fmt.Sprintf("`%s` confirmed blocks %d/%d", f.txHash.String(), confirmed, tr.us.confirms))
 						if confirmed >= tr.us.confirms {
+							tr.l.Debug(agent, fmt.Sprintf("`%s` confirmed blocks %d/%d", f.txHash.String(), confirmed, tr.us.confirms))
 							f.status = txSuccess
 							f.doneCh <- struct{}{}
 							return false, nil

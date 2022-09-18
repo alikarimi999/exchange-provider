@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	defaultLimiterMax    = 1
-	defaultLimiterPeriod = 3 * time.Second
+	defaultLimiterMax    = 10000
+	defaultLimiterPeriod = 1 * time.Second
 )
 
 type LimiterConfig struct {

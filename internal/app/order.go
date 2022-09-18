@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/logger"
 	"sync"
@@ -82,14 +81,12 @@ func (u *OrderUseCase) NewUserOrder(userId int64, wa *entity.Address, bc, qc *en
 		return nil, err
 	}
 
-	fmt.Println(da)
-
 	o := entity.NewOrder(userId, wa, da, bc, qc, side, ex.NID())
 
 	if err := u.write(o); err != nil {
 		return nil, errors.Wrap(err, op, errors.NewMesssage("create order failed, internal error"))
 	}
 
-	u.l.Debug(string(op), fmt.Sprintf("order (%s) created", o.String()))
+	// u.l.Debug(string(op), fmt.Sprintf("order (%s) created", o.String()))
 	return o, nil
 }

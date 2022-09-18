@@ -58,7 +58,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 	for order := range o.oCh {
 
 		go func(ord *entity.UserOrder) {
-			o.l.Debug(string(op), fmt.Sprintf("handle order: '%d' for user: '%d'", ord.Id, ord.UserId))
+			// o.l.Debug(string(op), fmt.Sprintf("handle order: '%d' for user: '%d'", ord.Id, ord.UserId))
 			exc, err := o.exStore.get(ord.Exchange)
 			if err != nil {
 				o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )", ord.Exchange, err.Error()))
@@ -173,7 +173,8 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				}
 
-				o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, ord.BC, ord.Withdrawal.Address))
+				o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, wc, ord.Withdrawal.Address))
+				ord.Withdrawal.Coin = wc
 				ord.Withdrawal.Fee = f
 				id, err = ex.Withdrawal(ord, wc, ord.Withdrawal.Address, r)
 				if err != nil {
@@ -205,7 +206,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.Withdrawal.String()).Error())
 				}
-				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
+				// o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				return
 
 			case entity.ExOrderPending:

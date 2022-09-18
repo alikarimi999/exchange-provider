@@ -4,6 +4,13 @@ import (
 	"sync"
 )
 
+type ExType string
+
+const (
+	DEX ExType = "DEX"
+	CEX ExType = "CEX"
+)
+
 type ExOrderStatus string
 
 const (
@@ -44,6 +51,7 @@ type Exchange interface {
 }
 
 type ExchangeManager interface {
+	Type() ExType
 	Stop()
 	StartAgain() (*StartAgainResult, error)
 

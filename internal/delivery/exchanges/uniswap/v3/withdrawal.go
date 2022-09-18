@@ -42,7 +42,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		if err != nil {
 			return "", err
 		}
-
+		o.MetaData["unwrap-txId"] = tx.Hash().String()
 		done := make(chan struct{})
 		tf := &ttFeed{
 			txHash:   tx.Hash(),

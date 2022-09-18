@@ -188,3 +188,7 @@ func (k *kucoinExchange) Stop() {
 	k.stopedAt = time.Now()
 	k.l.Debug(string(op), "stopped")
 }
+
+func (k *kucoinExchange) Type() entity.ExType {
+	return entity.CEX
+}

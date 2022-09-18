@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"order_service/internal/entity"
 	"order_service/pkg/errors"
 	"order_service/pkg/logger"
@@ -41,7 +40,7 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 			go ex.TrackDeposit(d, done, pCh)
 
 			<-done
-			h.l.Debug(agent, fmt.Sprintf("deposit `%d` for order `%d` status changed to  `%s`", d.Id, d.OrderId, d.Status))
+			// h.l.Debug(agent, fmt.Sprintf("deposit `%d` for order `%d` status changed to  `%s`", d.Id, d.OrderId, d.Status))
 			if err := h.o.write(d); err != nil {
 				h.l.Error(agent, err.Error())
 				pCh <- false
