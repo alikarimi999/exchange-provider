@@ -2,9 +2,9 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/internal/delivery/exchanges/kucoin/dto"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"strings"
 )
 

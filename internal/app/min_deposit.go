@@ -1,6 +1,6 @@
 package app
 
-import "order_service/internal/entity"
+import "exchange-provider/internal/entity"
 
 func (o *OrderUseCase) GetMinPairDeposit(bc, qc *entity.Coin) (minBc, minQc float64) {
 	return o.pc.PairMinDeposit(bc, qc)

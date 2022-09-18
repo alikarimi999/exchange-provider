@@ -2,7 +2,7 @@ package http
 
 import (
 	"context"
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 	"time"
 
 	"github.com/sethvargo/go-limiter"

@@ -1,6 +1,6 @@
 package app
 
-import "order_service/internal/entity"
+import "exchange-provider/internal/entity"
 
 type ExchangeRepo interface {
 	Add(ex *Exchange) error

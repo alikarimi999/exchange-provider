@@ -2,9 +2,9 @@ package exrepo
 
 import (
 	"crypto/rsa"
-	"order_service/internal/app"
-	"order_service/internal/entity"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/logger"
 	"time"
 
 	"github.com/go-redis/redis/v9"

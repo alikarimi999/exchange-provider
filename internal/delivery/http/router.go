@@ -1,10 +1,10 @@
 package http
 
 import (
-	"order_service/pkg/logger"
+	"exchange-provider/pkg/logger"
 
-	"order_service/internal/adapter/http"
-	"order_service/internal/app"
+	"exchange-provider/internal/adapter/http"
+	"exchange-provider/internal/app"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v9"

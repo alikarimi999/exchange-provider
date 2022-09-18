@@ -2,8 +2,8 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )

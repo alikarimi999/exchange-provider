@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 )
 
 type Deposit struct {

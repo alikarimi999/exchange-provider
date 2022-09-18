@@ -3,8 +3,8 @@ package http
 import (
 	"io"
 	"net/http"
-	"order_service/pkg/errors"
-	"order_service/pkg/utils"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/utils"
 	"sync"
 
 	"github.com/spf13/viper"

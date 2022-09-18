@@ -2,9 +2,9 @@ package http
 
 import (
 	"net/http"
-	"order_service/internal/adapter/http/dto"
-	"order_service/internal/app"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/app"
+	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) GetPairsToUser(ctx Context) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"order_service/pkg/logger"
+	"exchange-provider/pkg/logger"
 	"sync"
 	"time"
 

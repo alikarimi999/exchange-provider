@@ -1,7 +1,7 @@
 package eth
 
 import (
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"

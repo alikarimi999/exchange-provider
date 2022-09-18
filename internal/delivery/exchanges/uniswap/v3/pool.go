@@ -2,8 +2,8 @@ package uniswapv3
 
 import (
 	"math/big"
-	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
+	"exchange-provider/pkg/errors"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"

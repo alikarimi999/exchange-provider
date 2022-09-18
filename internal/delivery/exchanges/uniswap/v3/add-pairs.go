@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"order_service/internal/delivery/exchanges/uniswap/v3/dto"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/delivery/exchanges/uniswap/v3/dto"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"os"
 	"sync"
 )

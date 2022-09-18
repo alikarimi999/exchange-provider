@@ -6,5 +6,5 @@ COPY . /app/
 WORKDIR /app
 
 
-RUN chmod +x order_service
-CMD ["./order_service" ]
+RUN chmod +x exchange-provider
+CMD ["./exchange-provider" ]

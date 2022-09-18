@@ -1,7 +1,7 @@
 package database
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

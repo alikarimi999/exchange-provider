@@ -2,11 +2,11 @@ package exrepo
 
 import (
 	"encoding/json"
-	"order_service/internal/app"
-	"order_service/internal/delivery/exchanges/kucoin"
-	uniswapv3 "order_service/internal/delivery/exchanges/uniswap/v3"
-	"order_service/pkg/errors"
-	"order_service/pkg/utils"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/exchanges/kucoin"
+	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/utils"
 )
 
 type Exchange struct {

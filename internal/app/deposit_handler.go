@@ -1,9 +1,9 @@
 package app
 
 import (
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/logger"
 	"strconv"
 	"sync"
 )

@@ -1,10 +1,10 @@
 package storage
 
 import (
-	"order_service/internal/delivery/storage/cache"
-	"order_service/internal/delivery/storage/database"
-	"order_service/internal/entity"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/delivery/storage/cache"
+	"exchange-provider/internal/delivery/storage/database"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/logger"
 
 	"github.com/go-redis/redis/v9"
 	"gorm.io/gorm"

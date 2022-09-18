@@ -3,7 +3,7 @@ package http
 import (
 	"net/http"
 
-	h "order_service/internal/adapter/http"
+	h "exchange-provider/internal/adapter/http"
 
 	"github.com/gin-gonic/gin"
 )

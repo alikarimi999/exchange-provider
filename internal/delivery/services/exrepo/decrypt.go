@@ -3,11 +3,11 @@ package exrepo
 import (
 	"encoding/json"
 	"fmt"
-	"order_service/internal/delivery/exchanges/kucoin"
-	uniswapv3 "order_service/internal/delivery/exchanges/uniswap/v3"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
-	"order_service/pkg/utils"
+	"exchange-provider/internal/delivery/exchanges/kucoin"
+	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/utils"
 )
 
 func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {

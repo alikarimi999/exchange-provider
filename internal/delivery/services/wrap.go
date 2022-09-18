@@ -2,12 +2,12 @@ package services
 
 import (
 	"crypto/rsa"
-	"order_service/internal/app"
-	"order_service/internal/delivery/services/exrepo"
-	"order_service/internal/delivery/services/fee"
-	"order_service/internal/delivery/services/pairconf"
-	"order_service/internal/entity"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/services/exrepo"
+	"exchange-provider/internal/delivery/services/fee"
+	"exchange-provider/internal/delivery/services/pairconf"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/logger"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"

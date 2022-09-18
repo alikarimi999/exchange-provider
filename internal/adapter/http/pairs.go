@@ -3,12 +3,12 @@ package http
 import (
 	"fmt"
 	"net/http"
-	"order_service/internal/adapter/http/dto"
-	"order_service/internal/app"
-	kdto "order_service/internal/delivery/exchanges/kucoin/dto"
-	udto "order_service/internal/delivery/exchanges/uniswap/v3/dto"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/app"
+	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	udto "exchange-provider/internal/delivery/exchanges/uniswap/v3/dto"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) AddPairs(ctx Context) {

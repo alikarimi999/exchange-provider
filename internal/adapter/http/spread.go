@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"order_service/internal/adapter/http/dto"
+	"exchange-provider/internal/adapter/http/dto"
 )
 
 func (s *Server) GetAllPairsSpread(ctx Context) {

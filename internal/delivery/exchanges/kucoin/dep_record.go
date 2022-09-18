@@ -2,7 +2,7 @@ package kucoin
 
 import (
 	"encoding/json"
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 type depositeRecord struct {

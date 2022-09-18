@@ -2,12 +2,12 @@ package http
 
 import (
 	"net/http"
-	"order_service/internal/adapter/http/dto"
-	"order_service/internal/app"
-	"order_service/internal/entity"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/logger"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"

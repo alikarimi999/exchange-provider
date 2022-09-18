@@ -3,8 +3,8 @@ package uniswapv3
 import (
 	"fmt"
 	"math/big"
-	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
+	"exchange-provider/pkg/errors"
 	"sync"
 	"time"
 

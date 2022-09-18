@@ -1,8 +1,8 @@
 package app
 
 import (
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 )
 
 func (u *OrderUseCase) GetPaginated(pa *entity.PaginatedUserOrders) error {

@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 	"strconv"
 )
 

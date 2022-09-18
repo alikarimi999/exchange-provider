@@ -2,7 +2,7 @@ package http
 
 import (
 	"net/http"
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 )
 
 func handlerErr(ctx Context, err error) {

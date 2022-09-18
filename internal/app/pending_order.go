@@ -1,7 +1,7 @@
 package app
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 func (o *OrderUseCase) totalPendingOrders(ex entity.Exchange, fs ...*entity.Filter) (total int64, err error) {

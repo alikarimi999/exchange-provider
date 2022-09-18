@@ -1,4 +1,4 @@
-module order_service
+module exchange-provider
 
 go 1.18
 

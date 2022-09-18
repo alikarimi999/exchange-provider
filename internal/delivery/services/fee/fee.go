@@ -1,11 +1,11 @@
 package fee
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 	"strconv"
 	"sync"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 
 	"github.com/spf13/viper"
 	"gorm.io/gorm"

@@ -2,13 +2,13 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/internal/delivery/exchanges/kucoin/dto"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	"exchange-provider/pkg/logger"
 	"strconv"
 	"sync"
 	"time"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )

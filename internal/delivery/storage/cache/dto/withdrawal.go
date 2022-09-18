@@ -2,7 +2,7 @@ package dto
 
 import (
 	"encoding/json"
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 type Withdrawal struct {

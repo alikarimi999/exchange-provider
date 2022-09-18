@@ -3,8 +3,8 @@ package uniswapv3
 import (
 	"fmt"
 	"math/big"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"

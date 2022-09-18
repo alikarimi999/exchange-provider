@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
-	"order_service/pkg/logger"
+	"exchange-provider/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )

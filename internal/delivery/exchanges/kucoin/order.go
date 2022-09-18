@@ -2,7 +2,7 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 	"strings"
 
 	"github.com/Kucoin/kucoin-go-sdk"

@@ -2,11 +2,11 @@ package cache
 
 import (
 	"fmt"
-	"order_service/internal/delivery/storage/cache/dto"
-	"order_service/internal/entity"
+	"exchange-provider/internal/delivery/storage/cache/dto"
+	"exchange-provider/internal/entity"
 	"time"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 
 	"github.com/go-redis/redis/v9"
 )

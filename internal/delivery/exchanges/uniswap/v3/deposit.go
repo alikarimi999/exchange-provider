@@ -2,7 +2,7 @@ package uniswapv3
 
 import (
 	"fmt"
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 func (u *UniSwapV3) TrackDeposit(d *entity.Deposit, done chan<- struct{},

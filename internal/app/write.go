@@ -1,7 +1,7 @@
 package app
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 // Write writes the given data first to the persistent storage and then to the cache.

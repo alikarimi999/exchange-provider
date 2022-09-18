@@ -2,8 +2,8 @@ package kucoin
 
 import (
 	"fmt"
-	"order_service/pkg/errors"
-	"order_service/pkg/logger"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/logger"
 	"strconv"
 	"strings"
 	"sync"

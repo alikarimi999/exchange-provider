@@ -1,6 +1,6 @@
 package kucoin
 
-import "order_service/pkg/errors"
+import "exchange-provider/pkg/errors"
 
 func (k *kucoinExchange) Configs() interface{} {
 	return k.cfg

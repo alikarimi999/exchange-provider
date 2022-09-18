@@ -1,6 +1,6 @@
 package dto
 
-import "order_service/internal/app"
+import "exchange-provider/internal/app"
 
 type Account struct {
 	Status string      `json:"status"`

@@ -2,7 +2,7 @@ package pairconf
 
 import (
 	"fmt"
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 )
 
 type PairDepositLimit struct {

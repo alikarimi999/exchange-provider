@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/rand"
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 	"sync"
 	"time"
 

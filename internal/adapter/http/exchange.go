@@ -3,10 +3,10 @@ package http
 import (
 	"fmt"
 	"net/http"
-	"order_service/internal/adapter/http/dto"
-	"order_service/internal/app"
-	"order_service/internal/delivery/exchanges/kucoin"
-	uniswapv3 "order_service/internal/delivery/exchanges/uniswap/v3"
+	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/exchanges/kucoin"
+	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 )
 
 func (s *Server) AddExchange(ctx Context) {

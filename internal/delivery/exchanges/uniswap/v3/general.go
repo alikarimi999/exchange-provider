@@ -2,9 +2,9 @@ package uniswapv3
 
 import (
 	"context"
-	"order_service/internal/delivery/exchanges/uniswap/v3/contracts"
-	"order_service/pkg/errors"
-	"order_service/pkg/wallet/eth"
+	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
+	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/wallet/eth"
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"

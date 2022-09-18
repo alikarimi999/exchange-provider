@@ -2,10 +2,10 @@ package dto
 
 import (
 	"math/big"
-	kdto "order_service/internal/delivery/exchanges/kucoin/dto"
-	"order_service/internal/entity"
+	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	"exchange-provider/internal/entity"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 )
 
 type Coin struct {

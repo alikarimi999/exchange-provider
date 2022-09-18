@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) ChangeDefaultFee(ctx Context) {

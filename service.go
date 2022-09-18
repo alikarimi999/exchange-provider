@@ -7,11 +7,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"order_service/internal/app"
-	"order_service/internal/delivery/http"
-	"order_service/internal/delivery/services"
-	"order_service/internal/delivery/storage"
-	"order_service/pkg/logger"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/http"
+	"exchange-provider/internal/delivery/services"
+	"exchange-provider/internal/delivery/storage"
+	"exchange-provider/pkg/logger"
 	"os"
 	"sync"
 
@@ -58,7 +58,7 @@ func production() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		os.Getenv("MYSQL_USER"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), "order_service")
+		os.Getenv("MYSQL_USER"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), "exchange-provider")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -121,7 +121,7 @@ func test() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		"root", "123", "localhost:3306", "order_service")
+		"root", "123", "localhost:3306", "exchange-provider")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

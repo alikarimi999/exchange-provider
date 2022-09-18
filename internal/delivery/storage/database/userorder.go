@@ -1,10 +1,10 @@
 package database
 
 import (
-	"order_service/internal/delivery/storage/database/dto"
-	"order_service/internal/entity"
+	"exchange-provider/internal/delivery/storage/database/dto"
+	"exchange-provider/internal/entity"
 
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 
 	"gorm.io/gorm"
 )

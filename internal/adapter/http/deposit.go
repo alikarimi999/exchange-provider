@@ -1,8 +1,8 @@
 package http
 
 import (
-	"order_service/internal/adapter/http/dto"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) GetMinPairDeposit(ctx Context) {

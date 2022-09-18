@@ -1,6 +1,6 @@
 package dto
 
-import "order_service/internal/entity"
+import "exchange-provider/internal/entity"
 
 type Withdrawal struct {
 	Id       uint64 `json:"id"`

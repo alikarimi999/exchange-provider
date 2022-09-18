@@ -2,7 +2,7 @@ package dto
 
 import (
 	"fmt"
-	"order_service/pkg/errors"
+	"exchange-provider/pkg/errors"
 )
 
 type AddPairsRequest struct {

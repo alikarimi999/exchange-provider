@@ -1,7 +1,7 @@
 package kucoin
 
 import (
-	"order_service/internal/entity"
+	"exchange-provider/internal/entity"
 	"sync"
 
 	"github.com/pkg/errors"

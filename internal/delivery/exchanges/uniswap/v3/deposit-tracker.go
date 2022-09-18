@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"order_service/internal/entity"
-	"order_service/pkg/logger"
-	"order_service/pkg/utils/numbers"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/logger"
+	"exchange-provider/pkg/utils/numbers"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"

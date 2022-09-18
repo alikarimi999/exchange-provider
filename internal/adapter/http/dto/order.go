@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"order_service/internal/app"
-	"order_service/internal/entity"
-	"order_service/pkg/errors"
+	"exchange-provider/internal/app"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"strconv"
 )
 
