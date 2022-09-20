@@ -31,7 +31,6 @@ func (t *token) ToEntity(u *UniSwapV3) *entity.PairCoin {
 			ChainId: chainId,
 		},
 		BlockTime:       u.blockTime,
-		ConfirmBlocks:   int64(u.confirms),
 		ContractAddress: t.Address.String(),
 	}
 }

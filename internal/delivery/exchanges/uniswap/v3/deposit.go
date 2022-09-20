@@ -1,8 +1,8 @@
 package uniswapv3
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
+	"fmt"
 )
 
 func (u *UniSwapV3) TrackDeposit(d *entity.Deposit, done chan<- struct{},
@@ -22,7 +22,7 @@ func (u *UniSwapV3) TrackDeposit(d *entity.Deposit, done chan<- struct{},
 		return
 	}
 
-	u.dt.push(&dtFeed{
+	u.trackDeposit(&dtFeed{
 		d:     d,
 		token: &t,
 		done:  done,

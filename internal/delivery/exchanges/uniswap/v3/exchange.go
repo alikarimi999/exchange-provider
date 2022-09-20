@@ -1,15 +1,16 @@
 package uniswapv3
 
 import (
-	"fmt"
-	"math/big"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
+	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
+	agent := u.agent("Exchange")
 
 	bt := o.BC
 	qt := o.QC
@@ -45,6 +46,8 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 	o.ExchangeOrder.Funds = funds
 	o.ExchangeOrder.Size = size
 	o.ExchangeOrder.Symbol = pair.String()
+
+	u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash().String()))
 	return tx.Hash().String(), nil
 
 }
@@ -64,7 +67,7 @@ func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}
 		doneCh:   doneCh,
 	}
 
-	u.tt.push(tf)
+	go u.tt.track(tf)
 
 	<-doneCh
 
@@ -85,7 +88,8 @@ start:
 				o.ExchangeOrder.Status = entity.ExOrderSucceed
 				o.ExchangeOrder.Fee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 				o.ExchangeOrder.FeeCurrency = "ETH"
-				u.l.Debug(agent, fmt.Sprintf("track `%+v` succeed ", o.ExchangeOrder))
+				u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
+					o.Id, tf.txHash, tf.confirmed, tf.confirms))
 				break start
 			}
 
@@ -95,7 +99,7 @@ start:
 		o.ExchangeOrder.FailedDesc = "unable to parse tx logs"
 
 	case txFailed:
-		u.l.Debug(agent, fmt.Sprintf("track `%s` failed (%s)", tf.txHash.String(), tf.faildesc))
+		// u.l.Debug(agent, fmt.Sprintf("track `%s` failed (%s)", tf.txHash.String(), tf.faildesc))
 		o.ExchangeOrder.Status = entity.ExOrderFailed
 		o.ExchangeOrder.FailedDesc = fmt.Sprintf("failed to track `%s` (%s)", tf.txHash.String(), tf.faildesc)
 	}

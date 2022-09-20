@@ -9,8 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) transferEth(from, to common.Address, value *big.Int) (*types.Transaction, error) {
+func (u *UniSwapV3) transferNative(from, to common.Address, value *big.Int) (*types.Transaction, error) {
 
+	var err error
 	head, err := u.provider.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return nil, err
@@ -49,6 +50,15 @@ func (u *UniSwapV3) transferEth(from, to common.Address, value *big.Int) (*types
 		return nil, err
 	}
 
+	defer func() {
+		if err != nil {
+			u.wallet.ReleaseNonce(from, nonce)
+		} else {
+			u.wallet.BurnNonce(from, nonce)
+
+		}
+	}()
+
 	tx := types.NewTx(&types.DynamicFeeTx{
 		ChainID:   u.chainId,
 		Nonce:     nonce,
@@ -70,10 +80,8 @@ func (u *UniSwapV3) transferEth(from, to common.Address, value *big.Int) (*types
 	}
 	err = u.provider.SendTransaction(context.Background(), tx)
 	if err != nil {
-		u.wallet.ReleaseNonce(from, nonce)
 		return nil, err
 	}
 
-	u.wallet.BurnNonce(from, nonce)
 	return tx, nil
 }

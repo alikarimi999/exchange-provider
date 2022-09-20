@@ -18,7 +18,6 @@ type PairCoin struct {
 	*Coin
 
 	BlockTime           time.Duration
-	ConfirmBlocks       int64
 	ContractAddress     string
 	Address             string
 	Tag                 string

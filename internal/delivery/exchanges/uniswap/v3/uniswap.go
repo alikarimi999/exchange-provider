@@ -2,13 +2,13 @@ package uniswapv3
 
 import (
 	"context"
-	"fmt"
-	"math/big"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/wallet/eth"
+	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -51,7 +51,6 @@ type UniSwapV3 struct {
 	pairs  *supportedPairs
 
 	tt *txTracker
-	dt *depostiTracker
 	am *approveManager
 	rc *redis.Client
 	v  *viper.Viper
@@ -109,7 +108,7 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 	}
 
 	v3.tt = newTxTracker(v3)
-	v3.dt = newDepositTracker(v3)
+
 	v3.am = newApproveManager(v3)
 
 	if readConfig {
@@ -203,13 +202,6 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 func (u *UniSwapV3) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
-	w := &sync.WaitGroup{}
-
-	w.Add(1)
-	go u.tt.run(w, u.stopCh)
-
-	w.Add(1)
-	go u.dt.run(w, u.stopCh)
 
 }
 

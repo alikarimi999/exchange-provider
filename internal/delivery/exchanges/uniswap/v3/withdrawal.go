@@ -1,12 +1,12 @@
 package uniswapv3
 
 import (
-	"fmt"
-	"math/big"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils/numbers"
+	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -14,6 +14,7 @@ import (
 func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
 	agent := u.agent("Withdrawal")
 
+	var err error
 	t, err := u.tokens.get(coin.CoinId)
 	if err != nil {
 		return "", err
@@ -35,13 +36,18 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 	// unwrap
 	if t.isNative() {
 
-		u.l.Debug(agent, fmt.Sprintf("unwrapping `%s` WETH", vol))
+		// u.l.Debug(agent, fmt.Sprintf("unwrapping `%s` WETH", vol))
 		// TODO: check if it's wrapped before.
 
-		tx, err := u.unwrap(sender, t.Address, vol)
+		unwrapAmount, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
 		if err != nil {
 			return "", err
 		}
+		tx, err := u.unwrap(sender, t.Address, unwrapAmount)
+		if err != nil {
+			return "", err
+		}
+		u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`", o.Id, tx.Hash()))
 		o.MetaData["unwrap-txId"] = tx.Hash().String()
 		done := make(chan struct{})
 		tf := &ttFeed{
@@ -51,23 +57,27 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 
 			doneCh: done,
 		}
-		u.tt.push(tf)
+		go u.tt.track(tf)
 		<-done
 
 		switch tf.status {
 		case txFailed:
-			return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrapWETH tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
+			return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrap-tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
 		case txSuccess:
-			u.l.Debug(agent, fmt.Sprintf("unwrapping `%v` WETH was successful", vol))
+			// u.l.Debug(agent, fmt.Sprintf("unwrapping `%v` WETH was successful", vol))
 			o.Withdrawal.ExchangeFee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 			o.Withdrawal.ExchangeFeeCurrency = ether
+			u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
+				o.Id, tf.txHash, tf.confirmed, tf.confirms))
 		}
 
-		tx, err = u.transferEth(sender, reciever, value)
+		tx, err = u.transferNative(sender, reciever, value)
 		if err != nil {
 			return "", err
 		}
-		o.Withdrawal.Executed = numbers.BigIntToFloatString(tx.Value(), t.Decimals)
+		o.Withdrawal.Executed = vol
+		o.Withdrawal.TxId = tx.Hash().String()
+		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 		return tx.Hash().String(), nil
 	}
 
@@ -75,19 +85,32 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 	if err != nil {
 		return "", err
 	}
+
+	defer func() {
+		if err != nil {
+			u.wallet.ReleaseNonce(sender, opts.Nonce.Uint64())
+		} else {
+			u.wallet.BurnNonce(sender, opts.Nonce.Uint64())
+
+		}
+	}()
+
 	tx, err := contract.Transfer(opts, reciever, value)
 	if err != nil {
-		u.wallet.ReleaseNonce(sender, opts.Nonce.Uint64())
 		return "", err
 	}
 
-	u.wallet.BurnNonce(sender, tx.Nonce())
+	o.Withdrawal.Executed = vol
 	o.Withdrawal.TxId = tx.Hash().String()
+	u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
+
 	return tx.Hash().String(), nil
 }
 
 func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 	proccessedCh <-chan bool) {
+
+	agent := u.agent("TrackWithdrawal")
 
 	t, err := u.tokens.get(w.CoinId)
 	if err != nil {
@@ -112,7 +135,7 @@ func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 		needTx:   true,
 		doneCh:   doneCh,
 	}
-	u.tt.push(tf)
+	go u.tt.track(tf)
 	<-doneCh
 
 	switch tf.status {
@@ -131,6 +154,8 @@ func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 		w.ExchangeFee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), ethDecimals)
 		w.ExchangeFeeCurrency = ether
 		w.Status = entity.WithdrawalSucceed
+		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
+			w.OrderId, tf.txHash, tf.confirmed, tf.confirms))
 
 	default:
 		w.Status = entity.WithdrawalFailed

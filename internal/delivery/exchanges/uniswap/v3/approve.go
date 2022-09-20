@@ -1,10 +1,10 @@
 package uniswapv3
 
 import (
-	"fmt"
-	"math/big"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/pkg/errors"
+	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -126,7 +126,7 @@ func (am *approveManager) infinitApprove(t token, owner, spender common.Address)
 			doneCh:   doneCh,
 		}
 
-		am.u.tt.push(tf)
+		go am.u.tt.track(tf)
 		<-doneCh
 		if tf.status == txSuccess {
 			am.u.l.Debug(agent, fmt.Sprintf("`%s` approve done", prefix))
@@ -153,6 +153,8 @@ func (am *approveManager) allowance(token token, owner, spender common.Address) 
 }
 
 func (am *approveManager) approve(token token, owner, spender common.Address, amount *big.Int) (*types.Transaction, error) {
+
+	var err error
 	c, err := contracts.NewMain(token.Address, am.u.provider.Client)
 	if err != nil {
 		return nil, err
@@ -163,11 +165,18 @@ func (am *approveManager) approve(token token, owner, spender common.Address, am
 		return nil, err
 	}
 
+	defer func() {
+		if err != nil {
+			am.u.wallet.ReleaseNonce(owner, opts.Nonce.Uint64())
+		} else {
+			am.u.wallet.BurnNonce(owner, opts.Nonce.Uint64())
+
+		}
+	}()
+
 	tx, err := c.Approve(opts, spender, amount)
 	if err != nil {
-		am.u.wallet.ReleaseNonce(owner, opts.Nonce.Uint64())
 		return nil, err
 	}
-	am.u.wallet.BurnNonce(owner, tx.Nonce())
 	return tx, nil
 }

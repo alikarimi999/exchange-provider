@@ -1,14 +1,14 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/matryer/try"
+	"exchange-provider/pkg/try"
 )
 
 type dtFeed struct {
@@ -44,7 +44,7 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 		case feed := <-t.fCh:
 
 			go func(f *dtFeed) {
-				err := try.Do(func(attempt int) (bool, error) {
+				err := try.Do(10, func(attempt uint64) (bool, error) {
 					d, err := t.c.GetD(f.d.TxId)
 					if err == nil {
 						if !d.MatchCurrency(f.d) {

@@ -20,7 +20,7 @@ USE `exchange-provider` ;
 CREATE TABLE IF NOT EXISTS `exchange-provider`.`orders` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `user_id` INT NOT NULL,
-   `seq` INT NULL,
+  `seq` INT NULL DEFAULT NULL,
   `status` VARCHAR(100) NULL DEFAULT NULL,
   `exchange` VARCHAR(512) NULL DEFAULT NULL,
   `base_coin` VARCHAR(45) NULL DEFAULT NULL,
@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`orders` (
   `created_at` TIMESTAMP NULL DEFAULT NULL,
   `updated_at` TIMESTAMP NULL DEFAULT NULL,
   `deleted_at` TIMESTAMP NULL DEFAULT NULL,
-  `failed_code` INT NULL,
+  `failed_code` INT NULL DEFAULT NULL,
   `failed_desc` TEXT NULL DEFAULT NULL,
-
+  `meta_data` JSON NULL DEFAULT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 90
+AUTO_INCREMENT = 2384
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`deposits` (
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
+AUTO_INCREMENT = 1001
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -76,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`exchange_orders` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `ex_id` VARCHAR(100) NULL DEFAULT NULL,
   `order_id` INT NOT NULL,
-  `user_id` INT NULL,
+  `user_id` INT NULL DEFAULT NULL,
   `exchange` VARCHAR(512) NULL DEFAULT NULL,
   `symbol` VARCHAR(45) NULL DEFAULT NULL,
   `side` VARCHAR(45) NULL DEFAULT NULL,
@@ -85,26 +86,25 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`exchange_orders` (
   `fee` VARCHAR(45) NULL DEFAULT NULL,
   `fee_currency` VARCHAR(45) NULL DEFAULT NULL,
   `status` VARCHAR(45) NULL DEFAULT NULL,
-  `failed_desc` TEXT NULL,
+  `failed_desc` TEXT NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_exchange_orders_orders1_idx` (`order_id` ASC) VISIBLE,
   CONSTRAINT `fk_exchange_orders_orders1`
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 78
+AUTO_INCREMENT = 1001
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
 
 -- -----------------------------------------------------
--- Table `exchange-provider`.`kucoin_exchanges`
+-- Table `exchange-provider`.`exchanges`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `exchange-provider`.`kucoin_exchanges` (
+CREATE TABLE IF NOT EXISTS `exchange-provider`.`exchanges` (
   `id` VARCHAR(512) NOT NULL,
-  `api_key` VARCHAR(512) NULL DEFAULT NULL,
-  `api_secret` VARCHAR(512) NULL DEFAULT NULL,
-  `api_passphrase` VARCHAR(512) NULL DEFAULT NULL,
+  `name` VARCHAR(45) NULL DEFAULT NULL,
+  `configs` LONGTEXT NULL DEFAULT NULL,
   `status` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
@@ -155,7 +155,7 @@ COLLATE = utf8mb4_0900_ai_ci;
 CREATE TABLE IF NOT EXISTS `exchange-provider`.`withdrawals` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `w_id` VARCHAR(100) NULL DEFAULT NULL,
-  `order_id` INT NULL,
+  `order_id` INT NULL DEFAULT NULL,
   `user_id` INT NULL DEFAULT NULL,
   `status` VARCHAR(45) NULL DEFAULT NULL,
   `address` VARCHAR(1024) NULL DEFAULT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`withdrawals` (
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 108
+AUTO_INCREMENT = 1001
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

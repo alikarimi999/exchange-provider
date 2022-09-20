@@ -1,9 +1,9 @@
 package uniswapv3
 
 import (
-	"math/big"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/pkg/utils/numbers"
+	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +12,7 @@ import (
 
 func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
 	// agent := u.agent("swap")
+	var err error
 	pool, err := u.setBestPrice(tIn, tOut)
 	if err != nil {
 		return nil, nil, err
@@ -30,6 +31,15 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	if err != nil {
 		return nil, nil, err
 	}
+
+	defer func() {
+		if err != nil {
+			u.wallet.ReleaseNonce(source, opts.Nonce.Uint64())
+		} else {
+			u.wallet.BurnNonce(source, opts.Nonce.Uint64())
+
+		}
+	}()
 
 	data := [][]byte{}
 	abi, err := contracts.RouteMetaData.GetAbi()
@@ -61,10 +71,8 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 	deadline := big.NewInt(time.Now().Add(time.Minute * time.Duration(30)).Unix())
 	tx, err := route.Multicall0(opts, deadline, data)
 	if err != nil {
-		u.wallet.ReleaseNonce(source, opts.Nonce.Uint64())
 		return nil, nil, err
 	}
-	u.wallet.BurnNonce(source, tx.Nonce())
 
 	// u.l.Debug(agent, fmt.Sprintf("swap `%+v`", params))
 	return tx, pool, err

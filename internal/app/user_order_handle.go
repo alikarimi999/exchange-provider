@@ -1,9 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 
 	"exchange-provider/pkg/errors"
@@ -117,14 +117,14 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				pCh:  make(chan bool),
 			}
 			go o.eTracker.track(ef)
-			o.l.Debug(string(op), fmt.Sprintf(" waiting for exchange order: '%s' confirmation", ord.ExchangeOrder.ExId))
+			// o.l.Debug(string(op), fmt.Sprintf(" waiting for exchange order: '%s' confirmation", ord.ExchangeOrder.ExId))
 
 			<-ef.done
 			switch ord.ExchangeOrder.Status {
 			case entity.ExOrderSucceed:
 
 				ord.Status = entity.OSExchangeOrderConfirmed
-				o.l.Debug(string(op), fmt.Sprintf("exchange order: '%s' confirmed", ord.ExchangeOrder.ExId))
+				// o.l.Debug(string(op), fmt.Sprintf("exchange order: '%s' confirmed", ord.ExchangeOrder.ExId))
 				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 					ef.pCh <- false
@@ -173,7 +173,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				}
 
-				o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, wc, ord.Withdrawal.Address))
+				// o.l.Debug(string(op), fmt.Sprintf("order: %d  transferring '%s' %v to '%s'", ord.Id, r, wc, ord.Withdrawal.Address))
 				ord.Withdrawal.Coin = wc
 				ord.Withdrawal.Fee = f
 				id, err = ex.Withdrawal(ord, wc, ord.Withdrawal.Address, r)
@@ -195,7 +195,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ord.Withdrawal.Status = entity.WithdrawalPending
 				ord.Status = entity.OSWaitForWithdrawalConfirm
 
-				o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
+				// o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
 					return
