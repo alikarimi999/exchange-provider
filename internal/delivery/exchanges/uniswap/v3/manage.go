@@ -1,29 +1,26 @@
 package uniswapv3
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
+	"fmt"
 	"sync"
 	"time"
 )
 
-func (u *UniSwapV3) Stop() {
+func (u *dex) Stop() {
 	op := fmt.Sprintf("%s.Stop", u.NID())
 	close(u.stopCh)
 	u.stoppedAt = time.Now()
 	u.l.Debug(string(op), "stopped")
 }
 
-func (u *UniSwapV3) Configs() interface{} {
-	u.cfg.Id = u.accountId
+func (u *dex) Configs() interface{} {
+	u.cfg.Id = u.NID()
 	u.cfg.Accounts, _ = u.wallet.AllAccounts()
-	u.cfg.DefaultProvider = u.provider.URL
-	u.cfg.BackupProviders = u.backupProvidersURL
 	return u.cfg
 }
 
-func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
+func (u *dex) GetAllPairs() []*entity.Pair {
 	agent := u.agent("GetAllPairs")
 
 	ps := u.pairs.getAll()
@@ -48,20 +45,22 @@ func (u *UniSwapV3) GetAllPairs() []*entity.Pair {
 	return pairs
 }
 
-func (u *UniSwapV3) StartAgain() (*entity.StartAgainResult, error) {
+func (u *dex) StartAgain() (*entity.StartAgainResult, error) {
 	agent := u.agent("StartAgain")
 	u.l.Debug(agent, "start again")
 
-	if err := u.pingProvider(); err != nil {
-		return nil, errors.Wrap(errors.Op(agent), err)
+	for _, p := range u.cfg.Providers {
+		if err := p.ping(); err != nil {
+			return nil, err
+		}
 	}
 
 	u.stopCh = make(chan struct{})
 	return &entity.StartAgainResult{}, nil
 }
 
-func (u *UniSwapV3) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
-	if bc.ChainId != chainId || qc.ChainId != chainId {
+func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
+	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
 	}
 

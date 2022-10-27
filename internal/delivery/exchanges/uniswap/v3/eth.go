@@ -9,20 +9,21 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) transferNative(from, to common.Address, value *big.Int) (*types.Transaction, error) {
+func (u *dex) transferNative(from, to common.Address, value *big.Int) (*types.Transaction, error) {
 
+	p := u.provider()
 	var err error
-	head, err := u.provider.HeaderByNumber(context.Background(), nil)
+	head, err := p.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	gasPrice, err := u.provider.SuggestGasPrice(context.Background())
+	gasPrice, err := p.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	gasTipCap, err := u.provider.SuggestGasTipCap(context.Background())
+	gasTipCap, err := p.SuggestGasTipCap(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func (u *UniSwapV3) transferNative(from, to common.Address, value *big.Int) (*ty
 		new(big.Int).Mul(head.BaseFee, big.NewInt(2)),
 	)
 
-	gas, err := u.provider.EstimateGas(context.Background(), ethereum.CallMsg{
+	gas, err := p.EstimateGas(context.Background(), ethereum.CallMsg{
 		From:      from,
 		To:        &to,
 		GasPrice:  gasPrice,
@@ -60,7 +61,7 @@ func (u *UniSwapV3) transferNative(from, to common.Address, value *big.Int) (*ty
 	}()
 
 	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   u.chainId,
+		ChainID:   big.NewInt(int64(u.cfg.ChianId)),
 		Nonce:     nonce,
 		GasTipCap: gasTipCap,
 		GasFeeCap: gasFeeCap,
@@ -74,11 +75,11 @@ func (u *UniSwapV3) transferNative(from, to common.Address, value *big.Int) (*ty
 	if err != nil {
 		return nil, err
 	}
-	tx, err = types.SignTx(tx, types.NewLondonSigner(u.chainId), prvKey)
+	tx, err = types.SignTx(tx, types.NewLondonSigner(big.NewInt(int64(u.cfg.ChianId))), prvKey)
 	if err != nil {
 		return nil, err
 	}
-	err = u.provider.SendTransaction(context.Background(), tx)
+	err = p.SendTransaction(context.Background(), tx)
 	if err != nil {
 		return nil, err
 	}

@@ -11,13 +11,13 @@ var (
 
 type Price struct {
 	*Fraction
-	BaseCurrency  token     // input i.e. denominator
-	QuoteCurrency token     // output i.e. numerator
+	BaseCurrency  Token     // input i.e. denominator
+	QuoteCurrency Token     // output i.e. numerator
 	Scalar        *Fraction // used to adjust the raw fraction w/r/t the decimals of the {base,quote}Token
 }
 
 // Construct a price, either with the base and quote currency amount, or the args
-func NewPrice(baseCurrency, quoteCurrency token, denominator, numerator *big.Int) *Price {
+func NewPrice(baseCurrency, quoteCurrency Token, denominator, numerator *big.Int) *Price {
 	return &Price{
 		Fraction:      NewFraction(numerator, denominator),
 		BaseCurrency:  baseCurrency,

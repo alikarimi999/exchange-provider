@@ -2,21 +2,19 @@ package uniswapv3
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"os"
 	"sync"
 )
 
 type tokens struct {
-	Tokens []token `json:"tokens"`
+	Tokens []Token `json:"tokens"`
 }
 
-func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
+func (u *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	agent := u.agent("AddPairs")
 
 	req, ok := data.(*dto.AddPairsRequest)
@@ -28,20 +26,7 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	b, err := os.ReadFile(u.cfg.TokensFile)
 	if err != nil {
-		u.l.Error(agent, err.Error())
-
-		res, err := http.DefaultClient.Get(u.cfg.TokensUrl)
-		if err != nil {
-			return nil, err
-		}
-		b, err = io.ReadAll(res.Body)
-		if err != nil {
-			return nil, err
-		}
-		err = os.WriteFile(u.cfg.TokensFile, b, os.ModePerm)
-		if err != nil {
-			u.l.Error(agent, err.Error())
-		}
+		return nil, err
 	}
 
 	if err := json.Unmarshal(b, ts); err != nil {
@@ -68,27 +53,27 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				return
 			}
 
-			if bt == ether {
-				bt = wrappedETH
+			if bt == u.cfg.NativeToken {
+				bt = u.cfg.wrapNative()
 				btIsNative = true
 			}
-			if qt == ether {
-				qt = wrappedETH
+			if qt == u.cfg.NativeToken {
+				qt = u.cfg.wrapNative()
 				qtIsNative = true
 			}
 
 			for _, t0 := range ts.Tokens {
-				if t0.ChainId != u.chainId.Int64() {
+				if t0.ChainId != int64(u.cfg.ChianId) {
 					continue
 				}
 
 				if t0.Symbol == bt {
 					for _, t1 := range ts.Tokens {
-						if t1.ChainId != u.chainId.Int64() {
+						if t1.ChainId != int64(u.cfg.ChianId) {
 							continue
 						}
 						if t1.Symbol == qt {
-							pair, err := u.highestLiquidPool(t0, t1)
+							pair, err := u.pairWithPrice(t0, t1)
 							if err != nil {
 								res.Failed = append(res.Failed, &entity.PairsErr{
 									Pair: p.String(),
@@ -98,9 +83,11 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 							}
 
 							if btIsNative {
-								pair.BT.Symbol = ether
+								pair.BT.Symbol = u.cfg.NativeToken
+								pair.BT.Native = true
 							} else if qtIsNative {
-								pair.QT.Symbol = ether
+								pair.QT.Symbol = u.cfg.NativeToken
+								pair.QT.Native = true
 							}
 
 							// check pair's tokens allowance
@@ -117,14 +104,14 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 							var approveErr1 []error
 							wg.Add(1)
 							go func() {
-								approveErr1 = u.am.infinitApproves(pair.BT, routerV2, adds...)
+								approveErr1 = u.am.infinitApproves(pair.BT, u.cfg.Router, adds...)
 								wg.Done()
 							}()
 
 							var approveErr2 []error
 							wg.Add(1)
 							go func() {
-								approveErr2 = u.am.infinitApproves(pair.QT, routerV2, adds...)
+								approveErr2 = u.am.infinitApproves(pair.QT, u.cfg.Router, adds...)
 								wg.Done()
 							}()
 
@@ -172,7 +159,7 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 					res.Failed = append(res.Failed, &entity.PairsErr{
 						Pair: p.String(),
 						Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
-							fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, u.chainId.Int64()))),
+							fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, u.cfg.ChianId))),
 					})
 					return
 				}
@@ -180,7 +167,7 @@ func (u *UniSwapV3) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p.String(),
 				Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
-					fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, u.chainId.Int64()))),
+					fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, u.cfg.ChianId))),
 			})
 
 		}(p, *ts)

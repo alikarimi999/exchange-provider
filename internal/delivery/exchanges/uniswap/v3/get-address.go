@@ -1,22 +1,22 @@
 package uniswapv3
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"strings"
 )
 
-func (u *UniSwapV3) Support(bc, qc *entity.Coin) bool {
-	if bc.ChainId != chainId || qc.ChainId != chainId {
+func (u *dex) Support(bc, qc *entity.Coin) bool {
+	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return false
 	}
 	_, err := u.pairs.get(bc.CoinId, qc.CoinId)
 	return err == nil
 }
 
-func (u *UniSwapV3) RemovePair(bc, qc *entity.Coin) error {
-	if bc.ChainId != chainId || qc.ChainId != chainId {
+func (u *dex) RemovePair(bc, qc *entity.Coin) error {
+	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 
@@ -31,8 +31,8 @@ func (u *UniSwapV3) RemovePair(bc, qc *entity.Coin) error {
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }
 
-func (u *UniSwapV3) GetAddress(c *entity.Coin) (*entity.Address, error) {
-	if c.ChainId != chainId {
+func (u *dex) GetAddress(c *entity.Coin) (*entity.Address, error) {
+	if c.ChainId != u.cfg.TokenStandard {
 		return nil, errors.Wrap(errors.ErrBadRequest)
 	}
 

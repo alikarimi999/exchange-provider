@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniSwapV3) newKeyedTransactorWithChainID(address common.Address, value *big.Int) (*bind.TransactOpts, error) {
+func (u *dex) newKeyedTransactorWithChainID(address common.Address, value *big.Int) (*bind.TransactOpts, error) {
 	key, err := u.wallet.PrivateKey(address)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (u *UniSwapV3) newKeyedTransactorWithChainID(address common.Address, value 
 		return nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(key, u.chainId)
+	opts, err := bind.NewKeyedTransactorWithChainID(key, big.NewInt(int64(u.cfg.ChianId)))
 	if err != nil {
 		return nil, err
 	}

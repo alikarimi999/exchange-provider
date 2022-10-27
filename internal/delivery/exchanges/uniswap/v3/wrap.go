@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) wrap(from, contract common.Address, amount string) (*types.Transaction, error) {
+func (u *dex) wrap(from, contract common.Address, amount string) (*types.Transaction, error) {
 	agent := u.agent("wrap")
 
 	var err error
@@ -32,7 +32,7 @@ func (u *UniSwapV3) wrap(from, contract common.Address, amount string) (*types.T
 		}
 	}()
 
-	c, err := contracts.NewMain(contract, u.provider)
+	c, err := contracts.NewMain(contract, u.provider())
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (u *UniSwapV3) wrap(from, contract common.Address, amount string) (*types.T
 	return tx, nil
 }
 
-func (u *UniSwapV3) unwrap(from, contract common.Address, value *big.Int) (*types.Transaction, error) {
+func (u *dex) unwrap(from, contract common.Address, value *big.Int) (*types.Transaction, error) {
 	agent := u.agent("unwrap")
 
 	var err error
@@ -66,7 +66,7 @@ func (u *UniSwapV3) unwrap(from, contract common.Address, value *big.Int) (*type
 		}
 	}()
 
-	c, err := contracts.NewMain(contract, u.provider)
+	c, err := contracts.NewMain(contract, u.provider())
 	if err != nil {
 		return nil, err
 	}

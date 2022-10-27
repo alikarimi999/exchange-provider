@@ -1,10 +1,10 @@
 package app
 
 import (
-	"fmt"
-	"math/rand"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
+	"math/rand"
 	"time"
 )
 
@@ -12,7 +12,6 @@ func (o *OrderUseCase) AddExchange(ex entity.Exchange) error {
 
 	exists, status := o.exs.exists(ex.NID())
 	if !exists {
-
 		return o.exs.add(&Exchange{
 			Exchange:       ex,
 			CurrentStatus:  ExchangeStatusActive,

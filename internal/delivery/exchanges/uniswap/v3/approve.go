@@ -14,13 +14,13 @@ import (
 )
 
 type approveManager struct {
-	u *UniSwapV3
+	u *dex
 
 	pending  *amQueue
 	approved *amQueue
 }
 
-func newApproveManager(u *UniSwapV3) *approveManager {
+func newApproveManager(u *dex) *approveManager {
 	return &approveManager{
 		u:        u,
 		pending:  newAMQueue(),
@@ -28,14 +28,14 @@ func newApproveManager(u *UniSwapV3) *approveManager {
 	}
 }
 
-func (m *approveManager) exists(t token, owner, spender common.Address) bool {
+func (m *approveManager) exists(t Token, owner, spender common.Address) bool {
 	if m.pending.exists(t, owner, spender) || m.approved.exists(t, owner, spender) {
 		return true
 	}
 	return false
 }
 
-func (am *approveManager) notifyApproved(t token, owner, spender common.Address) bool {
+func (am *approveManager) notifyApproved(t Token, owner, spender common.Address) bool {
 	if am.approved.exists(t, owner, spender) {
 		return true
 	}
@@ -49,7 +49,7 @@ func (am *approveManager) notifyApproved(t token, owner, spender common.Address)
 	return am.notifyApproved(t, owner, spender)
 }
 
-func (m *approveManager) add(t token, owner, spender common.Address, approved bool) {
+func (m *approveManager) add(t Token, owner, spender common.Address, approved bool) {
 	if approved {
 		m.approved.add(t, owner, spender)
 		return
@@ -57,7 +57,7 @@ func (m *approveManager) add(t token, owner, spender common.Address, approved bo
 	m.pending.add(t, owner, spender)
 }
 
-func (m *approveManager) remove(t token, owner, spender common.Address, fromPending bool) {
+func (m *approveManager) remove(t Token, owner, spender common.Address, fromPending bool) {
 	if fromPending {
 		m.pending.remove(t, owner, spender)
 		return
@@ -65,7 +65,7 @@ func (m *approveManager) remove(t token, owner, spender common.Address, fromPend
 	m.approved.remove(t, owner, spender)
 }
 
-func (am *approveManager) infinitApproves(t token, spender common.Address, owners ...common.Address) []error {
+func (am *approveManager) infinitApproves(t Token, spender common.Address, owners ...common.Address) []error {
 	// agent := am.u.agent("approveManager.infinitApproves")
 
 	var errs []error
@@ -98,7 +98,7 @@ func (am *approveManager) infinitApproves(t token, spender common.Address, owner
 	return errs
 }
 
-func (am *approveManager) infinitApprove(t token, owner, spender common.Address) error {
+func (am *approveManager) infinitApprove(t Token, owner, spender common.Address) error {
 	agent := am.u.agent("approveManager.infinitApprove")
 	prefix := fmt.Sprintf("%s-%s", t.Symbol, owner)
 
@@ -117,7 +117,7 @@ func (am *approveManager) infinitApprove(t token, owner, spender common.Address)
 		if err != nil {
 			return errors.Wrap(errors.Op(agent), err)
 		}
-		am.u.l.Debug(agent, fmt.Sprintf("`%s` approving", prefix))
+		am.u.l.Debug(agent, fmt.Sprintf("`%s` approving tx:`%s`", prefix, tx.Hash().String()))
 		doneCh := make(chan struct{})
 		tf := &ttFeed{
 			txHash:   tx.Hash(),
@@ -143,8 +143,9 @@ func (am *approveManager) infinitApprove(t token, owner, spender common.Address)
 	return nil
 }
 
-func (am *approveManager) allowance(token token, owner, spender common.Address) (*big.Int, error) {
-	c, err := contracts.NewMain(token.Address, am.u.provider.Client)
+func (am *approveManager) allowance(token Token, owner, spender common.Address) (*big.Int, error) {
+	p := am.u.provider()
+	c, err := contracts.NewMain(token.Address, p.Client)
 	if err != nil {
 		return nil, err
 	}
@@ -152,10 +153,11 @@ func (am *approveManager) allowance(token token, owner, spender common.Address) 
 	return c.Allowance(nil, owner, spender)
 }
 
-func (am *approveManager) approve(token token, owner, spender common.Address, amount *big.Int) (*types.Transaction, error) {
+func (am *approveManager) approve(token Token, owner, spender common.Address, amount *big.Int) (*types.Transaction, error) {
+	p := am.u.provider()
 
 	var err error
-	c, err := contracts.NewMain(token.Address, am.u.provider.Client)
+	c, err := contracts.NewMain(token.Address, p.Client)
 	if err != nil {
 		return nil, err
 	}

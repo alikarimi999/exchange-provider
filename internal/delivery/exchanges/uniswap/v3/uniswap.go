@@ -1,14 +1,11 @@
 package uniswapv3
 
 import (
-	"context"
-	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/wallet/eth"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -19,33 +16,38 @@ import (
 )
 
 type Config struct {
-	Id              string             `json:"id,omitempty"`
-	DefaultProvider string             `json:"default_provider,omitempty"`
-	BackupProviders []string           `json:"backup_providers,omitempty"`
-	Mnemonic        string             `json:"mnemonic,omitempty"`
-	AccountCount    uint64             `json:"account_count,omitempty"`
-	Accounts        []accounts.Account `json:"accounts,omitempty"`
-	ConfirmBlocks   uint64             `json:"confirm_blocks,omitempty"`
-	TokensFile      string             `json:"tokens_file,omitempty"`
-	TokensUrl       string             `json:"tokens_url,omitempty"`
-	Msg             string             `json:"msg,omitempty"`
+	Id            string `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
+	ChianId       uint64 `json:"chian_id,omitempty"`
+	Network       string `json:"network,omitempty"`
+	NativeToken   string `json:"native_token,omitempty"`
+	TokenStandard string `json:"token_standard,omitempty"`
+
+	Providers []*Provider `json:"providers,omitempty"`
+
+	Factory       common.Address
+	Router        common.Address
+	Mnemonic      string             `json:"mnemonic,omitempty"`
+	AccountCount  uint64             `json:"account_count,omitempty"`
+	Accounts      []accounts.Account `json:"accounts,omitempty"`
+	ConfirmBlocks uint64             `json:"confirm_blocks,omitempty"`
+	TokensFile    string             `json:"tokens_file,omitempty"`
 }
 
-type UniSwapV3 struct {
+func (c *Config) wrapNative() string {
+	return fmt.Sprintf("W%s", c.NativeToken)
+}
+
+type dex struct {
 	mux *sync.Mutex
 
 	cfg       *Config
 	accountId string
 
-	wallet             *eth.HDWallet
-	provider           *Provider
-	backupProvidersURL []string
+	wallet *eth.HDWallet
 
 	confirms  uint64
 	blockTime time.Duration
-	chainId   *big.Int
-
-	factory *contracts.Uniswapv3Factory
 
 	tokens *supportedTokens
 	pairs  *supportedPairs
@@ -65,10 +67,6 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 	agent := "uniswapv3.NewExchange"
 
-	if cfg.DefaultProvider == "" && len(cfg.DefaultProvider) == 0 && !readConfig {
-		return nil, errors.Wrap(errors.NewMesssage("default provider and backup providers cannot by empty"))
-	}
-
 	if cfg.ConfirmBlocks == 0 {
 		cfg.ConfirmBlocks = 1
 	}
@@ -76,23 +74,19 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 	if cfg.TokensFile == "" {
 		cfg.TokensFile = "./tokens.json"
 	}
-	if cfg.TokensUrl == "" {
-		cfg.TokensUrl = "https://tokens.uniswap.org"
-	}
+
 	if cfg.Mnemonic == "" {
 		cfg.Mnemonic, _ = eth.NewMnemonic(128)
 	}
 
-	v3 := &UniSwapV3{
+	cfg.Factory = factory
+	cfg.Router = routerV2
+
+	ex := &dex{
 		mux: &sync.Mutex{},
 
-		provider: &Provider{
-			URL: cfg.DefaultProvider,
-		},
-
-		backupProvidersURL: cfg.BackupProviders,
-		accountId:          hash(hash(cfg.Mnemonic)),
-		cfg:                cfg,
+		accountId: accountId(cfg.Mnemonic),
+		cfg:       cfg,
 
 		confirms:  cfg.ConfirmBlocks,
 		blockTime: time.Duration(15 * time.Second),
@@ -107,35 +101,34 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 		stopCh: make(chan struct{}),
 	}
 
-	v3.tt = newTxTracker(v3)
+	ex.tt = newTxTracker(ex)
 
-	v3.am = newApproveManager(v3)
+	ex.am = newApproveManager(ex)
 
 	if readConfig {
-		v3.l.Debug(agent, fmt.Sprintf("retriving pairs from config file %s", v3.v.ConfigFileUsed()))
-		acc, ok := v3.v.Get(fmt.Sprintf("%s.account_count", v3.NID())).(float64)
+		ex.l.Debug(agent, fmt.Sprintf("retriving pairs from config file %s", ex.v.ConfigFileUsed()))
+		acc, ok := ex.v.Get(fmt.Sprintf("%s.account_count", ex.NID())).(float64)
 		if ok {
-			v3.cfg.AccountCount = uint64(acc)
+			ex.cfg.AccountCount = uint64(acc)
 		}
 
-		i := v3.v.Get(fmt.Sprintf("%s.providers", v3.NID()))
-		if i != nil {
-			psi := i.(map[string]interface{})
-			for k, v := range psi {
-				if k == "default" {
-					v3.provider.URL = v.(string)
-					continue
-				}
-				v3.backupProvidersURL = append(v3.backupProvidersURL, v.(string))
+		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.NID())).(string)
+		ex.cfg.TokenStandard = ex.v.Get(fmt.Sprintf("%s.token_standard", ex.NID())).(string)
 
-			}
+		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.NID()))
+		if i == nil {
+			return nil, errors.New("no provider available in config file")
+		}
+		psi := i.(map[string]interface{})
+		for _, v := range psi {
+			ex.cfg.Providers = append(ex.cfg.Providers, &Provider{URL: v.(string)})
 		}
 
-		if err := v3.generalSets(); err != nil {
+		if err := ex.generalSets(); err != nil {
 			return nil, err
 		}
 
-		i = v3.v.Get(fmt.Sprintf("%s.pairs", v3.NID()))
+		i = ex.v.Get(fmt.Sprintf("%s.pairs", ex.NID()))
 		if i != nil {
 			psi := i.(map[string]interface{})
 			wg := &sync.WaitGroup{}
@@ -150,8 +143,8 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 						bChainId := int64(p["bt"].(map[string]interface{})["chainid"].(float64))
 						qChainId := int64(p["qt"].(map[string]interface{})["chainid"].(float64))
 
-						if bChainId == qChainId && v3.chainId.Int64() == bChainId {
-							pair.BT = token{
+						if bChainId == qChainId && int64(ex.cfg.ChianId) == bChainId {
+							pair.BT = Token{
 								Name:     p["bt"].(map[string]interface{})["name"].(string),
 								Symbol:   p["bt"].(map[string]interface{})["symbol"].(string),
 								Address:  common.HexToAddress(p["bt"].(map[string]interface{})["address"].(string)),
@@ -159,7 +152,7 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 								ChainId:  bChainId,
 							}
 
-							pair.QT = token{
+							pair.QT = Token{
 								Name:     p["qt"].(map[string]interface{})["name"].(string),
 								Symbol:   p["qt"].(map[string]interface{})["symbol"].(string),
 								Address:  common.HexToAddress(p["qt"].(map[string]interface{})["address"].(string)),
@@ -167,15 +160,15 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 								ChainId:  qChainId,
 							}
 
-							pair, err := v3.highestLiquidPool(pair.BT, pair.QT)
+							pair, err := ex.pairWithPrice(pair.BT, pair.QT)
 							if err != nil {
-								v3.l.Error(agent, err.Error())
+								ex.l.Error(agent, err.Error())
 								return
 							}
 
-							v3.pairs.add(*pair)
-							v3.tokens.add(pair.BT, pair.QT)
-							v3.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
+							ex.pairs.add(*pair)
+							ex.tokens.add(pair.BT, pair.QT)
+							ex.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
 						}
 					}
 				}(v)
@@ -184,36 +177,28 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 		}
 
 	} else {
-		if err := v3.generalSets(); err != nil {
+		if err := ex.generalSets(); err != nil {
 			return nil, err
 		}
-		v3.v.Set(fmt.Sprintf("%s.providers.default", v3.NID()), v3.provider.URL)
-		v3.v.Set(fmt.Sprintf("%s.account_count", v3.NID()), v3.cfg.AccountCount)
-		for i, url := range v3.backupProvidersURL {
-			v3.v.Set(fmt.Sprintf("%s.providers.%d", v3.NID(), i), url)
+		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)
+		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.NID()), ex.cfg.TokenStandard)
+		ex.v.Set(fmt.Sprintf("%s.account_count", ex.NID()), ex.cfg.AccountCount)
+		for i, p := range ex.cfg.Providers {
+			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.NID(), i), p.URL)
 		}
-		if err := v3.v.WriteConfig(); err != nil {
+		if err := ex.v.WriteConfig(); err != nil {
 			return nil, err
 		}
 	}
 
-	return v3, nil
+	return ex, nil
 }
 
-func (u *UniSwapV3) Run(wg *sync.WaitGroup) {
+func (u *dex) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 }
 
-func (u *UniSwapV3) pingProvider() error {
-	agent := u.agent("pingProvider")
-	_, err := u.provider.BlockNumber(context.Background())
-	if err != nil {
-		return errors.Wrap(errors.Op(agent), err)
-	}
-	return nil
-}
-
-func (u *UniSwapV3) Type() entity.ExType {
+func (u *dex) Type() entity.ExType {
 	return entity.DEX
 }

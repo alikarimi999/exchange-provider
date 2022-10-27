@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
+func (u *dex) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
 	agent := u.agent("Exchange")
 
 	bt := o.BC
@@ -23,8 +23,8 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 
 	sAddr := common.HexToAddress(o.Deposit.Addr)
 
-	var tIn token
-	var tOut token
+	var tIn Token
+	var tOut Token
 	var amount string
 	if side == entity.SideBuy {
 		tIn = pair.QT
@@ -52,7 +52,7 @@ func (u *UniSwapV3) Exchange(o *entity.UserOrder, size, funds string) (string, e
 
 }
 
-func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, proccessed <-chan bool) {
+func (u *dex) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, proccessed <-chan bool) {
 	agent := u.agent("TrackExchangeOrder")
 	pair, err := u.pairs.get(o.BC.CoinId, o.QC.CoinId)
 	if err != nil {
@@ -62,7 +62,7 @@ func (u *UniSwapV3) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}
 	doneCh := make(chan struct{})
 	tf := &ttFeed{
 		txHash:   common.HexToHash(o.ExchangeOrder.ExId),
-		receiver: &routerV2,
+		receiver: &u.cfg.Router,
 		needTx:   true,
 		doneCh:   doneCh,
 	}

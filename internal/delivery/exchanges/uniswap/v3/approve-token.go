@@ -16,11 +16,11 @@ func newAMQueue() *amQueue {
 	return &amQueue{mux: &sync.Mutex{}}
 }
 
-func (q *amQueue) uid(t token, owner, spender common.Address) string {
+func (q *amQueue) uid(t Token, owner, spender common.Address) string {
 	return fmt.Sprintf("%s-%s-%s", t.Symbol, owner, spender)
 }
 
-func (a *amQueue) exists(t token, owner, spender common.Address) bool {
+func (a *amQueue) exists(t Token, owner, spender common.Address) bool {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	uid := a.uid(t, owner, spender)
@@ -33,13 +33,13 @@ func (a *amQueue) exists(t token, owner, spender common.Address) bool {
 	return false
 }
 
-func (a *amQueue) add(t token, owner, spender common.Address) {
+func (a *amQueue) add(t Token, owner, spender common.Address) {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	a.ts = append(a.ts, a.uid(t, owner, spender))
 }
 
-func (a *amQueue) remove(t token, owner, spender common.Address) {
+func (a *amQueue) remove(t Token, owner, spender common.Address) {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 

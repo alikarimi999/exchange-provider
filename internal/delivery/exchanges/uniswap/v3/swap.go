@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
+func (u *dex) swap(tIn, tOut Token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
 	// agent := u.agent("swap")
 	var err error
 	pool, err := u.setBestPrice(tIn, tOut)
@@ -47,7 +47,7 @@ func (u *UniSwapV3) swap(tIn, tOut token, value string, source, dest common.Addr
 		return nil, nil, err
 	}
 
-	route, err := contracts.NewRoute(routerV2, u.provider)
+	route, err := contracts.NewRoute(u.cfg.Router, u.provider())
 	if err != nil {
 		return nil, nil, err
 	}

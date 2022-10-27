@@ -1,22 +1,22 @@
 package uniswapv3
 
 import (
-	"math/big"
 	"exchange-provider/internal/delivery/exchanges/uniswap/v3/contracts"
 	"exchange-provider/pkg/errors"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
+func (u *dex) setBestPrice(bt, qt Token) (*pair, error) {
 
-	pool, err := u.highestLiquidPool(bt, qt)
+	pool, err := u.pairWithPrice(bt, qt)
 	if err != nil {
 		return nil, err
 	}
 
-	p, err := contracts.NewUniswapv3Pool(pool.address, u.provider)
+	p, err := contracts.NewUniswapv3Pool(pool.address, u.provider())
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +49,13 @@ func (u *UniSwapV3) setBestPrice(bt, qt token) (*pair, error) {
 
 }
 
-func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
-	agent := u.agent("highestLiquidPool")
-	f := u.factory
+func (u *dex) pairWithPrice(bt, qt Token) (*pair, error) {
+	agent := u.agent("pairWithPrice")
+
+	f, err := contracts.NewUniswapv3Factory(u.cfg.Factory, u.provider())
+	if err != nil {
+		return nil, err
+	}
 
 	pairs := []*pair{}
 	wg := &sync.WaitGroup{}
@@ -68,7 +72,7 @@ func (u *UniSwapV3) highestLiquidPool(bt, qt token) (*pair, error) {
 				return
 			}
 
-			p, err := contracts.NewUniswapv3Pool(a, u.provider)
+			p, err := contracts.NewUniswapv3Pool(a, u.provider())
 			if err != nil {
 				u.l.Error(agent, err.Error())
 				return

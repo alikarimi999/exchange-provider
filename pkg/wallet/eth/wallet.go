@@ -3,8 +3,8 @@ package eth
 import (
 	"context"
 	"crypto/ecdsa"
-	"math/rand"
 	"exchange-provider/pkg/errors"
+	"math/rand"
 	"sync"
 	"time"
 

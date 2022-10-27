@@ -1,10 +1,10 @@
 package uniswapv3
 
 import (
-	"fmt"
-	"math/big"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,8 +14,8 @@ var pairDelimiter string = "/"
 
 type pair struct {
 	address common.Address
-	BT      token `json:"bt"`
-	QT      token `json:"qt"`
+	BT      Token `json:"bt"`
+	QT      Token `json:"qt"`
 
 	baseIsZero bool
 
@@ -28,7 +28,7 @@ func (p *pair) String() string {
 	return fmt.Sprintf("%s%s%s", p.BT.String(), pairDelimiter, p.QT.String())
 }
 
-func (p *pair) ToEntity(u *UniSwapV3) *entity.Pair {
+func (p *pair) ToEntity(u *dex) *entity.Pair {
 
 	return &entity.Pair{
 		BC: p.BT.ToEntity(u),
@@ -39,7 +39,7 @@ func (p *pair) ToEntity(u *UniSwapV3) *entity.Pair {
 		Liquidity:       p.liquidity,
 		BestAsk:         p.price,
 		BestBid:         p.price,
-		FeeCurrency:     ether,
+		FeeCurrency:     u.cfg.NativeToken,
 	}
 }
 

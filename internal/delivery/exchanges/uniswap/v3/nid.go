@@ -6,24 +6,24 @@ import (
 	"fmt"
 )
 
-func (u *UniSwapV3) Name() string {
-	return "uniswapv3"
+func (u *dex) Name() string {
+	return u.cfg.Name
 }
 
-func (u *UniSwapV3) AccountId() string {
-	u.mux.Lock()
-	defer u.mux.Unlock()
+func (u *dex) AccountId() string {
 	return u.accountId
 }
 
-func (u *UniSwapV3) NID() string {
-	id := u.AccountId()
-	n := u.Name()
-	return fmt.Sprintf("%s-%s", n, id)
+func (u *dex) NID() string {
+	return fmt.Sprintf("%s-%s", u.Name(), u.AccountId())
 }
 
 func hash(s string) string {
 	h := sha1.New()
 	h.Write([]byte(s))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func accountId(id string) string {
+	return hash(hash(id))
 }

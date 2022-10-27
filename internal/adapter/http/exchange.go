@@ -1,12 +1,12 @@
 package http
 
 import (
-	"fmt"
-	"net/http"
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
+	"fmt"
+	"net/http"
 )
 
 func (s *Server) AddExchange(ctx Context) {
@@ -34,19 +34,21 @@ func (s *Server) AddExchange(ctx Context) {
 
 	case "uniswapv3":
 
-		cfg := &uniswapv3.Config{}
+		cfg := &dto.Config{}
 
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
-		if cfg.DefaultProvider == "" {
-			ctx.JSON(http.StatusBadRequest, "default provider must be set")
+		if len(cfg.Providers) == 0 {
+			ctx.JSON(http.StatusBadRequest, "at least one provider must be specified")
 			return
 		}
 
-		ex, err := uniswapv3.NewExchange(cfg, s.rc, s.v, s.l, false)
+		conf := cfg.Map()
+		conf.Name = id
+		ex, err := uniswapv3.NewExchange(conf, s.rc, s.v, s.l, false)
 		if err != nil {
 			cfg.Msg = err.Error()
 			ctx.JSON(http.StatusOK, cfg)
@@ -60,6 +62,7 @@ func (s *Server) AddExchange(ctx Context) {
 		}
 
 		cfg.Id = ex.NID()
+		cfg.Accounts = conf.Accounts
 		cfg.Msg = "exchange added"
 		ctx.JSON(http.StatusOK, cfg)
 		return

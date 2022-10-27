@@ -1,10 +1,10 @@
 package app
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 	"time"
 )

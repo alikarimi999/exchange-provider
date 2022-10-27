@@ -2,12 +2,12 @@ package exrepo
 
 import (
 	"encoding/json"
-	"fmt"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
+	"fmt"
 )
 
 func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
@@ -55,6 +55,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 		cfg := &uniswapv3.Config{
 			Mnemonic: m,
+			Name:     ex.Name,
 		}
 		return uniswapv3.NewExchange(cfg, r.rc, r.v, r.l, true)
 

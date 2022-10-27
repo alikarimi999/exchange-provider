@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
+func (u *dex) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
 	agent := u.agent("Withdrawal")
 
 	var err error
@@ -25,7 +25,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		return "", err
 	}
 
-	contract, err := contracts.NewMain(t.Address, u.provider)
+	contract, err := contracts.NewMain(t.Address, u.provider())
 	if err != nil {
 		return "", err
 	}
@@ -66,7 +66,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 		case txSuccess:
 			// u.l.Debug(agent, fmt.Sprintf("unwrapping `%v` WETH was successful", vol))
 			o.Withdrawal.ExchangeFee = computeTxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
-			o.Withdrawal.ExchangeFeeCurrency = ether
+			o.Withdrawal.ExchangeFeeCurrency = u.cfg.NativeToken
 			u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
 				o.Id, tf.txHash, tf.confirmed, tf.confirms))
 		}
@@ -107,7 +107,7 @@ func (u *UniSwapV3) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity
 	return tx.Hash().String(), nil
 }
 
-func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
+func (u *dex) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
 	agent := u.agent("TrackWithdrawal")
@@ -152,7 +152,7 @@ func (u *UniSwapV3) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 			}
 		}
 		w.ExchangeFee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), ethDecimals)
-		w.ExchangeFeeCurrency = ether
+		w.ExchangeFeeCurrency = u.cfg.NativeToken
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			w.OrderId, tf.txHash, tf.confirmed, tf.confirms))

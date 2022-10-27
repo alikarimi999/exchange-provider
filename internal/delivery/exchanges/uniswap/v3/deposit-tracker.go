@@ -11,12 +11,12 @@ import (
 
 type dtFeed struct {
 	d     *entity.Deposit
-	token *token
+	token *Token
 	done  chan<- struct{}
 	pCh   <-chan bool
 }
 
-func (u *UniSwapV3) trackDeposit(f *dtFeed) {
+func (u *dex) trackDeposit(f *dtFeed) {
 	agent := u.agent("trackDeposit")
 	txHash := common.HexToHash(f.d.TxId)
 
@@ -28,6 +28,7 @@ func (u *UniSwapV3) trackDeposit(f *dtFeed) {
 	} else {
 		destAddress = f.token.Address
 	}
+	fmt.Println(f.token.Native)
 	tf := &ttFeed{
 		txHash:     txHash,
 		receiver:   &destAddress,

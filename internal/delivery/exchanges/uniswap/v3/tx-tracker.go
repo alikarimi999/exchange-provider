@@ -38,20 +38,18 @@ type ttFeed struct {
 }
 
 type txTracker struct {
-	us       *UniSwapV3
-	provider *Provider
-	l        logger.Logger
+	us *dex
+	l  logger.Logger
 
 	maxRetries uint64
 
 	ctx context.Context
 }
 
-func newTxTracker(us *UniSwapV3) *txTracker {
+func newTxTracker(us *dex) *txTracker {
 	return &txTracker{
-		us:       us,
-		provider: us.provider,
-		l:        us.l,
+		us: us,
+		l:  us.l,
 
 		maxRetries: 10,
 		ctx:        context.Background(),
@@ -60,6 +58,8 @@ func newTxTracker(us *UniSwapV3) *txTracker {
 
 func (tr *txTracker) track(f *ttFeed) {
 	agent := tr.us.agent("txTracker.track")
+
+	p := tr.us.provider()
 
 	if f.effortRate == 0 {
 		f.effortRate = 10
@@ -73,7 +73,7 @@ func (tr *txTracker) track(f *ttFeed) {
 		// tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
 
 		if f.needTx {
-			tx, pending, err := tr.provider.TransactionByHash(tr.ctx, f.txHash)
+			tx, pending, err := p.TransactionByHash(tr.ctx, f.txHash)
 			if err != nil {
 				if err.Error() == errTxNotFound {
 					if attempt == 1 {
@@ -104,7 +104,7 @@ func (tr *txTracker) track(f *ttFeed) {
 			f.tx = tx
 		}
 
-		receipt, err := tr.provider.TransactionReceipt(tr.ctx, f.txHash)
+		receipt, err := p.TransactionReceipt(tr.ctx, f.txHash)
 		if err != nil {
 			if err.Error() == errTxNotFound {
 				if attempt <= max/2 {
@@ -124,7 +124,7 @@ func (tr *txTracker) track(f *ttFeed) {
 		switch f.Receipt.Status {
 		case txSuccess:
 			bn := receipt.BlockNumber.Uint64()
-			cn, err := tr.provider.BlockNumber(tr.ctx)
+			cn, err := p.BlockNumber(tr.ctx)
 			if err != nil {
 				tr.l.Error(agent, err.Error())
 				return true, err

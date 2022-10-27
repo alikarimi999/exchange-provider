@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-func (u *UniSwapV3) TrackDeposit(d *entity.Deposit, done chan<- struct{},
+func (u *dex) TrackDeposit(d *entity.Deposit, done chan<- struct{},
 	proccessed <-chan bool) {
-	if d.ChainId != chainId {
+	if d.ChainId != u.cfg.TokenStandard {
 		d.Status = entity.DepositFailed
 		d.FailedDesc = fmt.Sprintf("chain %s not supported", d.ChainId)
 		return
