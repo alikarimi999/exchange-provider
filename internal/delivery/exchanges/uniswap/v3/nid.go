@@ -15,7 +15,7 @@ func (u *dex) AccountId() string {
 }
 
 func (u *dex) NID() string {
-	return fmt.Sprintf("%s-%s", u.Name(), u.AccountId())
+	return fmt.Sprintf("%s-%s-%s", u.Name(), u.cfg.Network, u.AccountId())
 }
 
 func hash(s string) string {

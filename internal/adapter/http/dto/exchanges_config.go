@@ -4,6 +4,7 @@ import (
 	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type Config struct {
@@ -12,6 +13,9 @@ type Config struct {
 	Network       string `json:"network,omitempty"`
 	NativeToken   string `json:"native_token,omitempty"`
 	TokenStandard string `json:"token_standard,omitempty"`
+
+	Factory string `json:"factory,omitempty"`
+	Router  string `json:"router,omitempty"`
 
 	Providers []string `json:"providers,omitempty"`
 
@@ -29,6 +33,9 @@ func (cfg *Config) Map() *uniswapv3.Config {
 		Network:       cfg.Network,
 		TokenStandard: cfg.TokenStandard,
 		NativeToken:   cfg.NativeToken,
+
+		Factory: common.HexToAddress(cfg.Factory),
+		Router:  common.HexToAddress(cfg.Router),
 
 		Mnemonic:      cfg.Mnemonic,
 		AccountCount:  cfg.AccountCount,

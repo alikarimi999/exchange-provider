@@ -9,34 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
-
-type Config struct {
-	Id            string `json:"id,omitempty"`
-	Name          string `json:"name,omitempty"`
-	ChianId       uint64 `json:"chian_id,omitempty"`
-	Network       string `json:"network,omitempty"`
-	NativeToken   string `json:"native_token,omitempty"`
-	TokenStandard string `json:"token_standard,omitempty"`
-
-	Providers []*Provider `json:"providers,omitempty"`
-
-	Factory       common.Address
-	Router        common.Address
-	Mnemonic      string             `json:"mnemonic,omitempty"`
-	AccountCount  uint64             `json:"account_count,omitempty"`
-	Accounts      []accounts.Account `json:"accounts,omitempty"`
-	ConfirmBlocks uint64             `json:"confirm_blocks,omitempty"`
-	TokensFile    string             `json:"tokens_file,omitempty"`
-}
-
-func (c *Config) wrapNative() string {
-	return fmt.Sprintf("W%s", c.NativeToken)
-}
 
 type dex struct {
 	mux *sync.Mutex
@@ -67,20 +43,9 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 	agent := "uniswapv3.NewExchange"
 
-	if cfg.ConfirmBlocks == 0 {
-		cfg.ConfirmBlocks = 1
+	if err := cfg.Validate(readConfig); err != nil {
+		return nil, err
 	}
-
-	if cfg.TokensFile == "" {
-		cfg.TokensFile = "./tokens.json"
-	}
-
-	if cfg.Mnemonic == "" {
-		cfg.Mnemonic, _ = eth.NewMnemonic(128)
-	}
-
-	cfg.Factory = factory
-	cfg.Router = routerV2
 
 	ex := &dex{
 		mux: &sync.Mutex{},
@@ -106,7 +71,7 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 	ex.am = newApproveManager(ex)
 
 	if readConfig {
-		ex.l.Debug(agent, fmt.Sprintf("retriving pairs from config file %s", ex.v.ConfigFileUsed()))
+		ex.l.Debug(agent, fmt.Sprintf("retriving `%s` data", ex.NID()))
 		acc, ok := ex.v.Get(fmt.Sprintf("%s.account_count", ex.NID())).(float64)
 		if ok {
 			ex.cfg.AccountCount = uint64(acc)
@@ -114,6 +79,9 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.NID())).(string)
 		ex.cfg.TokenStandard = ex.v.Get(fmt.Sprintf("%s.token_standard", ex.NID())).(string)
+		ex.cfg.Factory = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.factory", ex.NID())).(string))
+		ex.cfg.Router = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.router", ex.NID())).(string))
+		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.NID())).(string)
 
 		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.NID()))
 		if i == nil {
@@ -180,9 +148,13 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 		if err := ex.generalSets(); err != nil {
 			return nil, err
 		}
+		ex.v.Set(fmt.Sprintf("%s.factory", ex.NID()), ex.cfg.Factory)
+		ex.v.Set(fmt.Sprintf("%s.router", ex.NID()), ex.cfg.Router)
 		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)
 		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.NID()), ex.cfg.TokenStandard)
 		ex.v.Set(fmt.Sprintf("%s.account_count", ex.NID()), ex.cfg.AccountCount)
+		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.NID()), ex.cfg.TokensFile)
+
 		for i, p := range ex.cfg.Providers {
 			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.NID(), i), p.URL)
 		}

@@ -50,12 +50,17 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 		m, ok := jb["mnemonic"].(string)
 		if !ok {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have a mnemonic", ex)))
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
+		}
+		n, ok := jb["network"].(string)
+		if !ok {
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have network paramether", ex)))
 		}
 
 		cfg := &uniswapv3.Config{
 			Mnemonic: m,
 			Name:     ex.Name,
+			Network:  n,
 		}
 		return uniswapv3.NewExchange(cfg, r.rc, r.v, r.l, true)
 

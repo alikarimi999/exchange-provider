@@ -28,7 +28,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
-		Id:     ex.AccountId(),
+		Id:     ex.NID(),
 		Name:   ex.Name(),
 		Status: ex.CurrentStatus,
 	}
@@ -40,6 +40,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 		conf := ex.Configs().(*uniswapv3.Config)
 
 		jb["mnemonic"] = conf.Mnemonic
+		jb["network"] = conf.Network
 
 	case "kucoin":
 		conf := ex.Configs().(*kucoin.Configs)

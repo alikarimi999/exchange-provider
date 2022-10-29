@@ -107,12 +107,7 @@ func (am *approveManager) infinitApprove(t Token, owner, spender common.Address)
 		return err
 	}
 
-	max := abi.MaxUint256
-	if t.Symbol == "UNI" {
-		max = max96
-	}
-
-	if amount.Cmp(max) == -1 {
+	if amount.Cmp(max96) == -1 {
 		tx, err := am.approve(t, owner, spender, abi.MaxUint256)
 		if err != nil {
 			return errors.Wrap(errors.Op(agent), err)

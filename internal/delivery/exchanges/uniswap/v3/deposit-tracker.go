@@ -52,9 +52,9 @@ func (u *dex) trackDeposit(f *dtFeed) {
 		f.done <- struct{}{}
 	case txSuccess:
 		if !f.token.isNative() {
-			if len(tf.Logs) != 1 {
+			if len(tf.Logs) == 0 {
 				f.d.Status = entity.DepositFailed
-				f.d.FailedDesc = fmt.Sprintf("invalid transaction with `%d` logs", len(tf.Logs))
+				f.d.FailedDesc = "invalid transaction"
 				f.done <- struct{}{}
 				break
 			}
