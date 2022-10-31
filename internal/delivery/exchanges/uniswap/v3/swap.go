@@ -11,7 +11,7 @@ import (
 )
 
 func (u *dex) swap(tIn, tOut Token, value string, source, dest common.Address) (*types.Transaction, *pair, error) {
-	// agent := u.agent("swap")
+
 	var err error
 	pool, err := u.setBestPrice(tIn, tOut)
 	if err != nil {
@@ -74,6 +74,5 @@ func (u *dex) swap(tIn, tOut Token, value string, source, dest common.Address) (
 		return nil, nil, err
 	}
 
-	// u.l.Debug(agent, fmt.Sprintf("swap `%+v`", params))
 	return tx, pool, err
 }

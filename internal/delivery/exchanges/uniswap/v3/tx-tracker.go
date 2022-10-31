@@ -40,7 +40,7 @@ type ttFeed struct {
 }
 
 type txTracker struct {
-	us *dex
+	ex *dex
 	l  logger.Logger
 
 	ctx context.Context
@@ -48,7 +48,7 @@ type txTracker struct {
 
 func newTxTracker(us *dex) *txTracker {
 	return &txTracker{
-		us: us,
+		ex: us,
 		l:  us.l,
 
 		ctx: context.Background(),
@@ -56,15 +56,15 @@ func newTxTracker(us *dex) *txTracker {
 }
 
 func (tr *txTracker) track(f *ttFeed) {
-	agent := tr.us.agent("txTracker.track")
+	agent := tr.ex.agent("txTracker.track")
 
-	p := tr.us.provider()
+	p := tr.ex.provider()
 
 	if f.maxRetries == 0 {
 		f.maxRetries = 100
 	}
 	if f.confirms == 0 {
-		f.confirms = tr.us.confirms
+		f.confirms = tr.ex.confirms
 	}
 
 	err := try.Do(f.maxRetries, func(attempt uint64) (bool, error) {
@@ -73,7 +73,7 @@ func (tr *txTracker) track(f *ttFeed) {
 			if err != nil {
 				if err.Error() == errTxNotFound {
 					if attempt < f.maxRetries {
-						time.Sleep(tr.us.blockTime)
+						time.Sleep(tr.ex.blockTime)
 						return true, err
 					}
 					f.status = txFailed
@@ -82,11 +82,11 @@ func (tr *txTracker) track(f *ttFeed) {
 					return false, nil
 				}
 				tr.l.Error(agent, err.Error())
-				time.Sleep(tr.us.blockTime)
+				time.Sleep(tr.ex.blockTime)
 				return true, err
 			}
 			if pending {
-				time.Sleep(tr.us.blockTime)
+				time.Sleep(tr.ex.blockTime)
 				return true, errors.New("pending")
 			}
 
@@ -104,7 +104,7 @@ func (tr *txTracker) track(f *ttFeed) {
 		if err != nil {
 			if err.Error() == errTxNotFound {
 				if attempt < f.maxRetries {
-					time.Sleep(tr.us.blockTime * time.Duration(f.confirms))
+					time.Sleep(tr.ex.blockTime * time.Duration(f.confirms))
 					return true, err
 				}
 				f.status = txFailed
@@ -113,7 +113,7 @@ func (tr *txTracker) track(f *ttFeed) {
 				return false, nil
 			}
 			tr.l.Error(agent, err.Error())
-			time.Sleep(tr.us.blockTime)
+			time.Sleep(tr.ex.blockTime)
 			return true, err
 		}
 
@@ -136,7 +136,7 @@ func (tr *txTracker) track(f *ttFeed) {
 			}
 
 			t := f.confirms - confirmed
-			time.Sleep(tr.us.blockTime * time.Duration(t))
+			time.Sleep(tr.ex.blockTime * time.Duration(t))
 			return true, fmt.Errorf("confirmed `%d` blocks", confirmed)
 		default:
 			f.status = txFailed

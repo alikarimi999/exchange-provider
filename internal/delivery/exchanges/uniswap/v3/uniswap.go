@@ -54,7 +54,7 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 		accountId: accountId(cfg.Mnemonic),
 		cfg:       cfg,
 
-		confirms:  cfg.ConfirmBlocks,
+		confirms:  1,
 		blockTime: time.Duration(15 * time.Second),
 
 		tokens: newSupportedTokens(),
