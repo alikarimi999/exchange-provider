@@ -26,7 +26,8 @@ func (p *Provider) ping() error {
 func (ex *dex) provider() *Provider {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if len(ex.cfg.Providers) > 0 {
-		return ex.cfg.Providers[r.Intn(len(ex.cfg.Providers))]
+		p := ex.cfg.Providers[r.Intn(len(ex.cfg.Providers))]
+		return p
 	}
 	return &Provider{}
 }

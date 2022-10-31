@@ -19,6 +19,9 @@ type Router struct {
 
 	auth *authService
 
+	user string
+	pass string
+
 	col *rateLimiter
 	gls *limiters
 }
@@ -27,7 +30,7 @@ func (r *Router) Run(addr ...string) {
 	r.gin.Run(addr...)
 }
 
-func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Router {
+func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger, user, pass string) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
@@ -36,6 +39,9 @@ func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 		srv: http.NewServer(app, v, rc, l),
 		l:   l,
 		v:   v,
+
+		user: user,
+		pass: pass,
 	}
 	router.setup()
 	return router

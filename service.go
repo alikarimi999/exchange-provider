@@ -6,12 +6,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services"
 	"exchange-provider/internal/delivery/storage"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"os"
 	"sync"
 
@@ -32,6 +32,15 @@ func production() {
 	agent := "main"
 
 	l := logger.NewLogger("./service.log", true)
+
+	user := os.Getenv("ADMIN_USER")
+	if user == "" {
+		l.Fatal(agent, "You must set ADMIN_USER environment variable")
+	}
+	pass := os.Getenv("ADMIN_PASS")
+	if pass == "" {
+		l.Fatal(agent, "You must set ADMIN_PASS environment variable")
+	}
 
 	v := viper.New()
 	v.SetConfigName("config")
@@ -85,7 +94,7 @@ func production() {
 	wg.Add(1)
 	go ou.Run(wg)
 
-	http.NewRouter(ou, v, rc, l).Run(":8000")
+	http.NewRouter(ou, v, rc, l, user, pass).Run(":8000")
 
 	wg.Wait()
 
@@ -96,6 +105,15 @@ func test() {
 	agent := "main"
 
 	l := logger.NewLogger("./service.log", true)
+
+	user := os.Getenv("ADMIN_USER")
+	if user == "" {
+		l.Fatal(agent, "You must set ADMIN_USER environment variable")
+	}
+	pass := os.Getenv("ADMIN_PASS")
+	if pass == "" {
+		l.Fatal(agent, "You must set ADMIN_PASS environment variable")
+	}
 
 	v := viper.New()
 	v.SetConfigName("config")
@@ -149,7 +167,7 @@ func test() {
 	wg.Add(1)
 	go ou.Run(wg)
 
-	http.NewRouter(ou, v, rc, l).Run(":8081")
+	http.NewRouter(ou, v, rc, l, user, pass).Run(":8081")
 
 	wg.Wait()
 

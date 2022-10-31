@@ -6,6 +6,7 @@ import (
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/wallet/eth"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -96,58 +97,29 @@ func NewExchange(cfg *Config, rc *redis.Client, v *viper.Viper,
 			return nil, err
 		}
 
-		i = ex.v.Get(fmt.Sprintf("%s.pairs", ex.NID()))
-		if i != nil {
-			psi := i.(map[string]interface{})
-			wg := &sync.WaitGroup{}
-			for _, v := range psi {
+		ps := ex.v.GetStringSlice(fmt.Sprintf("%s.pairs", ex.NID()))
+		wg := &sync.WaitGroup{}
+		for _, v := range ps {
+			p := strings.Split(v, pairDelimiter)
+			if len(p) == 2 {
 				wg.Add(1)
-				go func(v interface{}) {
+				go func(bt, qt string) {
 					defer wg.Done()
-					p := v.(map[string]interface{})
-					pair := &pair{}
-
-					if p["bt"] != nil && p["qt"] != nil {
-						bChainId := int64(p["bt"].(map[string]interface{})["chainid"].(float64))
-						qChainId := int64(p["qt"].(map[string]interface{})["chainid"].(float64))
-
-						if bChainId == qChainId && int64(ex.cfg.ChianId) == bChainId {
-							pair.BT = Token{
-								Name:     p["bt"].(map[string]interface{})["name"].(string),
-								Symbol:   p["bt"].(map[string]interface{})["symbol"].(string),
-								Address:  common.HexToAddress(p["bt"].(map[string]interface{})["address"].(string)),
-								Decimals: int(p["bt"].(map[string]interface{})["decimals"].(float64)),
-								ChainId:  bChainId,
-							}
-
-							pair.QT = Token{
-								Name:     p["qt"].(map[string]interface{})["name"].(string),
-								Symbol:   p["qt"].(map[string]interface{})["symbol"].(string),
-								Address:  common.HexToAddress(p["qt"].(map[string]interface{})["address"].(string)),
-								Decimals: int(p["qt"].(map[string]interface{})["decimals"].(float64)),
-								ChainId:  qChainId,
-							}
-
-							pair, err := ex.pairWithPrice(pair.BT, pair.QT)
-							if err != nil {
-								ex.l.Error(agent, err.Error())
-								return
-							}
-
-							ex.pairs.add(*pair)
-							ex.tokens.add(pair.BT, pair.QT)
-							ex.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
-						}
+					if err := ex.addPair(bt, qt); err != nil {
+						ex.l.Error(agent, err.Error())
+						return
 					}
-				}(v)
+					ex.l.Debug(agent, fmt.Sprintf("pair %s added", v))
+				}(p[0], p[1])
 			}
-			wg.Wait()
 		}
-
+		wg.Wait()
 	} else {
+
 		if err := ex.generalSets(); err != nil {
 			return nil, err
 		}
+
 		ex.v.Set(fmt.Sprintf("%s.factory", ex.NID()), ex.cfg.Factory)
 		ex.v.Set(fmt.Sprintf("%s.router", ex.NID()), ex.cfg.Router)
 		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)

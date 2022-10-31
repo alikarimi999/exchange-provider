@@ -150,6 +150,13 @@ func (s *Server) ChangeStatus(ctx Context) {
 			handlerErr(ctx, err)
 			return
 		}
+
+		s.v.Set(req.Id, struct{}{})
+		if err := s.v.WriteConfig(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s removed!", req.Id))
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("status %s not supported", req.Status))

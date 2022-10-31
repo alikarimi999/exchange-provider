@@ -1,9 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 )
 
 func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*ChangeExchangeStatus, error) {

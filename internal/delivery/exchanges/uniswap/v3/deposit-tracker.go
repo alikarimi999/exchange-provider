@@ -28,12 +28,12 @@ func (u *dex) trackDeposit(f *dtFeed) {
 	} else {
 		destAddress = f.token.Address
 	}
-	fmt.Println(f.token.Native)
+
 	tf := &ttFeed{
 		txHash:     txHash,
 		receiver:   &destAddress,
 		needTx:     f.token.isNative(),
-		effortRate: 2,
+		maxRetries: 20,
 		confirms:   3,
 		doneCh:     doneCh,
 	}
@@ -42,10 +42,6 @@ func (u *dex) trackDeposit(f *dtFeed) {
 
 	<-doneCh
 	switch tf.status {
-	case txNotFound:
-		f.d.Status = entity.DepositFailed
-		f.d.FailedDesc = "transaction not found"
-		f.done <- struct{}{}
 	case txFailed:
 		f.d.Status = entity.DepositFailed
 		f.d.FailedDesc = tf.faildesc

@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"fmt"
 	"exchange-provider/pkg/errors"
+	"fmt"
 )
 
 type AddPairsRequest struct {
@@ -11,7 +11,7 @@ type AddPairsRequest struct {
 
 func (req AddPairsRequest) Validate() error {
 	for _, p := range req.Pairs {
-		if p.BaseToken == "" || p.Quote_Token == "" {
+		if p.BT == "" || p.QT == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("Invalid pair token"))
 		}
 	}
@@ -19,10 +19,10 @@ func (req AddPairsRequest) Validate() error {
 }
 
 type Pair struct {
-	BaseToken   string `json:"base_token"`
-	Quote_Token string `json:"quote_token"`
+	BT string `json:"base_token"`
+	QT string `json:"quote_token"`
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s/%s", p.BaseToken, p.Quote_Token)
+	return fmt.Sprintf("%s/%s", p.BT, p.QT)
 }

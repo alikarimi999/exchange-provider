@@ -16,18 +16,20 @@ import (
 const (
 	txFailed = iota
 	txSuccess
-	txNotFound
+	// txNotFound
 )
 
 var errTxNotFound = "not found"
 
 type ttFeed struct {
-	txHash     common.Hash
-	receiver   *common.Address
-	needTx     bool
-	effortRate uint64
-	confirms   uint64
-	confirmed  uint64
+	txHash   common.Hash
+	receiver *common.Address
+	needTx   bool
+
+	maxRetries uint64
+
+	confirms  uint64
+	confirmed uint64
 
 	status   int
 	faildesc string
@@ -41,8 +43,6 @@ type txTracker struct {
 	us *dex
 	l  logger.Logger
 
-	maxRetries uint64
-
 	ctx context.Context
 }
 
@@ -51,8 +51,7 @@ func newTxTracker(us *dex) *txTracker {
 		us: us,
 		l:  us.l,
 
-		maxRetries: 10,
-		ctx:        context.Background(),
+		ctx: context.Background(),
 	}
 }
 
@@ -61,26 +60,24 @@ func (tr *txTracker) track(f *ttFeed) {
 
 	p := tr.us.provider()
 
-	if f.effortRate == 0 {
-		f.effortRate = 10
+	if f.maxRetries == 0 {
+		f.maxRetries = 100
 	}
 	if f.confirms == 0 {
 		f.confirms = tr.us.confirms
 	}
 
-	max := f.effortRate * tr.maxRetries
-	err := try.Do(max, func(attempt uint64) (bool, error) {
-		// tr.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.txHash))
-
+	err := try.Do(f.maxRetries, func(attempt uint64) (bool, error) {
 		if f.needTx {
 			tx, pending, err := p.TransactionByHash(tr.ctx, f.txHash)
 			if err != nil {
 				if err.Error() == errTxNotFound {
-					if attempt == 1 {
+					if attempt < f.maxRetries {
 						time.Sleep(tr.us.blockTime)
 						return true, err
 					}
-					f.status = txNotFound
+					f.status = txFailed
+					f.faildesc = "tx not found"
 					f.doneCh <- struct{}{}
 					return false, nil
 				}
@@ -94,8 +91,7 @@ func (tr *txTracker) track(f *ttFeed) {
 			}
 
 			if *tx.To() != *f.receiver {
-				fmt.Println(tx.To())
-				fmt.Println(f.receiver)
+
 				f.status = txFailed
 				f.faildesc = fmt.Sprintf("invalid destination address `%s`", tx.To())
 				f.doneCh <- struct{}{}
@@ -107,11 +103,12 @@ func (tr *txTracker) track(f *ttFeed) {
 		receipt, err := p.TransactionReceipt(tr.ctx, f.txHash)
 		if err != nil {
 			if err.Error() == errTxNotFound {
-				if attempt <= max/2 {
+				if attempt < f.maxRetries {
 					time.Sleep(tr.us.blockTime * time.Duration(f.confirms))
 					return true, err
 				}
-				f.status = txNotFound
+				f.status = txFailed
+				f.faildesc = "tx not found"
 				f.doneCh <- struct{}{}
 				return false, nil
 			}
@@ -132,7 +129,6 @@ func (tr *txTracker) track(f *ttFeed) {
 
 			confirmed := cn - bn
 			if confirmed >= f.confirms {
-				// tr.l.Debug(agent, fmt.Sprintf("`%s` confirmed blocks %d/%d", f.txHash.String(), confirmed, f.confirms))
 				f.confirmed = confirmed
 				f.status = txSuccess
 				f.doneCh <- struct{}{}

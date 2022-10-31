@@ -14,164 +14,142 @@ type tokens struct {
 	Tokens []Token `json:"tokens"`
 }
 
-func (u *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
-	agent := u.agent("AddPairs")
+func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
+	agent := d.agent("AddPairs")
 
 	req, ok := data.(*dto.AddPairsRequest)
 	if !ok {
 		return nil, errors.Wrap(errors.ErrBadRequest)
 	}
 
+	res := &entity.AddPairsResult{}
+	pwg := &sync.WaitGroup{}
+
+	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.NID()))
+	for _, dp := range req.Pairs {
+		if d.pairs.exist(dp.BT, dp.QT) {
+			d.l.Debug(agent, fmt.Sprintf("pair %s already exists", dp.String()))
+			res.Existed = append(res.Existed, dp.String())
+			continue
+		}
+
+		pwg.Add(1)
+		go func(p *dto.Pair) {
+			defer pwg.Done()
+			if err := d.addPair(p.BT, p.QT); err != nil {
+				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
+				return
+			}
+			res.Added = append(res.Added, p.String())
+			ps = append(ps, p.String())
+		}(dp)
+
+	}
+	pwg.Wait()
+	d.v.Set(fmt.Sprintf("%s.pairs", d.NID()), ps)
+	if err := d.v.WriteConfig(); err != nil {
+		d.l.Error(agent, err.Error())
+	}
+	return res, nil
+}
+
+func (d *dex) addPair(bt string, qt string) error {
 	ts := &tokens{}
 
-	b, err := os.ReadFile(u.cfg.TokensFile)
+	b, err := os.ReadFile(d.cfg.TokensFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := json.Unmarshal(b, ts); err != nil {
-		return nil, err
+		return err
 	}
 
-	res := &entity.AddPairsResult{}
+	var btIsNative bool
+	var qtIsNative bool
 
-	pwg := &sync.WaitGroup{}
+	if bt == d.cfg.NativeToken {
+		bt = d.cfg.wrapNative()
+		btIsNative = true
+	}
+	if qt == d.cfg.NativeToken {
+		qt = d.cfg.wrapNative()
+		qtIsNative = true
+	}
 
-	for _, p := range req.Pairs {
+	for _, t0 := range ts.Tokens {
+		if t0.ChainId != int64(d.cfg.ChianId) {
+			continue
+		}
 
-		pwg.Add(1)
-		go func(p *dto.Pair, ts tokens) {
-			defer pwg.Done()
-			var btIsNative bool
-			var qtIsNative bool
-			bt := p.BaseToken
-			qt := p.Quote_Token
-
-			if u.pairs.exist(bt, qt) {
-				u.l.Debug(agent, fmt.Sprintf("pair %s already exists", p.String()))
-				res.Existed = append(res.Existed, p.String())
-				return
-			}
-
-			if bt == u.cfg.NativeToken {
-				bt = u.cfg.wrapNative()
-				btIsNative = true
-			}
-			if qt == u.cfg.NativeToken {
-				qt = u.cfg.wrapNative()
-				qtIsNative = true
-			}
-
-			for _, t0 := range ts.Tokens {
-				if t0.ChainId != int64(u.cfg.ChianId) {
+		if t0.Symbol == bt {
+			for _, t1 := range ts.Tokens {
+				if t1.ChainId != int64(d.cfg.ChianId) {
 					continue
 				}
-
-				if t0.Symbol == bt {
-					for _, t1 := range ts.Tokens {
-						if t1.ChainId != int64(u.cfg.ChianId) {
-							continue
-						}
-						if t1.Symbol == qt {
-							pair, err := u.pairWithPrice(t0, t1)
-							if err != nil {
-								res.Failed = append(res.Failed, &entity.PairsErr{
-									Pair: p.String(),
-									Err:  err,
-								})
-								return
-							}
-
-							if btIsNative {
-								pair.BT.Symbol = u.cfg.NativeToken
-								pair.BT.Native = true
-							} else if qtIsNative {
-								pair.QT.Symbol = u.cfg.NativeToken
-								pair.QT.Native = true
-							}
-
-							// check pair's tokens allowance
-							adds, err := u.wallet.AllAddresses()
-							if err != nil {
-								u.l.Error(agent, err.Error())
-								res.Failed = append(res.Failed, &entity.PairsErr{
-									Pair: p.String(),
-									Err:  err,
-								})
-							}
-
-							wg := &sync.WaitGroup{}
-							var approveErr1 []error
-							wg.Add(1)
-							go func() {
-								approveErr1 = u.am.infinitApproves(pair.BT, u.cfg.Router, adds...)
-								wg.Done()
-							}()
-
-							var approveErr2 []error
-							wg.Add(1)
-							go func() {
-								approveErr2 = u.am.infinitApproves(pair.QT, u.cfg.Router, adds...)
-								wg.Done()
-							}()
-
-							wg.Wait()
-							if len(approveErr1) > 0 {
-								for _, err := range approveErr1 {
-									u.l.Error(agent, err.Error())
-								}
-								res.Failed = append(res.Failed, &entity.PairsErr{
-									Pair: p.String(),
-									Err:  errors.Wrap(fmt.Sprintf("%s", approveErr1)),
-								})
-								return
-							}
-
-							if approveErr2 != nil {
-								for _, err := range approveErr2 {
-									u.l.Error(agent, err.Error())
-								}
-								res.Failed = append(res.Failed, &entity.PairsErr{
-									Pair: p.String(),
-									Err:  errors.Wrap(fmt.Sprintf("%s", approveErr2)),
-								})
-								return
-							}
-
-							u.v.Set(fmt.Sprintf("%s.pairs.%s", u.NID(), pairId(pair.BT.Symbol, pair.QT.Symbol)), pair)
-							if err := u.v.WriteConfig(); err != nil {
-								u.l.Error(agent, err.Error())
-								res.Failed = append(res.Failed, &entity.PairsErr{
-									Pair: p.String(),
-									Err:  err,
-								})
-								return
-							}
-
-							u.pairs.add(*pair)
-							u.tokens.add(pair.BT, pair.QT)
-							res.Added = append(res.Added, pair.String())
-							u.l.Debug(agent, fmt.Sprintf("pair %s added", pair.String()))
-							return
-						}
-
+				if t1.Symbol == qt {
+					pair, err := d.pairWithPrice(t0, t1)
+					if err != nil {
+						return err
 					}
-					res.Failed = append(res.Failed, &entity.PairsErr{
-						Pair: p.String(),
-						Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
-							fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, u.cfg.ChianId))),
-					})
-					return
-				}
-			}
-			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p.String(),
-				Err: errors.Wrap(errors.ErrNotFound, errors.NewMesssage(
-					fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, u.cfg.ChianId))),
-			})
 
-		}(p, *ts)
+					if btIsNative {
+						pair.BT.Symbol = d.cfg.NativeToken
+						pair.BT.Native = true
+					} else if qtIsNative {
+						pair.QT.Symbol = d.cfg.NativeToken
+						pair.QT.Native = true
+					}
+
+					// check pair's tokens allowance
+					adds, err := d.wallet.AllAddresses()
+					if err != nil {
+						return err
+					}
+
+					wg := &sync.WaitGroup{}
+					var approveErr1 []error
+					wg.Add(1)
+					go func() {
+						approveErr1 = d.am.infinitApproves(pair.BT, d.cfg.Router, adds...)
+						wg.Done()
+					}()
+
+					var approveErr2 []error
+					wg.Add(1)
+					go func() {
+						approveErr2 = d.am.infinitApproves(pair.QT, d.cfg.Router, adds...)
+						wg.Done()
+					}()
+
+					wg.Wait()
+					if len(approveErr1) > 0 {
+						e := errors.New("")
+						for _, err := range approveErr1 {
+							e = errors.New(fmt.Sprintf("%s\n%s", e.Error(), err.Error()))
+						}
+						return e
+					}
+
+					if approveErr2 != nil {
+						e := errors.New("")
+						for _, err := range approveErr1 {
+							e = errors.New(fmt.Sprintf("%s\n%s", e.Error(), err.Error()))
+						}
+						return e
+					}
+
+					d.pairs.add(*pair)
+					d.tokens.add(pair.BT, pair.QT)
+					return nil
+				}
+
+			}
+			return errors.New(
+				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, d.cfg.ChianId))
+		}
 	}
-	pwg.Wait()
-	return res, nil
+	return errors.New(
+		fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, d.cfg.ChianId))
+
 }

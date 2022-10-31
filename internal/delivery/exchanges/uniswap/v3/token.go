@@ -3,7 +3,6 @@ package uniswapv3
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
-	"fmt"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -20,10 +19,6 @@ type Token struct {
 
 func (t *Token) isNative() bool {
 	return t.Native
-}
-
-func (t *Token) wrappSymbol() string {
-	return fmt.Sprintf("W%s", t.Symbol)
 }
 
 func (t *Token) String() string {

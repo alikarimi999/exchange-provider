@@ -1,11 +1,11 @@
 package http
 
 import (
-	"net/http"
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"net/http"
 
 	"exchange-provider/pkg/errors"
 
@@ -32,7 +32,7 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 }
 
 func (s *Server) NewUserOrder(ctx Context) {
-	const agent = "NewUserOrder"
+
 	userId, _ := ctx.GetKey("user_id")
 	req := dto.CreateOrderRequest{}
 	if err := ctx.Bind(&req); err != nil {
@@ -55,8 +55,6 @@ func (s *Server) NewUserOrder(ctx Context) {
 		handlerErr(ctx, err)
 		return
 	}
-
-	// s.l.Debug(agent, fmt.Sprintf("creating new order `(%+v)` for user `%d`", req, userId.(int64)))
 
 	ex, err := s.app.SelectExchangeByPair(bc, qc)
 	if err != nil {

@@ -1,67 +1,70 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
-func (o *Router) adminRoutes() {
-	a := o.gin.Group("/admin")
+func (r *Router) adminRoutes() {
+	a := r.gin.Group("/admin", gin.BasicAuth(gin.Accounts{
+		r.user: r.pass,
+	}))
 	{
-
 		ss := a.Group("/services")
 		{
-			ss.GET("", func(ctx *gin.Context) { o.GetServicesConfig(ctx) })
-			ss.POST("/:service", func(ctx *gin.Context) { o.ChangeSerivcesConfig(ctx) })
+			ss.GET("", func(ctx *gin.Context) { r.GetServicesConfig(ctx) })
+			ss.POST("/:service", func(ctx *gin.Context) { r.ChangeSerivcesConfig(ctx) })
 		}
 
 		os := a.Group("/orders")
 		{
 			os.POST("/", func(ctx *gin.Context) {
-				o.srv.GetPaginatedForAdmin(newContext(ctx))
+				r.srv.GetPaginatedForAdmin(newContext(ctx))
 			})
 		}
 
 		ps := a.Group("/pairs")
 		{
 			ps.POST("/add/:id", func(ctx *gin.Context) {
-				o.srv.AddPairs(newContext(ctx))
+				r.srv.AddPairs(newContext(ctx))
 			})
 
 			ps.POST("", func(ctx *gin.Context) {
-				o.srv.GetExchangesPairs(newContext(ctx))
+				r.srv.GetExchangesPairs(newContext(ctx))
 			})
 
 			ps.POST("/get_min_deposit", func(ctx *gin.Context) {
-				o.srv.GetMinPairDeposit(newContext(ctx))
+				r.srv.GetMinPairDeposit(newContext(ctx))
 			})
 
 			ps.POST("/change_min_deposit", func(ctx *gin.Context) {
-				o.srv.ChangeMinDeposit(newContext(ctx))
+				r.srv.ChangeMinDeposit(newContext(ctx))
 			})
 
 			ps.POST("/get_all_min_deposit", func(ctx *gin.Context) {
-				o.srv.GetAllMinDeposit(newContext(ctx))
+				r.srv.GetAllMinDeposit(newContext(ctx))
 			})
 
 			ps.DELETE("", func(ctx *gin.Context) {
-				o.srv.RemovePair(newContext(ctx))
+				r.srv.RemovePair(newContext(ctx))
 			})
 		}
 
 		fee := a.Group("/fee")
 		{
 			fee.POST("/default", func(ctx *gin.Context) {
-				o.srv.ChangeDefaultFee(newContext(ctx))
+				r.srv.ChangeDefaultFee(newContext(ctx))
 			})
 
 			fee.GET("/default", func(ctx *gin.Context) {
-				o.srv.GetDefaultFee(newContext(ctx))
+				r.srv.GetDefaultFee(newContext(ctx))
 			})
 
 			fee.POST("/get_by_users", func(ctx *gin.Context) {
-				o.srv.GetUsersFee(newContext(ctx))
+				r.srv.GetUsersFee(newContext(ctx))
 			})
 
 			fee.POST("/change_by_user", func(ctx *gin.Context) {
-				o.srv.ChangeUserFee(newContext(ctx))
+				r.srv.ChangeUserFee(newContext(ctx))
 			})
 
 		}
@@ -70,31 +73,31 @@ func (o *Router) adminRoutes() {
 		{
 
 			spread.GET("/get_all", func(ctx *gin.Context) {
-				o.srv.GetAllPairsSpread(newContext(ctx))
+				r.srv.GetAllPairsSpread(newContext(ctx))
 			})
 
 			spread.POST("/change", func(ctx *gin.Context) {
-				o.srv.ChangePairSpread(newContext(ctx))
+				r.srv.ChangePairSpread(newContext(ctx))
 			})
 
 			spread.GET("/default", func(ctx *gin.Context) {
-				o.srv.GetDefaultSpread(newContext(ctx))
+				r.srv.GetDefaultSpread(newContext(ctx))
 			})
 
 			spread.POST("/default", func(ctx *gin.Context) {
-				o.srv.ChangeDefaultSpread(newContext(ctx))
+				r.srv.ChangeDefaultSpread(newContext(ctx))
 			})
 		}
 
 		es := a.Group("/exchanges")
 		{
 			es.POST("/list", func(ctx *gin.Context) {
-				o.srv.GetExchangeList(newContext(ctx))
+				r.srv.GetExchangeList(newContext(ctx))
 			})
 			es.POST("/change_status", func(ctx *gin.Context) {
-				o.srv.ChangeStatus(newContext(ctx))
+				r.srv.ChangeStatus(newContext(ctx))
 			})
-			es.POST("/add_account/:id", func(ctx *gin.Context) { o.srv.AddExchange(newContext(ctx)) })
+			es.POST("/add_account/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
 		}
 
 		limiter := a.Group("/limiter")
@@ -114,22 +117,22 @@ func (o *Router) adminRoutes() {
 						Max    uint64
 						Period string
 					}{
-						Max:    o.gls.conf.Max,
-						Period: o.gls.conf.Period.String(),
+						Max:    r.gls.conf.Max,
+						Period: r.gls.conf.Period.String(),
 					},
 					Col: struct {
 						Max    uint64
 						Period string
 					}{
-						Max:    o.col.conf.Max,
-						Period: o.col.conf.Period.String(),
+						Max:    r.col.conf.Max,
+						Period: r.col.conf.Period.String(),
 					},
 				}
 				ctx.JSON(200, res)
 			})
 
 			limiter.POST("", func(ctx *gin.Context) {
-				o.changeLimitersConf(ctx)
+				r.changeLimitersConf(ctx)
 			})
 		}
 	}

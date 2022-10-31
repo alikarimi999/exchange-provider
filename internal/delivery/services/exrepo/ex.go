@@ -42,13 +42,10 @@ func (a *ExchangeRepo) Add(ex *app.Exchange) error {
 }
 
 func (a *ExchangeRepo) UpdateStatus(ex entity.Exchange, s string) error {
-
-	return a.db.Model(&Exchange{}).Where("id = ?", ex.AccountId()).Update("status", s).Error
-
+	return a.db.Model(&Exchange{}).Where("id = ?", ex.NID()).Update("status", s).Error
 }
 
 func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
-
 	agent := "ExchangeRepo.GetAll"
 
 	var exs []*app.Exchange
@@ -76,7 +73,5 @@ func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
 }
 
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
-
-	return a.db.Delete(&Exchange{}, "id = ?", ex.AccountId()).Error
-
+	return a.db.Delete(&Exchange{}, "id = ?", ex.NID()).Error
 }

@@ -116,6 +116,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				done: make(chan struct{}),
 				pCh:  make(chan bool),
 			}
+
 			go o.eTracker.track(ef)
 			// o.l.Debug(string(op), fmt.Sprintf(" waiting for exchange order: '%s' confirmation", ord.ExchangeOrder.ExId))
 

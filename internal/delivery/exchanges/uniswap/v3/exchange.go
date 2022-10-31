@@ -99,9 +99,8 @@ start:
 		o.ExchangeOrder.FailedDesc = "unable to parse tx logs"
 
 	case txFailed:
-		// u.l.Debug(agent, fmt.Sprintf("track `%s` failed (%s)", tf.txHash.String(), tf.faildesc))
 		o.ExchangeOrder.Status = entity.ExOrderFailed
-		o.ExchangeOrder.FailedDesc = fmt.Sprintf("failed to track `%s` (%s)", tf.txHash.String(), tf.faildesc)
+		o.ExchangeOrder.FailedDesc = tf.faildesc
 	}
 
 	done <- struct{}{}
