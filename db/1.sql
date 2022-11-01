@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`orders` (
   `meta_data` JSON NULL DEFAULT NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 2384
+AUTO_INCREMENT = 5727
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`deposits` (
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 1001
+AUTO_INCREMENT = 127
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`exchange_orders` (
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 1001
+AUTO_INCREMENT = 11
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `exchange-provider`.`withdrawals` (
     FOREIGN KEY (`order_id`)
     REFERENCES `exchange-provider`.`orders` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 1001
+AUTO_INCREMENT = 11
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 

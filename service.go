@@ -23,8 +23,8 @@ import (
 )
 
 func main() {
-	test()
-	// production()
+	// test()
+	production()
 }
 
 func production() {
@@ -71,9 +71,9 @@ func production() {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
+		l.Fatal(agent, "failed to connect to mysql")
 	}
-	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
+	l.Debug(agent, "connected to mysql")
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
@@ -143,10 +143,10 @@ func test() {
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		l.Fatal(agent, fmt.Sprintf("failed to connect to %s", dsn))
+		l.Fatal(agent, "failed to connect to mysql")
 	}
 	db.Logger.LogMode(glogger.Silent)
-	l.Debug(agent, fmt.Sprintf("connected to %s", dsn))
+	l.Debug(agent, "connected to mysql")
 	s := storage.NewStorage(db, rc, l)
 
 	ss, err := services.WrapServices(&services.Config{
