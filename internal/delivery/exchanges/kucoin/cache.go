@@ -3,9 +3,9 @@ package kucoin
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"time"
 
 	"exchange-provider/pkg/errors"
@@ -44,10 +44,7 @@ func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, error) {
 	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
 	v, err := c.r.Get(c.ctx, key).Result()
 	if err != nil {
-		if err == redis.Nil {
-			return nil, errors.Wrap(err, errors.ErrNotFound, op)
-		}
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
+		return nil, err
 	}
 	if v == "" {
 		return nil, nil

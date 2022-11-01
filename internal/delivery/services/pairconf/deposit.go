@@ -1,8 +1,8 @@
 package pairconf
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
+	"fmt"
 )
 
 type PairDepositLimit struct {
@@ -25,6 +25,14 @@ func (c *PairConfigs) ChangeMinDeposit(bc, qc *entity.Coin, minBc, minQc float64
 	c.dMux.Lock()
 	defer c.dMux.Unlock()
 
+	if v, ok := c.minDpositCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]; ok {
+		if minBc == 0 {
+			minBc = v.MinBc
+		}
+		if minQc == 0 {
+			minQc = v.MinQc
+		}
+	}
 	m := &PairDepositLimit{
 		Pair:  fmt.Sprintf("%s/%s", bc.String(), qc.String()),
 		MinBc: minBc,

@@ -1,9 +1,9 @@
 package app
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 
 	"exchange-provider/pkg/errors"
@@ -42,8 +42,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	for wd := range t.wCh {
 		go func(w *entity.Withdrawal) {
 			w0 := *w
-			// t.l.Debug(string(op), fmt.Sprintf("track withdrawal: '%s' order: '%d' user: '%d'", w.WId, w.OrderId, w.UserId))
-
 			ex, err := t.exs.get(w.Exchange)
 			if err != nil {
 				t.l.Error(string(op), errors.Wrap(err, op, "exchange not found").Error())

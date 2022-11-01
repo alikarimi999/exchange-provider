@@ -1,9 +1,9 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -53,10 +53,6 @@ func (a *depositAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 			}
 			ds = append(ds, dsf...)
-
-			if len(ds) > 0 {
-				a.l.Debug(agent, fmt.Sprintf("%d deposit record downloaded", len(ds)))
-			}
 
 			for _, d := range ds {
 				exist, err := a.c.ExistD(d.TxId)

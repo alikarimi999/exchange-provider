@@ -61,7 +61,6 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 					}
 
-					t.l.Debug(agent, fmt.Sprintf("attempt: `%d`, txId: `%s`", attempt, f.d.TxId))
 					t := f.blockTime * time.Duration(f.confirms)
 					time.Sleep(t / 2)
 

@@ -1,14 +1,14 @@
 package http
 
 import (
-	"fmt"
-	"net/http"
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	udto "exchange-provider/internal/delivery/exchanges/uniswap/v3/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
+	"net/http"
 )
 
 func (s *Server) AddPairs(ctx Context) {

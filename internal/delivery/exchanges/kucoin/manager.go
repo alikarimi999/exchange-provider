@@ -1,10 +1,10 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"strings"
 )
 
@@ -61,7 +61,14 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			continue
 		}
 		aps = append(aps, p)
-		res.Added = append(res.Added, p.String())
+		res.Added = append(res.Added, entity.Pair{
+			BC: &entity.PairCoin{
+				Coin: &entity.Coin{CoinId: p.BC.CoinId, ChainId: p.BC.ChainId},
+			},
+			QC: &entity.PairCoin{
+				Coin: &entity.Coin{CoinId: p.QC.CoinId, ChainId: p.QC.ChainId},
+			},
+		})
 		cs[p.BC.CoinId+p.BC.ChainId] = p.BC.snapshot()
 
 		cs[p.QC.CoinId+p.QC.ChainId] = p.QC.snapshot()

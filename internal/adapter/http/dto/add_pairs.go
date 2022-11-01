@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"math/big"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
+	"math/big"
 
 	"exchange-provider/pkg/errors"
 )
@@ -31,6 +31,7 @@ type kuPair struct {
 }
 
 func (p *kuPair) Map() *kdto.Pair {
+
 	pair := &kdto.Pair{
 		BC: &kdto.Coin{
 			CoinId:              p.BC.CoinId,
@@ -106,8 +107,8 @@ type AdminPair struct {
 	ContractAddress      string   `json:"contract_address,omitempty"`
 	FeeTier              int64    `json:"fee_tier,omitempty"`
 	Liquidity            *big.Int `json:"liquidity,omitempty"`
-	BestAskPrice         string   `json:"best_ask_price"`
-	BestBidPrice         string   `json:"best_bid_price"`
+	BuyPrice             string   `json:"buy_price,omitempty"`
+	SellPrice            string   `json:"sell_price,omitempty"`
 	FeeCurrency          string   `json:"fee_currency"`
 	ExchangeOrderFeeRate string   `json:"exchange_order_fee_rate,omitempty"`
 	SpreadRate           string   `json:"spread_rate"`
@@ -151,8 +152,8 @@ func PairDTO(p *entity.Pair) *AdminPair {
 		ContractAddress:      p.ContractAddress,
 		FeeTier:              p.FeeTier,
 		Liquidity:            p.Liquidity,
-		BestAskPrice:         p.BestAsk,
-		BestBidPrice:         p.BestBid,
+		BuyPrice:             p.BestAsk,
+		SellPrice:            p.BestBid,
 		SpreadRate:           p.SpreadRate,
 		FeeCurrency:          p.FeeCurrency,
 		ExchangeOrderFeeRate: p.OrderFeeRate,
@@ -176,7 +177,9 @@ func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 		Exs:    []string{},
 		Failed: []*PairsErr{},
 	}
-	res.Addedd = append(res.Addedd, r.Added...)
+	for _, p := range r.Added {
+		res.Addedd = append(res.Addedd, p.String())
+	}
 	res.Exs = append(res.Exs, r.Existed...)
 
 	for _, p := range r.Failed {

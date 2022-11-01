@@ -1,7 +1,6 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"strings"
 
@@ -46,6 +45,5 @@ func trim(s string, l int) string {
 	} else {
 		result = ss[0] + ".0"
 	}
-	fmt.Printf("trim %s to %s\n", s, result)
 	return result
 }

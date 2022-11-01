@@ -1,9 +1,9 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -56,18 +56,12 @@ start:
 
 			wss = append(wss, wsf...)
 
-			if l := len(wss); l > 0 {
-				wa.l.Debug(string(op), fmt.Sprintf("aggregated '%d' withdrawals which occured from ( %s ) to ( %s ) ",
-					l, t.Add(-wa.windowSize).String(), t.String()))
-			}
-
 			for _, w := range wss {
 				p, err := wa.c.isAddable(w.Id)
 				if err != nil {
 					wa.l.Error(string(op), errors.Wrap(err, op).Error())
 				}
 				if p {
-					wa.l.Debug(string(op), fmt.Sprintf("withdrawal '%s' cached before", w.Id))
 					continue
 				}
 				if err := wa.c.recordWithdrawal(w); err != nil {

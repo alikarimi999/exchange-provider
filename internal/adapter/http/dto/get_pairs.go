@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"strings"
 )
 

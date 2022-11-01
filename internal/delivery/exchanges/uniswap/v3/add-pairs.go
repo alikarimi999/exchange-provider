@@ -40,7 +40,14 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
 				return
 			}
-			res.Added = append(res.Added, p.String())
+			res.Added = append(res.Added, entity.Pair{
+				BC: &entity.PairCoin{
+					Coin: &entity.Coin{CoinId: p.BT, ChainId: d.cfg.TokenStandard},
+				},
+				QC: &entity.PairCoin{
+					Coin: &entity.Coin{CoinId: p.QT, ChainId: d.cfg.TokenStandard},
+				},
+			})
 			ps = append(ps, p.String())
 		}(dp)
 

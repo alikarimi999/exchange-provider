@@ -1,12 +1,14 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 
 	"exchange-provider/pkg/errors"
+
+	"github.com/go-redis/redis/v9"
 )
 
 type wtFeed struct {
@@ -39,12 +41,13 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 	for {
 		select {
 		case feed := <-t.feedCh:
-			func(f *wtFeed) {
+			go func(f *wtFeed) {
 				wd, err := t.c.getWithdrawal(f.w.WId)
 				if err != nil {
-					t.l.Error(string(op), err.Error())
-					f.w.Status = entity.WithdrawalFailed
-					f.w.FailedDesc = err.Error()
+					if err != redis.Nil {
+						t.l.Error(string(op), err.Error())
+					}
+					f.w.Status = entity.WithdrawalPending
 					f.done <- struct{}{}
 					<-f.proccessedCh
 					return
@@ -58,11 +61,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				case "FAILURE":
 					f.w.Status = entity.WithdrawalFailed
 					f.w.FailedDesc = "failed by exchange"
-				default:
-					f.w.Status = entity.WithdrawalPending
-					f.done <- struct{}{}
-					<-f.proccessedCh
-					return
 				}
 				f.done <- struct{}{}
 

@@ -1,10 +1,10 @@
 package pairconf
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -93,6 +93,9 @@ func (r *PairConfigs) GetPairSpread(bc, qc *entity.Coin) string {
 func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
+	if s <= 0 || s >= 1 {
+		return errors.New("spread rate must be > 0 and < 1")
+	}
 	if err := r.db.Save(&PairSpread{Pair: fmt.Sprintf("%s/%s", bc.String(), qc.String()), Spread: s}).Error; err != nil {
 		return err
 	}

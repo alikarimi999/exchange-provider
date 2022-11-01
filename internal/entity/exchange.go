@@ -75,7 +75,7 @@ type ExchangeManager interface {
 }
 
 type AddPairsResult struct {
-	Added   []string
+	Added   []Pair
 	Existed []string
 	Failed  []*PairsErr
 }
