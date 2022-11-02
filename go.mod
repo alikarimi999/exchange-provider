@@ -10,7 +10,6 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -64,7 +63,6 @@ require (
 	github.com/go-redis/redis/v9 v9.0.0-beta.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/rabbitmq/amqp091-go v1.3.4

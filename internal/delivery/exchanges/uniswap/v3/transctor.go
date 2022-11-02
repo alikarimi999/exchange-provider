@@ -3,7 +3,8 @@ package uniswapv3
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"exchange-provider/pkg/bind"
+
 	"github.com/ethereum/go-ethereum/common"
 )
 
