@@ -99,7 +99,7 @@ func (c *cache) SaveD(de *depositeRecord) error {
 	op := fmt.Sprintf("%s.cache.recordDeposite", c.k.NID())
 
 	key := fmt.Sprintf("kucoin:deposites:%s", de.TxId)
-	err := c.r.Set(c.ctx, key, de, time.Duration(48*time.Hour)).Err()
+	err := c.r.Set(c.ctx, key, de, time.Duration(12*time.Hour)).Err()
 	if err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
