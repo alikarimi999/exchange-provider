@@ -61,7 +61,7 @@ func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 
 					}
 
-					t := f.blockTime * time.Duration(f.confirms)
+					t := (f.blockTime + (5 * time.Second)) * time.Duration(f.confirms)
 					time.Sleep(t / 2)
 
 					return true, err

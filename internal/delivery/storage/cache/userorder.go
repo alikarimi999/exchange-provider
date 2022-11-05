@@ -3,9 +3,9 @@ package cache
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"exchange-provider/internal/delivery/storage/cache/dto"
 	"exchange-provider/internal/entity"
+	"fmt"
 	"time"
 
 	"exchange-provider/pkg/errors"
@@ -49,7 +49,7 @@ func (c *OrderCache) save(o *dto.UserOrder) error {
 	const op = errors.Op("OrderCache.save")
 
 	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
-	if err := c.r.Set(c.ctx, key, o, time.Duration(4*time.Hour)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, key, o, time.Duration(48*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
@@ -58,7 +58,7 @@ func (c *OrderCache) saveOrderSeq(uId, oId, seq int64) error {
 	const op = errors.Op("OrderCache.saveOrderSeq")
 
 	key := fmt.Sprintf("user:%d:seq:%d", uId, seq)
-	if err := c.r.Set(c.ctx, key, oId, time.Duration(4*time.Hour)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, key, oId, time.Duration(48*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
