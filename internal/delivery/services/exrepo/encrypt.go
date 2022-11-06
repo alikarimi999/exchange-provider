@@ -3,8 +3,8 @@ package exrepo
 import (
 	"encoding/json"
 	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/exchanges/dex"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
-	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
 )
@@ -37,7 +37,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 
 	switch e.Name {
 	case "uniswapv3":
-		conf := ex.Configs().(*uniswapv3.Config)
+		conf := ex.Configs().(*dex.Config)
 
 		jb["mnemonic"] = conf.Mnemonic
 		jb["network"] = conf.Network

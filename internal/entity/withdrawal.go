@@ -25,7 +25,7 @@ type Withdrawal struct {
 	Exchange string
 
 	*Coin
-
+	Unwrapped   bool
 	Total       string
 	Fee         string
 	FeeCurrency string

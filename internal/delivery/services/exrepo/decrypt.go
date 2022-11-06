@@ -2,8 +2,8 @@ package exrepo
 
 import (
 	"encoding/json"
+	"exchange-provider/internal/delivery/exchanges/dex"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
-	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
@@ -57,12 +57,12 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have network paramether", ex)))
 		}
 
-		cfg := &uniswapv3.Config{
+		cfg := &dex.Config{
 			Mnemonic: m,
 			Name:     ex.Name,
 			Network:  n,
 		}
-		return uniswapv3.NewExchange(cfg, r.rc, r.v, r.l, true)
+		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
 
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Name)))

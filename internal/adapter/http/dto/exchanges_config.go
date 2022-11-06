@@ -1,7 +1,8 @@
 package dto
 
 import (
-	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
+	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/types"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,16 +20,18 @@ type Config struct {
 
 	Providers []string `json:"providers,omitempty"`
 
-	Mnemonic      string             `json:"mnemonic,omitempty"`
-	AccountCount  uint64             `json:"account_count,omitempty"`
-	Accounts      []accounts.Account `json:"accounts,omitempty"`
-	ConfirmBlocks uint64             `json:"confirm_blocks,omitempty"`
-	TokensFile    string             `json:"tokens_file,omitempty"`
-	Msg           string             `json:"msg,omitempty"`
+	Mnemonic     string             `json:"mnemonic,omitempty"`
+	AccountCount uint64             `json:"account_count,omitempty"`
+	Accounts     []accounts.Account `json:"accounts,omitempty"`
+
+	BlockTime     string `json:"block_time,omitempty"`
+	ConfirmBlocks uint64 `json:"confirm_blocks,omitempty"`
+	TokensFile    string `json:"tokens_file,omitempty"`
+	Msg           string `json:"msg,omitempty"`
 }
 
-func (cfg *Config) Map() *uniswapv3.Config {
-	c := &uniswapv3.Config{
+func (cfg *Config) Map() (*dex.Config, error) {
+	c := &dex.Config{
 		ChianId:       cfg.ChianId,
 		Network:       cfg.Network,
 		TokenStandard: cfg.TokenStandard,
@@ -37,15 +40,23 @@ func (cfg *Config) Map() *uniswapv3.Config {
 		Factory: common.HexToAddress(cfg.Factory),
 		Router:  common.HexToAddress(cfg.Router),
 
-		Mnemonic:      cfg.Mnemonic,
-		AccountCount:  cfg.AccountCount,
+		Mnemonic:     cfg.Mnemonic,
+		AccountCount: cfg.AccountCount,
+
 		ConfirmBlocks: cfg.ConfirmBlocks,
 		TokensFile:    cfg.TokensFile,
 	}
 
-	for _, url := range cfg.Providers {
-		c.Providers = append(c.Providers, &uniswapv3.Provider{URL: url})
+	bt, err := toTime(cfg.BlockTime)
+	if err != nil {
+		return nil, err
 	}
 
-	return c
+	c.BlockTime = bt
+
+	for _, url := range cfg.Providers {
+		c.Providers = append(c.Providers, &types.Provider{URL: url})
+	}
+
+	return c, nil
 }

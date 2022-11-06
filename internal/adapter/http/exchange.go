@@ -3,8 +3,8 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/exchanges/dex"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
-	uniswapv3 "exchange-provider/internal/delivery/exchanges/uniswap/v3"
 	"fmt"
 	"net/http"
 )
@@ -46,9 +46,13 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		conf := cfg.Map()
+		conf, err := cfg.Map()
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
 		conf.Name = id
-		ex, err := uniswapv3.NewExchange(conf, s.rc, s.v, s.l, false)
+		ex, err := dex.NewDEX(conf, s.rc, s.v, s.l, false)
 		if err != nil {
 			cfg.Msg = err.Error()
 			ctx.JSON(http.StatusOK, cfg)

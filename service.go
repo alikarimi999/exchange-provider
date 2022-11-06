@@ -23,8 +23,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -139,7 +139,7 @@ func test() {
 	}
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		"root", "123", "localhost:3306", "exchange-provider")
+		"root", "root_L0d92Jlf0HfNmV01", "localhost:3306", "exchange-provider")
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

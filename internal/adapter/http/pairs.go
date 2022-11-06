@@ -3,8 +3,8 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
+	udto "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/dto"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
-	udto "exchange-provider/internal/delivery/exchanges/uniswap/v3/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
