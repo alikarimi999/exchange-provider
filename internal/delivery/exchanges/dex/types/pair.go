@@ -29,15 +29,20 @@ func (p *Pair) String() string {
 
 func (p *Pair) ToEntity(native, standard string, blockTime time.Duration) *entity.Pair {
 
-	return &entity.Pair{
+	pair := &entity.Pair{
 		BC: p.BT.ToEntity(standard, blockTime),
 		QC: p.QT.ToEntity(standard, blockTime),
 
 		ContractAddress: p.Address.String(),
-		FeeTier:         p.FeeTier.Int64(),
-		Liquidity:       p.Liquidity,
-		BestAsk:         p.Price,
-		BestBid:         p.Price,
-		FeeCurrency:     native,
+
+		Liquidity:   p.Liquidity,
+		BestAsk:     p.Price,
+		BestBid:     p.Price,
+		FeeCurrency: native,
 	}
+
+	if p.FeeTier != nil {
+		pair.FeeTier = p.FeeTier.Int64()
+	}
+	return pair
 }

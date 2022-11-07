@@ -263,7 +263,7 @@ func (a *exStore) start(wg *sync.WaitGroup) {
 
 func (a *exStore) add(ex *Exchange) error {
 	if err := a.repo.Add(ex); err != nil {
-		return errors.Wrap(errors.NewMesssage(err.Error()))
+		return err
 	}
 	a.addCh <- ex
 	return nil

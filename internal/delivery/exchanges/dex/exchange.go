@@ -1,11 +1,9 @@
 package dex
 
 import (
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/utils/numbers"
 	"fmt"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,8 +22,8 @@ func (d *dex) Exchange(o *entity.UserOrder, size, funds string) (string, error) 
 
 	sAddr := common.HexToAddress(o.Deposit.Addr)
 
-	var tIn types.Token
-	var tOut types.Token
+	var tIn ts.Token
+	var tOut ts.Token
 	var amount string
 	if side == entity.SideBuy {
 		tIn = pair.QT
@@ -37,12 +35,14 @@ func (d *dex) Exchange(o *entity.UserOrder, size, funds string) (string, error) 
 		amount = size
 	}
 
-	tx, pool, err := d.Swap(o, tIn, tOut, amount, sAddr, sAddr)
+	tx, nonce, err := d.Swap(o, tIn, tOut, amount, sAddr, sAddr)
 	if err != nil {
+		if nonce != nil {
+			d.wallet.ReleaseNonce(sAddr, nonce.Uint64())
+		}
 		return "", err
 	}
-
-	o.MetaData["swap-pool"] = pool.Address.String()
+	d.wallet.BurnNonce(sAddr, nonce.Uint64())
 
 	o.ExchangeOrder.Funds = funds
 	o.ExchangeOrder.Size = size
@@ -72,32 +72,24 @@ func (d *dex) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, proc
 
 	<-doneCh
 
-start:
 	switch tf.status {
 	case txSuccess:
-		for _, log := range tf.Receipt.Logs {
-			if len(log.Topics) == 3 && log.Topics[0] == erc20TransferSignature &&
-				hashToAddress(log.Topics[2]) == common.HexToAddress(o.Deposit.Addr) {
-
-				if o.Side == entity.SideBuy {
-					d := pair.BT.Decimals
-					o.ExchangeOrder.Size = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
-				} else {
-					d := pair.QT.Decimals
-					o.ExchangeOrder.Funds = numbers.BigIntToFloatString(new(big.Int).SetBytes(log.Data), d)
-				}
-				o.ExchangeOrder.Status = entity.ExOrderSucceed
-				o.ExchangeOrder.Fee = txFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
-				o.ExchangeOrder.FeeCurrency = "ETH"
-				d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-					o.Id, tf.txHash, tf.confirmed, tf.confirms))
-				break start
-			}
-
+		amont, fee, err := d.ParseSwapLogs(o, tf.tx, pair, tf.Receipt)
+		if err != nil {
+			o.ExchangeOrder.Status = entity.ExOrderFailed
+			o.ExchangeOrder.FailedDesc = err.Error()
 		}
+		if o.Side == entity.SideBuy {
+			o.ExchangeOrder.Size = amont
+		} else {
+			o.ExchangeOrder.Funds = amont
+		}
+		o.ExchangeOrder.Status = entity.ExOrderSucceed
+		o.ExchangeOrder.Fee = fee
+		o.ExchangeOrder.FeeCurrency = d.cfg.NativeToken
 
-		o.ExchangeOrder.Status = entity.ExOrderFailed
-		o.ExchangeOrder.FailedDesc = "unable to parse tx logs"
+		d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
+			o.Id, tf.txHash, tf.confirmed, tf.confirms))
 
 	case txFailed:
 		o.ExchangeOrder.Status = entity.ExOrderFailed

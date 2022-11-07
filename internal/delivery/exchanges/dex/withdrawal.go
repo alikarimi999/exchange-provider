@@ -2,6 +2,7 @@ package dex
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/contracts"
+	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils/numbers"
@@ -64,7 +65,7 @@ func (u *dex) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Addre
 				return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrap-tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
 			case txSuccess:
 				o.Withdrawal.Unwrapped = true
-				o.Withdrawal.ExchangeFee = txFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
+				o.Withdrawal.ExchangeFee = utils.TxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 				o.Withdrawal.ExchangeFeeCurrency = u.cfg.NativeToken
 				u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
 					o.Id, tf.txHash, tf.confirmed, tf.confirms))
@@ -140,7 +141,7 @@ func (u *dex) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 
 	switch tf.status {
 	case txSuccess:
-		f := txFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
+		f := utils.TxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
 		fee, _ := numbers.FloatStringToBigInt(f, ethDecimals)
 
 		unwrapFee := new(big.Int)

@@ -11,34 +11,34 @@ import (
 )
 
 type UniswapV3 struct {
-	Id       string
-	Ps       []*types.Provider
-	Factory  common.Address
-	Router   common.Address
-	Wallet   *eth.HDWallet
-	ChaindId int64
+	id       string
+	ps       []*types.Provider
+	factory  common.Address
+	router   common.Address
+	wallet   *eth.HDWallet
+	chaindId int64
 
-	L logger.Logger
+	l logger.Logger
 }
 
 func NewUniSwapV3(id string, ps []*types.Provider, f, r common.Address, w *eth.HDWallet, l logger.Logger) (*UniswapV3, error) {
 	u := &UniswapV3{
-		Id:      id,
-		Ps:      ps,
-		Factory: f,
-		Router:  r,
-		Wallet:  w,
-		L:       l,
+		id:      id,
+		ps:      ps,
+		factory: f,
+		router:  r,
+		wallet:  w,
+		l:       l,
 	}
 
 	c, err := u.provider().Client.ChainID(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	u.ChaindId = c.Int64()
+	u.chaindId = c.Int64()
 	return u, nil
 }
 
 func (u *UniswapV3) agent(fn string) string {
-	return fmt.Sprintf("%s-%s", u.Id, fn)
+	return fmt.Sprintf("%s-%s", u.id, fn)
 }

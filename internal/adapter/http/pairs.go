@@ -3,12 +3,13 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
-	udto "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/dto"
+	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 func (s *Server) AddPairs(ctx Context) {
@@ -49,7 +50,7 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
-	case "uniswapv3":
+	case "uniswapv3", "panckakeswapv2":
 		req := &udto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
 			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
@@ -106,22 +107,27 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 		}
 	}
 
-	for _, ex := range exs {
-		ps, err := s.app.GetAllPairsByExchange(ex)
-		if err != nil {
-			resp.Messages = append(resp.Messages, err.Error())
-			continue
-		}
+	wg := &sync.WaitGroup{}
+	for _, exc := range exs {
+		wg.Add(1)
+		go func(ex *app.Exchange) {
+			defer wg.Done()
+			ps, err := s.app.GetAllPairsByExchange(ex)
+			if err != nil {
+				resp.Messages = append(resp.Messages, err.Error())
+				return
+			}
 
-		resp.Exchanges[ex.NID()] = &dto.Exchange{
-			Status: ex.CurrentStatus,
-		}
-		for _, p := range ps {
-			dp := dto.PairDTO(p)
-			resp.Exchanges[ex.NID()].Pairs = append(resp.Exchanges[ex.NID()].Pairs, dp)
-		}
+			resp.Exchanges[ex.NID()] = &dto.Exchange{
+				Status: ex.CurrentStatus,
+			}
+			for _, p := range ps {
+				dp := dto.PairDTO(p)
+				resp.Exchanges[ex.NID()].Pairs = append(resp.Exchanges[ex.NID()].Pairs, dp)
+			}
+		}(exc)
 	}
-
+	wg.Wait()
 	ctx.JSON(200, resp)
 }
 

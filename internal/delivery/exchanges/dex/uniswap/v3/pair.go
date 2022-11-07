@@ -10,9 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *UniswapV3) SetBestPrice(bt, qt types.Token) (*types.Pair, error) {
+func (u *UniswapV3) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
 
-	pool, err := u.PairWithPrice(bt, qt)
+	pool, err := u.Pair(bt, qt)
 	if err != nil {
 		return nil, err
 	}
@@ -50,10 +50,10 @@ func (u *UniswapV3) SetBestPrice(bt, qt types.Token) (*types.Pair, error) {
 
 }
 
-func (u *UniswapV3) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
+func (u *UniswapV3) Pair(bt, qt types.Token) (*types.Pair, error) {
 	agent := u.agent("pairWithPrice")
 
-	f, err := contracts.NewUniswapv3Factory(u.Factory, u.provider())
+	f, err := contracts.NewUniswapv3Factory(u.factory, u.provider())
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (u *UniswapV3) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
 
 			a, err := f.GetPool(nil, bt.Address, qt.Address, fee)
 			if err != nil {
-				u.L.Error(agent, err.Error())
+				u.l.Error(agent, err.Error())
 				return
 			} else if a == common.HexToAddress("0") {
 				return
@@ -75,13 +75,13 @@ func (u *UniswapV3) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
 
 			p, err := contracts.NewUniswapv3Pool(a, u.provider())
 			if err != nil {
-				u.L.Error(agent, err.Error())
+				u.l.Error(agent, err.Error())
 				return
 			}
 
 			l, err := p.Liquidity(nil)
 			if err != nil {
-				u.L.Error(agent, err.Error())
+				u.l.Error(agent, err.Error())
 				return
 			}
 

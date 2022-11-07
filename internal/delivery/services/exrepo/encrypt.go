@@ -7,6 +7,7 @@ import (
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
+	"fmt"
 )
 
 type Exchange struct {
@@ -24,7 +25,7 @@ type KucoinExchange struct {
 }
 
 func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
-
+	op := errors.Op("ExchangeRepo.encryptConfigs")
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
@@ -38,7 +39,11 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 	switch e.Name {
 	case "uniswapv3":
 		conf := ex.Configs().(*dex.Config)
+		jb["mnemonic"] = conf.Mnemonic
+		jb["network"] = conf.Network
 
+	case "panckakeswapv2":
+		conf := ex.Configs().(*dex.Config)
 		jb["mnemonic"] = conf.Mnemonic
 		jb["network"] = conf.Network
 
@@ -49,7 +54,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 		jb["api_passphrase"] = conf.ApiPassphrase
 
 	default:
-		return nil, errors.Wrap(errors.ErrBadRequest)
+		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange name", e.Name))
 	}
 
 	b, err := json.Marshal(jb)

@@ -32,7 +32,7 @@ func (s *Server) AddExchange(ctx Context) {
 		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.NID()))
 		return
 
-	case "uniswapv3":
+	case "dex":
 
 		cfg := &dto.Config{}
 
@@ -51,7 +51,7 @@ func (s *Server) AddExchange(ctx Context) {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		conf.Name = id
+
 		ex, err := dex.NewDEX(conf, s.rc, s.v, s.l, false)
 		if err != nil {
 			cfg.Msg = err.Error()

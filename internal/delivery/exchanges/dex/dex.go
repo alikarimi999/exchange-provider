@@ -1,8 +1,10 @@
 package dex
 
 import (
+	pv2 "exchange-provider/internal/delivery/exchanges/dex/pancakeswap/v2"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
-	uniswapv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
+	uv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
+
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
@@ -127,6 +129,10 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			return nil, err
 		}
 
+		if err := ex.setDEX(); err != nil {
+			return nil, err
+		}
+
 		ex.v.Set(fmt.Sprintf("%s.factory", ex.NID()), ex.cfg.Factory)
 		ex.v.Set(fmt.Sprintf("%s.router", ex.NID()), ex.cfg.Router)
 		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)
@@ -142,10 +148,6 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			return nil, err
 		}
 
-		if err := ex.setDEX(); err != nil {
-			return nil, err
-		}
-
 	}
 
 	return ex, nil
@@ -154,12 +156,21 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 func (d *dex) setDEX() error {
 	switch d.cfg.Name {
 	case "uniswapv3":
-		u, err := uniswapv3.NewUniSwapV3(d.NID(), d.cfg.Providers, d.cfg.Factory, d.cfg.Router, d.wallet, d.l)
+		u, err := uv3.NewUniSwapV3(d.NID(), d.cfg.Providers, d.cfg.Factory, d.cfg.Router, d.wallet, d.l)
 		if err != nil {
 			return err
 		}
 		d.Dex = u
+		return nil
+	case "panckakeswapv2":
+		u, err := pv2.NewPanckakeswapV2(d.NID(), d.wallet, d.cfg.Router, d.cfg.Providers, d.l)
+		if err != nil {
+			return err
+		}
+		d.Dex = u
+		return nil
+	default:
+		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Name)
 	}
 
-	return nil
 }

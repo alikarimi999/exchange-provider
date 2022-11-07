@@ -42,7 +42,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 		wg.Add(1)
 		go func(p types.Pair) {
 			defer wg.Done()
-			newPair, err := u.SetBestPrice(p.BT, p.QT)
+			newPair, err := u.PairWithPrice(p.BT, p.QT)
 			if err != nil {
 				u.l.Error(agent, err.Error())
 				return
@@ -80,7 +80,7 @@ func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 		return nil, err
 	}
 
-	p, err = u.SetBestPrice(p.BT, p.QT)
+	p, err = u.PairWithPrice(p.BT, p.QT)
 	if err != nil {
 		return nil, err
 	}

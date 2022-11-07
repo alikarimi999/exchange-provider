@@ -2,6 +2,7 @@ package dex
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
@@ -71,7 +72,7 @@ func (d *dex) trackDeposit(f *dtFeed) {
 				f.done <- struct{}{}
 				break
 			}
-			dAddress := hashToAddress(log.Topics[2])
+			dAddress := utils.HashToAddress(log.Topics[2])
 			if dAddress != common.HexToAddress(f.d.Addr) {
 				f.d.Status = entity.DepositFailed
 				f.d.FailedDesc = fmt.Sprintf("invalid destination address `%s`", dAddress)

@@ -64,6 +64,24 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		}
 		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
 
+	case "panckakeswapv2":
+
+		m, ok := jb["mnemonic"].(string)
+		if !ok {
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
+		}
+		n, ok := jb["network"].(string)
+		if !ok {
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have network paramether", ex)))
+		}
+
+		cfg := &dex.Config{
+			Mnemonic: m,
+			Name:     ex.Name,
+			Network:  n,
+		}
+		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
+
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Name)))
 }

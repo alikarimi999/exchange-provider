@@ -12,10 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *ts.Pair, error) {
+func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	var err error
-	pool, err := u.SetBestPrice(tIn, tOut)
+	pair, err := u.Pair(tIn, tOut)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -29,16 +29,16 @@ func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, 
 	if tIn.IsNative() {
 		val = amount
 	}
-	opts, err := u.Wallet.NewKeyedTransactorWithChainID(source, val, u.ChaindId)
+	opts, err := u.wallet.NewKeyedTransactorWithChainID(source, val, u.chaindId)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	defer func() {
 		if err != nil {
-			u.Wallet.ReleaseNonce(source, opts.Nonce.Uint64())
+			u.wallet.ReleaseNonce(source, opts.Nonce.Uint64())
 		} else {
-			u.Wallet.BurnNonce(source, opts.Nonce.Uint64())
+			u.wallet.BurnNonce(source, opts.Nonce.Uint64())
 
 		}
 	}()
@@ -46,18 +46,18 @@ func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, 
 	data := [][]byte{}
 	abi, err := contracts.RouteMetaData.GetAbi()
 	if err != nil {
-		return nil, nil, err
+		return nil, opts.Nonce, err
 	}
 
-	route, err := contracts.NewRoute(u.Router, u.provider())
+	route, err := contracts.NewRoute(u.router, u.provider())
 	if err != nil {
-		return nil, nil, err
+		return nil, opts.Nonce, err
 	}
 
 	params := contracts.IV3SwapRouterExactInputSingleParams{
 		TokenIn:           tIn.Address,
 		TokenOut:          tOut.Address,
-		Fee:               pool.FeeTier,
+		Fee:               pair.FeeTier,
 		Recipient:         dest,
 		AmountIn:          amount,
 		AmountOutMinimum:  big.NewInt(0),
@@ -65,7 +65,7 @@ func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, 
 	}
 	es, err := abi.Pack("exactInputSingle", params)
 	if err != nil {
-		return nil, nil, err
+		return nil, opts.Nonce, err
 	}
 
 	data = append(data, es)
@@ -73,8 +73,8 @@ func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, 
 	deadline := big.NewInt(time.Now().Add(time.Minute * time.Duration(30)).Unix())
 	tx, err := route.Multicall0(opts, deadline, data)
 	if err != nil {
-		return nil, nil, err
+		return nil, opts.Nonce, err
 	}
 
-	return tx, pool, err
+	return tx, opts.Nonce, err
 }

@@ -5,6 +5,7 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v9"
@@ -54,21 +55,25 @@ func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
 		return nil, err
 	}
 
-	for _, ex := range exchanges {
+	wg := &sync.WaitGroup{}
+	for _, exc := range exchanges {
+		wg.Add(1)
+		go func(ex Exchange) {
+			defer wg.Done()
+			exc, err := a.decrypt(&ex)
+			if err != nil {
+				a.l.Error(agent, err.Error())
+				return
+			}
 
-		exc, err := a.decrypt(&ex)
-		if err != nil {
-			a.l.Error(agent, err.Error())
-			continue
-		}
-
-		exs = append(exs, &app.Exchange{
-			Exchange:       exc,
-			CurrentStatus:  ex.Status,
-			LastChangeTime: time.Now(),
-		})
+			exs = append(exs, &app.Exchange{
+				Exchange:       exc,
+				CurrentStatus:  ex.Status,
+				LastChangeTime: time.Now(),
+			})
+		}(exc)
 	}
-
+	wg.Wait()
 	return exs, nil
 }
 

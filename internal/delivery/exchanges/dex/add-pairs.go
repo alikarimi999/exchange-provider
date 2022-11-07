@@ -2,8 +2,8 @@ package dex
 
 import (
 	"encoding/json"
+	"exchange-provider/internal/delivery/exchanges/dex/dto"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
-	"exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -96,7 +96,7 @@ func (d *dex) addPair(bt string, qt string) error {
 					continue
 				}
 				if t1.Symbol == qt {
-					pair, err := d.PairWithPrice(t0, t1)
+					pair, err := d.Pair(t0, t1)
 					if err != nil {
 						return err
 					}

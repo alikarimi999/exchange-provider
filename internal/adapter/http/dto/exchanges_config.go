@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Id            string `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
 	ChianId       uint64 `json:"chian_id,omitempty"`
 	Network       string `json:"network,omitempty"`
 	NativeToken   string `json:"native_token,omitempty"`
@@ -32,6 +33,7 @@ type Config struct {
 
 func (cfg *Config) Map() (*dex.Config, error) {
 	c := &dex.Config{
+		Name:          cfg.Name,
 		ChianId:       cfg.ChianId,
 		Network:       cfg.Network,
 		TokenStandard: cfg.TokenStandard,

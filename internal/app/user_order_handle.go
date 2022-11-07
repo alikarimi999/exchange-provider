@@ -94,7 +94,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ord.FailedCode = entity.FCExOrdFailed
 				ord.FailedDesc = err.Error()
 
-				o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+				o.l.Error(string(op), err.Error())
 
 				if err := o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), fmt.Sprintf("failed to write order: '%s' due to error: ( %s )", ord.String(), err.Error()))
@@ -106,7 +106,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 			ord.ExchangeOrder.ExId = id
 			ord.Status = entity.OSWaitForExchangeOrderConfirm
 			if err = o.ouc.write(ord); err != nil {
-				o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+				o.l.Error(string(op), err.Error())
 				return
 			}
 
@@ -127,7 +127,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ord.Status = entity.OSExchangeOrderConfirmed
 				// o.l.Debug(string(op), fmt.Sprintf("exchange order: '%s' confirmed", ord.ExchangeOrder.ExId))
 				if err = o.ouc.write(ord); err != nil {
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					o.l.Error(string(op), err.Error())
 					ef.pCh <- false
 					return
 				}
@@ -148,9 +148,9 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						ord.FailedCode = entity.FCInternalError
 						ord.FailedDesc = err.Error()
 
-						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						o.l.Error(string(op), err.Error())
 						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+							o.l.Error(string(op), err.Error())
 						}
 						return
 					}
@@ -165,10 +165,10 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					ord.FailedCode = entity.FCInternalError
 					ord.FailedDesc = err.Error()
 
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					o.l.Error(string(op), err.Error())
 
 					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						o.l.Error(string(op), err.Error())
 					}
 					return
 
@@ -183,10 +183,10 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					ord.FailedCode = entity.FCInternalError
 					ord.FailedDesc = err.Error()
 
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					o.l.Error(string(op), err.Error())
 
 					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+						o.l.Error(string(op), err.Error())
 					}
 					return
 
@@ -198,14 +198,14 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				// o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' withdrawal order: '%s' created", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				if err = o.ouc.write(ord); err != nil {
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					o.l.Error(string(op), err.Error())
 					return
 				}
 
 				// add to withdrawal cache
 				// and wait for withdrawal confirm
 				if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
-					o.l.Error(string(op), errors.Wrap(err, op, ord.Withdrawal.String()).Error())
+					o.l.Error(string(op), err.Error())
 				}
 				// o.l.Debug(string(op), fmt.Sprintf("order: '%d' for user: '%d' is waiting for withdrawal: '%s' to confirm", ord.Id, ord.UserId, ord.Withdrawal.WId))
 				return
@@ -219,7 +219,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				ord.Status = entity.OSFailed
 				ord.FailedCode = entity.FCExOrdFailed
 				if err := o.ouc.write(ord); err != nil {
-					o.l.Error(string(op), errors.Wrap(err, op, ord.String()).Error())
+					o.l.Error(string(op), err.Error())
 					ef.pCh <- false
 					return
 				}
