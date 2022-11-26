@@ -60,14 +60,15 @@ func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker,
 	return p, nil
 }
 
-func (p *Panckakeswapv2) Swap(o *entity.Order, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
+func (p *Panckakeswapv2) Swap(o *entity.Order, tIn, tOut ts.Token, value string,
+	source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	contract, err := contracts.NewContract(p.router, p.provider())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	d := time.Now().Add(time.Minute * time.Duration(15)).Unix()
+	d := time.Now().Add(time.Minute * time.Duration(30)).Unix()
 	amount, err := numbers.FloatStringToBigInt(value, tIn.Decimals)
 	if err != nil {
 		return nil, nil, err

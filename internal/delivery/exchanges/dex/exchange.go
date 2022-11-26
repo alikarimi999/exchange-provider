@@ -28,8 +28,8 @@ func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 		tIn = pair.T1
 		tOut = pair.T2
 	} else {
-		tOut = pair.T2
-		tIn = pair.T1
+		tOut = pair.T1
+		tIn = pair.T2
 	}
 
 	tx, nonce, err := d.Swap(o, tIn, tOut, o.Swaps[index].InAmount, sAddr, sAddr)

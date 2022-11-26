@@ -36,8 +36,8 @@ func (d *dex) trackDeposit(f *dtFeed) {
 		TxHash:     txHash,
 		Receiver:   &destAddress,
 		NeedTx:     f.token.IsNative(),
-		MaxRetries: 50,
-		Confirms:   3,
+		MaxRetries: 30,
+		Confirms:   1,
 		DoneCh:     doneCh,
 	}
 

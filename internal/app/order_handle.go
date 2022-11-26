@@ -79,6 +79,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				}
 
 				id, err := ex.Exchange(ord, i)
+
 				if err != nil {
 					ord.Status = entity.OSFailed
 					ord.FailedCode = entity.FCExOrdFailed
