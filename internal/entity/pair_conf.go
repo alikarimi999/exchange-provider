@@ -8,14 +8,18 @@ type PairConfigs interface {
 	GetAllPairsSpread() map[string]float64
 	ApplySpread(bc, qc *Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error)
 
-	PairMinDeposit(bc, qc *Coin) (minBc, minQc float64)
+	PairMinDeposit(c1, c2 string) (float64, float64)
 
-	ChangeMinDeposit(bc, qc *Coin, minBc, minQc float64) error
+	ChangeMinDeposit(...*PairMinDeposit) error
 	AllMinDeposit() []*PairMinDeposit
 }
 
 type PairMinDeposit struct {
-	Pair         string
-	MinBaseCoin  float64
-	MinQouteCoin float64
+	C1 *CoinMinDeposit
+	C2 *CoinMinDeposit
+}
+
+type CoinMinDeposit struct {
+	Coin string
+	Min  float64
 }

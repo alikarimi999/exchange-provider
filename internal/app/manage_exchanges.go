@@ -112,20 +112,20 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 
 		switch ex.CurrentStatus {
 		case ExchangeStatusActive:
-			if !force {
-				// First, check whether there is a request being processed for this exchange.
-				// if there is, we cannot disable it
-				t, err := o.totalPendingOrders(ex.Exchange)
-				if err != nil {
-					return nil, errors.Wrap(op, err)
-				}
+			// if !force {
+			// 	// First, check whether there is a request being processed for this exchange.
+			// 	// if there is, we cannot disable it
+			// 	t, err := o.totalPendingOrders(ex.Exchange)
+			// 	if err != nil {
+			// 		return nil, errors.Wrap(op, err)
+			// 	}
 
-				if t > 0 {
-					o.l.Info(string(op), fmt.Sprintf("unable to disable exchange %s because there are %d pending orders", nid, t))
-					return nil, errors.Wrap(errors.ErrBadRequest,
-						errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't disable it, unless force it", nid, t)))
-				}
-			}
+			// 	if t > 0 {
+			// 		o.l.Info(string(op), fmt.Sprintf("unable to disable exchange %s because there are %d pending orders", nid, t))
+			// 		return nil, errors.Wrap(errors.ErrBadRequest,
+			// 			errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't disable it, unless force it", nid, t)))
+			// 	}
+			// }
 
 			if err := o.exs.disable(nid); err != nil {
 				return nil, errors.Wrap(op, err)
@@ -141,20 +141,20 @@ func (o *OrderUseCase) ChangeExchangeStatus(nid, status string, force bool) (*Ch
 			}, nil
 
 		case ExchangeStatusDeactive:
-			if !force {
-				// First, check whether there is a request being processed for this exchange.
-				// if there is, we cannot disable it
-				t, err := o.totalPendingOrders(ex.Exchange)
-				if err != nil {
-					return nil, errors.Wrap(op, err)
-				}
+			// if !force {
+			// 	// First, check whether there is a request being processed for this exchange.
+			// 	// if there is, we cannot disable it
+			// 	t, err := o.totalPendingOrders(ex.Exchange)
+			// 	if err != nil {
+			// 		return nil, errors.Wrap(op, err)
+			// 	}
 
-				if t > 0 {
-					o.l.Info(string(op), fmt.Sprintf("unable to disable exchange %s because there are %d pending orders", nid, t))
-					return nil, errors.Wrap(errors.ErrBadRequest,
-						errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't disable it, unless force it", nid, t)))
-				}
-			}
+			// 	if t > 0 {
+			// 		o.l.Info(string(op), fmt.Sprintf("unable to disable exchange %s because there are %d pending orders", nid, t))
+			// 		return nil, errors.Wrap(errors.ErrBadRequest,
+			// 			errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't disable it, unless force it", nid, t)))
+			// 	}
+			// }
 
 			if err := o.exs.disable(nid); err != nil {
 				return nil, errors.Wrap(op, err)
@@ -192,20 +192,20 @@ func (o *OrderUseCase) RemoveExchange(nid string, force bool) error {
 	}
 
 	if ex.CurrentStatus != ExchangeStatusDisable {
-		if !force {
-			// First, check whether there is a request being processed for this exchange.
-			// if there is, we cannot disable it
-			t, err := o.totalPendingOrders(ex.Exchange)
-			if err != nil {
-				return errors.Wrap(op, err)
-			}
+		// if !force {
+		// 	// First, check whether there is a request being processed for this exchange.
+		// 	// if there is, we cannot disable it
+		// 	t, err := o.totalPendingOrders(ex.Exchange)
+		// 	if err != nil {
+		// 		return errors.Wrap(op, err)
+		// 	}
 
-			if t > 0 {
-				o.l.Info(string(op), fmt.Sprintf("unable to remove exchange %s because there are %d pending orders", nid, t))
-				return errors.Wrap(errors.ErrBadRequest,
-					errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't remove it, unless force it", nid, t)))
-			}
-		}
+		// 	if t > 0 {
+		// 		o.l.Info(string(op), fmt.Sprintf("unable to remove exchange %s because there are %d pending orders", nid, t))
+		// 		return errors.Wrap(errors.ErrBadRequest,
+		// 			errors.NewMesssage(fmt.Sprintf("exchange %s has %d pending orders, so you can't remove it, unless force it", nid, t)))
+		// 	}
+		// }
 		ex.Stop()
 	}
 

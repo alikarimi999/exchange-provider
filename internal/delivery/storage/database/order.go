@@ -20,38 +20,33 @@ func NewUserRepo(db *gorm.DB) entity.OrderRepo {
 	}
 }
 
-func (m *MySqlDB) Add(order *entity.UserOrder) error {
+func (m *MySqlDB) Add(order *entity.Order) error {
 	const op = errors.Op("MySqlDB.Add")
 
 	od := dto.UoToDto(order)
-	// get last seq
-	var lastSeq int64
-	if err := m.db.Model(&dto.Order{}).Select("seq").Where("user_id = ?", order.UserId).Order("seq desc").Limit(1).Scan(&lastSeq).Error; err != nil {
-		return errors.Wrap(op, err, errors.ErrInternal)
-	}
-
-	od.Seq = lastSeq + 1
 	err := m.db.Create(od).Error
 	if err != nil {
 		err = errors.Wrap(err, op, errors.ErrInternal)
 	}
 	order.Id = int64(od.ID)
-	order.Seq = od.Seq
 	order.Deposit.Id = od.Deposit.Id
 	order.Deposit.OrderId = order.Id
 	order.Withdrawal.Id = od.Withdrawal.Id
 	order.Withdrawal.OrderId = int64(od.ID)
-	order.ExchangeOrder.Id = od.ExchangeOrder.Id
-	order.ExchangeOrder.OrderId = int64(od.ID)
+
+	for i, s := range od.Swaps {
+		order.Swaps[i].Id = s.Id
+		order.Swaps[i].OrderId = s.OrderId
+	}
 	return err
 }
 
-func (m *MySqlDB) Get(userId, id int64) (*entity.UserOrder, error) {
+func (m *MySqlDB) Get(userId, id int64) (*entity.Order, error) {
 	const op = errors.Op("MySqlDB.Get")
 
 	o := &dto.Order{}
 	if err := m.db.Where("id = ? and user_id = ?", id, userId).
-		Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
+		Preload("Deposit").Preload("Withdrawal").Preload("Swaps").
 		First(o).Error; err != nil {
 
 		if err == gorm.ErrRecordNotFound {
@@ -63,29 +58,12 @@ func (m *MySqlDB) Get(userId, id int64) (*entity.UserOrder, error) {
 	return o.ToEntity(), nil
 }
 
-func (m *MySqlDB) GetBySeq(uId, seq int64) (*entity.UserOrder, error) {
-	const op = errors.Op("MySqlDB.GetBySeq")
-
-	o := &dto.Order{}
-	if err := m.db.Where("seq = ? and user_id = ?", seq, uId).
-		Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
-		First(o).Error; err != nil {
-
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.Wrap(err, op, errors.ErrNotFound)
-		}
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-
-	}
-	return o.ToEntity(), nil
-}
-
-func (m *MySqlDB) GetAll(UserId int64) ([]*entity.UserOrder, error) {
+func (m *MySqlDB) GetAll(UserId int64) ([]*entity.Order, error) {
 	const op = errors.Op("MySqlDB.GetAll")
 
 	osDTO := []*dto.Order{}
-	if err := m.db.Where("user_id = ?", UserId).Preload("Deposit").Preload("Withdrawal").Preload("ExchangeOrder").
-		Find(&osDTO).Error; err != nil {
+	if err := m.db.Where("user_id = ?", UserId).Preload("Deposit").
+		Preload("Withdrawal").Preload("Swaps").Find(&osDTO).Error; err != nil {
 		return nil, errors.Wrap(op, err, errors.ErrInternal)
 	}
 
@@ -93,14 +71,14 @@ func (m *MySqlDB) GetAll(UserId int64) ([]*entity.UserOrder, error) {
 		return nil, errors.Wrap(op, errors.ErrNotFound)
 	}
 
-	os := []*entity.UserOrder{}
+	os := []*entity.Order{}
 	for _, o := range osDTO {
 		os = append(os, o.ToEntity())
 	}
 	return os, nil
 }
 
-func (m *MySqlDB) Update(order *entity.UserOrder) error {
+func (m *MySqlDB) Update(order *entity.Order) error {
 	const op = errors.Op("MySqlDB.Update")
 
 	if err := m.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(dto.UoToDto(order)).Error; err != nil {

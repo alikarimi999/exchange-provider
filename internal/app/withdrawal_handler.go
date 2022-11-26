@@ -23,8 +23,8 @@ func newWithdrawalHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.Or
 	w := &withdrawalHandler{
 
 		tracker:     newWithdrawalTracker(ouc, repo, oc, wc, exs, l),
-		ticker:      time.NewTicker(time.Minute * 1),
-		windowsSize: time.Minute * 1,
+		ticker:      time.NewTicker(time.Second * 30),
+		windowsSize: time.Second * 30,
 		cache:       wc,
 		wg:          &sync.WaitGroup{},
 

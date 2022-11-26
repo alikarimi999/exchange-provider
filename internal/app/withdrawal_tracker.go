@@ -63,7 +63,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				pCh <- true
 				return
 			case entity.WithdrawalSucceed:
-				o := &entity.UserOrder{Id: w.OrderId, UserId: w.UserId}
+				o := &entity.Order{Id: w.OrderId, UserId: w.UserId}
 				if err := t.ouc.read(o); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op,
 						fmt.Sprintf("order: '%d'", w.OrderId)).Error())
@@ -98,7 +98,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 
 			case entity.WithdrawalFailed:
 
-				o := &entity.UserOrder{Id: w.OrderId, UserId: w.UserId}
+				o := &entity.Order{Id: w.OrderId, UserId: w.UserId}
 				if err := t.ouc.read(o); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op,
 						fmt.Sprintf("order: '%d'", w.OrderId)).Error())

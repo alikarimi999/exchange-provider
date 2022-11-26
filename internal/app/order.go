@@ -66,27 +66,26 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 
 }
 
-func (u *OrderUseCase) NewUserOrder(userId int64, wa *entity.Address, bc, qc *entity.Coin, side string, ex entity.Exchange) (*entity.UserOrder, error) {
+func (u *OrderUseCase) NewOrder(userId int64, wa *entity.Address, routes map[int]*entity.Route) (*entity.Order, error) {
 	const op = errors.Op("Order-Usecase.NewUserOrder")
 
-	var dc *entity.Coin
-	if side == "buy" {
-		dc = qc
-	} else {
-		dc = bc
+	ex, err := u.GetExchange(routes[0].Exchange)
+	if err != nil {
+		return nil, err
 	}
 
+	dc := routes[0].Input
 	da, err := ex.GetAddress(dc)
 	if err != nil {
 		return nil, err
 	}
 
-	o := entity.NewOrder(userId, wa, da, bc, qc, side, ex.NID())
+	o := entity.NewOrder(userId, wa, da, routes)
 
 	if err := u.write(o); err != nil {
+		u.l.Error(string(op), err.Error())
 		return nil, errors.Wrap(err, op, errors.NewMesssage("create order failed, internal error"))
 	}
 
-	// u.l.Debug(string(op), fmt.Sprintf("order (%s) created", o.String()))
 	return o, nil
 }

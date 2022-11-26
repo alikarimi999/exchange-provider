@@ -3,8 +3,10 @@ package uniswapv3
 import (
 	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/contracts"
+	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
+func (u *UniswapV3) Swap(o *entity.Order, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	var err error
 	pair, err := u.Pair(tIn, tOut)
@@ -77,4 +79,52 @@ func (u *UniswapV3) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, 
 	}
 
 	return tx, opts.Nonce, err
+}
+
+func (ex *UniswapV3) TrackSwap(o *entity.Order, p *ts.Pair, i int) {
+	agent := ex.id + "TrackSwap"
+	doneCh := make(chan struct{})
+	tf := &utils.TtFeed{
+		P:        ex.provider(),
+		TxHash:   common.HexToHash(o.Swaps[i].ExId),
+		Receiver: &ex.router,
+		NeedTx:   true,
+		DoneCh:   doneCh,
+	}
+
+	go ex.tt.Track(tf)
+
+	<-doneCh
+
+	switch tf.Status {
+	case utils.TxSuccess:
+		vol, err := ex.parseSwapLogs(o, tf.Tx, tf.Receipt)
+		if err != nil {
+			o.Swaps[i].Status = entity.ExOrderFailed
+			o.Swaps[i].FailedDesc = err.Error()
+		}
+
+		var decimals int
+		if o.Routes[i].Output.CoinId == p.T1.Symbol {
+			decimals = p.T1.Decimals
+		} else {
+			decimals = p.T2.Decimals
+		}
+
+		amount := numbers.BigIntToFloatString(vol, decimals)
+		fee := utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
+
+		o.Swaps[i].OutAmount = amount
+		o.Swaps[i].Status = entity.ExOrderSucceed
+		o.Swaps[i].Fee = fee
+		o.Swaps[i].FeeCurrency = ex.nt
+
+		ex.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
+			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
+
+	case utils.TxFailed:
+		o.Swaps[i].Status = entity.ExOrderFailed
+		o.Swaps[i].FailedDesc = tf.Faildesc
+	}
+
 }

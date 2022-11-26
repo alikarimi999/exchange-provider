@@ -30,73 +30,72 @@ const (
 	FCWithdFailed
 )
 
-type UserOrder struct {
-	Id        int64
-	UserId    int64
-	Seq       int64
+type Route struct {
+	Input    *Coin
+	Output   *Coin
+	Exchange string
+}
+
+type Order struct {
+	Id     int64
+	UserId int64
+
 	CreatedAt int64
 	Status    OrderStatus
-	Exchange  string
-	BC        *Coin
-	QC        *Coin
-	Side      string // buy or sell
 
-	SpreadVol     string
-	SpreadRate    string
-	Deposit       *Deposit
-	ExchangeOrder *ExchangeOrder
-	Withdrawal    *Withdrawal
-	FailedCode    int64
-	FailedDesc    string
+	Deposit *Deposit
+
+	Routes map[int]*Route
+	Swaps  map[int]*Swap
+
+	Withdrawal *Withdrawal
+
+	SpreadVol  string
+	SpreadRate string
+
+	FailedCode int64
+	FailedDesc string
 	MetaData
 }
 
-func NewOrder(userId int64, wAddress, dAddress *Address, bc, qc *Coin, side string, ex string) *UserOrder {
-	w := &UserOrder{
+func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) *Order {
+	o := &Order{
 		UserId:    userId,
 		CreatedAt: time.Now().Unix(),
 		Status:    OSNew,
-		Exchange:  ex,
-		BC:        bc,
-		QC:        qc,
-		Side:      side,
+		Routes:    routes,
+
 		Deposit: &Deposit{
 			UserId:   userId,
 			Status:   "",
-			Exchange: ex,
+			Exchange: routes[0].Exchange,
 			Address:  dAddress,
+			Coin:     routes[0].Input,
 		},
 
-		ExchangeOrder: &ExchangeOrder{
-			UserId:   userId,
-			Status:   "",
-			Exchange: ex,
-			Side:     side,
-		},
+		Swaps: make(map[int]*Swap),
+
 		Withdrawal: &Withdrawal{
 			UserId:   userId,
 			Address:  wAddress,
-			Exchange: ex,
+			Exchange: routes[len(routes)-1].Exchange,
 			Status:   "",
+			Coin:     routes[len(routes)-1].Output,
 		},
 		MetaData: make(MetaData),
 	}
 
-	if side == "buy" {
-		w.Deposit.Coin = qc
-		w.Withdrawal.Coin = bc
-	} else {
-		w.Deposit.Coin = bc
-		w.Withdrawal.Coin = qc
+	for i := range o.Routes {
+		o.Swaps[i] = &Swap{
+			UserId: o.UserId,
+		}
 	}
 
-	w.Withdrawal.OrderId = w.Id
-	w.ExchangeOrder.OrderId = w.Id
-	return w
+	return o
 }
 
 // implement stringer interface
-func (o *UserOrder) String() string {
+func (o *Order) String() string {
 	b, _ := json.Marshal(o)
 	return string(b)
 }

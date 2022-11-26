@@ -26,27 +26,27 @@ type Coin struct {
 }
 
 type kuPair struct {
-	BC *Coin `json:"base_coin"`
-	QC *Coin `json:"quote_coin"`
+	C1 *Coin `json:"coin1"`
+	C2 *Coin `json:"coin2"`
 }
 
 func (p *kuPair) Map() *kdto.Pair {
 
 	pair := &kdto.Pair{
-		BC: &kdto.Coin{
-			CoinId:              p.BC.CoinId,
-			ChainId:             p.BC.ChainId,
-			WithdrawalPrecision: p.BC.WithdrawalPrecision,
+		C1: &kdto.Coin{
+			CoinId:              p.C1.CoinId,
+			ChainId:             p.C1.ChainId,
+			WithdrawalPrecision: p.C1.WithdrawalPrecision,
 		},
-		QC: &kdto.Coin{
-			CoinId:              p.QC.CoinId,
-			ChainId:             p.QC.ChainId,
-			WithdrawalPrecision: p.QC.WithdrawalPrecision,
+		C2: &kdto.Coin{
+			CoinId:              p.C2.CoinId,
+			ChainId:             p.C2.ChainId,
+			WithdrawalPrecision: p.C2.WithdrawalPrecision,
 		},
 	}
 
-	pair.BC.BlockTime, _ = toTime(p.BC.BlockTime)
-	pair.QC.BlockTime, _ = toTime(p.QC.BlockTime)
+	pair.C1.BlockTime, _ = toTime(p.C1.BlockTime)
+	pair.C2.BlockTime, _ = toTime(p.C2.BlockTime)
 
 	return pair
 }
@@ -59,22 +59,22 @@ type KucoinAddPairsRequest struct {
 // if there was return an error that the value must set
 func (r *KucoinAddPairsRequest) Validate() error {
 	for _, p := range r.Pairs {
-		if p.BC.CoinId == "" || p.BC.ChainId == "" {
+		if p.C1.CoinId == "" || p.C1.ChainId == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin must have id"))
 		}
-		if p.QC.CoinId == "" || p.QC.ChainId == "" {
+		if p.C2.CoinId == "" || p.C2.ChainId == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin must have id"))
 		}
 
-		if p.BC.WithdrawalPrecision == 0 || p.QC.WithdrawalPrecision == 0 {
+		if p.C1.WithdrawalPrecision == 0 || p.C2.WithdrawalPrecision == 0 {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("withdrawal_precision must be set"))
 		}
 
-		if _, err := toTime(p.BC.BlockTime); err != nil {
+		if _, err := toTime(p.C1.BlockTime); err != nil {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
 		}
 
-		if _, err := toTime(p.QC.BlockTime); err != nil {
+		if _, err := toTime(p.C2.BlockTime); err != nil {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
 		}
 
@@ -82,27 +82,9 @@ func (r *KucoinAddPairsRequest) Validate() error {
 	return nil
 }
 
-func (r *kuPair) BaseCoin() (*entity.Coin, error) {
-	c := &entity.Coin{
-		CoinId:  r.BC.CoinId,
-		ChainId: r.BC.ChainId,
-	}
-
-	return c, nil
-}
-
-func (r *kuPair) QuoteCoin() (*entity.Coin, error) {
-	c := &entity.Coin{
-		CoinId:  r.QC.CoinId,
-		ChainId: r.QC.ChainId,
-	}
-
-	return c, nil
-}
-
 type AdminPair struct {
-	BC *Coin `json:"base_coin"`
-	QC *Coin `json:"quote_coin"`
+	C1 *Coin `json:"coin1"`
+	C2 *Coin `json:"coin2"`
 
 	ContractAddress      string   `json:"contract_address,omitempty"`
 	FeeTier              int64    `json:"fee_tier,omitempty"`
@@ -116,37 +98,37 @@ type AdminPair struct {
 
 func PairDTO(p *entity.Pair) *AdminPair {
 	return &AdminPair{
-		BC: &Coin{
-			CoinId:              p.BC.Coin.CoinId,
-			ChainId:             p.BC.Coin.ChainId,
-			ContractAddress:     p.BC.ContractAddress,
-			Address:             p.BC.Address,
-			Tag:                 p.BC.Tag,
-			BlockTime:           p.BC.BlockTime.String(),
-			MinDeposit:          p.BC.MinDeposit,
-			MinOrderSize:        p.BC.MinOrderSize,
-			MaxOrderSize:        p.BC.MaxOrderSize,
-			MinWithdrawalSize:   p.BC.MinWithdrawalSize,
-			MinWithdrawalFee:    p.BC.WithdrawalMinFee,
-			OrderPrecision:      p.BC.OrderPrecision,
-			WithdrawalPrecision: p.BC.WithdrawalPrecision,
-			SetChain:            p.BC.SetChain,
+		C1: &Coin{
+			CoinId:              p.C1.Coin.CoinId,
+			ChainId:             p.C1.Coin.ChainId,
+			ContractAddress:     p.C1.ContractAddress,
+			Address:             p.C1.Address,
+			Tag:                 p.C1.Tag,
+			BlockTime:           p.C1.BlockTime.String(),
+			MinDeposit:          p.C1.MinDeposit,
+			MinOrderSize:        p.C1.MinOrderSize,
+			MaxOrderSize:        p.C1.MaxOrderSize,
+			MinWithdrawalSize:   p.C1.MinWithdrawalSize,
+			MinWithdrawalFee:    p.C1.WithdrawalMinFee,
+			OrderPrecision:      p.C1.OrderPrecision,
+			WithdrawalPrecision: p.C1.WithdrawalPrecision,
+			SetChain:            p.C1.SetChain,
 		},
-		QC: &Coin{
-			CoinId:              p.QC.Coin.CoinId,
-			ChainId:             p.QC.Coin.ChainId,
-			ContractAddress:     p.QC.ContractAddress,
-			Address:             p.QC.Address,
-			Tag:                 p.QC.Tag,
-			BlockTime:           p.BC.BlockTime.String(),
-			MinDeposit:          p.QC.MinDeposit,
-			MinOrderSize:        p.QC.MinOrderSize,
-			MaxOrderSize:        p.QC.MaxOrderSize,
-			MinWithdrawalSize:   p.QC.MinWithdrawalSize,
-			MinWithdrawalFee:    p.QC.WithdrawalMinFee,
-			OrderPrecision:      p.QC.OrderPrecision,
-			WithdrawalPrecision: p.QC.WithdrawalPrecision,
-			SetChain:            p.QC.SetChain,
+		C2: &Coin{
+			CoinId:              p.C2.Coin.CoinId,
+			ChainId:             p.C2.Coin.ChainId,
+			ContractAddress:     p.C2.ContractAddress,
+			Address:             p.C2.Address,
+			Tag:                 p.C2.Tag,
+			BlockTime:           p.C1.BlockTime.String(),
+			MinDeposit:          p.C2.MinDeposit,
+			MinOrderSize:        p.C2.MinOrderSize,
+			MaxOrderSize:        p.C2.MaxOrderSize,
+			MinWithdrawalSize:   p.C2.MinWithdrawalSize,
+			MinWithdrawalFee:    p.C2.WithdrawalMinFee,
+			OrderPrecision:      p.C2.OrderPrecision,
+			WithdrawalPrecision: p.C2.WithdrawalPrecision,
+			SetChain:            p.C2.SetChain,
 		},
 
 		ContractAddress:      p.ContractAddress,

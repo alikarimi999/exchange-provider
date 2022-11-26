@@ -24,7 +24,7 @@ func (o *OrderUseCase) write(data interface{}) error {
 // WriteToPersistentStorage writes the given data to the persistent storage.
 func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 	switch d := data.(type) {
-	case *entity.UserOrder:
+	case *entity.Order:
 		if d.Status == entity.OSNew {
 			return o.repo.Add(d)
 		}
@@ -39,7 +39,7 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 // WriteToCache writes the given data to the cache.
 func (o *OrderUseCase) writeToCache(data interface{}) error {
 	switch d := data.(type) {
-	case *entity.UserOrder:
+	case *entity.Order:
 		if d.Status == entity.OSSucceed || d.Status == entity.OSFailed {
 			return nil
 		}

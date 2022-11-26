@@ -1,15 +1,15 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
 func (k *kucoinExchange) setPrice(p *entity.Pair) error {
-	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.BC.Coin.CoinId, pairDelimiter, p.QC.Coin.CoinId))
+	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.C1.Coin.CoinId, pairDelimiter, p.C2.Coin.CoinId))
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error(fmt.Sprintf("%s.setPrice", k.NID()), err.Error())
 		return err
@@ -29,7 +29,7 @@ func (k *kucoinExchange) setPrice(p *entity.Pair) error {
 }
 
 func (k *kucoinExchange) setOrderFeeRate(p *entity.Pair) error {
-	res, err := k.api.ActualFee(fmt.Sprintf("%s%s%s", p.BC.Coin.CoinId, pairDelimiter, p.QC.Coin.CoinId))
+	res, err := k.api.ActualFee(fmt.Sprintf("%s%s%s", p.C1.Coin.CoinId, pairDelimiter, p.C2.Coin.CoinId))
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
 		return err

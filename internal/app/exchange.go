@@ -46,16 +46,16 @@ func (o *OrderUseCase) GetAllDeactivesExchanges() []*Exchange {
 	return o.exs.getDeactives()
 }
 
-func (o *OrderUseCase) SelectExchangeByPair(bc, qc *entity.Coin) (entity.Exchange, error) {
+func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Coin) (entity.Exchange, error) {
 	exs := []entity.Exchange{}
 	for _, ex := range o.exs.getActives() {
-		if ex.Support(bc, qc) {
+		if ex.Support(in, out) {
 			exs = append(exs, ex.Exchange)
 		}
 	}
 
 	if len(exs) == 0 {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("no exchange support %s/%s", bc.String(), qc.String())))
+		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("no exchange support %s/%s", in.String(), out.String())))
 	}
 
 	// pick one randomly

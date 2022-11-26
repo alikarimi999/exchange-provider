@@ -5,12 +5,12 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (o *OrderUseCase) SetTxId(userId, seq int64, txId string) error {
+func (o *OrderUseCase) SetTxId(Id, userId int64, txId string) error {
 	const op = errors.Op("OrderUseCase.SetTxId")
 
-	ord := &entity.UserOrder{
+	ord := &entity.Order{
+		Id:     Id,
 		UserId: userId,
-		Seq:    seq,
 	}
 	if err := o.read(ord); err != nil {
 		if errors.ErrorCode(err) == errors.ErrNotFound {

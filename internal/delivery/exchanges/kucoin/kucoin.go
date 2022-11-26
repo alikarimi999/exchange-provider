@@ -1,9 +1,9 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -32,7 +32,7 @@ type kucoinExchange struct {
 
 	api *kucoin.ApiService
 	// ws   *webSocket
-	ot  *orderTracker
+
 	wt  *withdrawalTracker
 	da  *depositAggregator
 	dt  *depositTracker
@@ -49,7 +49,8 @@ type kucoinExchange struct {
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l logger.Logger, readConfig bool) (entity.Exchange, error) {
+func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
+	l logger.Logger, readConfig bool) (entity.Exchange, error) {
 	const op = errors.Op("Kucoin-Exchange.NewKucoinExchange")
 
 	cfg, err := validateConfigs(cfgi)
@@ -82,7 +83,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 	}
 	k.l.Debug(string(op), "ping was successful")
 	c := newCache(k, rc, k.l)
-	k.ot = newOrderTracker(k, k.api, l)
+
 	k.wt = newWithdrawalTracker(k, c)
 	k.da = newDepositAggregator(k, c)
 	k.dt = newDepositTracker(k, c)
@@ -103,10 +104,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 			ps := make(map[string]*pair)
 			for _, v := range psi {
 				p := v.(map[string]interface{})
-				pc := &pair{
-					Id:     p["id"].(string),
-					Symbol: p["symbol"].(string),
-				}
+				pc := &pair{}
 				if p["bc"] != nil && p["qc"] != nil {
 					pc.BC = &kuCoin{
 						CoinId:              p["bc"].(map[string]interface{})["coin_id"].(string),
@@ -124,7 +122,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 						WithdrawalPrecision: int(p["qc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
-					ps[pc.Id] = pc
+					ps[pc.Id()] = pc
 				}
 			}
 
@@ -134,7 +132,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 				ok, _ := k.pls.support(p)
 				if !ok {
 					k.l.Debug(string(op), fmt.Sprintf("pair %s is not supported by kucoin anymore", p.String()))
-					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id))
+					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id()))
 					if err := k.v.WriteConfig(); err != nil {
 						k.l.Error(string(op), err.Error())
 					}
@@ -142,7 +140,8 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 				}
 
 				if err := k.setInfos(p); err != nil {
-					k.l.Error(string(op), fmt.Sprintf("failed to set infos for pair %s du to error (%s)", p.String(), err.Error()))
+					k.l.Error(string(op), fmt.Sprintf("failed to set infos for pair %s du to error (%s)",
+						p.String(), err.Error()))
 					continue
 				}
 
@@ -167,8 +166,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper, l log
 func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 	w := &sync.WaitGroup{}
-	w.Add(1)
-	go k.ot.run(w, k.stopCh)
+
 	w.Add(1)
 	go k.wt.run(w, k.stopCh)
 	w.Add(1)

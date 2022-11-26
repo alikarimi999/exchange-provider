@@ -1,9 +1,9 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -74,6 +74,19 @@ func (pl *pairList) support(p *pair) (bool, error) {
 			p.feeCurrency = pair.FeeCurrency
 
 			return true, nil
+		} else if pair.BaseCurrency == p.QC.CoinId && pair.QuoteCurrency == p.BC.CoinId {
+			x := p.QC
+			p.QC = p.BC
+			p.BC = x
+
+			p.BC.minOrderSize = pair.BaseMinSize
+			p.BC.maxOrderSize = pair.BaseMaxSize
+			p.BC.orderPrecision = calcPrecision(pair.BaseIncrement)
+			p.QC.minOrderSize = pair.QuoteMinSize
+			p.QC.maxOrderSize = pair.QuoteMaxSize
+			p.QC.orderPrecision = calcPrecision(pair.QuoteIncrement)
+
+			p.feeCurrency = pair.FeeCurrency
 		}
 	}
 

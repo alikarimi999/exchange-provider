@@ -1,10 +1,10 @@
 package kucoin
 
 import (
-	"fmt"
 	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -80,12 +80,13 @@ func (k *kuCoin) toEntityCoin() *entity.PairCoin {
 }
 
 type pair struct {
-	Id          string  // base.id + base.Chain.Id + quote.id + quote.Chain.Id
-	Symbol      string  // base.id + pairDelimiter + quote.id
 	BC          *kuCoin // base coin
 	QC          *kuCoin // quote coin
 	feeCurrency string
 }
+
+func (p *pair) Id() string     { return p.BC.CoinId + p.BC.ChainId + p.QC.CoinId + p.QC.ChainId }
+func (p *pair) Symbol() string { return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String()) }
 
 func (p *pair) String() string {
 	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
@@ -93,8 +94,6 @@ func (p *pair) String() string {
 
 func (p *pair) snapshot() *pair {
 	return &pair{
-		Id:          p.Id,
-		Symbol:      p.Symbol,
 		BC:          p.BC.snapshot(),
 		QC:          p.QC.snapshot(),
 		feeCurrency: p.feeCurrency,
@@ -103,27 +102,25 @@ func (p *pair) snapshot() *pair {
 
 func fromDto(p *dto.Pair) *pair {
 	return &pair{
-		Id:     p.BC.CoinId + p.BC.ChainId + p.QC.CoinId + p.QC.ChainId,
-		Symbol: p.BC.CoinId + pairDelimiter + p.QC.CoinId,
 		BC: &kuCoin{
-			CoinId:              p.BC.CoinId,
-			ChainId:             p.BC.ChainId,
-			BlockTime:           p.BC.BlockTime,
-			WithdrawalPrecision: p.BC.WithdrawalPrecision,
+			CoinId:              p.C1.CoinId,
+			ChainId:             p.C1.ChainId,
+			BlockTime:           p.C1.BlockTime,
+			WithdrawalPrecision: p.C1.WithdrawalPrecision,
 		},
 		QC: &kuCoin{
-			CoinId:              p.QC.CoinId,
-			ChainId:             p.QC.ChainId,
-			BlockTime:           p.QC.BlockTime,
-			WithdrawalPrecision: p.QC.WithdrawalPrecision,
+			CoinId:              p.C2.CoinId,
+			ChainId:             p.C2.ChainId,
+			BlockTime:           p.C2.BlockTime,
+			WithdrawalPrecision: p.C2.WithdrawalPrecision,
 		},
 	}
 }
 
 func (p *pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		BC:          p.BC.toEntityCoin(),
-		QC:          p.QC.toEntityCoin(),
+		C1:          p.BC.toEntityCoin(),
+		C2:          p.QC.toEntityCoin(),
 		FeeCurrency: p.feeCurrency,
 	}
 }
@@ -144,28 +141,18 @@ func (sp *exPairs) add(pairs ...*pair) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 	for _, p := range pairs {
-		sp.pairs[p.Id] = p.snapshot()
+		sp.pairs[p.Id()] = p.snapshot()
 	}
 }
 
-func (sp *exPairs) exists(bc, qc *kuCoin) bool {
+func (sp *exPairs) get(c1, c2 *entity.Coin) (*pair, error) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
-	_, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
-	if exist {
-		return true
-	}
-
-	return exist
-}
-
-func (sp *exPairs) get(bc, qc *entity.Coin) (*pair, error) {
-	sp.mux.Lock()
-	defer sp.mux.Unlock()
-	p, exist := sp.pairs[bc.CoinId+bc.ChainId+qc.CoinId+qc.ChainId]
-	if exist {
-		return p.snapshot(), nil
+	if p, exist := sp.pairs[pId(c1, c2)]; exist {
+		return p, nil
+	} else if p, exist = sp.pairs[pId(c2, c1)]; exist {
+		return p, nil
 	}
 
 	return nil, errors.New("pair not found")
@@ -192,4 +179,7 @@ func (sp *exPairs) snapshot() []*pair {
 		pairs = append(pairs, p.snapshot())
 	}
 	return pairs
+}
+func pId(bc, qc *entity.Coin) string {
+	return bc.CoinId + bc.ChainId + qc.CoinId + qc.ChainId
 }

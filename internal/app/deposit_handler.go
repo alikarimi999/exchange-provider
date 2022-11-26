@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
-	"strconv"
 	"sync"
 )
 
@@ -64,7 +63,7 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 func (h *depositHandler) confirmedDposit(userId, orderId int64) error {
 	const op = errors.Op("depositHandler.confirmedDposit")
 
-	o := &entity.UserOrder{Id: orderId, UserId: userId}
+	o := &entity.Order{Id: orderId, UserId: userId}
 
 	err := h.o.read(o)
 	if err != nil {
@@ -72,38 +71,38 @@ func (h *depositHandler) confirmedDposit(userId, orderId int64) error {
 		return err
 	}
 
-	minBc, minQc := h.o.pc.PairMinDeposit(o.BC, o.QC)
-	vf, _ := strconv.ParseFloat(o.Deposit.Volume, 64)
+	// minBc, minQc := h.o.pc.PairMinDeposit(o.BC, o.QC)
+	// vf, _ := strconv.ParseFloat(o.Deposit.Volume, 64)
 
-	switch o.Side {
-	case "buy":
-		if vf < minQc {
-			o.Deposit.Status = entity.DepositFailed
-			o.Deposit.FailedDesc = BR_InsufficientDepositVolume
-			o.Status = entity.OSFailed
-			o.FailedCode = entity.FCDepositFailed
+	// switch o.Side {
+	// case "buy":
+	// 	if vf < minQc {
+	// 		o.Deposit.Status = entity.DepositFailed
+	// 		o.Deposit.FailedDesc = BR_InsufficientDepositVolume
+	// 		o.Status = entity.OSFailed
+	// 		o.FailedCode = entity.FCDepositFailed
 
-			if err := h.o.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
-				return err
-			}
-			return nil
-		}
+	// 		if err := h.o.write(o); err != nil {
+	// 			h.l.Error(string(op), err.Error())
+	// 			return err
+	// 		}
+	// 		return nil
+	// 	}
 
-	case "sell":
-		if vf < minBc {
-			o.Deposit.Status = entity.DepositFailed
-			o.Deposit.FailedDesc = BR_InsufficientDepositVolume
-			o.Status = entity.OSFailed
-			o.FailedCode = entity.FCDepositFailed
+	// case "sell":
+	// 	if vf < minBc {
+	// 		o.Deposit.Status = entity.DepositFailed
+	// 		o.Deposit.FailedDesc = BR_InsufficientDepositVolume
+	// 		o.Status = entity.OSFailed
+	// 		o.FailedCode = entity.FCDepositFailed
 
-			if err := h.o.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
-				return err
-			}
-			return nil
-		}
-	}
+	// 		if err := h.o.write(o); err != nil {
+	// 			h.l.Error(string(op), err.Error())
+	// 			return err
+	// 		}
+	// 		return nil
+	// 	}
+	// }
 
 	o.Status = entity.OSDepositeConfimred
 
@@ -119,7 +118,7 @@ func (h *depositHandler) confirmedDposit(userId, orderId int64) error {
 
 func (u *depositHandler) failedDeposit(userId, orderId int64) {
 	const agent = "depositHandler.failedDeposit"
-	o := &entity.UserOrder{Id: orderId, UserId: userId}
+	o := &entity.Order{Id: orderId, UserId: userId}
 
 	err := u.o.read(o)
 	if err != nil {

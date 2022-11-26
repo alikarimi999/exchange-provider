@@ -49,10 +49,6 @@ func DToDto(d *entity.Deposit) *Deposit {
 }
 
 func (d *Deposit) ToEntity() *entity.Deposit {
-	if d == nil {
-		return &entity.Deposit{}
-	}
-
 	return &entity.Deposit{
 		Id:      d.Id,
 		UserId:  d.UserId,

@@ -3,11 +3,10 @@ package entity
 import "time"
 
 type OrderCache interface {
-	Add(order *UserOrder) error
+	Add(order *Order) error
 	UpdateDeposit(d *Deposit) error
-	Get(userId, id int64) (*UserOrder, error)
-	GetAll(userId int64) ([]*UserOrder, error)
-	GetBySeq(uId, seq int64) (*UserOrder, error)
+	Get(userId, id int64) (*Order, error)
+	GetAll(userId int64) ([]*Order, error)
 	Delete(userId, id int64) error
 
 	WithdrawalCache

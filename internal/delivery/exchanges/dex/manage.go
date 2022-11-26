@@ -42,7 +42,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 		wg.Add(1)
 		go func(p types.Pair) {
 			defer wg.Done()
-			newPair, err := u.PairWithPrice(p.BT, p.QT)
+			newPair, err := u.PairWithPrice(p.T1, p.T2)
 			if err != nil {
 				u.l.Error(agent, err.Error())
 				return
@@ -80,7 +80,7 @@ func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 		return nil, err
 	}
 
-	p, err = u.PairWithPrice(p.BT, p.QT)
+	p, err = u.PairWithPrice(p.T1, p.T2)
 	if err != nil {
 		return nil, err
 	}
@@ -95,18 +95,18 @@ func (u *dex) Support(bc, qc *entity.Coin) bool {
 	return err == nil
 }
 
-func (u *dex) RemovePair(bc, qc *entity.Coin) error {
-	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
+func (u *dex) RemovePair(t1, t2 *entity.Coin) error {
+	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 
-	if u.pairs.existsExactly(bc.CoinId, qc.CoinId) {
-		id := pairId(bc.CoinId, qc.CoinId)
+	if p, err := u.pairs.get(t1.CoinId, t2.CoinId); err == nil {
+		id := pairId(p.T1.Symbol, p.T2.Symbol)
 		delete(u.v.Get(fmt.Sprintf("%s.pairs", u.NID())).(map[string]interface{}), strings.ToLower(id))
 		if err := u.v.WriteConfig(); err != nil {
 			return err
 		}
-		return u.pairs.remove(bc.CoinId, qc.CoinId)
+		return u.pairs.remove(t1.CoinId, t2.CoinId)
 	}
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }

@@ -31,24 +31,25 @@ func (d *dex) trackDeposit(f *dtFeed) {
 		destAddress = f.token.Address
 	}
 
-	tf := &ttFeed{
-		txHash:     txHash,
-		receiver:   &destAddress,
-		needTx:     f.token.IsNative(),
-		maxRetries: 20,
-		confirms:   3,
-		doneCh:     doneCh,
+	tf := &utils.TtFeed{
+		P:          d.provider(),
+		TxHash:     txHash,
+		Receiver:   &destAddress,
+		NeedTx:     f.token.IsNative(),
+		MaxRetries: 50,
+		Confirms:   3,
+		DoneCh:     doneCh,
 	}
 
-	go d.tt.track(tf)
+	go d.tt.Track(tf)
 
 	<-doneCh
-	switch tf.status {
-	case txFailed:
+	switch tf.Status {
+	case utils.TxFailed:
 		f.d.Status = entity.DepositFailed
-		f.d.FailedDesc = tf.faildesc
+		f.d.FailedDesc = tf.Faildesc
 		f.done <- struct{}{}
-	case txSuccess:
+	case utils.TxSuccess:
 		if !f.token.IsNative() {
 			if len(tf.Logs) == 0 {
 				f.d.Status = entity.DepositFailed
@@ -84,14 +85,14 @@ func (d *dex) trackDeposit(f *dtFeed) {
 			f.d.Volume = numbers.BigIntToFloatString(bn, int(f.token.Decimals))
 			f.d.Status = entity.DepositConfirmed
 			d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-				f.d.OrderId, tf.txHash, tf.confirmed, tf.confirms))
+				f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 			f.done <- struct{}{}
 			break
 		}
-		f.d.Volume = numbers.BigIntToFloatString(tf.tx.Value(), f.token.Decimals)
+		f.d.Volume = numbers.BigIntToFloatString(tf.Tx.Value(), f.token.Decimals)
 		f.d.Status = entity.DepositConfirmed
 		d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			f.d.OrderId, tf.txHash, tf.confirmed, tf.confirms))
+			f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 		f.done <- struct{}{}
 
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"exchange-provider/internal/delivery/exchanges/dex/pancakeswap/v2/contracts"
 	ts "exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/utils/numbers"
@@ -22,6 +23,9 @@ type Panckakeswapv2 struct {
 	wallet *eth.HDWallet
 	router common.Address
 
+	nt string
+	tt *utils.TxTracker
+
 	chainId int64
 	abi     abi.ABI
 	ps      []*ts.Provider
@@ -29,13 +33,18 @@ type Panckakeswapv2 struct {
 	l logger.Logger
 }
 
-func NewPanckakeswapV2(id string, wallet *eth.HDWallet, router common.Address, ps []*ts.Provider, l logger.Logger) (*Panckakeswapv2, error) {
+func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker, router common.Address,
+	ps []*ts.Provider, l logger.Logger) (*Panckakeswapv2, error) {
 	p := &Panckakeswapv2{
 		id:     id,
 		wallet: wallet,
 		router: router,
-		ps:     ps,
-		l:      l,
+
+		nt: nt,
+		tt: tt,
+
+		ps: ps,
+		l:  l,
 	}
 
 	abi, err := abi.JSON(strings.NewReader(string(contracts.EventsABI)))
@@ -51,7 +60,7 @@ func NewPanckakeswapV2(id string, wallet *eth.HDWallet, router common.Address, p
 	return p, nil
 }
 
-func (p *Panckakeswapv2) Swap(o *entity.UserOrder, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
+func (p *Panckakeswapv2) Swap(o *entity.Order, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	contract, err := contracts.NewContract(p.router, p.provider())
 	if err != nil {

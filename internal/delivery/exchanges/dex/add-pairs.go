@@ -28,7 +28,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.NID()))
 	for _, dp := range req.Pairs {
-		if d.pairs.exist(dp.BT, dp.QT) {
+		if d.pairs.exist(dp.C1, dp.C2) {
 			d.l.Debug(agent, fmt.Sprintf("pair %s already exists", dp.String()))
 			res.Existed = append(res.Existed, dp.String())
 			continue
@@ -37,16 +37,16 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 		pwg.Add(1)
 		go func(p *dto.Pair) {
 			defer pwg.Done()
-			if err := d.addPair(p.BT, p.QT); err != nil {
+			if err := d.addPair(p.C1, p.C2); err != nil {
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
 				return
 			}
 			res.Added = append(res.Added, entity.Pair{
-				BC: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.BT, ChainId: d.cfg.TokenStandard},
+				C1: &entity.PairCoin{
+					Coin: &entity.Coin{CoinId: p.C1, ChainId: d.cfg.TokenStandard},
 				},
-				QC: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.QT, ChainId: d.cfg.TokenStandard},
+				C2: &entity.PairCoin{
+					Coin: &entity.Coin{CoinId: p.C2, ChainId: d.cfg.TokenStandard},
 				},
 			})
 			ps = append(ps, p.String())
@@ -61,7 +61,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	return res, nil
 }
 
-func (d *dex) addPair(bt string, qt string) error {
+func (d *dex) addPair(t1 string, t2 string) error {
 	ts := &tokens{}
 
 	b, err := os.ReadFile(d.cfg.TokensFile)
@@ -76,12 +76,12 @@ func (d *dex) addPair(bt string, qt string) error {
 	var btIsNative bool
 	var qtIsNative bool
 
-	if bt == d.cfg.NativeToken {
-		bt = d.cfg.wrapNative()
+	if t1 == d.cfg.NativeToken {
+		t1 = d.cfg.wrapNative()
 		btIsNative = true
 	}
-	if qt == d.cfg.NativeToken {
-		qt = d.cfg.wrapNative()
+	if t2 == d.cfg.NativeToken {
+		t2 = d.cfg.wrapNative()
 		qtIsNative = true
 	}
 
@@ -90,23 +90,23 @@ func (d *dex) addPair(bt string, qt string) error {
 			continue
 		}
 
-		if t0.Symbol == bt {
+		if t0.Symbol == t1 {
 			for _, t1 := range ts.Tokens {
 				if t1.ChainId != int64(d.cfg.ChianId) {
 					continue
 				}
-				if t1.Symbol == qt {
+				if t1.Symbol == t2 {
 					pair, err := d.Pair(t0, t1)
 					if err != nil {
 						return err
 					}
 
 					if btIsNative {
-						pair.BT.Symbol = d.cfg.NativeToken
-						pair.BT.Native = true
+						pair.T1.Symbol = d.cfg.NativeToken
+						pair.T1.Native = true
 					} else if qtIsNative {
-						pair.QT.Symbol = d.cfg.NativeToken
-						pair.QT.Native = true
+						pair.T2.Symbol = d.cfg.NativeToken
+						pair.T2.Native = true
 					}
 
 					// check pair's tokens allowance
@@ -119,14 +119,14 @@ func (d *dex) addPair(bt string, qt string) error {
 					var approveErr1 []error
 					wg.Add(1)
 					go func() {
-						approveErr1 = d.am.infinitApproves(pair.BT, d.cfg.Router, adds...)
+						approveErr1 = d.am.InfinitApproves(pair.T1, d.cfg.Router, int64(d.cfg.ChianId), adds...)
 						wg.Done()
 					}()
 
 					var approveErr2 []error
 					wg.Add(1)
 					go func() {
-						approveErr2 = d.am.infinitApproves(pair.QT, d.cfg.Router, adds...)
+						approveErr2 = d.am.InfinitApproves(pair.T2, d.cfg.Router, int64(d.cfg.ChianId), adds...)
 						wg.Done()
 					}()
 
@@ -148,16 +148,16 @@ func (d *dex) addPair(bt string, qt string) error {
 					}
 
 					d.pairs.add(*pair)
-					d.tokens.add(pair.BT, pair.QT)
+					d.tokens.add(pair.T1, pair.T2)
 					return nil
 				}
 
 			}
 			return errors.New(
-				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", qt, d.cfg.ChianId))
+				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t2, d.cfg.ChianId))
 		}
 	}
 	return errors.New(
-		fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", bt, d.cfg.ChianId))
+		fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t1, d.cfg.ChianId))
 
 }

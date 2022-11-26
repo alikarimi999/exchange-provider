@@ -25,8 +25,7 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 	aps := []*pair{}
 	for _, p := range ps {
-
-		if k.exchangePairs.exists(p.BC, p.QC) {
+		if _, err := k.exchangePairs.get(p.BC.toEntityCoin().Coin, p.QC.toEntityCoin().Coin); err == nil {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
@@ -62,10 +61,10 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 		}
 		aps = append(aps, p)
 		res.Added = append(res.Added, entity.Pair{
-			BC: &entity.PairCoin{
+			C1: &entity.PairCoin{
 				Coin: &entity.Coin{CoinId: p.BC.CoinId, ChainId: p.BC.ChainId},
 			},
-			QC: &entity.PairCoin{
+			C2: &entity.PairCoin{
 				Coin: &entity.Coin{CoinId: p.QC.CoinId, ChainId: p.QC.ChainId},
 			},
 		})
@@ -120,21 +119,24 @@ func (k *kucoinExchange) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 }
 
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Coin) error {
-	if k.exchangePairs.exists(coinFromEntity(bc), coinFromEntity(qc)) {
-		id := bc.CoinId + bc.ChainId + qc.CoinId + qc.ChainId
-		delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(id))
+	if p, err := k.exchangePairs.get(bc, qc); err != nil {
+		delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}),
+			strings.ToLower(p.Id()))
 		if err := k.v.WriteConfig(); err != nil {
 			return err
 		}
 
-		k.exchangePairs.remove(id)
+		k.exchangePairs.remove(p.Id())
 		return nil
 	}
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }
 
-func (k *kucoinExchange) Support(bc, qc *entity.Coin) bool {
-	return k.exchangePairs.exists(coinFromEntity(bc), coinFromEntity(qc))
+func (k *kucoinExchange) Support(c1, c2 *entity.Coin) bool {
+	if _, err := k.exchangePairs.get(c1, c2); err != nil {
+		return false
+	}
+	return true
 }
 
 func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
@@ -172,7 +174,7 @@ func (k *kucoinExchange) StartAgain() (*entity.StartAgainResult, error) {
 		}
 
 		if !ok {
-			delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id))
+			delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id()))
 			if err := k.v.WriteConfig(); err != nil {
 				k.l.Error(string(op), err.Error())
 			}

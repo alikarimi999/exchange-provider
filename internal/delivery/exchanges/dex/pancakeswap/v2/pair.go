@@ -10,7 +10,7 @@ import (
 )
 
 func (p *Panckakeswapv2) Pair(bt, qt types.Token) (*types.Pair, error) {
-	return &types.Pair{BT: bt, QT: qt}, nil
+	return &types.Pair{T1: bt, T2: qt}, nil
 }
 
 func (p *Panckakeswapv2) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
@@ -26,8 +26,8 @@ func (p *Panckakeswapv2) PairWithPrice(bt, qt types.Token) (*types.Pair, error) 
 	}
 
 	pair := &types.Pair{
-		BT: bt,
-		QT: qt,
+		T1: bt,
+		T2: qt,
 	}
 
 	pair.Price = big.NewInt(0).Div(amounts[1], big.NewInt(int64(math.Pow10(6)))).String()

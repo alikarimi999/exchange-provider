@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"fmt"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 )
 
 type PaginatedUserOrdersRequest struct {
@@ -56,18 +56,18 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 	return nil
 }
 
-func (r *PaginatedUserOrdersRequest) Map() *entity.PaginatedUserOrders {
+func (r *PaginatedUserOrdersRequest) Map() *entity.PaginatedOrders {
 	fs := []*entity.Filter{}
 
 	for _, f := range r.Fs {
 		fs = append(fs, f.ToEntity())
 	}
 
-	return &entity.PaginatedUserOrders{
+	return &entity.PaginatedOrders{
 		Page:    r.CurrentPage,
 		PerPage: r.PageSize,
 		Filters: fs,
-		Orders:  []*entity.UserOrder{},
+		Orders:  []*entity.Order{},
 	}
 
 }
@@ -80,7 +80,7 @@ type PaginatedUserOrdersResponse struct {
 	Orders      []interface{} `json:"orders"`
 }
 
-func (r *PaginatedUserOrdersResponse) Map(po *entity.PaginatedUserOrders, admin bool) {
+func (r *PaginatedUserOrdersResponse) Map(po *entity.PaginatedOrders, admin bool) {
 
 	r.CurrentPage = po.Page
 	r.PageSize = int64(len(po.Orders))
@@ -94,7 +94,7 @@ func (r *PaginatedUserOrdersResponse) Map(po *entity.PaginatedUserOrders, admin 
 	r.Orders = []interface{}{}
 	if admin {
 		for _, o := range po.Orders {
-			r.Orders = append(r.Orders, interface{}(AdminUOFromEntity(o)))
+			r.Orders = append(r.Orders, interface{}(AdminOrderFromEntity(o)))
 		}
 
 	} else {

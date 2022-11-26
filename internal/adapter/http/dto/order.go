@@ -31,12 +31,9 @@ type UserOrder struct {
 	CreatedAt      int64  `json:"created_at"`
 }
 
-func UOFromEntity(oe *entity.UserOrder) *UserOrder {
+func UOFromEntity(oe *entity.Order) *UserOrder {
 	o := &UserOrder{
-		Id:        oe.Seq,
-		BaseCoin:  oe.BC.String(),
-		QuoteCoin: oe.QC.String(),
-		Side:      oe.Side,
+		Id: oe.Id,
 
 		Fee:            oe.Withdrawal.Fee,
 		TransferFee:    oe.Withdrawal.ExchangeFee,
@@ -69,15 +66,15 @@ func UOFromEntity(oe *entity.UserOrder) *UserOrder {
 		o.Status = "pending"
 	}
 
-	if oe.Side == "buy" {
-		o.FinalSize = oe.Withdrawal.Executed
-		o.FinalFunds = oe.Deposit.Volume
-		o.FeeCurrency = oe.BC.String()
-	} else {
-		o.FinalSize = oe.Deposit.Volume
-		o.FinalFunds = oe.Withdrawal.Executed
-		o.FeeCurrency = oe.QC.String()
-	}
+	// if oe.Side == "buy" {
+	// 	o.FinalSize = oe.Withdrawal.Executed
+	// 	o.FinalFunds = oe.Deposit.Volume
+	// 	o.FeeCurrency = oe.BC.String()
+	// } else {
+	// 	o.FinalSize = oe.Deposit.Volume
+	// 	o.FinalFunds = oe.Withdrawal.Executed
+	// 	o.FeeCurrency = oe.QC.String()
+	// }
 
 	if oe.Withdrawal.Total != "" && oe.Deposit.Volume != "" {
 
@@ -94,10 +91,10 @@ func UOFromEntity(oe *entity.UserOrder) *UserOrder {
 	return o
 }
 
-type AdminUserOrder struct {
-	Id        int64  `json:"order_id"`
-	UserId    int64  `json:"user_id"`
-	Seq       int64  `json:"seq"`
+type AdminOrder struct {
+	Id     int64 `json:"order_id"`
+	UserId int64 `json:"user_id"`
+
 	Status    string `json:"status"`
 	BaseCoin  string `json:"base_coin"`
 	QuoteCoin string `json:"quote_coin"`
@@ -108,44 +105,44 @@ type AdminUserOrder struct {
 
 	Exchange string `json:"exchange"`
 
-	Deposit         *Deposit       `json:"deposit"`
-	ExchangeOrder   *ExchangeOrder `json:"exchange_order"`
-	Withdrawal      *Withdrawal    `json:"withdrawal"`
-	CreatedAt       int64          `json:"created_at"`
-	FaileCode       int64          `json:"failed_code"`
-	FailedDesc      string         `json:"failed_desc"`
+	Deposit         *Deposit `json:"deposit"`
+	Routes          map[int]*entity.Route
+	Swaps           map[int]*Swap `json:"swaps"`
+	Withdrawal      *Withdrawal   `json:"withdrawal"`
+	CreatedAt       int64         `json:"created_at"`
+	FaileCode       int64         `json:"failed_code"`
+	FailedDesc      string        `json:"failed_desc"`
 	entity.MetaData `json:"meta_data"`
 }
 
-func AdminUOFromEntity(o *entity.UserOrder) *AdminUserOrder {
-	return &AdminUserOrder{
-		Id:         o.Id,
-		UserId:     o.UserId,
-		Seq:        o.Seq,
+func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
+	ord := &AdminOrder{
+		Id:     o.Id,
+		UserId: o.UserId,
+
 		CreatedAt:  o.CreatedAt,
 		Status:     string(o.Status),
 		Deposit:    DFromEntity(o.Deposit),
-		Exchange:   o.Exchange,
+		Routes:     o.Routes,
 		Withdrawal: WFromEntity(o.Withdrawal),
-		BaseCoin:   o.BC.String(),
-		QuoteCoin:  o.QC.String(),
-		Side:       o.Side,
 
 		SpreadRate: o.SpreadRate,
 		SpreadVol:  o.SpreadVol,
 
-		ExchangeOrder: EoFromEntity(o.ExchangeOrder),
-		FaileCode:     o.FailedCode,
-		FailedDesc:    o.FailedDesc,
-		MetaData:      o.MetaData,
+		FaileCode:  o.FailedCode,
+		FailedDesc: o.FailedDesc,
+		MetaData:   o.MetaData,
 	}
+	for k, v := range o.Swaps {
+		ord.Swaps[k] = SwapFromEntity(v)
+	}
+	return ord
 }
 
 type CreateOrderRequest struct {
-	BC string `json:"base_coin"`
-	QC string `json:"quote_coin"`
+	In  string `json:"input"`
+	Out string `json:"output"`
 
-	Side    string `json:"side"`
 	Address string `json:"address"`
 	Tag     string `json:"tag"`
 }
@@ -154,16 +151,12 @@ func (r *CreateOrderRequest) Validate() error {
 	if r.Address == "" {
 		return errors.Wrap(errors.NewMesssage("address is required"))
 	}
-	if r.BC == "" {
-		return errors.Wrap(errors.NewMesssage("base_coin is required"))
+	if r.In == "" {
+		return errors.Wrap(errors.NewMesssage("input is required"))
 	}
 
-	if r.QC == "" {
-		return errors.Wrap(errors.NewMesssage("quote_coin is required"))
-	}
-
-	if r.Side != "buy" && r.Side != "sell" {
-		return errors.Wrap(errors.NewMesssage("only buy or sell is allowed for side"))
+	if r.Out == "" {
+		return errors.Wrap(errors.NewMesssage("output is required"))
 	}
 
 	return nil

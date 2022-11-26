@@ -1,14 +1,14 @@
 package http
 
 import (
-	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) GetMinPairDeposit(ctx Context) {
 	req := struct {
-		Bc string `json:"base_coin"`
-		Qc string `json:"quote_coin"`
+		C1 string `json:"coin1"`
+		C2 string `json:"coin2"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -16,26 +16,14 @@ func (s *Server) GetMinPairDeposit(ctx Context) {
 		return
 	}
 
-	bc, err := dto.ParseCoin(req.Bc)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	qc, err := dto.ParseCoin(req.Qc)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	minBc, minQc := s.app.GetMinPairDeposit(bc, qc)
+	c1, c2 := s.app.GetMinPairDeposit(req.C1, req.C2)
 
 	ctx.JSON(200, struct {
-		MinBc float64 `json:"min_base_coin"`
-		MinQc float64 `json:"min_quote_coin"`
+		MinC1 float64 `json:"min_coin1"`
+		MinC2 float64 `json:"min_coin2"`
 	}{
-		MinBc: minBc,
-		MinQc: minQc,
+		MinC1: c1,
+		MinC2: c2,
 	})
 
 }
@@ -46,10 +34,10 @@ func (s *Server) GetAllMinDeposit(ctx Context) {
 
 func (s *Server) ChangeMinDeposit(ctx Context) {
 	req := struct {
-		Bc    string  `json:"base_coin"`
-		MinBc float64 `json:"min_base_coin"`
-		Qc    string  `json:"quote_coin"`
-		MinQc float64 `json:"min_quote_coin"`
+		C1    string  `json:"coin1"`
+		MinC1 float64 `json:"min_coin1"`
+		C2    string  `json:"coin2"`
+		MinC2 float64 `json:"min_coin2"`
 		Msg   string  `json:"message,omitempty"`
 	}{}
 
@@ -58,23 +46,15 @@ func (s *Server) ChangeMinDeposit(ctx Context) {
 		return
 	}
 
-	if req.MinBc <= 0 || req.MinQc <= 0 {
+	if req.MinC1 <= 0 || req.MinC2 <= 0 {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("min deposit must be greater than 0")))
 		return
 	}
-	bc, err := dto.ParseCoin(req.Bc)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
 
-	qc, err := dto.ParseCoin(req.Qc)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	if err := s.app.ChangeMinDeposit(bc, qc, req.MinBc, req.MinQc); err != nil {
+	if err := s.app.ChangeMinDeposit(&entity.PairMinDeposit{
+		C1: &entity.CoinMinDeposit{Coin: req.C1, Min: req.MinC1},
+		C2: &entity.CoinMinDeposit{Coin: req.C2, Min: req.MinC2}},
+	); err != nil {
 		handlerErr(ctx, err)
 		return
 	}

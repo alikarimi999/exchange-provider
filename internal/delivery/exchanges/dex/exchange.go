@@ -8,14 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (d *dex) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
+func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 	agent := d.agent("Exchange")
 
-	bt := o.BC
-	qt := o.QC
-	side := o.Side
+	in := o.Routes[index].Input
+	out := o.Routes[index].Output
 
-	pair, err := d.pairs.get(bt.CoinId, qt.CoinId)
+	pair, err := d.pairs.get(in.CoinId, out.CoinId)
 	if err != nil {
 		return "", err
 	}
@@ -24,77 +23,45 @@ func (d *dex) Exchange(o *entity.UserOrder, size, funds string) (string, error) 
 
 	var tIn ts.Token
 	var tOut ts.Token
-	var amount string
-	if side == entity.SideBuy {
-		tIn = pair.QT
-		tOut = pair.BT
-		amount = funds
+
+	if in.CoinId == pair.T1.Symbol {
+		tIn = pair.T1
+		tOut = pair.T2
 	} else {
-		tIn = pair.BT
-		tOut = pair.QT
-		amount = size
+		tOut = pair.T2
+		tIn = pair.T1
 	}
 
-	tx, nonce, err := d.Swap(o, tIn, tOut, amount, sAddr, sAddr)
+	tx, nonce, err := d.Swap(o, tIn, tOut, o.Swaps[index].InAmount, sAddr, sAddr)
 	if err != nil {
 		if nonce != nil {
 			d.wallet.ReleaseNonce(sAddr, nonce.Uint64())
 		}
 		return "", err
 	}
-	d.wallet.BurnNonce(sAddr, nonce.Uint64())
-
-	o.ExchangeOrder.Funds = funds
-	o.ExchangeOrder.Size = size
-	o.ExchangeOrder.Symbol = pair.String()
+	if nonce != nil {
+		d.wallet.BurnNonce(sAddr, nonce.Uint64())
+	}
 
 	d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash().String()))
 	return tx.Hash().String(), nil
 
 }
 
-func (d *dex) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, proccessed <-chan bool) {
-	agent := d.agent("TrackExchangeOrder")
-	pair, err := d.pairs.get(o.BC.CoinId, o.QC.CoinId)
+func (d *dex) TrackExchangeOrder(o *entity.Order, index int,
+	done chan<- struct{}, proccessed <-chan bool) {
+
+	pair, err := d.pairs.get(o.Routes[index].Input.CoinId, o.Routes[index].Output.CoinId)
 	if err != nil {
+		o.Swaps[index].Status = entity.ExOrderFailed
+		o.Swaps[index].FailedDesc = err.Error()
+		done <- struct{}{}
+		<-proccessed
+
 		return
 	}
 
-	doneCh := make(chan struct{})
-	tf := &ttFeed{
-		txHash:   common.HexToHash(o.ExchangeOrder.ExId),
-		receiver: &d.cfg.Router,
-		needTx:   true,
-		doneCh:   doneCh,
-	}
-
-	go d.tt.track(tf)
-
-	<-doneCh
-
-	switch tf.status {
-	case txSuccess:
-		amont, fee, err := d.ParseSwapLogs(o, tf.tx, pair, tf.Receipt)
-		if err != nil {
-			o.ExchangeOrder.Status = entity.ExOrderFailed
-			o.ExchangeOrder.FailedDesc = err.Error()
-		}
-		if o.Side == entity.SideBuy {
-			o.ExchangeOrder.Size = amont
-		} else {
-			o.ExchangeOrder.Funds = amont
-		}
-		o.ExchangeOrder.Status = entity.ExOrderSucceed
-		o.ExchangeOrder.Fee = fee
-		o.ExchangeOrder.FeeCurrency = d.cfg.NativeToken
-
-		d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			o.Id, tf.txHash, tf.confirmed, tf.confirms))
-
-	case txFailed:
-		o.ExchangeOrder.Status = entity.ExOrderFailed
-		o.ExchangeOrder.FailedDesc = tf.faildesc
-	}
+	d.TrackSwap(o, pair, index)
 
 	done <- struct{}{}
 	<-proccessed

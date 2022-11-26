@@ -1,23 +1,16 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/entity"
 	"strings"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) createOrderRequest(bc, qc *entity.Coin, side, size, funds string) (*kucoin.CreateOrderModel, error) {
-
-	p, err := k.exchangePairs.get(bc, qc)
-	if err != nil {
-		return nil, err
-	}
-
+func (k *kucoinExchange) createOrderRequest(p *pair, side, size, funds string) (*kucoin.CreateOrderModel, error) {
 	return &kucoin.CreateOrderModel{
 		ClientOid: uuid.New().String(),
-		Symbol:    p.Symbol,
+		Symbol:    p.Symbol(),
 		Side:      side,
 		Type:      "market",
 		Size:      trim(size, p.BC.orderPrecision),

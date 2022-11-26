@@ -16,23 +16,22 @@ type ExOrderStatus string
 const (
 	ExOrderSucceed ExOrderStatus = "succeed"
 	ExOrderFailed  ExOrderStatus = "failed"
-	ExOrderPending ExOrderStatus = "pending"
 )
 
-type ExchangeOrder struct {
-	Id          uint64
-	ExId        string
-	UserId      int64
-	OrderId     int64
-	Status      ExOrderStatus // succed, failed
-	Exchange    string
-	Symbol      string
-	Side        string
-	Funds       string
-	Size        string
+type Swap struct {
+	Id   uint64
+	ExId string
+
+	UserId  int64
+	OrderId int64
+	Status  ExOrderStatus // succed, failed
+
+	InAmount    string
+	OutAmount   string
 	Fee         string
 	FeeCurrency string
 	FailedDesc  string
+	MetaData
 }
 
 type Exchange interface {
@@ -40,11 +39,11 @@ type Exchange interface {
 	AccountId() string
 	NID() string
 
-	Exchange(o *UserOrder, size, funds string) (string, error)
-	TrackExchangeOrder(o *UserOrder, done chan<- struct{}, proccessed <-chan bool)
+	Exchange(o *Order, index int) (string, error)
+	TrackExchangeOrder(o *Order, index int, done chan<- struct{}, proccessed <-chan bool)
 	TrackDeposit(d *Deposit, done chan<- struct{}, proccessed <-chan bool)
 
-	Withdrawal(o *UserOrder, coin *Coin, address *Address, vol string) (string, error)
+	Withdrawal(o *Order) (string, error)
 	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, proccessedCh <-chan bool)
 
 	ExchangeManager
@@ -66,7 +65,7 @@ type ExchangeManager interface {
 	GetAllPairs() []*Pair
 	GetPair(bc, qc *Coin) (*Pair, error)
 
-	RemovePair(bc, qc *Coin) error
+	RemovePair(c1, c2 *Coin) error
 
 	// check if the exchange support a pair with combination of two coins
 	Support(bc, qc *Coin) bool

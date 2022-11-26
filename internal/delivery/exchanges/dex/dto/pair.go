@@ -11,7 +11,7 @@ type AddPairsRequest struct {
 
 func (req AddPairsRequest) Validate() error {
 	for _, p := range req.Pairs {
-		if p.BT == "" || p.QT == "" {
+		if p.C1 == "" || p.C2 == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("Invalid pair token"))
 		}
 	}
@@ -19,10 +19,10 @@ func (req AddPairsRequest) Validate() error {
 }
 
 type Pair struct {
-	BT string `json:"base_token"`
-	QT string `json:"quote_token"`
+	C1 string `json:"coin1"`
+	C2 string `json:"coin2"`
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s/%s", p.BT, p.QT)
+	return fmt.Sprintf("%s/%s", p.C1, p.C2)
 }

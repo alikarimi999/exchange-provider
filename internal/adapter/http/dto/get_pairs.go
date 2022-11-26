@@ -35,29 +35,29 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 }
 
 type UserPair struct {
-	BC                  string  `json:"base_coin"`
-	QC                  string  `json:"quote_coin"`
-	BuyPrice            string  `json:"buy_price,omitempty"`
-	SellPrice           string  `json:"sell_price,omitempty"`
-	FeeRate             string  `json:"fee_rate,omitempty"`
-	BuyTransferFee      string  `json:"buy_transfer_fee,omitempty"`
-	SellTransferFee     string  `json:"sell_transfer_fee,omitempty"`
-	MinBaseCoinDeposit  float64 `json:"min_base_coin_deposit,omitempty"`
-	MinQuoteCoinDeposit float64 `json:"min_quote_coin_deposit,omitempty"`
-	Msg                 string  `json:"message,omitempty"`
+	Coin1           string  `json:"coin1"`
+	Coin2           string  `json:"coin2"`
+	BuyPrice        string  `json:"buy_price,omitempty"`
+	SellPrice       string  `json:"sell_price,omitempty"`
+	FeeRate         string  `json:"fee_rate,omitempty"`
+	BuyTransferFee  string  `json:"buy_transfer_fee,omitempty"`
+	SellTransferFee string  `json:"sell_transfer_fee,omitempty"`
+	MinDepositCoin1 float64 `json:"min_deposit_coin1,omitempty"`
+	MinDepositCoin2 float64 `json:"min_deposit_coin2,omitempty"`
+	Msg             string  `json:"message,omitempty"`
 }
 
 func EntityPairToUserRequest(p *entity.Pair, exTyp entity.ExType) *UserPair {
 	pair := &UserPair{
-		BC:        p.BC.String(),
-		QC:        p.QC.String(),
+		Coin1:     p.C1.String(),
+		Coin2:     p.C2.String(),
 		BuyPrice:  p.BestAsk,
 		SellPrice: p.BestBid,
 		FeeRate:   p.FeeRate,
 	}
 	if exTyp == entity.CEX {
-		pair.BuyTransferFee = fmt.Sprintf("%s/%s", p.BC.WithdrawalMinFee, p.BC.String())
-		pair.SellTransferFee = fmt.Sprintf("%s/%s", p.QC.WithdrawalMinFee, p.QC.String())
+		pair.BuyTransferFee = fmt.Sprintf("%s/%s", p.C1.WithdrawalMinFee, p.C1.String())
+		pair.SellTransferFee = fmt.Sprintf("%s/%s", p.C2.WithdrawalMinFee, p.C2.String())
 	}
 	return pair
 }
@@ -67,12 +67,12 @@ type GetPairsToUserResponse struct {
 }
 
 type Pair struct {
-	BC *entity.Coin
-	QC *entity.Coin
+	Coin1 *entity.Coin
+	Coin2 *entity.Coin
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
+	return fmt.Sprintf("%s/%s", p.Coin1.String(), p.Coin2.String())
 }
 
 type GetPairsToUserRequest struct {
@@ -82,17 +82,17 @@ type GetPairsToUserRequest struct {
 func (r *GetPairsToUserRequest) Parse() ([]*Pair, error) {
 	pairs := []*Pair{}
 	for _, p := range r.Pairs {
-		bc, err := ParseCoin(p.BC)
+		bc, err := ParseCoin(p.Coin1)
 		if err != nil {
 			return nil, err
 		}
-		qc, err := ParseCoin(p.QC)
+		qc, err := ParseCoin(p.Coin2)
 		if err != nil {
 			return nil, err
 		}
 		pairs = append(pairs, &Pair{
-			BC: bc,
-			QC: qc,
+			Coin1: bc,
+			Coin2: qc,
 		})
 	}
 	return pairs, nil

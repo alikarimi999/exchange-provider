@@ -13,8 +13,8 @@ var Delimiter string = "/"
 
 type Pair struct {
 	Address common.Address
-	BT      Token `json:"bt"`
-	QT      Token `json:"qt"`
+	T1      Token `json:"t1"`
+	T2      Token `json:"t2"`
 
 	BaseIsZero bool
 
@@ -24,14 +24,14 @@ type Pair struct {
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s%s%s", p.BT.String(), Delimiter, p.QT.String())
+	return fmt.Sprintf("%s%s%s", p.T1.String(), Delimiter, p.T2.String())
 }
 
 func (p *Pair) ToEntity(native, standard string, blockTime time.Duration) *entity.Pair {
 
 	pair := &entity.Pair{
-		BC: p.BT.ToEntity(standard, blockTime),
-		QC: p.QT.ToEntity(standard, blockTime),
+		C1: p.T1.ToEntity(standard, blockTime),
+		C2: p.T2.ToEntity(standard, blockTime),
 
 		ContractAddress: p.Address.String(),
 

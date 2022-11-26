@@ -25,13 +25,27 @@ func (k *kucoinExchange) AccountId() string {
 	return k.accountId
 }
 
-func (k *kucoinExchange) Exchange(o *entity.UserOrder, size, funds string) (string, error) {
+func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Exchange", k.NID()))
 
-	bc := o.BC
-	qc := o.QC
-	side := o.Side
-	req, err := k.createOrderRequest(bc, qc, side, size, funds)
+	in := o.Routes[index].Input
+	out := o.Routes[index].Output
+
+	p, err := k.exchangePairs.get(in, out)
+	if err != nil {
+		return "", err
+	}
+
+	var side, size, funds string
+	if p.BC.CoinId == in.CoinId && p.QC.ChainId == in.ChainId {
+		size = o.Swaps[index].InAmount
+		side = "sell"
+	} else {
+		funds = o.Swaps[index].InAmount
+		side = "buy"
+	}
+
+	req, err := k.createOrderRequest(p, side, size, funds)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
@@ -39,25 +53,20 @@ func (k *kucoinExchange) Exchange(o *entity.UserOrder, size, funds string) (stri
 	// transfer from main account to trade account
 	// if it's a buy order, we transfer the qoute coin from main account to trade account
 	// if it's a sell order, we transfer the base coin from main account to trade account
+
+	res, err := k.api.InnerTransferV2(uuid.New().String(), in.CoinId, "main", "trade", req.Funds)
+	if err = handleSDKErr(err, res); err != nil {
+		return "", errors.Wrap(err, op, errors.ErrBadRequest)
+	}
 	switch req.Side {
 	case "buy":
-		// k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Funds, qc.CoinId))
-		res, err := k.api.InnerTransferV2(uuid.New().String(), qc.CoinId, "main", "trade", req.Funds)
-		if err = handleSDKErr(err, res); err != nil {
-			return "", errors.Wrap(err, op, errors.ErrBadRequest)
-		}
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Funds, qc.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Funds, in.CoinId))
 	case "sell":
-		// k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from main account to trade account", req.Size, bc.CoinId))
-		res, err := k.api.InnerTransferV2(uuid.New().String(), bc.CoinId, "main", "trade", req.Size)
-		if err = handleSDKErr(err, res); err != nil {
-			return "", errors.Wrap(err, op, errors.ErrBadRequest)
-		}
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Size, bc.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Size, in.CoinId))
 	}
 
 	// create order, after transfer is done
-	res, err := k.api.CreateOrder(req)
+	res, err = k.api.CreateOrder(req)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
@@ -71,54 +80,44 @@ func (k *kucoinExchange) Exchange(o *entity.UserOrder, size, funds string) (stri
 
 }
 
-func (k *kucoinExchange) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.NID()))
+func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done chan<- struct{}, p <-chan bool) {
+	op := errors.Op(fmt.Sprintf("%s.TrackExchangeOrder", k.NID()))
 
-	opts, err := k.withdrawalOpts(coin, a.Tag)
-	if err != nil {
-		return "", errors.Wrap(err, op, errors.ErrBadRequest)
+	s := o.Swaps[index]
+	resp, err := k.api.Order(s.ExId)
+	if err = handleSDKErr(err, resp); err != nil {
+		k.l.Error(string(op), err.Error())
+		s.Status = entity.ExOrderFailed
+		s.FailedDesc = err.Error()
+		done <- struct{}{}
+		<-p
+		return
 	}
 
-	wc, err := k.supportedCoins.get(coin.CoinId, coin.ChainId)
-	if err != nil {
-		return "", errors.Wrap(err, op, errors.ErrBadRequest)
+	order := &kucoin.OrderModel{}
+	if err = resp.ReadData(order); err != nil {
+		k.l.Error(string(op), err.Error())
+		s.Status = entity.ExOrderFailed
+		s.FailedDesc = err.Error()
+		done <- struct{}{}
+		<-p
+		return
 	}
 
-	vol = trim(vol, wc.WithdrawalPrecision)
+	s.InAmount = order.DealFunds
+	s.OutAmount = order.DealSize
 
-	// first transfer from trade account to main account
-	// k.l.Debug(string(op), fmt.Sprintf("transferring %s `%s` from trade account to main account", vol, coin.CoinId))
-	res, err := k.api.InnerTransferV2(uuid.New().String(), coin.CoinId, "trade", "main", vol)
-	if err = handleSDKErr(err, res); err != nil {
-		return "", errors.Wrap(err, op)
+	if order.Side == "sell" {
+		s.OutAmount = order.DealFunds
+	} else {
+		s.OutAmount = order.DealSize
 	}
 
-	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from trade account to main account", vol, coin.CoinId))
-
-	// then withdraw from main account
-	// k.l.Debug(string(op), fmt.Sprintf("withdrawing %s `%s` from main account", vol, coin.CoinId))
-	res, err = k.api.ApplyWithdrawal(coin.CoinId, a.Addr, vol, opts)
-	if err = handleSDKErr(err, res); err != nil {
-		return "", errors.Wrap(err, op)
-	}
-
-	k.l.Debug(string(op), fmt.Sprintf("%s %s withdrawn from main account", vol, coin.CoinId))
-
-	w := &kucoin.ApplyWithdrawalResultModel{}
-	if err = res.ReadData(w); err != nil {
-		return "", errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return w.WithdrawalId, nil
-}
-
-func (k *kucoinExchange) TrackExchangeOrder(o *entity.UserOrder, done chan<- struct{}, p <-chan bool) {
-	feed := &trackerFedd{
-		eo:   o.ExchangeOrder,
-		done: done,
-		pCh:  p,
-	}
-
-	k.ot.track(feed)
+	s.Fee = order.Fee
+	s.FeeCurrency = order.FeeCurrency
+	s.Status = entity.ExOrderSucceed
+	done <- struct{}{}
+	<-p
 
 }
 

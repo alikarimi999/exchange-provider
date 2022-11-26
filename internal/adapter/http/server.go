@@ -6,6 +6,7 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"net/http"
+	"sync"
 
 	"exchange-provider/pkg/errors"
 
@@ -19,6 +20,7 @@ type Server struct {
 	l  logger.Logger
 	v  *viper.Viper
 	rc *redis.Client
+	cf *chainsFee
 }
 
 func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
@@ -28,6 +30,10 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 		l:  l,
 		v:  v,
 		rc: rc,
+		cf: &chainsFee{
+			mux:   &sync.Mutex{},
+			chain: make(map[string]float64),
+		},
 	}
 }
 
@@ -45,43 +51,43 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	bc, err := dto.ParseCoin(req.BC)
+	in, err := dto.ParseCoin(req.In)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
-	qc, err := dto.ParseCoin(req.QC)
-	if err != nil {
-		handlerErr(ctx, err)
-		return
-	}
-
-	ex, err := s.app.SelectExchangeByPair(bc, qc)
+	out, err := dto.ParseCoin(req.Out)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	o, err := s.app.NewUserOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, bc, qc, req.Side, ex)
+	routes, err := s.routing(in, out)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	var dc string
-	var minD float64
-	if o.Side == "buy" {
-		dc = o.QC.String()
-		_, minD = s.app.GetMinPairDeposit(o.BC, o.QC)
-	} else {
-		dc = o.BC.String()
-		minD, _ = s.app.GetMinPairDeposit(o.BC, o.QC)
+	o, err := s.app.NewOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, routes)
+	if err != nil {
+		handlerErr(ctx, err)
+		return
 	}
+
+	// var dc string
+	// var minD float64
+	// if o.Side == "buy" {
+	// 	dc = o.QC.String()
+	// 	_, minD = s.app.GetMinPairDeposit(in, out)
+	// } else {
+	// 	dc = o.BC.String()
+	// 	minD, _ = s.app.GetMinPairDeposit(o.BC, o.QC)
+	// }
 
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
-		OrderId:         o.Seq,
-		DC:              dc,
-		MinDeposit:      minD,
+		OrderId: o.Id,
+		// DC:              dc,
+		// MinDeposit:      minD,
 		DepositeAddress: o.Deposit.Addr,
 		AddressTag:      o.Deposit.Tag,
 	})
@@ -148,7 +154,7 @@ func (s *Server) SetTxId(ctx Context) {
 		return
 	}
 
-	if err := s.app.SetTxId(userId.(int64), r.Seq, r.TxId); err != nil {
+	if err := s.app.SetTxId(r.Id, userId.(int64), r.TxId); err != nil {
 		r.Msg = errors.ErrorMsg(err)
 		ctx.JSON(http.StatusBadRequest, r)
 		return

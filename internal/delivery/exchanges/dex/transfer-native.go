@@ -3,6 +3,7 @@ package dex
 import (
 	"context"
 	ts "exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/pkg/wallet/eth"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -11,9 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func (u *dex) transferNative(from, to common.Address, value *big.Int) (*types.Transaction, error) {
+func TransferNative(w *eth.HDWallet, from, to common.Address,
+	chainId int64, value *big.Int, p *ts.Provider) (*types.Transaction, error) {
 
-	p := u.provider()
 	head, err := p.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return nil, err
@@ -22,26 +23,24 @@ func (u *dex) transferNative(from, to common.Address, value *big.Int) (*types.Tr
 	var tx *types.Transaction
 	var nonce *big.Int
 	if head.BaseFee != nil {
-		tx, nonce, err = u.sendDynamicTx(from, to, value, head, p)
+		tx, nonce, err = sendDynamicTx(w, from, to, chainId, value, head, p)
 	} else {
 		// Chain is not London ready -> use legacy transaction
-		tx, nonce, err = u.sendLegacyTx(from, to, value)
+		tx, nonce, err = sendLegacyTx(w, from, to, chainId, value, p)
 	}
 
 	if err != nil {
 		if nonce != nil {
-			u.wallet.ReleaseNonce(from, nonce.Uint64())
+			w.ReleaseNonce(from, nonce.Uint64())
 		}
 	} else {
-		u.wallet.BurnNonce(from, nonce.Uint64())
+		w.BurnNonce(from, nonce.Uint64())
 	}
 
 	return tx, nil
 }
 
-func (u *dex) sendLegacyTx(from, to common.Address, value *big.Int) (*types.Transaction, *big.Int, error) {
-
-	p := u.provider()
+func sendLegacyTx(w *eth.HDWallet, from, to common.Address, chainId int64, value *big.Int, p *ts.Provider) (*types.Transaction, *big.Int, error) {
 
 	gasPrice, err := p.SuggestGasPrice(context.Background())
 	if err != nil {
@@ -61,7 +60,7 @@ func (u *dex) sendLegacyTx(from, to common.Address, value *big.Int) (*types.Tran
 		return nil, nil, err
 	}
 
-	n, err := u.wallet.Nonce(from)
+	n, err := w.Nonce(from)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -76,11 +75,11 @@ func (u *dex) sendLegacyTx(from, to common.Address, value *big.Int) (*types.Tran
 		Data:     []byte{},
 	})
 
-	prvKey, err := u.wallet.PrivateKey(from)
+	prvKey, err := w.PrivateKey(from)
 	if err != nil {
 		return nil, bn, err
 	}
-	tx, err = types.SignTx(tx, types.LatestSignerForChainID(big.NewInt(int64(u.cfg.ChianId))), prvKey)
+	tx, err = types.SignTx(tx, types.LatestSignerForChainID(big.NewInt(chainId)), prvKey)
 	if err != nil {
 		return nil, bn, err
 	}
@@ -94,7 +93,7 @@ func (u *dex) sendLegacyTx(from, to common.Address, value *big.Int) (*types.Tran
 
 }
 
-func (u *dex) sendDynamicTx(from, to common.Address, value *big.Int,
+func sendDynamicTx(wallet *eth.HDWallet, from, to common.Address, chainId int64, value *big.Int,
 	head *types.Header, p *ts.Provider) (*types.Transaction, *big.Int, error) {
 
 	gasPrice, err := p.SuggestGasPrice(context.Background())
@@ -125,14 +124,14 @@ func (u *dex) sendDynamicTx(from, to common.Address, value *big.Int,
 		return nil, nil, err
 	}
 
-	n, err := u.wallet.Nonce(from)
+	n, err := wallet.Nonce(from)
 	if err != nil {
 		return nil, nil, err
 	}
 	bn := big.NewInt(int64(n))
 
 	tx := types.NewTx(&types.DynamicFeeTx{
-		ChainID:   big.NewInt(int64(u.cfg.ChianId)),
+		ChainID:   big.NewInt(chainId),
 		Nonce:     n,
 		GasTipCap: gasTipCap,
 		GasFeeCap: gasFeeCap,
@@ -142,12 +141,12 @@ func (u *dex) sendDynamicTx(from, to common.Address, value *big.Int,
 		Data:      []byte{},
 	})
 
-	prvKey, err := u.wallet.PrivateKey(from)
+	prvKey, err := wallet.PrivateKey(from)
 	if err != nil {
 		return nil, bn, err
 	}
 
-	signer := types.LatestSignerForChainID(big.NewInt(int64(u.cfg.ChianId)))
+	signer := types.LatestSignerForChainID(big.NewInt(chainId))
 
 	signature, err := crypto.Sign(signer.Hash(tx).Bytes(), prvKey)
 	if err != nil {

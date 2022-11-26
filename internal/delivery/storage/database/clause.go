@@ -8,7 +8,7 @@ import (
 )
 
 func setClauses(db *gorm.DB, filters []*entity.Filter) *gorm.DB {
-	if filters == nil || len(filters) == 0 {
+	if len(filters) == 0 {
 		return db
 	}
 

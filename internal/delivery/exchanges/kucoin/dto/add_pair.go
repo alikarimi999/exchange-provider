@@ -11,8 +11,8 @@ type Coin struct {
 }
 
 type Pair struct {
-	BC *Coin
-	QC *Coin
+	C1 *Coin
+	C2 *Coin
 }
 type AddPairsRequest struct {
 	Pairs []*Pair

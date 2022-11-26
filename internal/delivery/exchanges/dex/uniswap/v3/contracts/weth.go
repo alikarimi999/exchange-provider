@@ -207,7 +207,7 @@ func (_Main *MainTransactorRaw) Transact(opts *bind.TransactOpts, method string,
 func (_Main *MainCaller) Allowance(opts *bind.CallOpts, arg0 common.Address, arg1 common.Address) (*big.Int, error) {
 	var out []interface{}
 	err := _Main.contract.Call(opts, &out, "allowance", arg0, arg1)
-
+	
 	if err != nil {
 		return *new(*big.Int), err
 	}

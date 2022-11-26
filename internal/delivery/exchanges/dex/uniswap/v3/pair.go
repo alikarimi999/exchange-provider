@@ -95,8 +95,8 @@ func (u *UniswapV3) Pair(bt, qt types.Token) (*types.Pair, error) {
 	wg.Wait()
 
 	pool := &types.Pair{
-		BT:        bt,
-		QT:        qt,
+		T1:        bt,
+		T2:        qt,
 		Liquidity: common.Big0,
 		Address:   common.HexToAddress("0"),
 	}

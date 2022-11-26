@@ -1,10 +1,10 @@
 package http
 
 import (
-	"net/http"
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	"exchange-provider/pkg/errors"
+	"net/http"
 )
 
 func (s *Server) GetPairsToUser(ctx Context) {
@@ -44,7 +44,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 
 				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
-				dp.MinBaseCoinDeposit, dp.MinQuoteCoinDeposit = s.app.GetMinPairDeposit(p.BC.Coin, p.QC.Coin)
+				dp.MinDepositCoin1, dp.MinDepositCoin2 = s.app.GetMinPairDeposit(p.C1.Coin.String(), p.C2.Coin.String())
 
 				pairs[p.String()] = dp
 			}
@@ -55,13 +55,13 @@ func (s *Server) GetPairsToUser(ctx Context) {
 					continue
 				}
 
-				ep, err := ex.GetPair(p.BC, p.QC)
+				ep, err := ex.GetPair(p.Coin1, p.Coin2)
 				if err != nil {
 					if errors.ErrorCode(err) == errors.ErrNotFound && i == lenExs-1 {
 						resp.Pairs = append(resp.Pairs, &dto.UserPair{
-							BC:  p.BC.String(),
-							QC:  p.QC.String(),
-							Msg: "pair not found",
+							Coin1: p.Coin1.String(),
+							Coin2: p.Coin2.String(),
+							Msg:   "pair not found",
 						})
 					}
 					continue
@@ -69,7 +69,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 
 				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(ep), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
-				dp.MinBaseCoinDeposit, dp.MinQuoteCoinDeposit = s.app.GetMinPairDeposit(p.BC, p.QC)
+				dp.MinDepositCoin1, dp.MinDepositCoin2 = s.app.GetMinPairDeposit(p.Coin1.String(), p.Coin2.String())
 				pairs[p.String()] = dp
 
 			}

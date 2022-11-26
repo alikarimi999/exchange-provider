@@ -32,8 +32,8 @@ type PairCoin struct {
 }
 
 type Pair struct {
-	BC *PairCoin
-	QC *PairCoin
+	C1 *PairCoin
+	C2 *PairCoin
 
 	ContractAddress string
 	FeeTier         int64
@@ -52,5 +52,5 @@ func (p *PairCoin) String() string {
 }
 
 func (p *Pair) String() string {
-	return p.BC.String() + "/" + p.QC.String()
+	return p.C1.String() + "/" + p.C2.String()
 }

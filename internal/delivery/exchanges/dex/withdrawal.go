@@ -12,16 +12,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *dex) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Address, vol string) (string, error) {
+func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 	agent := u.agent("Withdrawal")
 
 	var err error
-	t, err := u.tokens.get(coin.CoinId)
+	t, err := u.tokens.get(o.Withdrawal.CoinId)
 	if err != nil {
 		return "", err
 	}
 
-	value, err := numbers.FloatStringToBigInt(vol, t.Decimals)
+	value, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
 	if err != nil {
 		return "", err
 	}
@@ -50,33 +50,34 @@ func (u *dex) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Addre
 			u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`", o.Id, tx.Hash()))
 			o.MetaData["unwrap-txId"] = tx.Hash().String()
 			done := make(chan struct{})
-			tf := &ttFeed{
-				txHash:   tx.Hash(),
-				receiver: &t.Address,
-				needTx:   true,
+			tf := &utils.TtFeed{
+				P:        u.provider(),
+				TxHash:   tx.Hash(),
+				Receiver: &t.Address,
+				NeedTx:   true,
 
-				doneCh: done,
+				DoneCh: done,
 			}
-			go u.tt.track(tf)
+			go u.tt.Track(tf)
 			<-done
 
-			switch tf.status {
-			case txFailed:
-				return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrap-tx `%s` failed (%s)", tx.Hash(), tf.faildesc)))
-			case txSuccess:
+			switch tf.Status {
+			case utils.TxFailed:
+				return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrap-tx `%s` failed (%s)", tx.Hash(), tf.Faildesc)))
+			case utils.TxSuccess:
 				o.Withdrawal.Unwrapped = true
-				o.Withdrawal.ExchangeFee = utils.TxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
+				o.Withdrawal.ExchangeFee = utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
 				o.Withdrawal.ExchangeFeeCurrency = u.cfg.NativeToken
 				u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
-					o.Id, tf.txHash, tf.confirmed, tf.confirms))
+					o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 			}
 		}
 
-		tx, err := u.transferNative(sender, reciever, value)
+		tx, err := TransferNative(u.wallet, sender, reciever, int64(u.cfg.ChianId), value, u.provider())
 		if err != nil {
 			return "", err
 		}
-		o.Withdrawal.Executed = vol
+		o.Withdrawal.Executed = o.Withdrawal.Total
 		o.Withdrawal.TxId = tx.Hash().String()
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 		return tx.Hash().String(), nil
@@ -101,7 +102,7 @@ func (u *dex) Withdrawal(o *entity.UserOrder, coin *entity.Coin, a *entity.Addre
 		return "", err
 	}
 
-	o.Withdrawal.Executed = vol
+	o.Withdrawal.Executed = o.Withdrawal.Total
 	o.Withdrawal.TxId = tx.Hash().String()
 	u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 
@@ -130,18 +131,19 @@ func (u *dex) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 	}
 
 	doneCh := make(chan struct{})
-	tf := &ttFeed{
-		txHash:   common.HexToHash(w.WId),
-		receiver: &r,
-		needTx:   true,
-		doneCh:   doneCh,
+	tf := &utils.TtFeed{
+		P:        u.provider(),
+		TxHash:   common.HexToHash(w.WId),
+		Receiver: &r,
+		NeedTx:   true,
+		DoneCh:   doneCh,
 	}
-	go u.tt.track(tf)
+	go u.tt.Track(tf)
 	<-doneCh
 
-	switch tf.status {
-	case txSuccess:
-		f := utils.TxFee(tf.tx.GasPrice(), tf.Receipt.GasUsed)
+	switch tf.Status {
+	case utils.TxSuccess:
+		f := utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
 		fee, _ := numbers.FloatStringToBigInt(f, ethDecimals)
 
 		unwrapFee := new(big.Int)
@@ -156,11 +158,11 @@ func (u *dex) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
 		w.ExchangeFeeCurrency = u.cfg.NativeToken
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			w.OrderId, tf.txHash, tf.confirmed, tf.confirms))
+			w.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 
 	default:
 		w.Status = entity.WithdrawalFailed
-		w.FailedDesc = tf.faildesc
+		w.FailedDesc = tf.Faildesc
 	}
 
 	done <- struct{}{}

@@ -4,6 +4,7 @@ import (
 	pv2 "exchange-provider/internal/delivery/exchanges/dex/pancakeswap/v2"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
 	uv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
+	"exchange-provider/internal/delivery/exchanges/dex/utils"
 
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -34,8 +35,8 @@ type dex struct {
 	tokens *supportedTokens
 	pairs  *supportedPairs
 
-	tt *txTracker
-	am *approveManager
+	tt *utils.TxTracker
+	am *utils.ApproveManager
 	rc *redis.Client
 	v  *viper.Viper
 	l  logger.Logger
@@ -71,10 +72,6 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		stopCh: make(chan struct{}),
 	}
 
-	ex.tt = newTxTracker(ex)
-
-	ex.am = newApproveManager(ex)
-
 	if readConfig {
 		ex.l.Debug(agent, fmt.Sprintf("retriving `%s` data", ex.NID()))
 		acc, ok := ex.v.Get(fmt.Sprintf("%s.account_count", ex.NID())).(float64)
@@ -89,14 +86,18 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.NID())).(string)
 		ex.cfg.BlockTime = time.Duration(ex.v.Get(fmt.Sprintf("%s.block_time", ex.NID())).(float64))
 
+		ex.tt = utils.NewTxTracker(ex.NID(), ex.cfg.BlockTime, ex.confirms, l)
+
 		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.NID()))
 		if i == nil {
 			return nil, errors.New("no provider available in config file")
 		}
+
 		psi := i.(map[string]interface{})
 		for _, v := range psi {
 			ex.cfg.Providers = append(ex.cfg.Providers, &types.Provider{URL: v.(string)})
 		}
+		ex.am = utils.NewApproveManager(ex.NID(), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
 
 		if err := ex.generalSets(); err != nil {
 			return nil, err
@@ -112,9 +113,9 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			p := strings.Split(v, types.Delimiter)
 			if len(p) == 2 {
 				wg.Add(1)
-				go func(bt, qt string) {
+				go func(t1, t2 string) {
 					defer wg.Done()
-					if err := ex.addPair(bt, qt); err != nil {
+					if err := ex.addPair(t1, t2); err != nil {
 						ex.l.Error(agent, err.Error())
 						return
 					}
@@ -141,9 +142,14 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.NID()), ex.cfg.TokensFile)
 		ex.v.Set(fmt.Sprintf("%s.block_time", ex.NID()), ex.cfg.BlockTime)
 
+		ex.tt = utils.NewTxTracker(ex.NID(), ex.cfg.BlockTime, ex.confirms, l)
+
 		for i, p := range ex.cfg.Providers {
 			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.NID(), i), p.URL)
 		}
+
+		ex.am = utils.NewApproveManager(ex.NID(), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
+
 		if err := ex.v.WriteConfig(); err != nil {
 			return nil, err
 		}
@@ -156,14 +162,16 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 func (d *dex) setDEX() error {
 	switch d.cfg.Name {
 	case "uniswapv3":
-		u, err := uv3.NewUniSwapV3(d.NID(), d.cfg.Providers, d.cfg.Factory, d.cfg.Router, d.wallet, d.l)
+		u, err := uv3.NewUniSwapV3(d.NID(), d.cfg.NativeToken, d.cfg.Providers,
+			d.cfg.Factory, d.cfg.Router, d.wallet, d.tt, d.l)
 		if err != nil {
 			return err
 		}
 		d.Dex = u
 		return nil
 	case "panckakeswapv2":
-		u, err := pv2.NewPanckakeswapV2(d.NID(), d.wallet, d.cfg.Router, d.cfg.Providers, d.l)
+		u, err := pv2.NewPanckakeswapV2(d.NID(), d.cfg.NativeToken, d.wallet, d.tt, d.cfg.Router,
+			d.cfg.Providers, d.l)
 		if err != nil {
 			return err
 		}
