@@ -37,12 +37,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 	jb := make(jsonb)
 
 	switch e.Name {
-	case "uniswapv3":
-		conf := ex.Configs().(*dex.Config)
-		jb["mnemonic"] = conf.Mnemonic
-		jb["network"] = conf.Network
-
-	case "panckakeswapv2":
+	case "uniswapv3", "panckakeswapv2", "multichain":
 		conf := ex.Configs().(*dex.Config)
 		jb["mnemonic"] = conf.Mnemonic
 		jb["network"] = conf.Network

@@ -31,8 +31,8 @@ const (
 )
 
 type Route struct {
-	Input    *Coin
-	Output   *Coin
+	In       *Coin
+	Out      *Coin
 	Exchange string
 }
 
@@ -70,7 +70,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 			Status:   "",
 			Exchange: routes[0].Exchange,
 			Address:  dAddress,
-			Coin:     routes[0].Input,
+			Coin:     routes[0].In,
 		},
 
 		Swaps: make(map[int]*Swap),
@@ -80,7 +80,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 			Address:  wAddress,
 			Exchange: routes[len(routes)-1].Exchange,
 			Status:   "",
-			Coin:     routes[len(routes)-1].Output,
+			Coin:     routes[len(routes)-1].Out,
 		},
 		MetaData: make(MetaData),
 	}

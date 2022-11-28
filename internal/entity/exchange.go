@@ -7,8 +7,9 @@ import (
 type ExType string
 
 const (
-	DEX ExType = "DEX"
-	CEX ExType = "CEX"
+	DEX   ExType = "DEX"
+	CEX   ExType = "CEX"
+	Cross ExType = "Cross"
 )
 
 type ExOrderStatus string
@@ -41,10 +42,10 @@ type Exchange interface {
 
 	Exchange(o *Order, index int) (string, error)
 	TrackExchangeOrder(o *Order, index int, done chan<- struct{}, proccessed <-chan bool)
-	TrackDeposit(d *Deposit, done chan<- struct{}, proccessed <-chan bool)
+	TrackDeposit(o *Order, done chan<- struct{}, proccessed <-chan bool)
 
 	Withdrawal(o *Order) (string, error)
-	TrackWithdrawal(w *Withdrawal, done chan<- struct{}, proccessedCh <-chan bool)
+	TrackWithdrawal(w *Order, done chan<- struct{}, proccessedCh <-chan bool)
 
 	ExchangeManager
 }
@@ -63,12 +64,12 @@ type ExchangeManager interface {
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	// get all pairs from the exchange
 	GetAllPairs() []*Pair
-	GetPair(bc, qc *Coin) (*Pair, error)
+	GetPair(c1, c2 *Coin) (*Pair, error)
 
 	RemovePair(c1, c2 *Coin) error
 
 	// check if the exchange support a pair with combination of two coins
-	Support(bc, qc *Coin) bool
+	Support(c1, c2 *Coin) bool
 
 	GetAddress(c *Coin) (*Address, error)
 }

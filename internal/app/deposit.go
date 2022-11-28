@@ -39,7 +39,7 @@ func (o *OrderUseCase) SetTxId(Id, userId int64, txId string) error {
 		return err
 	}
 
-	o.dh.dCh <- ord.Deposit
+	o.dh.ch <- ord
 
 	return nil
 }

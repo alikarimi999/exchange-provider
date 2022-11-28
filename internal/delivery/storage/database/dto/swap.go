@@ -45,11 +45,11 @@ func SwapToDto(s *entity.Swap, r *entity.Route, index int) *Swap {
 
 		Index: index,
 
-		InCoin:  r.Input.CoinId,
-		InChain: r.Input.ChainId,
+		InCoin:  r.In.CoinId,
+		InChain: r.In.ChainId,
 
-		OutCoin:  r.Output.CoinId,
-		OutChain: r.Output.ChainId,
+		OutCoin:  r.Out.CoinId,
+		OutChain: r.Out.ChainId,
 
 		Exchange: r.Exchange,
 
@@ -92,8 +92,8 @@ func (s *Swap) ToEntity() (*entity.Swap, *entity.Route, int) {
 	}
 
 	route := &entity.Route{
-		Input:    &entity.Coin{CoinId: s.InCoin, ChainId: s.InChain},
-		Output:   &entity.Coin{CoinId: s.OutCoin, ChainId: s.OutChain},
+		In:       &entity.Coin{CoinId: s.InCoin, ChainId: s.InChain},
+		Out:      &entity.Coin{CoinId: s.OutCoin, ChainId: s.OutChain},
 		Exchange: s.Exchange,
 	}
 

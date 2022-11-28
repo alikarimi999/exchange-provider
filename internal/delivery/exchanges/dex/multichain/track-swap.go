@@ -2,7 +2,6 @@ package multichain
 
 import (
 	"encoding/json"
-	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/try"
 	"fmt"
@@ -28,7 +27,7 @@ type info struct {
 	} `json:"info"`
 }
 
-func (ex *Multichain) TrackSwap(o *entity.Order, p *ts.Pair, index int) {
+func (ex *Multichain) trackSwap(o *entity.Order, index int) {
 	err := try.Do(1000, func(attempt uint64) (retry bool, err error) {
 		i, err := ex.getInfo(o.Swaps[index].ExId)
 		if err != nil {
@@ -49,7 +48,7 @@ func (ex *Multichain) TrackSwap(o *entity.Order, p *ts.Pair, index int) {
 			o.Swaps[index].Status = entity.ExOrderSucceed
 			o.Swaps[index].OutAmount = i.Info.Formatswapvalue
 			o.Swaps[index].Fee = i.Info.FormatFee
-			o.Swaps[index].FeeCurrency = o.Routes[index].Input.String()
+			o.Swaps[index].FeeCurrency = o.Routes[index].In.String()
 			o.Swaps[index].MetaData["SwapTx"] = i.Info.Swaptx
 			return false, nil
 		}

@@ -3,6 +3,7 @@ package dex
 import (
 	"context"
 	"exchange-provider/pkg/wallet/eth"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -17,7 +18,8 @@ func (u *dex) generalSets() error {
 		if err != nil {
 			return err
 		} else {
-			u.cfg.ChianId = cId.Uint64()
+			u.cfg.ChainId = cId.Uint64()
+			u.cfg.chainId = fmt.Sprintf("%d", u.cfg.ChainId)
 		}
 
 		p.Client = c

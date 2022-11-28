@@ -8,16 +8,16 @@ import (
 )
 
 type depositHandler struct {
-	dCh chan *entity.Deposit
-	o   *OrderUseCase
-	l   logger.Logger
+	ch chan *entity.Order
+	o  *OrderUseCase
+	l  logger.Logger
 }
 
 func newDepositHandler(o *OrderUseCase) *depositHandler {
 	return &depositHandler{
-		dCh: make(chan *entity.Deposit),
-		o:   o,
-		l:   o.l,
+		ch: make(chan *entity.Order),
+		o:  o,
+		l:  o.l,
 	}
 }
 
@@ -25,8 +25,9 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 	const agent = "depositHandler.handle"
 	defer wg.Done()
 
-	for de := range h.dCh {
-		go func(d *entity.Deposit) {
+	for de := range h.ch {
+		go func(o *entity.Order) {
+			d := o.Deposit
 			ex, err := h.o.exs.get(d.Exchange)
 			if err != nil {
 				d.FailedDesc = err.Error()
@@ -36,7 +37,7 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 
 			done := make(chan struct{})
 			pCh := make(chan bool)
-			go ex.TrackDeposit(d, done, pCh)
+			go ex.TrackDeposit(o, done, pCh)
 
 			<-done
 			// h.l.Debug(agent, fmt.Sprintf("deposit `%d` for order `%d` status changed to  `%s`", d.Id, d.OrderId, d.Status))

@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"fmt"
 	"net/http"
@@ -69,6 +70,30 @@ func (s *Server) AddExchange(ctx Context) {
 		cfg.Accounts = conf.Accounts
 		cfg.Msg = "exchange added"
 		ctx.JSON(http.StatusOK, cfg)
+		return
+
+	case "multichain":
+
+		cfg := &multichain.Config{}
+		if err := ctx.Bind(cfg); err != nil {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		ex, err := multichain.NewMultichain(cfg, s.l)
+		if err != nil {
+			ctx.JSON(200, err.Error())
+			return
+		}
+
+		cfg.Id = "multichain"
+		if err := s.app.AddExchange(ex); err != nil {
+			ctx.JSON(200, err.Error())
+			return
+		}
+
+		cfg.Msg = "exchange added"
+		ctx.JSON(200, cfg)
 		return
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))

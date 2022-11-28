@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (ex *Multichain) provider() *types.Provider {
+func (ex *Chain) provider() *types.Provider {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if len(ex.ps) > 0 {
 		p := ex.ps[r.Intn(len(ex.ps))]

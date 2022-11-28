@@ -46,25 +46,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 		return kucoin.NewKucoinExchange(cfg, r.rc, r.v, r.l, true)
 
-	case "uniswapv3":
-
-		m, ok := jb["mnemonic"].(string)
-		if !ok {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
-		}
-		n, ok := jb["network"].(string)
-		if !ok {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have network paramether", ex)))
-		}
-
-		cfg := &dex.Config{
-			Mnemonic: m,
-			Name:     ex.Name,
-			Network:  n,
-		}
-		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
-
-	case "panckakeswapv2":
+	case "uniswapv3", "panckakeswapv2", "multichain":
 
 		m, ok := jb["mnemonic"].(string)
 		if !ok {

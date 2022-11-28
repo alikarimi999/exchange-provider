@@ -60,7 +60,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				if i == 0 {
 
-					aVol, sVol, rate, err := o.pc.ApplySpread(route.Input, route.Input, ord.Deposit.Volume)
+					aVol, sVol, rate, err := o.pc.ApplySpread(route.In, route.In, ord.Deposit.Volume)
 					if err != nil {
 						ord.Status = entity.OSFailed
 						ord.FailedCode = entity.FCInternalError
@@ -139,7 +139,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 					}
 
-					ord.Withdrawal.Coin = route.Output
+					ord.Withdrawal.Coin = route.Out
 					ord.Withdrawal.Executed = r
 					ord.Withdrawal.Fee = f
 

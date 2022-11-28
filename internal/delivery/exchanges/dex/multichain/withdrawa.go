@@ -1,4 +1,4 @@
-package dex
+package multichain
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/contracts"
@@ -8,26 +8,38 @@ import (
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *dex) Withdrawal(o *entity.Order) (string, error) {
-	agent := u.agent("Withdrawal")
+func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
+	agent := "Withdrawal"
+
+	in := c2T(o.Routes[len(o.Routes)-1].In)
+	out := c2T(o.Routes[len(o.Routes)-1].Out)
 
 	var err error
-	t, err := u.tokens.get(o.Withdrawal.CoinId)
+	p, err := m.pairs.get(in, out)
 	if err != nil {
 		return "", err
 	}
+
+	var t *token
+	if p.t1.Symbol == out.Symbol {
+		t = p.t1
+	} else {
+		t = p.t2
+	}
+	cid, _ := strconv.Atoi(t.Chain)
 
 	value, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
 	if err != nil {
 		return "", err
 	}
 
-	pr := u.provider()
-	contract, err := contracts.NewMain(t.Address, pr)
+	pr := m.cs[chainId(out.Chain)].provider()
+	contract, err := contracts.NewMain(common.HexToAddress(t.Address), pr)
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +48,7 @@ func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 	reciever := common.HexToAddress(o.Withdrawal.Addr)
 
 	// unwrap
-	if t.IsNative() {
+	if t.Native {
 
 		if !o.Withdrawal.Unwrapped {
 
@@ -44,22 +56,23 @@ func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			tx, err := u.unwrap(sender, t.Address, unwrapAmount)
+			tx, err := m.cs[chainId(t.Chain)].unwrap(sender, common.HexToAddress(t.Address), unwrapAmount)
 			if err != nil {
 				return "", err
 			}
-			u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`", o.Id, tx.Hash()))
+			m.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`", o.Id, tx.Hash()))
 			o.MetaData["unwrap-txId"] = tx.Hash().String()
 			done := make(chan struct{})
+			r := common.HexToAddress(t.Address)
 			tf := &utils.TtFeed{
 				P:        pr,
 				TxHash:   tx.Hash(),
-				Receiver: &t.Address,
+				Receiver: &r,
 				NeedTx:   true,
 
 				DoneCh: done,
 			}
-			go u.tt.Track(tf)
+			go m.tt.Track(tf)
 			<-done
 
 			switch tf.Status {
@@ -68,32 +81,34 @@ func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 			case utils.TxSuccess:
 				o.Withdrawal.Unwrapped = true
 				o.Withdrawal.ExchangeFee = utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
-				o.Withdrawal.ExchangeFeeCurrency = u.cfg.NativeToken
-				u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
+				// o.Withdrawal.ExchangeFeeCurrency = m.cs[chainId(t.Chain)].nativeToken
+				m.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
 					o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 			}
 		}
 
-		tx, err := transferNative(u.wallet, sender, reciever, int64(u.cfg.ChainId), value, pr)
+		tx, err := transferNative(m.cs[chainId(t.Chain)].w, sender,
+			reciever, int64(cid), value, pr)
 		if err != nil {
 			return "", err
 		}
 		o.Withdrawal.Executed = o.Withdrawal.Total
 		o.Withdrawal.TxId = tx.Hash().String()
-		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
+		m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 		return tx.Hash().String(), nil
 	}
 
-	opts, err := u.wallet.NewKeyedTransactorWithChainID(sender, big.NewInt(0), int64(u.cfg.ChainId))
+	opts, err := m.cs[chainId(t.Chain)].w.NewKeyedTransactorWithChainID(sender,
+		big.NewInt(0), int64(cid))
 	if err != nil {
 		return "", err
 	}
 
 	defer func() {
 		if err != nil {
-			u.wallet.ReleaseNonce(sender, opts.Nonce.Uint64())
+			m.cs[chainId(t.Chain)].w.ReleaseNonce(sender, opts.Nonce.Uint64())
 		} else {
-			u.wallet.BurnNonce(sender, opts.Nonce.Uint64())
+			m.cs[chainId(t.Chain)].w.BurnNonce(sender, opts.Nonce.Uint64())
 
 		}
 	}()
@@ -105,7 +120,7 @@ func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 
 	o.Withdrawal.Executed = o.Withdrawal.Total
 	o.Withdrawal.TxId = tx.Hash().String()
-	u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
+	m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 
 	return tx.Hash().String(), nil
 }

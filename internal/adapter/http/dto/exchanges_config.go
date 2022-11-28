@@ -9,12 +9,11 @@ import (
 )
 
 type Config struct {
-	Id            string `json:"id,omitempty"`
-	Name          string `json:"name,omitempty"`
-	ChianId       uint64 `json:"chian_id,omitempty"`
-	Network       string `json:"network,omitempty"`
-	NativeToken   string `json:"native_token,omitempty"`
-	TokenStandard string `json:"token_standard,omitempty"`
+	Id          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	ChianId     uint64 `json:"chian_id,omitempty"`
+	Network     string `json:"network,omitempty"`
+	NativeToken string `json:"native_token,omitempty"`
 
 	Factory string `json:"factory,omitempty"`
 	Router  string `json:"router,omitempty"`
@@ -33,11 +32,10 @@ type Config struct {
 
 func (cfg *Config) Map() (*dex.Config, error) {
 	c := &dex.Config{
-		Name:          cfg.Name,
-		ChianId:       cfg.ChianId,
-		Network:       cfg.Network,
-		TokenStandard: cfg.TokenStandard,
-		NativeToken:   cfg.NativeToken,
+		Name:        cfg.Name,
+		ChainId:     cfg.ChianId,
+		Network:     cfg.Network,
+		NativeToken: cfg.NativeToken,
 
 		Factory: common.HexToAddress(cfg.Factory),
 		Router:  common.HexToAddress(cfg.Router),

@@ -28,8 +28,8 @@ func (k *kucoinExchange) AccountId() string {
 func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Exchange", k.NID()))
 
-	in := o.Routes[index].Input
-	out := o.Routes[index].Output
+	in := o.Routes[index].In
+	out := o.Routes[index].Out
 
 	p, err := k.exchangePairs.get(in, out)
 	if err != nil {
@@ -121,11 +121,11 @@ func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done cha
 
 }
 
-func (k *kucoinExchange) TrackWithdrawal(w *entity.Withdrawal, done chan<- struct{},
+func (k *kucoinExchange) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
 	feed := &wtFeed{
-		w:            w,
+		w:            o.Withdrawal,
 		done:         done,
 		proccessedCh: proccessedCh,
 	}
@@ -144,9 +144,9 @@ func (k *kucoinExchange) ping() error {
 	return nil
 }
 
-func (k *kucoinExchange) TrackDeposit(d *entity.Deposit, done chan<- struct{},
+func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
 	proccessed <-chan bool) {
-
+	d := o.Deposit
 	c, err := k.supportedCoins.get(d.CoinId, d.ChainId)
 	if err != nil {
 		d.Status = entity.DepositFailed

@@ -105,7 +105,7 @@ func (ex *UniswapV3) TrackSwap(o *entity.Order, p *ts.Pair, i int) {
 		}
 
 		var decimals int
-		if o.Routes[i].Output.CoinId == p.T1.Symbol {
+		if o.Routes[i].Out.CoinId == p.T1.Symbol {
 			decimals = p.T1.Decimals
 		} else {
 			decimals = p.T2.Decimals

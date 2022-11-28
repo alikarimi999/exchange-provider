@@ -21,10 +21,9 @@ import (
 var max96 = new(big.Int).Sub(new(big.Int).Lsh(common.Big1, 96), common.Big1)
 
 type ApproveManager struct {
-	nid string
-
-	tt *TxTracker
-	w  *eth.HDWallet
+	chainId int64
+	tt      *TxTracker
+	w       *eth.HDWallet
 
 	pending  *amQueue
 	approved *amQueue
@@ -33,9 +32,8 @@ type ApproveManager struct {
 	l  logger.Logger
 }
 
-func NewApproveManager(nid string, tt *TxTracker, w *eth.HDWallet, l logger.Logger, ps []*ts.Provider) *ApproveManager {
+func NewApproveManager(chainId int64, tt *TxTracker, w *eth.HDWallet, l logger.Logger, ps []*ts.Provider) *ApproveManager {
 	return &ApproveManager{
-		nid: nid,
 
 		tt: tt,
 		w:  w,
@@ -48,44 +46,45 @@ func NewApproveManager(nid string, tt *TxTracker, w *eth.HDWallet, l logger.Logg
 	}
 }
 
-func (m *ApproveManager) exists(t ts.Token, owner, spender common.Address, chainId int64) bool {
-	if m.pending.exists(t, owner, spender, chainId) || m.approved.exists(t, owner, spender, chainId) {
+func (m *ApproveManager) exists(t ts.Token, owner, spender common.Address) bool {
+	if m.pending.exists(t, owner, spender, m.chainId) || m.approved.exists(t, owner, spender, m.chainId) {
 		return true
 	}
 	return false
 }
 
-func (am *ApproveManager) notifyApproved(t ts.Token, owner, spender common.Address, chainId int64) bool {
-	if am.approved.exists(t, owner, spender, chainId) {
+func (am *ApproveManager) notifyApproved(t ts.Token, owner, spender common.Address) bool {
+	if am.approved.exists(t, owner, spender, am.chainId) {
 		return true
 	}
 
-	if am.pending.exists(t, owner, spender, chainId) {
+	if am.pending.exists(t, owner, spender, am.chainId) {
 		time.Sleep(time.Second * 1)
 	} else {
 		return false
 	}
 
-	return am.notifyApproved(t, owner, spender, chainId)
+	return am.notifyApproved(t, owner, spender)
 }
 
-func (m *ApproveManager) add(t ts.Token, owner, spender common.Address, approved bool, chainId int64) {
+func (m *ApproveManager) add(t ts.Token, owner, spender common.Address, approved bool) {
 	if approved {
-		m.approved.add(t, owner, spender, chainId)
+		m.approved.add(t, owner, spender, m.chainId)
 		return
 	}
-	m.pending.add(t, owner, spender, chainId)
+	m.pending.add(t, owner, spender, m.chainId)
 }
 
-func (m *ApproveManager) remove(t ts.Token, owner, spender common.Address, fromPending bool, chainId int64) {
+func (m *ApproveManager) remove(t ts.Token, owner, spender common.Address, fromPending bool) {
 	if fromPending {
-		m.pending.remove(t, owner, spender, chainId)
+		m.pending.remove(t, owner, spender, m.chainId)
 		return
 	}
-	m.approved.remove(t, owner, spender, chainId)
+	m.approved.remove(t, owner, spender, m.chainId)
 }
 
-func (am *ApproveManager) InfinitApproves(t ts.Token, spender common.Address, chainId int64, owners ...common.Address) []error {
+func (am *ApproveManager) InfinitApproves(t ts.Token, spender common.Address,
+	owners ...common.Address) []error {
 	// agent := am.u.agent("approveManager.infinitApproves")
 
 	var errs []error
@@ -95,19 +94,19 @@ func (am *ApproveManager) InfinitApproves(t ts.Token, spender common.Address, ch
 		wg.Add(1)
 		go func(o common.Address) {
 			defer wg.Done()
-			if am.exists(t, o, spender, chainId) {
-				if !am.notifyApproved(t, o, spender, chainId) {
+			if am.exists(t, o, spender) {
+				if !am.notifyApproved(t, o, spender) {
 					errs = append(errs, fmt.Errorf("%s-%s didn't receive approval", t.Symbol, o))
 				}
 				return
 			}
 
-			am.add(t, o, spender, false, chainId)
-			err := am.infinitApprove(t, o, spender, chainId)
+			am.add(t, o, spender, false)
+			err := am.infinitApprove(t, o, spender)
 			if err == nil {
-				am.add(t, o, spender, true, chainId)
+				am.add(t, o, spender, true)
 			}
-			am.remove(t, o, spender, true, chainId)
+			am.remove(t, o, spender, true)
 
 			if err != nil {
 				errs = append(errs, err)
@@ -118,8 +117,8 @@ func (am *ApproveManager) InfinitApproves(t ts.Token, spender common.Address, ch
 	return errs
 }
 
-func (am *ApproveManager) infinitApprove(t ts.Token, owner, spender common.Address, chainId int64) error {
-	agent := am.nid + "approveManager.infinitApprove"
+func (am *ApproveManager) infinitApprove(t ts.Token, owner, spender common.Address) error {
+	agent := "approveManager.infinitApprove"
 
 	prefix := fmt.Sprintf("%s-%s", t.Symbol, owner)
 
@@ -129,7 +128,7 @@ func (am *ApproveManager) infinitApprove(t ts.Token, owner, spender common.Addre
 	}
 
 	if amount.Cmp(max96) == -1 {
-		tx, err := am.approve(t, owner, spender, abi.MaxUint256, chainId)
+		tx, err := am.approve(t, owner, spender, abi.MaxUint256)
 		if err != nil {
 			return errors.Wrap(errors.Op(agent), err)
 		}
@@ -169,7 +168,8 @@ func (am *ApproveManager) allowance(token ts.Token, owner, spender common.Addres
 	return c.Allowance(nil, owner, spender)
 }
 
-func (am *ApproveManager) approve(token ts.Token, owner, spender common.Address, amount *big.Int, chainId int64) (*types.Transaction, error) {
+func (am *ApproveManager) approve(token ts.Token, owner, spender common.Address,
+	amount *big.Int) (*types.Transaction, error) {
 	p := am.provider()
 
 	var err error
@@ -178,7 +178,7 @@ func (am *ApproveManager) approve(token ts.Token, owner, spender common.Address,
 		return nil, err
 	}
 
-	opts, err := am.w.NewKeyedTransactorWithChainID(owner, common.Big0, chainId)
+	opts, err := am.w.NewKeyedTransactorWithChainID(owner, common.Big0, am.chainId)
 	if err != nil {
 		return nil, err
 	}

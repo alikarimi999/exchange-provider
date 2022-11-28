@@ -1,4 +1,4 @@
-package dex
+package multichain
 
 import (
 	"context"

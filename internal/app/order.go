@@ -74,7 +74,7 @@ func (u *OrderUseCase) NewOrder(userId int64, wa *entity.Address, routes map[int
 		return nil, err
 	}
 
-	dc := routes[0].Input
+	dc := routes[0].In
 	da, err := ex.GetAddress(dc)
 	if err != nil {
 		return nil, err

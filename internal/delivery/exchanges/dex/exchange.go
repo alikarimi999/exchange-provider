@@ -11,8 +11,8 @@ import (
 func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 	agent := d.agent("Exchange")
 
-	in := o.Routes[index].Input
-	out := o.Routes[index].Output
+	in := o.Routes[index].In
+	out := o.Routes[index].Out
 
 	pair, err := d.pairs.get(in.CoinId, out.CoinId)
 	if err != nil {
@@ -51,7 +51,7 @@ func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 func (d *dex) TrackExchangeOrder(o *entity.Order, index int,
 	done chan<- struct{}, proccessed <-chan bool) {
 
-	pair, err := d.pairs.get(o.Routes[index].Input.CoinId, o.Routes[index].Output.CoinId)
+	pair, err := d.pairs.get(o.Routes[index].In.CoinId, o.Routes[index].Out.CoinId)
 	if err != nil {
 		o.Swaps[index].Status = entity.ExOrderFailed
 		o.Swaps[index].FailedDesc = err.Error()

@@ -5,9 +5,11 @@ import (
 	"fmt"
 )
 
-func (d *dex) TrackDeposit(de *entity.Deposit, done chan<- struct{},
+func (d *dex) TrackDeposit(o *entity.Order, done chan<- struct{},
 	proccessed <-chan bool) {
-	if de.ChainId != d.cfg.TokenStandard {
+
+	de := o.Deposit
+	if de.ChainId != d.cfg.chainId {
 		de.Status = entity.DepositFailed
 		de.FailedDesc = fmt.Sprintf("chain %s not supported", de.ChainId)
 		return

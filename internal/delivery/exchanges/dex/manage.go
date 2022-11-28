@@ -48,7 +48,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 				return
 			}
 
-			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard, u.cfg.BlockTime))
+			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.chainId, u.cfg.BlockTime))
 		}(p)
 	}
 
@@ -71,7 +71,7 @@ func (u *dex) StartAgain() (*entity.StartAgainResult, error) {
 }
 
 func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
-	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
+	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
 		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
 	}
 
@@ -84,11 +84,11 @@ func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard, u.cfg.BlockTime), nil
+	return p.ToEntity(u.cfg.NativeToken, u.cfg.chainId, u.cfg.BlockTime), nil
 }
 
 func (u *dex) Support(bc, qc *entity.Coin) bool {
-	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
+	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
 		return false
 	}
 	_, err := u.pairs.get(bc.CoinId, qc.CoinId)
@@ -96,7 +96,7 @@ func (u *dex) Support(bc, qc *entity.Coin) bool {
 }
 
 func (u *dex) RemovePair(t1, t2 *entity.Coin) error {
-	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
+	if t1.ChainId != u.cfg.chainId || t2.ChainId != u.cfg.chainId {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 

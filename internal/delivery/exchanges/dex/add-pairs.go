@@ -43,10 +43,10 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			}
 			res.Added = append(res.Added, entity.Pair{
 				C1: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.C1, ChainId: d.cfg.TokenStandard},
+					Coin: &entity.Coin{CoinId: p.C1, ChainId: d.cfg.chainId},
 				},
 				C2: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.C2, ChainId: d.cfg.TokenStandard},
+					Coin: &entity.Coin{CoinId: p.C2, ChainId: d.cfg.chainId},
 				},
 			})
 			ps = append(ps, p.String())
@@ -86,13 +86,13 @@ func (d *dex) addPair(t1 string, t2 string) error {
 	}
 
 	for _, t0 := range ts.Tokens {
-		if t0.ChainId != int64(d.cfg.ChianId) {
+		if t0.ChainId != int64(d.cfg.ChainId) {
 			continue
 		}
 
 		if t0.Symbol == t1 {
 			for _, t1 := range ts.Tokens {
-				if t1.ChainId != int64(d.cfg.ChianId) {
+				if t1.ChainId != int64(d.cfg.ChainId) {
 					continue
 				}
 				if t1.Symbol == t2 {
@@ -119,14 +119,14 @@ func (d *dex) addPair(t1 string, t2 string) error {
 					var approveErr1 []error
 					wg.Add(1)
 					go func() {
-						approveErr1 = d.am.InfinitApproves(pair.T1, d.cfg.Router, int64(d.cfg.ChianId), adds...)
+						approveErr1 = d.am.InfinitApproves(pair.T1, d.cfg.Router, adds...)
 						wg.Done()
 					}()
 
 					var approveErr2 []error
 					wg.Add(1)
 					go func() {
-						approveErr2 = d.am.InfinitApproves(pair.T2, d.cfg.Router, int64(d.cfg.ChianId), adds...)
+						approveErr2 = d.am.InfinitApproves(pair.T2, d.cfg.Router, adds...)
 						wg.Done()
 					}()
 
@@ -154,10 +154,10 @@ func (d *dex) addPair(t1 string, t2 string) error {
 
 			}
 			return errors.New(
-				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t2, d.cfg.ChianId))
+				fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t2, d.cfg.ChainId))
 		}
 	}
 	return errors.New(
-		fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t1, d.cfg.ChianId))
+		fmt.Sprintf("token `%s` for chain `%d` did not found in tokens list", t1, d.cfg.ChainId))
 
 }

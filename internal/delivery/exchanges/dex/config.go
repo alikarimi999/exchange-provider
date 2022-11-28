@@ -12,12 +12,13 @@ import (
 )
 
 type Config struct {
-	Id            string
-	Name          string
-	ChianId       uint64
-	Network       string
-	NativeToken   string
-	TokenStandard string
+	Id          string
+	Name        string
+	ChainId     uint64
+	chainId     string
+	Network     string
+	NativeToken string
+	// TokenStandard string
 
 	Providers []*types.Provider
 
@@ -35,9 +36,6 @@ type Config struct {
 func (cfg *Config) Validate(readConfig bool) error {
 
 	if !readConfig {
-		if cfg.TokenStandard == "" {
-			return errors.New("token-standard cannot be empty")
-		}
 		if cfg.NativeToken == "" {
 			return errors.New("native-token cannot be empty")
 		}

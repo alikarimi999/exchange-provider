@@ -1,4 +1,4 @@
-package dex
+package multichain
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/uniswap/v3/contracts"
@@ -8,33 +8,33 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *dex) unwrap(from, contract common.Address, value *big.Int) (*types.Transaction, error) {
-	agent := u.agent("unwrap")
+func (m *Chain) unwrap(from, contract common.Address, value *big.Int) (*types.Transaction, error) {
+	agent := "unwrap"
 
 	var err error
 
-	opts, err := u.wallet.NewKeyedTransactorWithChainID(from, big.NewInt(0), int64(u.cfg.ChainId))
+	opts, err := m.w.NewKeyedTransactorWithChainID(from, big.NewInt(0), m.id)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
 		if err != nil {
-			u.wallet.ReleaseNonce(from, opts.Nonce.Uint64())
+			m.w.ReleaseNonce(from, opts.Nonce.Uint64())
 		} else {
-			u.wallet.BurnNonce(from, opts.Nonce.Uint64())
+			m.w.BurnNonce(from, opts.Nonce.Uint64())
 
 		}
 	}()
 
-	c, err := contracts.NewMain(contract, u.provider())
+	c, err := contracts.NewMain(contract, m.provider())
 	if err != nil {
 		return nil, err
 	}
 
 	tx, err := c.Withdraw(opts, value)
 	if err != nil {
-		u.l.Error(agent, err.Error())
+		m.l.Error(agent, err.Error())
 		return nil, err
 	}
 	return tx, nil

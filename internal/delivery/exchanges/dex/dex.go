@@ -80,7 +80,6 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		}
 
 		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.NID())).(string)
-		ex.cfg.TokenStandard = ex.v.Get(fmt.Sprintf("%s.token_standard", ex.NID())).(string)
 		ex.cfg.Factory = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.factory", ex.NID())).(string))
 		ex.cfg.Router = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.router", ex.NID())).(string))
 		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.NID())).(string)
@@ -97,7 +96,7 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		for _, v := range psi {
 			ex.cfg.Providers = append(ex.cfg.Providers, &types.Provider{URL: v.(string)})
 		}
-		ex.am = utils.NewApproveManager(ex.NID(), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
+		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
 
 		if err := ex.generalSets(); err != nil {
 			return nil, err
@@ -137,7 +136,6 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 		ex.v.Set(fmt.Sprintf("%s.factory", ex.NID()), ex.cfg.Factory)
 		ex.v.Set(fmt.Sprintf("%s.router", ex.NID()), ex.cfg.Router)
 		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)
-		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.NID()), ex.cfg.TokenStandard)
 		ex.v.Set(fmt.Sprintf("%s.account_count", ex.NID()), ex.cfg.AccountCount)
 		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.NID()), ex.cfg.TokensFile)
 		ex.v.Set(fmt.Sprintf("%s.block_time", ex.NID()), ex.cfg.BlockTime)
@@ -148,7 +146,7 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.NID(), i), p.URL)
 		}
 
-		ex.am = utils.NewApproveManager(ex.NID(), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
+		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
 
 		if err := ex.v.WriteConfig(); err != nil {
 			return nil, err
@@ -162,20 +160,20 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 func (d *dex) setDEX() error {
 	switch d.cfg.Name {
 	case "uniswapv3":
-		u, err := uv3.NewUniSwapV3(d.NID(), d.cfg.NativeToken, d.cfg.Providers,
+		dex, err := uv3.NewUniSwapV3(d.NID(), d.cfg.NativeToken, d.cfg.Providers,
 			d.cfg.Factory, d.cfg.Router, d.wallet, d.tt, d.l)
 		if err != nil {
 			return err
 		}
-		d.Dex = u
+		d.Dex = dex
 		return nil
 	case "panckakeswapv2":
-		u, err := pv2.NewPanckakeswapV2(d.NID(), d.cfg.NativeToken, d.wallet, d.tt, d.cfg.Router,
+		dex, err := pv2.NewPanckakeswapV2(d.NID(), d.cfg.NativeToken, d.wallet, d.tt, d.cfg.Router,
 			d.cfg.Providers, d.l)
 		if err != nil {
 			return err
 		}
-		d.Dex = u
+		d.Dex = dex
 		return nil
 	default:
 		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Name)
