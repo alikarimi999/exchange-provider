@@ -5,6 +5,7 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -24,7 +25,7 @@ type Server struct {
 }
 
 func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
-	return &Server{
+	s := &Server{
 		app: app,
 
 		l:  l,
@@ -35,6 +36,13 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 			chain: make(map[string]float64),
 		},
 	}
+
+	fmt.Println("Delete: http-server.go-NewServer")
+	s.cf.chain["97"] = 1
+	s.cf.chain["80001"] = 2
+
+	return s
+
 }
 
 func (s *Server) NewUserOrder(ctx Context) {
@@ -73,16 +81,6 @@ func (s *Server) NewUserOrder(ctx Context) {
 		handlerErr(ctx, err)
 		return
 	}
-
-	// var dc string
-	// var minD float64
-	// if o.Side == "buy" {
-	// 	dc = o.QC.String()
-	// 	_, minD = s.app.GetMinPairDeposit(in, out)
-	// } else {
-	// 	dc = o.BC.String()
-	// 	minD, _ = s.app.GetMinPairDeposit(o.BC, o.QC)
-	// }
 
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
 		OrderId: o.Id,
@@ -141,7 +139,7 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 }
 
 func (s *Server) SetTxId(ctx Context) {
-	userId, _ := ctx.GetKey("user_id")
+	// userId, _ := ctx.GetKey("user_id")
 	r := &dto.SetTxIdRequest{}
 	if err := ctx.Bind(r); err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
@@ -154,7 +152,7 @@ func (s *Server) SetTxId(ctx Context) {
 		return
 	}
 
-	if err := s.app.SetTxId(r.Id, userId.(int64), r.TxId); err != nil {
+	if err := s.app.SetTxId(r.Id, r.TxId); err != nil {
 		r.Msg = errors.ErrorMsg(err)
 		ctx.JSON(http.StatusBadRequest, r)
 		return

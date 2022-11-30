@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"exchange-provider/internal/delivery/storage/cache/dto"
-	"exchange-provider/internal/entity"
 	"fmt"
 	"time"
 
@@ -13,28 +11,26 @@ import (
 
 var prefix_pending_key = "pending_withdrawals"
 
-func (c *OrderCache) AddPendingWithdrawal(w *entity.Withdrawal) error {
+func (c *OrderCache) AddPendingWithdrawal(orderId int64) error {
 	const op = errors.Op("WithdrawalCache.AddPendingWithdrawal")
-
-	dto := dto.OWToDTO(w)
 
 	if err := c.r.ZAdd(c.ctx, prefix_pending_key, redis.Z{
 		Score:  float64(time.Now().Unix()),
-		Member: dto,
+		Member: orderId,
 	}).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
 }
 
-func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal, error) {
+func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]int64, error) {
 	const op = errors.Op("WithdrawalCache.GetPendingWithdrawals")
 
-	ws := []*dto.Withdrawal{}
+	ids := []int64{}
 	err := c.r.ZRangeByScore(c.ctx, prefix_pending_key, &redis.ZRangeBy{
 		Min: "-inf",
 		Max: fmt.Sprintf("%d", end.Unix()),
-	}).ScanSlice(&ws)
+	}).ScanSlice(&ids)
 
 	if err != nil {
 		if err == redis.Nil {
@@ -42,18 +38,14 @@ func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]*entity.Withdrawal,
 		}
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
-	ews := []*entity.Withdrawal{}
-	for _, w := range ws {
-		ews = append(ews, w.ToEntity())
-	}
 
-	return ews, nil
+	return ids, nil
 }
 
-func (c *OrderCache) DelPendingWithdrawal(w entity.Withdrawal) error {
+func (c *OrderCache) DelPendingWithdrawal(orderId int64) error {
 	const op = errors.Op("WithdrawalCache.DelPendingWithdrawal")
 
-	if err := c.r.ZRem(c.ctx, prefix_pending_key, dto.OWToDTO(&w)).Err(); err != nil {
+	if err := c.r.ZRem(c.ctx, prefix_pending_key, orderId).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil

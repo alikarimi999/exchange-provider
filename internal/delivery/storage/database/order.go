@@ -41,11 +41,11 @@ func (m *MySqlDB) Add(order *entity.Order) error {
 	return err
 }
 
-func (m *MySqlDB) Get(userId, id int64) (*entity.Order, error) {
+func (m *MySqlDB) Get(orderId int64) (*entity.Order, error) {
 	const op = errors.Op("MySqlDB.Get")
 
 	o := &dto.Order{}
-	if err := m.db.Where("id = ? and user_id = ?", id, userId).
+	if err := m.db.Where("id = ?", orderId).
 		Preload("Deposit").Preload("Withdrawal").Preload("Swaps").
 		First(o).Error; err != nil {
 

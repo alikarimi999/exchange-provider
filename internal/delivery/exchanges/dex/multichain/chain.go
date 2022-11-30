@@ -14,8 +14,8 @@ type Chain struct {
 	am *utils.ApproveManager
 	w  *eth.HDWallet
 
-	nativeToken string
-	ps          []*ts.Provider
+	// nativeToken string
+	ps []*ts.Provider
 
 	l logger.Logger
 }

@@ -13,10 +13,10 @@ func (o *OrderUseCase) read(v interface{}) error {
 	case *entity.Order:
 		var dd *entity.Order
 		var err error
-		if d.Id > 0 && d.UserId > 0 {
-			dd, err = readOrder(o.repo, o.cache, d.UserId, d.Id)
+		if d.Id > 0 {
+			dd, err = readOrder(o.repo, o.cache, d.Id)
 		} else {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order id or seq or userId not found"))
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("orderId not found"))
 		}
 		if err != nil {
 			return err
@@ -42,16 +42,18 @@ func (o *OrderUseCase) read(v interface{}) error {
 
 	return errors.Wrap(errors.New("unsupported type"))
 }
-func readOrder(r entity.OrderRepo, c entity.OrderCache, userId, orderId int64) (*entity.Order, error) {
-	ord, er1 := c.Get(userId, orderId)
+func readOrder(r entity.OrderRepo, c entity.OrderCache, orderId int64) (*entity.Order, error) {
+	ord, er1 := c.Get(orderId)
 	if er1 != nil {
 		var er2 error
-		ord, er2 = r.Get(userId, orderId)
+		ord, er2 = r.Get(orderId)
 		if er2 != nil {
 			if errors.ErrorCode(er2) == errors.ErrNotFound {
-				return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("order %d for user %d not found", orderId, userId)))
+				return nil, errors.Wrap(errors.ErrNotFound,
+					errors.NewMesssage(fmt.Sprintf("order %d not found", orderId)))
 			}
-			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )", er1, er2)), fmt.Sprintf("order %d for user %d", orderId, userId))
+			return nil, errors.Wrap(errors.ErrInternal, errors.New(fmt.Sprintf("error ( %s ),\n error ( %s )",
+				er1, er2)), fmt.Sprintf("order %d ", orderId))
 		}
 	}
 	return ord, nil

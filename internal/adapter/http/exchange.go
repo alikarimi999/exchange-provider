@@ -74,14 +74,29 @@ func (s *Server) AddExchange(ctx Context) {
 
 	case "multichain":
 
-		cfg := &multichain.Config{}
+		cfg := multichain.EmptyConfig()
 		if err := ctx.Bind(cfg); err != nil {
+			ctx.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+
+		if err := cfg.Validate(); err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		ex, err := multichain.NewMultichain(cfg, s.l)
 		if err != nil {
+			ctx.JSON(200, err.Error())
+			return
+		}
+
+		if err = cfg.PL.Add("80001", []string{"https://rpc-mumbai.maticvigil.com"}); err != nil {
+			ctx.JSON(200, err.Error())
+			return
+		}
+
+		if err = cfg.PL.Add("97", []string{"https://bsc-testnet.public.blastapi.io"}); err != nil {
 			ctx.JSON(200, err.Error())
 			return
 		}

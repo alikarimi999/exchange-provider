@@ -63,6 +63,8 @@ func (ex *Multichain) trackSwap(o *entity.Order, index int) {
 }
 
 func (ex *Multichain) getInfo(txId string) (*info, error) {
+	fmt.Println("Delete: multichain-track-swap.go.getInfo")
+	txId = "0xd6bb2d385217ed656ed723ef6e5820274dcecb6a97fc41adf2f69f32997688f3"
 	res, err := http.Get(ex.apiUrl + txId)
 	if err != nil {
 		return nil, err
@@ -73,5 +75,8 @@ func (ex *Multichain) getInfo(txId string) (*info, error) {
 	}
 	i := &info{}
 	err = json.Unmarshal(b, i)
+	if err != nil {
+		return nil, err
+	}
 	return i, err
 }

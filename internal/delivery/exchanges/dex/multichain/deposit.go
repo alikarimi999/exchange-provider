@@ -4,6 +4,14 @@ import (
 	"exchange-provider/internal/entity"
 )
 
+func (m *Multichain) GetAddress(c *entity.Coin) (*entity.Address, error) {
+	a, err := m.cs[chainId(c.ChainId)].w.RandAddress()
+	if err != nil {
+		return nil, err
+	}
+	return &entity.Address{Addr: a.String()}, nil
+}
+
 func (m *Multichain) TrackDeposit(o *entity.Order, done chan<- struct{},
 	proccessed <-chan bool) {
 
@@ -18,11 +26,11 @@ func (m *Multichain) TrackDeposit(o *entity.Order, done chan<- struct{},
 		<-proccessed
 		return
 	}
-	var t *token
-	if p.t1.Symbol == in.Symbol {
-		t = p.t1
+	var t *Token
+	if p.T1.ChainId == in.ChainId {
+		t = p.T1
 	} else {
-		t = p.t2
+		t = p.T2
 	}
 
 	m.trackDeposit(&dtFeed{

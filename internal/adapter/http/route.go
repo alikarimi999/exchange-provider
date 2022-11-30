@@ -29,6 +29,7 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 			if err == nil {
 				routes[1].Exchange = ex.NID()
 			}
+
 			return routes, nil
 		}
 
@@ -46,5 +47,6 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 		return nil, fmt.Errorf("NoRouteFound")
 	}
 	routes[1].Exchange = ex.NID()
+
 	return routes, nil
 }

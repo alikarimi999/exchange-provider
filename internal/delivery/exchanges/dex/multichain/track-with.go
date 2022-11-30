@@ -27,11 +27,11 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 		return
 	}
 
-	var t *token
-	if p.t1 == out {
-		t = p.t1
+	var t *Token
+	if p.T1.ChainId == out.ChainId {
+		t = p.T1
 	} else {
-		t = p.t2
+		t = p.T2
 	}
 
 	var r common.Address
@@ -43,7 +43,7 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
-		P:        u.cs[chainId(t.Chain)].provider(),
+		P:        u.cs[chainId(t.ChainId)].provider(),
 		TxHash:   common.HexToHash(w.WId),
 		Receiver: &r,
 		NeedTx:   true,

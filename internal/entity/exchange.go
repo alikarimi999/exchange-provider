@@ -69,7 +69,7 @@ type ExchangeManager interface {
 	RemovePair(c1, c2 *Coin) error
 
 	// check if the exchange support a pair with combination of two coins
-	Support(c1, c2 *Coin) bool
+	Support(in, out *Coin) bool
 
 	GetAddress(c *Coin) (*Address, error)
 }

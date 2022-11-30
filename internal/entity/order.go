@@ -2,6 +2,7 @@ package entity
 
 import (
 	"encoding/json"
+	"sort"
 	"time"
 )
 
@@ -92,6 +93,20 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 	}
 
 	return o
+}
+
+func (o *Order) SortedRoutes() []*Route {
+	indexes := []int{}
+	for i := range o.Routes {
+		indexes = append(indexes, i)
+	}
+
+	sort.Ints(indexes)
+	routes := []*Route{}
+	for _, i := range indexes {
+		routes = append(routes, o.Routes[i])
+	}
+	return routes
 }
 
 // implement stringer interface

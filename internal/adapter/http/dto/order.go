@@ -66,16 +66,6 @@ func UOFromEntity(oe *entity.Order) *UserOrder {
 		o.Status = "pending"
 	}
 
-	// if oe.Side == "buy" {
-	// 	o.FinalSize = oe.Withdrawal.Executed
-	// 	o.FinalFunds = oe.Deposit.Volume
-	// 	o.FeeCurrency = oe.BC.String()
-	// } else {
-	// 	o.FinalSize = oe.Deposit.Volume
-	// 	o.FinalFunds = oe.Withdrawal.Executed
-	// 	o.FeeCurrency = oe.QC.String()
-	// }
-
 	if oe.Withdrawal.Total != "" && oe.Deposit.Volume != "" {
 
 		wt, _ := strconv.ParseFloat(oe.Withdrawal.Total, 64)
@@ -123,7 +113,7 @@ func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
 		CreatedAt:  o.CreatedAt,
 		Status:     string(o.Status),
 		Deposit:    DFromEntity(o.Deposit),
-		Routes:     o.Routes,
+		Routes:     make(map[int]*entity.Route),
 		Withdrawal: WFromEntity(o.Withdrawal),
 
 		SpreadRate: o.SpreadRate,
@@ -134,7 +124,7 @@ func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
 		MetaData:   o.MetaData,
 	}
 	for k, v := range o.Swaps {
-		ord.Swaps[k] = SwapFromEntity(v)
+		ord.Swaps[k] = SwapFromEntity(v, o.Routes[k])
 	}
 	return ord
 }

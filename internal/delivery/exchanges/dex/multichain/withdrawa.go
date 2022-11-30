@@ -25,20 +25,20 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		return "", err
 	}
 
-	var t *token
-	if p.t1.Symbol == out.Symbol {
-		t = p.t1
+	var t *Token
+	if p.T1.ChainId == out.ChainId {
+		t = p.T1
 	} else {
-		t = p.t2
+		t = p.T2
 	}
-	cid, _ := strconv.Atoi(t.Chain)
+	cid, _ := strconv.Atoi(t.ChainId)
 
 	value, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
 	if err != nil {
 		return "", err
 	}
 
-	pr := m.cs[chainId(out.Chain)].provider()
+	pr := m.cs[chainId(out.ChainId)].provider()
 	contract, err := contracts.NewMain(common.HexToAddress(t.Address), pr)
 	if err != nil {
 		return "", err
@@ -56,7 +56,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			tx, err := m.cs[chainId(t.Chain)].unwrap(sender, common.HexToAddress(t.Address), unwrapAmount)
+			tx, err := m.cs[chainId(t.ChainId)].unwrap(sender, common.HexToAddress(t.Address), unwrapAmount)
 			if err != nil {
 				return "", err
 			}
@@ -87,7 +87,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 			}
 		}
 
-		tx, err := transferNative(m.cs[chainId(t.Chain)].w, sender,
+		tx, err := transferNative(m.cs[chainId(t.ChainId)].w, sender,
 			reciever, int64(cid), value, pr)
 		if err != nil {
 			return "", err
@@ -98,7 +98,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		return tx.Hash().String(), nil
 	}
 
-	opts, err := m.cs[chainId(t.Chain)].w.NewKeyedTransactorWithChainID(sender,
+	opts, err := m.cs[chainId(t.ChainId)].w.NewKeyedTransactorWithChainID(sender,
 		big.NewInt(0), int64(cid))
 	if err != nil {
 		return "", err
@@ -106,9 +106,9 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 
 	defer func() {
 		if err != nil {
-			m.cs[chainId(t.Chain)].w.ReleaseNonce(sender, opts.Nonce.Uint64())
+			m.cs[chainId(t.ChainId)].w.ReleaseNonce(sender, opts.Nonce.Uint64())
 		} else {
-			m.cs[chainId(t.Chain)].w.BurnNonce(sender, opts.Nonce.Uint64())
+			m.cs[chainId(t.ChainId)].w.BurnNonce(sender, opts.Nonce.Uint64())
 
 		}
 	}()

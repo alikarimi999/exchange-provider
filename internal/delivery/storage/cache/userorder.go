@@ -31,7 +31,7 @@ func (c *OrderCache) Add(o *entity.Order) error {
 
 func (c *OrderCache) UpdateDeposit(d *entity.Deposit) error {
 
-	o, err := c.get(d.UserId, d.OrderId)
+	o, err := c.get(d.OrderId)
 	if err != nil {
 		return err
 	}
@@ -43,21 +43,21 @@ func (c *OrderCache) UpdateDeposit(d *entity.Deposit) error {
 func (c *OrderCache) save(o *entity.Order) error {
 	const op = errors.Op("OrderCache.save")
 
-	key := fmt.Sprintf("user:%d:order:%d", o.UserId, o.Id)
+	key := fmt.Sprintf("order:%d", o.Id)
 	if err := c.r.Set(c.ctx, key, &dto.Order{Order: o}, time.Duration(48*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
 }
 
-func (c *OrderCache) Get(userId, id int64) (*entity.Order, error) {
-	return c.get(userId, id)
+func (c *OrderCache) Get(id int64) (*entity.Order, error) {
+	return c.get(id)
 }
 
-func (c *OrderCache) get(userId, id int64) (*entity.Order, error) {
+func (c *OrderCache) get(id int64) (*entity.Order, error) {
 	const op = errors.Op("OrderCache.get")
 
-	key := fmt.Sprintf("user:%d:order:%d", userId, id)
+	key := fmt.Sprintf("order:%d", id)
 	o := &entity.Order{}
 	b, err := c.r.Get(c.ctx, key).Bytes()
 
@@ -70,40 +70,16 @@ func (c *OrderCache) get(userId, id int64) (*entity.Order, error) {
 	if err = json.Unmarshal(b, o); err != nil {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
-	return o, nil
-}
 
-func (c *OrderCache) GetAll(userId int64) ([]*entity.Order, error) {
-	const op = errors.Op("OrderCache.GetAll")
-
-	p := fmt.Sprintf("user:%d:order:*", userId)
-	var keys []string
-	if err := c.r.Keys(c.ctx, p).ScanSlice(&keys); err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
+	if o.MetaData == nil {
+		o.MetaData = make(map[string]interface{})
 	}
-
-	if len(keys) == 0 {
-		return nil, errors.Wrap(op, errors.ErrNotFound)
-	}
-
-	vals, err := c.r.MGet(c.ctx, keys...).Result()
-	if err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-	}
-
-	var osDTO []*entity.Order
-	for _, v := range vals {
-		o := &entity.Order{}
-		if err := json.Unmarshal([]byte(v.(string)), o); err != nil {
-			return nil, errors.Wrap(err, op, errors.ErrInternal)
+	for _, s := range o.Swaps {
+		if s.MetaData == nil {
+			s.MetaData = make(map[string]interface{})
 		}
-		osDTO = append(osDTO, o)
 	}
-
-	var os []*entity.Order
-	os = append(os, osDTO...)
-	return os, nil
-
+	return o, nil
 }
 
 func (c *OrderCache) Update(o *entity.Order) error {
@@ -114,10 +90,10 @@ func (c *OrderCache) Update(o *entity.Order) error {
 	return nil
 }
 
-func (c *OrderCache) Delete(userId, id int64) error {
+func (c *OrderCache) Delete(id int64) error {
 	const op = errors.Op("OrderCache.Delete")
 
-	key := fmt.Sprintf("user:%d:order:%d", userId, id)
+	key := fmt.Sprintf("order:%d", id)
 	if err := c.r.Del(c.ctx, key).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
@@ -127,7 +103,7 @@ func (c *OrderCache) Delete(userId, id int64) error {
 func (c *OrderCache) UpdateWithdrawal(w *entity.Withdrawal) error {
 	const op = errors.Op("OrderCache.UpdateWithdrawal")
 
-	o, err := c.Get(w.UserId, w.OrderId)
+	o, err := c.Get(w.OrderId)
 	if err != nil {
 		return errors.Wrap(err, op)
 	}

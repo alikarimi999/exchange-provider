@@ -45,11 +45,7 @@ func (o *OrderUseCase) writeToCache(data interface{}) error {
 		}
 
 		return o.cache.Add(d)
-	case *entity.Withdrawal:
-		if d.Status == entity.WithdrawalPending {
-			return o.cache.AddPendingWithdrawal(d)
-		}
-		return nil
+
 	case *entity.Deposit:
 		return o.cache.UpdateDeposit(d)
 	default:

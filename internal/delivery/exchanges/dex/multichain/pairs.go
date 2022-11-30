@@ -22,16 +22,16 @@ func (s *supportedPairs) add(p *Pair) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	_, exist := s.pairs[id(p.t1, p.t2)]
+	_, exist := s.pairs[id(p.T1, p.T2)]
 	if !exist {
-		_, exist = s.pairs[id(p.t2, p.t1)]
+		_, exist = s.pairs[id(p.T2, p.T1)]
 	}
 	if !exist {
-		s.pairs[id(p.t1, p.t2)] = p
+		s.pairs[id(p.T1, p.T2)] = p
 	}
 }
 
-func (s *supportedPairs) get(t1, t2 *token) (*Pair, error) {
+func (s *supportedPairs) get(t1, t2 *Token) (*Pair, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -55,7 +55,7 @@ func (s *supportedPairs) getAll() []*Pair {
 	return pairs
 }
 
-func (s *supportedPairs) exist(t1, t2 *token) bool {
+func (s *supportedPairs) exist(t1, t2 *Token) bool {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	_, exist := s.pairs[id(t1, t2)]
@@ -65,7 +65,7 @@ func (s *supportedPairs) exist(t1, t2 *token) bool {
 	return exist
 }
 
-func (s *supportedPairs) remove(t1, t2 *token) error {
+func (s *supportedPairs) remove(t1, t2 *Token) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	if _, exist := s.pairs[id(t1, t2)]; exist {
@@ -79,6 +79,6 @@ func (s *supportedPairs) remove(t1, t2 *token) error {
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }
 
-func id(t1, t2 *token) string {
-	return t1.Symbol + "-" + t1.Chain + types.Delimiter + t2.Symbol + "-" + t2.Chain
+func id(t1, t2 *Token) string {
+	return t1.CoinId + "-" + t1.ChainId + types.Delimiter + t2.CoinId + "-" + t2.ChainId
 }

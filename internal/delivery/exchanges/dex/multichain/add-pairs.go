@@ -1,15 +1,37 @@
 package multichain
 
 import (
-	"exchange-provider/internal/delivery/exchanges/dex/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"strconv"
 )
+
+type AddPairsRequest struct {
+	Pairs []*Pair
+}
+
+func (a *AddPairsRequest) Validate() error {
+	for _, p := range a.Pairs {
+		if p.T1.CoinId != p.T2.CoinId {
+			return fmt.Errorf("both tokens must have the same coinId")
+		}
+		if p.T1.ChainId == p.T2.ChainId {
+			return fmt.Errorf("both tokens cannot have the same chainId")
+		}
+		if _, err := strconv.Atoi(p.T1.ChainId); err != nil {
+			return err
+		}
+		if _, err := strconv.Atoi(p.T2.ChainId); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func (m *Multichain) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
-	req, ok := data.(*dto.AddPairsRequest)
+	req, ok := data.(*AddPairsRequest)
 	if !ok {
 		return nil, errors.Wrap(errors.ErrBadRequest)
 	}
@@ -17,50 +39,33 @@ func (m *Multichain) AddPairs(data interface{}) (*entity.AddPairsResult, error) 
 	res := &entity.AddPairsResult{}
 	// ps := []*Pair{}
 	for _, p := range req.Pairs {
-		c1, err := parseCoin(p.C1)
-		if err != nil {
-			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
-			continue
-		}
-		c2, err := parseCoin(p.C2)
-		if err != nil {
-			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
-			continue
-		}
-
-		if exist := m.pairs.exist(c2T(c1), c2T(c2)); exist {
+		if exist := m.pairs.exist(p.T1, p.T2); exist {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
 
-		t1, t2 := getinfos(m.f, c1.CoinId, c1.ChainId, c2.CoinId, c2.ChainId)
-		if len(t1.cs) == 0 || len(t2.cs) == 0 {
-			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("not found")})
-			continue
-		}
-
-		if _, ok := m.cs[chainId(t1.Chain)]; !ok {
-			c, err := m.newChain(t1.Chain)
+		if _, ok := m.cs[chainId(p.T1.ChainId)]; !ok {
+			c, err := m.newChain(p.T1.ChainId)
 			if err != nil {
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
 					Err: err})
 				continue
 			}
-			m.cs[chainId(t1.Chain)] = c
+			m.cs[chainId(p.T1.ChainId)] = c
 		}
 
-		if _, ok := m.cs[chainId(t2.Chain)]; !ok {
-			c, err := m.newChain(t2.Chain)
+		if _, ok := m.cs[chainId(p.T2.ChainId)]; !ok {
+			c, err := m.newChain(p.T2.ChainId)
 			if err != nil {
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
 					Err: err})
 				continue
 			}
-			m.cs[chainId(t1.Chain)] = c
+			m.cs[chainId(p.T2.ChainId)] = c
 		}
 
-		m.pairs.add(&Pair{t1: t1, t2: t2})
+		m.pairs.add(p)
+		res.Added = append(res.Added, *p.toEntity())
 
 	}
 	return res, nil

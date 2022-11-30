@@ -14,7 +14,7 @@ var erc20TransferSignature = common.HexToHash("0xddf252ad1be2c89b69c2b068fc378da
 
 type dtFeed struct {
 	d    *entity.Deposit
-	t    *token
+	t    *Token
 	done chan<- struct{}
 	pCh  <-chan bool
 }
@@ -34,7 +34,7 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 	}
 
 	tf := &utils.TtFeed{
-		P:          m.cs[chainId(f.t.Chain)].provider(),
+		P:          m.cs[chainId(f.t.ChainId)].provider(),
 		TxHash:     txHash,
 		Receiver:   &destAddress,
 		NeedTx:     f.t.Native,

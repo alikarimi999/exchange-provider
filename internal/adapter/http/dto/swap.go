@@ -5,13 +5,16 @@ import (
 )
 
 type Swap struct {
-	Id       uint64
-	Ex_Id    string `json:"exchange_id"`
-	UserId   int64  `json:"user_id,omitempty"`
-	OrderId  int64  `json:"order_id,omitempty"`
-	Exchange string `json:"exchange,omitempty"`
+	Id      uint64
+	Ex_Id   string `json:"exchange_id"`
+	UserId  int64  `json:"user_id,omitempty"`
+	OrderId int64  `json:"order_id,omitempty"`
+
 	Input    string `json:"input,omitempty"`
-	Output   string `json:"output,omitempty"`
+	InAmount string `json:"inAmount,omitempty"`
+
+	Output    string `json:"output,omitempty"`
+	OutAmount string `json:"outAmount,omitempty"`
 
 	FilledPrice string `json:"filled_price,omitempty"`
 	Fee         string `json:"fee"`
@@ -19,13 +22,17 @@ type Swap struct {
 	Status      string `json:"status"`
 }
 
-func SwapFromEntity(e *entity.Swap) *Swap {
+func SwapFromEntity(e *entity.Swap, r *entity.Route) *Swap {
 	ex := &Swap{
 		Id:    e.Id,
 		Ex_Id: e.ExId,
 
-		Input:       e.InAmount,
-		Output:      e.OutAmount,
+		Input:    r.In.String(),
+		InAmount: e.InAmount,
+
+		Output:    r.Out.String(),
+		OutAmount: e.OutAmount,
+
 		Fee:         e.Fee,
 		FeeCurrency: e.FeeCurrency,
 		Status:      string(e.Status),

@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
+	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -68,6 +69,18 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
+	case "multichain":
+		req := &multichain.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			return
+		}
+		res, err = s.app.AddPairs(ex, req)
+		if err != nil {
+			handlerErr(ctx, err)
+			return
+		}
+
 	}
 
 	ctx.JSON(200, dto.FromEntity(res))
@@ -100,7 +113,8 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 				continue
 			}
 			if ex.CurrentStatus == app.ExchangeStatusDisable {
-				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange %s is %s", ex.NID(), ex.CurrentStatus))
+				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange %s is %s", ex.NID(),
+					ex.CurrentStatus))
 				continue
 			}
 			exs = append(exs, ex)

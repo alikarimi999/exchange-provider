@@ -49,7 +49,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 		go func(ord *entity.Order) {
 
-			for i, route := range ord.Routes {
+			for i, route := range ord.SortedRoutes() {
 				exc, err := o.exStore.get(route.Exchange)
 				if err != nil {
 					o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )",
@@ -76,6 +76,8 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					ord.Swaps[i].InAmount = aVol
 					ord.SpreadVol = sVol
 					ord.SpreadRate = rate
+				} else {
+					ord.Swaps[i].InAmount = ord.Swaps[i-1].OutAmount
 				}
 
 				id, err := ex.Exchange(ord, i)
@@ -169,7 +171,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 					// add to withdrawal cache
 					// and wait for withdrawal confirm
-					if err := o.wc.AddPendingWithdrawal(ord.Withdrawal); err != nil {
+					if err := o.wc.AddPendingWithdrawal(ord.Id); err != nil {
 						o.l.Error(string(op), err.Error())
 					}
 					return

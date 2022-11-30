@@ -97,7 +97,7 @@ func (r *Router) adminRoutes() {
 			es.POST("/change_status", func(ctx *gin.Context) {
 				r.srv.ChangeStatus(newContext(ctx))
 			})
-			es.POST("/add_account/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
+			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
 		}
 
 		limiter := a.Group("/limiter")

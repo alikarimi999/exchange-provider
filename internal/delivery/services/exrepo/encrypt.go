@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
@@ -37,10 +38,14 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 	jb := make(jsonb)
 
 	switch e.Name {
-	case "uniswapv3", "panckakeswapv2", "multichain":
+	case "uniswapv3", "panckakeswapv2":
 		conf := ex.Configs().(*dex.Config)
 		jb["mnemonic"] = conf.Mnemonic
 		jb["network"] = conf.Network
+
+	case "multichain":
+		conf := ex.Configs().(*multichain.Config)
+		jb["mnemonic"] = conf.Mnemonic
 
 	case "kucoin":
 		conf := ex.Configs().(*kucoin.Configs)

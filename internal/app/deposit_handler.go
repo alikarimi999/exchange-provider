@@ -49,10 +49,10 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 			pCh <- true
 			switch d.Status {
 			case entity.DepositConfirmed:
-				h.confirmedDposit(d.UserId, d.OrderId)
+				h.confirmedDposit(d.OrderId)
 				return
 			case entity.DepositFailed:
-				h.failedDeposit(d.UserId, d.OrderId)
+				h.failedDeposit(d.OrderId)
 				return
 			}
 
@@ -61,10 +61,10 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 
 }
 
-func (h *depositHandler) confirmedDposit(userId, orderId int64) error {
+func (h *depositHandler) confirmedDposit(orderId int64) error {
 	const op = errors.Op("depositHandler.confirmedDposit")
 
-	o := &entity.Order{Id: orderId, UserId: userId}
+	o := &entity.Order{Id: orderId}
 
 	err := h.o.read(o)
 	if err != nil {
@@ -117,9 +117,9 @@ func (h *depositHandler) confirmedDposit(userId, orderId int64) error {
 
 }
 
-func (u *depositHandler) failedDeposit(userId, orderId int64) {
+func (u *depositHandler) failedDeposit(orderId int64) {
 	const agent = "depositHandler.failedDeposit"
-	o := &entity.Order{Id: orderId, UserId: userId}
+	o := &entity.Order{Id: orderId}
 
 	err := u.o.read(o)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 type withdrawalTracker struct {
-	wCh chan *entity.Withdrawal
+	wCh chan int64
 
 	ouc *OrderUseCase
 
@@ -19,12 +19,14 @@ type withdrawalTracker struct {
 	wc   entity.WithdrawalCache
 	exs  *exStore
 
+	list []int64
+
 	l logger.Logger
 }
 
 func newWithdrawalTracker(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalTracker {
 	w := &withdrawalTracker{
-		wCh:  make(chan *entity.Withdrawal, 1024),
+		wCh:  make(chan int64, 1024),
 		ouc:  ouc,
 		repo: repo,
 		oc:   oc,
@@ -41,17 +43,16 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for wd := range t.wCh {
-		go func(w *entity.Withdrawal) {
-
-			o := &entity.Order{Id: w.OrderId, UserId: w.UserId}
+		go func(oId int64) {
+			defer t.delete(oId)
+			o := &entity.Order{Id: oId}
 			if err := t.ouc.read(o); err != nil {
 				t.l.Error(agent, errors.Wrap(err, op,
-					fmt.Sprintf("order: '%d'", w.OrderId)).Error())
+					fmt.Sprintf("order: '%d'", oId)).Error())
 				return
 			}
 
-			w0 := *w
-			ex, err := t.exs.get(w.Exchange)
+			ex, err := t.exs.get(o.Withdrawal.Exchange)
 			if err != nil {
 				t.l.Error(agent, errors.Wrap(err, op, "exchange not found").Error())
 				return
@@ -60,11 +61,11 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 			done := make(chan struct{})
 			pCh := make(chan bool)
 
-			t.l.Debug(agent, fmt.Sprintf("order %d", w.OrderId))
+			t.l.Debug(agent, fmt.Sprintf("order %d", oId))
 			go ex.TrackWithdrawal(o, done, pCh)
 
 			<-done
-			t.l.Debug(agent, fmt.Sprintf("orderId: '%d', staus: '%s'", w.OrderId, w.Status))
+			t.l.Debug(agent, fmt.Sprintf("orderId: '%d', staus: '%s'", oId, o.Withdrawal.Status))
 
 			switch o.Withdrawal.Status {
 			case entity.WithdrawalPending:
@@ -73,10 +74,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 			case entity.WithdrawalSucceed:
 
 				o.Status = entity.OSSucceed
-				o.Withdrawal.Status = w.Status
-				o.Withdrawal.ExchangeFee = w.ExchangeFee
-				o.Withdrawal.Executed = w.Executed
-				o.Withdrawal.TxId = w.TxId
 
 				if err := t.ouc.write(o); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op, o.String()).Error())
@@ -85,14 +82,14 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 				pCh <- true
 
-				if err := t.oc.Delete(w.UserId, w.OrderId); err != nil {
+				if err := t.oc.Delete(oId); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op,
-						fmt.Sprintf("order: '%d'", w.OrderId)).Error())
+						fmt.Sprintf("order: '%d'", oId)).Error())
 				}
 
-				if err := t.wc.DelPendingWithdrawal(w0); err != nil {
+				if err := t.wc.DelPendingWithdrawal(oId); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op,
-						fmt.Sprintf("order: '%d'", w.OrderId)).Error())
+						fmt.Sprintf("order: '%d'", oId)).Error())
 				}
 
 				return
@@ -101,8 +98,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 
 				o.Status = entity.OSFailed
 				o.FailedCode = entity.FCWithdFailed
-				o.Withdrawal.Status = w.Status
-				o.Withdrawal.FailedDesc = w.FailedDesc
 
 				if err := t.ouc.write(o); err != nil {
 					t.l.Error(string(op), errors.Wrap(err, op, o.String()).Error())
@@ -111,9 +106,9 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				}
 				pCh <- true
 
-				if err := t.wc.DelPendingWithdrawal(w0); err != nil {
+				if err := t.wc.DelPendingWithdrawal(oId); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op,
-						fmt.Sprintf("order: '%d'", w.OrderId)).Error())
+						fmt.Sprintf("order: '%d'", oId)).Error())
 				}
 				return
 
@@ -123,6 +118,23 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 	}
 }
 
-func (t *withdrawalTracker) track(wi *entity.Withdrawal) {
-	t.wCh <- wi
+func (t *withdrawalTracker) track(id int64) {
+	var exists bool
+	for _, v := range t.list {
+		if v == id {
+			exists = true
+		}
+	}
+	if !exists {
+		t.list = append(t.list, id)
+		t.wCh <- id
+	}
+}
+
+func (t *withdrawalTracker) delete(id int64) {
+	for i, v := range t.list {
+		if v == id {
+			t.list = append(t.list[:i], t.list[i+1:]...)
+		}
+	}
 }
