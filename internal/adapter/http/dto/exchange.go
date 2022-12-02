@@ -3,8 +3,7 @@ package dto
 import "exchange-provider/internal/app"
 
 type Account struct {
-	Status string      `json:"status"`
-	Conf   interface{} `json:"configs"`
+	Conf interface{} `json:"configs"`
 }
 
 type GetAllExchangesResponse struct {

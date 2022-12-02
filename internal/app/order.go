@@ -57,9 +57,6 @@ func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go o.wh.tracker.run(wg)
 
-	wg.Add(1)
-	go o.exs.start(w)
-
 	o.l.Debug(agent, "started")
 
 	w.Wait()

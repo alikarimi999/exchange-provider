@@ -2,7 +2,6 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
-	"exchange-provider/internal/app"
 	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
@@ -20,14 +19,10 @@ func (s *Server) AddPairs(ctx Context) {
 		handlerErr(ctx, err)
 		return
 	}
-	if ex.CurrentStatus == app.ExchangeStatusDisable {
-		ctx.JSON(404, "exchange is disable")
-		return
-	}
 
 	res := &entity.AddPairsResult{}
 
-	switch ex.Name() {
+	switch ex.Id() {
 	case "kucoin":
 		req := &dto.KucoinAddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
@@ -97,14 +92,10 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 		Exchanges: make(map[string]*dto.Exchange),
 	}
 
-	var exs []*app.Exchange
+	var exs []entity.Exchange
 	if len(req.Es) == 0 || len(req.Es) == 1 && req.Es[0] == "*" {
-		for _, ex := range s.app.AllExchanges() {
-			if ex.CurrentStatus == app.ExchangeStatusDisable {
-				continue
-			}
-			exs = append(exs, ex)
-		}
+		exs = s.app.AllExchanges()
+
 	} else {
 		for _, nid := range req.Es {
 			ex, err := s.app.GetExchange(nid)
@@ -112,11 +103,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 				resp.Messages = append(resp.Messages, err.Error())
 				continue
 			}
-			if ex.CurrentStatus == app.ExchangeStatusDisable {
-				resp.Messages = append(resp.Messages, fmt.Sprintf("exchange %s is %s", ex.NID(),
-					ex.CurrentStatus))
-				continue
-			}
+
 			exs = append(exs, ex)
 		}
 	}
@@ -124,7 +111,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 	wg := &sync.WaitGroup{}
 	for _, exc := range exs {
 		wg.Add(1)
-		go func(ex *app.Exchange) {
+		go func(ex entity.Exchange) {
 			defer wg.Done()
 			ps, err := s.app.GetAllPairsByExchange(ex)
 			if err != nil {
@@ -132,12 +119,9 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 				return
 			}
 
-			resp.Exchanges[ex.NID()] = &dto.Exchange{
-				Status: ex.CurrentStatus,
-			}
 			for _, p := range ps {
 				dp := dto.PairDTO(p)
-				resp.Exchanges[ex.NID()].Pairs = append(resp.Exchanges[ex.NID()].Pairs, dp)
+				resp.Exchanges[ex.Id()].Pairs = append(resp.Exchanges[ex.Id()].Pairs, dp)
 			}
 		}(exc)
 	}
@@ -163,16 +147,12 @@ func (s *Server) RemovePair(ctx Context) {
 		handlerErr(ctx, err)
 		return
 	}
-	if ex.CurrentStatus == app.ExchangeStatusDisable {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("exchange %s is %s", ex.NID(), ex.CurrentStatus))))
-		return
-	}
 
-	err = s.app.RemovePair(ex.Exchange, bc, qc, req.Force)
+	err = s.app.RemovePair(ex, bc, qc, req.Force)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	ctx.JSON(200, fmt.Sprintf("pair '%s/%s' removed from %s", bc, qc, ex.NID()))
+	ctx.JSON(200, fmt.Sprintf("pair '%s/%s' removed from %s", bc, qc, ex.Id()))
 }

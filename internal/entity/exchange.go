@@ -36,9 +36,7 @@ type Swap struct {
 }
 
 type Exchange interface {
-	Name() string
-	AccountId() string
-	NID() string
+	Id() string
 
 	Exchange(o *Order, index int) (string, error)
 	TrackExchangeOrder(o *Order, index int, done chan<- struct{}, proccessed <-chan bool)
@@ -53,7 +51,6 @@ type Exchange interface {
 type ExchangeManager interface {
 	Type() ExType
 	Stop()
-	StartAgain() (*StartAgainResult, error)
 
 	Command(Command) (CommandResult, error)
 
@@ -83,8 +80,4 @@ type AddPairsResult struct {
 type PairsErr struct {
 	Pair string
 	Err  error
-}
-
-type StartAgainResult struct {
-	Removed []*PairsErr
 }

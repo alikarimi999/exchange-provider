@@ -21,14 +21,8 @@ func newSupportedPairs() *supportedPairs {
 func (s *supportedPairs) add(p *Pair) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+	s.pairs[id(p.T1, p.T2)] = p
 
-	_, exist := s.pairs[id(p.T1, p.T2)]
-	if !exist {
-		_, exist = s.pairs[id(p.T2, p.T1)]
-	}
-	if !exist {
-		s.pairs[id(p.T1, p.T2)] = p
-	}
 }
 
 func (s *supportedPairs) get(t1, t2 *Token) (*Pair, error) {

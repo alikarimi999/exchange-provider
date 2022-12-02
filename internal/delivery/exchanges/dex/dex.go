@@ -23,8 +23,7 @@ import (
 type dex struct {
 	mux *sync.Mutex
 
-	cfg       *Config
-	accountId string
+	cfg *Config
 
 	wallet *eth.HDWallet
 
@@ -57,8 +56,7 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 	ex := &dex{
 		mux: &sync.Mutex{},
 
-		accountId: accountId(cfg.Mnemonic),
-		cfg:       cfg,
+		cfg: cfg,
 
 		confirms: 1,
 
@@ -73,21 +71,21 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 	}
 
 	if readConfig {
-		ex.l.Debug(agent, fmt.Sprintf("retriving `%s` data", ex.NID()))
-		acc, ok := ex.v.Get(fmt.Sprintf("%s.account_count", ex.NID())).(float64)
+		ex.l.Debug(agent, fmt.Sprintf("retriving `%s` data", ex.Id()))
+		acc, ok := ex.v.Get(fmt.Sprintf("%s.account_count", ex.Id())).(float64)
 		if ok {
 			ex.cfg.AccountCount = uint64(acc)
 		}
 
-		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.NID())).(string)
-		ex.cfg.Factory = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.factory", ex.NID())).(string))
-		ex.cfg.Router = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.router", ex.NID())).(string))
-		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.NID())).(string)
-		ex.cfg.BlockTime = time.Duration(ex.v.Get(fmt.Sprintf("%s.block_time", ex.NID())).(float64))
+		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.Id())).(string)
+		ex.cfg.Factory = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.factory", ex.Id())).(string))
+		ex.cfg.Router = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.router", ex.Id())).(string))
+		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.Id())).(string)
+		ex.cfg.BlockTime = time.Duration(ex.v.Get(fmt.Sprintf("%s.block_time", ex.Id())).(float64))
 
-		ex.tt = utils.NewTxTracker(ex.NID(), ex.cfg.BlockTime, ex.confirms, l)
+		ex.tt = utils.NewTxTracker(ex.Id(), ex.cfg.BlockTime, ex.confirms, l)
 
-		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.NID()))
+		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.Id()))
 		if i == nil {
 			return nil, errors.New("no provider available in config file")
 		}
@@ -106,7 +104,7 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			return nil, err
 		}
 
-		ps := ex.v.GetStringSlice(fmt.Sprintf("%s.pairs", ex.NID()))
+		ps := ex.v.GetStringSlice(fmt.Sprintf("%s.pairs", ex.Id()))
 		wg := &sync.WaitGroup{}
 		for _, v := range ps {
 			p := strings.Split(v, types.Delimiter)
@@ -133,17 +131,17 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			return nil, err
 		}
 
-		ex.v.Set(fmt.Sprintf("%s.factory", ex.NID()), ex.cfg.Factory)
-		ex.v.Set(fmt.Sprintf("%s.router", ex.NID()), ex.cfg.Router)
-		ex.v.Set(fmt.Sprintf("%s.native_token", ex.NID()), ex.cfg.NativeToken)
-		ex.v.Set(fmt.Sprintf("%s.account_count", ex.NID()), ex.cfg.AccountCount)
-		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.NID()), ex.cfg.TokensFile)
-		ex.v.Set(fmt.Sprintf("%s.block_time", ex.NID()), ex.cfg.BlockTime)
+		ex.v.Set(fmt.Sprintf("%s.factory", ex.Id()), ex.cfg.Factory)
+		ex.v.Set(fmt.Sprintf("%s.router", ex.Id()), ex.cfg.Router)
+		ex.v.Set(fmt.Sprintf("%s.native_token", ex.Id()), ex.cfg.NativeToken)
+		ex.v.Set(fmt.Sprintf("%s.account_count", ex.Id()), ex.cfg.AccountCount)
+		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.Id()), ex.cfg.TokensFile)
+		ex.v.Set(fmt.Sprintf("%s.block_time", ex.Id()), ex.cfg.BlockTime)
 
-		ex.tt = utils.NewTxTracker(ex.NID(), ex.cfg.BlockTime, ex.confirms, l)
+		ex.tt = utils.NewTxTracker(ex.Id(), ex.cfg.BlockTime, ex.confirms, l)
 
 		for i, p := range ex.cfg.Providers {
-			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.NID(), i), p.URL)
+			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Id(), i), p.URL)
 		}
 
 		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
@@ -158,9 +156,9 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 }
 
 func (d *dex) setDEX() error {
-	switch d.cfg.Name {
+	switch d.cfg.Id {
 	case "uniswapv3":
-		dex, err := uv3.NewUniSwapV3(d.NID(), d.cfg.NativeToken, d.cfg.Providers,
+		dex, err := uv3.NewUniSwapV3(d.Id(), d.cfg.NativeToken, d.cfg.Providers,
 			d.cfg.Factory, d.cfg.Router, d.wallet, d.tt, d.l)
 		if err != nil {
 			return err
@@ -168,7 +166,7 @@ func (d *dex) setDEX() error {
 		d.Dex = dex
 		return nil
 	case "panckakeswapv2":
-		dex, err := pv2.NewPanckakeswapV2(d.NID(), d.cfg.NativeToken, d.wallet, d.tt, d.cfg.Router,
+		dex, err := pv2.NewPanckakeswapV2(d.Id(), d.cfg.NativeToken, d.wallet, d.tt, d.cfg.Router,
 			d.cfg.Providers, d.l)
 		if err != nil {
 			return err
@@ -176,7 +174,7 @@ func (d *dex) setDEX() error {
 		d.Dex = dex
 		return nil
 	default:
-		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Name)
+		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Id)
 	}
 
 }

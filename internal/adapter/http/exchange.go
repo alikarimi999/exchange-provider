@@ -2,10 +2,10 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
-	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
+	"exchange-provider/internal/entity"
 	"fmt"
 	"net/http"
 )
@@ -30,7 +30,7 @@ func (s *Server) AddExchange(ctx Context) {
 			handlerErr(ctx, err)
 			return
 		}
-		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.NID()))
+		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.Id()))
 		return
 
 	case "dex":
@@ -66,7 +66,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		cfg.Id = ex.NID()
+		cfg.Id = ex.Id()
 		cfg.Accounts = conf.Accounts
 		cfg.Msg = "exchange added"
 		ctx.JSON(http.StatusOK, cfg)
@@ -85,13 +85,13 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := multichain.NewMultichain(cfg, s.l)
+		ex, err := multichain.NewMultichain(cfg, s.v, s.l, false)
 		if err != nil {
 			ctx.JSON(200, err.Error())
 			return
 		}
 
-		cfg.Id = "multichain"
+		cfg.Name = "multichain"
 		if err := s.app.AddExchange(ex); err != nil {
 			ctx.JSON(200, err.Error())
 			return
@@ -120,7 +120,7 @@ func (s *Server) GetExchangeList(ctx Context) {
 	res := &dto.GetAllExchangesResponse{
 		Exchanges: make(map[string]*dto.Account),
 	}
-	exs := []*app.Exchange{}
+	exs := []entity.Exchange{}
 	if len(req.Es) == 0 || len(req.Es) == 1 && req.Es[0] == "*" {
 		exs = s.app.AllExchanges()
 	} else {
@@ -136,9 +136,8 @@ func (s *Server) GetExchangeList(ctx Context) {
 	}
 
 	for _, ex := range exs {
-		res.Exchanges[ex.NID()] = &dto.Account{
-			Status: string(ex.CurrentStatus),
-			Conf:   ex.Configs(),
+		res.Exchanges[ex.Id()] = &dto.Account{
+			Conf: ex.Configs(),
 		}
 	}
 
@@ -150,50 +149,20 @@ func (s *Server) GetExchangeList(ctx Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-func (s *Server) ChangeStatus(ctx Context) {
-	req := struct {
-		Id     string `json:"id"`
-		Status string `json:"status"`
-		Force  bool   `json:"force"`
-	}{}
+func (s *Server) RemoveExchange(ctx Context) {
+	id := ctx.Param("id")
 
-	if err := ctx.Bind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+	if err := s.app.RemoveExchange(id, true); err != nil {
+		handlerErr(ctx, err)
 		return
 	}
 
-	if req.Id == "" || req.Status == "" {
-		ctx.JSON(http.StatusBadRequest, "id and status are required")
+	s.v.Set(id, struct{}{})
+	if err := s.v.WriteConfig(); err != nil {
+		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	switch req.Status {
-	case app.ExchangeStatusActive, app.ExchangeStatusDeactive, app.ExchangeStatusDisable:
-		res, err := s.app.ChangeExchangeStatus(req.Id, req.Status, req.Force)
-		if err != nil {
-			handlerErr(ctx, err)
-			return
-		}
-
-		r := &dto.ChangeExchangeStatusResponse{}
-		r.FromEntity(res)
-		ctx.JSON(http.StatusOK, r)
-
-	case "remove":
-		if err := s.app.RemoveExchange(req.Id, req.Force); err != nil {
-			handlerErr(ctx, err)
-			return
-		}
-
-		s.v.Set(req.Id, struct{}{})
-		if err := s.v.WriteConfig(); err != nil {
-			ctx.JSON(http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s removed!", req.Id))
-	default:
-		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("status %s not supported", req.Status))
-	}
+	ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s removed!", id))
 
 }

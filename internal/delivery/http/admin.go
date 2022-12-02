@@ -97,8 +97,8 @@ func (r *Router) adminRoutes() {
 			es.POST("/list", func(ctx *gin.Context) {
 				r.srv.GetExchangeList(newContext(ctx))
 			})
-			es.POST("/change_status", func(ctx *gin.Context) {
-				r.srv.ChangeStatus(newContext(ctx))
+			es.GET("/remove/:id", func(ctx *gin.Context) {
+				r.srv.RemoveExchange(newContext(ctx))
 			})
 			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
 

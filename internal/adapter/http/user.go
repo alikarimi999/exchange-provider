@@ -2,7 +2,6 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
-	"exchange-provider/internal/app"
 	"exchange-provider/pkg/errors"
 	"net/http"
 )
@@ -31,9 +30,6 @@ func (s *Server) GetPairsToUser(ctx Context) {
 	exs := s.app.AllExchanges()
 	lenExs := len(exs)
 	for i, ex := range exs {
-		if ex.CurrentStatus != app.ExchangeStatusActive {
-			continue
-		}
 		if len(dps) == 0 {
 			ps := ex.GetAllPairs()
 			for _, p := range ps {

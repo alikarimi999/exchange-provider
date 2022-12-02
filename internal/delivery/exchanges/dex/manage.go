@@ -15,18 +15,21 @@ func (u *dex) Run(wg *sync.WaitGroup) {
 
 }
 
+func (u *dex) Id() string {
+	return u.cfg.Id
+}
+
 func (u *dex) Type() entity.ExType {
 	return entity.DEX
 }
 func (u *dex) Stop() {
-	op := fmt.Sprintf("%s.Stop", u.NID())
+	op := fmt.Sprintf("%s.Stop", u.Id())
 	close(u.stopCh)
 	u.stoppedAt = time.Now()
 	u.l.Debug(string(op), "stopped")
 }
 
 func (u *dex) Configs() interface{} {
-	u.cfg.Id = u.NID()
 	u.cfg.Accounts, _ = u.wallet.AllAccounts()
 	return u.cfg
 }
@@ -54,20 +57,6 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 
 	wg.Wait()
 	return pairs
-}
-
-func (u *dex) StartAgain() (*entity.StartAgainResult, error) {
-	agent := u.agent("StartAgain")
-	u.l.Debug(agent, "start again")
-
-	for _, p := range u.cfg.Providers {
-		if err := p.Ping(); err != nil {
-			return nil, err
-		}
-	}
-
-	u.stopCh = make(chan struct{})
-	return &entity.StartAgainResult{}, nil
 }
 
 func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
@@ -102,7 +91,7 @@ func (u *dex) RemovePair(t1, t2 *entity.Coin) error {
 
 	if p, err := u.pairs.get(t1.CoinId, t2.CoinId); err == nil {
 		id := pairId(p.T1.Symbol, p.T2.Symbol)
-		delete(u.v.Get(fmt.Sprintf("%s.pairs", u.NID())).(map[string]interface{}), strings.ToLower(id))
+		delete(u.v.Get(fmt.Sprintf("%s.pairs", u.Id())).(map[string]interface{}), strings.ToLower(id))
 		if err := u.v.WriteConfig(); err != nil {
 			return err
 		}

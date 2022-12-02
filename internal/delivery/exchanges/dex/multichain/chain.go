@@ -19,29 +19,41 @@ type Chain struct {
 	w  *eth.HDWallet
 
 	// nativeToken string
-	ps []*ts.Provider
+	Providers []*ts.Provider
 
 	l logger.Logger
 }
 
-func (m *Multichain) newChain(id ChainId) (*Chain, error) {
+func (m *Multichain) newChain(id ChainId, urls ...string) (*Chain, []URL, error) {
 	cId, _ := strconv.Atoi(string(id))
 	c := &Chain{
 		id: int64(cId),
 		l:  m.l,
 	}
 
-	w, err := eth.NewWallet(m.cfg.Mnemonic, c.provider().Client, m.cfg.AccountCount)
-	if err != nil {
-		return nil, err
+	us := []URL{}
+	for _, url := range urls {
+		if err := c.addProvider(url); err != nil {
+			us = append(us, URL{Url: url, Msg: err.Error()})
+			continue
+		}
+		us = append(us, URL{Url: url, Msg: addMsg})
 	}
-	c.w = w
-	c.am = utils.NewApproveManager(int64(cId), m.tt, w, m.l, c.ps)
-	return c, nil
+
+	if len(c.Providers) > 0 {
+		w, err := eth.NewWallet(m.cfg.Mnemonic, c.provider().Client, m.cfg.AccountCount)
+		if err != nil {
+			return nil, us, err
+		}
+		c.w = w
+		c.am = utils.NewApproveManager(int64(cId), m.tt, w, m.l, c.Providers)
+		return c, us, nil
+	}
+	return nil, us, fmt.Errorf("all urls was invalid")
 }
 
 func (c *Chain) addProvider(url string) error {
-	for _, p := range c.ps {
+	for _, p := range c.Providers {
 		if p.URL == url {
 			return nil
 		}
@@ -61,5 +73,6 @@ func (c *Chain) addProvider(url string) error {
 	}
 
 	p.Client = cl
+	c.Providers = append(c.Providers, p)
 	return nil
 }

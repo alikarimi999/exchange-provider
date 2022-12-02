@@ -30,7 +30,7 @@ func newCache(k *kucoinExchange, r *redis.Client, l logger.Logger) *cache {
 }
 
 func (c *cache) recordWithdrawal(w *dto.Withdrawal) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.recordWithdrawal", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.recordWithdrawal", c.k.Id()))
 	key := fmt.Sprintf("kucoin:withdrawals:%s", w.Id)
 	if err := c.r.Set(c.ctx, key, w, time.Duration(24*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
@@ -39,7 +39,7 @@ func (c *cache) recordWithdrawal(w *dto.Withdrawal) error {
 }
 
 func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.getWithdrawal", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.getWithdrawal", c.k.Id()))
 
 	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
 	v, err := c.r.Get(c.ctx, key).Result()
@@ -58,7 +58,7 @@ func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, error) {
 }
 
 func (c *cache) delWithdrawal(id string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.delWithdrawal", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.delWithdrawal", c.k.Id()))
 
 	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
 	if err := c.r.Del(c.ctx, key).Err(); err != nil {
@@ -68,7 +68,7 @@ func (c *cache) delWithdrawal(id string) error {
 }
 
 func (c *cache) proccessedWithdrawal(id string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.proccessedWithdrawal", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.proccessedWithdrawal", c.k.Id()))
 
 	key := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
 	if err := c.r.Set(c.ctx, key, "", time.Duration(2*time.Hour)).Err(); err != nil {
@@ -79,7 +79,7 @@ func (c *cache) proccessedWithdrawal(id string) error {
 
 // check if withdrawal is processed
 func (c *cache) isAddable(id string) (bool, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.isAddable", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.isAddable", c.k.Id()))
 
 	key1 := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
 	key2 := fmt.Sprintf("kucoin:withdrawals:%s", id)
@@ -96,7 +96,7 @@ func (c *cache) isAddable(id string) (bool, error) {
 }
 
 func (c *cache) SaveD(de *depositeRecord) error {
-	op := fmt.Sprintf("%s.cache.recordDeposite", c.k.NID())
+	op := fmt.Sprintf("%s.cache.recordDeposite", c.k.Id())
 
 	key := fmt.Sprintf("kucoin:deposites:%s", de.TxId)
 	err := c.r.Set(c.ctx, key, de, time.Duration(12*time.Hour)).Err()
@@ -107,7 +107,7 @@ func (c *cache) SaveD(de *depositeRecord) error {
 }
 
 func (c *cache) GetD(txid string) (*depositeRecord, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.getDepositRecord", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.getDepositRecord", c.k.Id()))
 
 	key := fmt.Sprintf("kucoin:deposites:%s", txid)
 	d := &depositeRecord{}
@@ -127,7 +127,7 @@ func (c *cache) GetD(txid string) (*depositeRecord, error) {
 }
 
 func (c *cache) RemoveD(txid string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.purgeDepositRecord", c.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.cache.purgeDepositRecord", c.k.Id()))
 
 	key := fmt.Sprintf("kucoin:deposites:%s", txid)
 	err := c.r.Del(c.ctx, key).Err()

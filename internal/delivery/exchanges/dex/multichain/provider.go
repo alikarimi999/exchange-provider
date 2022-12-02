@@ -8,8 +8,8 @@ import (
 
 func (ex *Chain) provider() *types.Provider {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	if len(ex.ps) > 0 {
-		p := ex.ps[r.Intn(len(ex.ps))]
+	if len(ex.Providers) > 0 {
+		p := ex.Providers[r.Intn(len(ex.Providers))]
 		return p
 	}
 	return &types.Provider{}

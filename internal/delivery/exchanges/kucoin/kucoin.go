@@ -26,9 +26,8 @@ type Configs struct {
 
 // kucoinExchange is a concrete implementation of entity.Exchange interface.
 type kucoinExchange struct {
-	cfg       *Configs
-	mux       *sync.Mutex
-	accountId string
+	cfg *Configs
+	mux *sync.Mutex
 
 	api *kucoin.ApiService
 	// ws   *webSocket
@@ -59,9 +58,8 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 	}
 
 	k := &kucoinExchange{
-		cfg:       cfg,
-		mux:       &sync.Mutex{},
-		accountId: hash(cfg.ApiKey, cfg.ApiSecret, cfg.ApiPassphrase),
+		cfg: cfg,
+		mux: &sync.Mutex{},
 
 		api: kucoin.NewApiService(
 			kucoin.ApiBaseURIOption(cfg.ApiUrl),
@@ -93,7 +91,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 	if readConfig {
 		k.l.Debug(string(op), fmt.Sprintf("retriving pairs from config file %s", k.v.ConfigFileUsed()))
 
-		i := k.v.Get(fmt.Sprintf("%s.pairs", k.NID()))
+		i := k.v.Get(fmt.Sprintf("%s.pairs", k.Id()))
 		if i != nil {
 			if err := k.pls.download(); err != nil {
 				return nil, err
@@ -132,7 +130,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 				ok, _ := k.pls.support(p)
 				if !ok {
 					k.l.Debug(string(op), fmt.Sprintf("pair %s is not supported by kucoin anymore", p.String()))
-					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.NID())).(map[string]interface{}), strings.ToLower(p.Id()))
+					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Id())).(map[string]interface{}), strings.ToLower(p.Id()))
 					if err := k.v.WriteConfig(); err != nil {
 						k.l.Error(string(op), err.Error())
 					}
@@ -156,7 +154,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
-			k.l.Info(string(op), fmt.Sprintf("exchange %s started again successfully", k.NID()))
+			k.l.Info(string(op), fmt.Sprintf("exchange %s started again successfully", k.Id()))
 
 		}
 	}
@@ -176,12 +174,12 @@ func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
 	w.Add(1)
 	go k.wa.run(w, k.stopCh)
 
-	k.l.Debug(fmt.Sprintf("%s.Run", k.NID()), "started")
+	k.l.Debug(fmt.Sprintf("%s.Run", k.Id()), "started")
 	w.Wait()
 }
 
 func (k *kucoinExchange) Stop() {
-	op := fmt.Sprintf("%s.Stop", k.NID())
+	op := fmt.Sprintf("%s.Stop", k.Id())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
 	k.l.Debug(string(op), "stopped")

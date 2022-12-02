@@ -9,24 +9,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) NID() string {
-	k.mux.Lock()
-	defer k.mux.Unlock()
-	return fmt.Sprintf("%s-%s", k.Name(), k.accountId)
-}
-
-func (k *kucoinExchange) Name() string {
+func (k *kucoinExchange) Id() string {
 	return "kucoin"
 }
 
-func (k *kucoinExchange) AccountId() string {
-	k.mux.Lock()
-	defer k.mux.Unlock()
-	return k.accountId
-}
-
 func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Exchange", k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.Exchange", k.Id()))
 
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
@@ -81,7 +69,7 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 }
 
 func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done chan<- struct{}, p <-chan bool) {
-	op := errors.Op(fmt.Sprintf("%s.TrackExchangeOrder", k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.TrackExchangeOrder", k.Id()))
 
 	s := o.Swaps[index]
 	resp, err := k.api.Order(s.ExId)
@@ -134,7 +122,7 @@ func (k *kucoinExchange) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 }
 
 func (k *kucoinExchange) ping() error {
-	op := errors.Op(fmt.Sprintf("%s.ping", k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.ping", k.Id()))
 
 	resp, err := k.api.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {

@@ -14,7 +14,7 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 		if err != nil {
 			return nil, err
 		}
-		routes[0].Exchange = ex.NID()
+		routes[0].Exchange = ex.Id()
 		return routes, nil
 
 	} else if s.cf.lowerEq(in.ChainId, out.ChainId) {
@@ -23,11 +23,11 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 
 		ex, err := s.app.SelectExchangeByPair(routes[0].In, routes[0].Out)
 		if err == nil {
-			routes[0].Exchange = ex.NID()
+			routes[0].Exchange = ex.Id()
 			routes[1] = &entity.Route{In: routes[0].Out, Out: out}
 			ex, err := s.app.SelectExchangeByPair(routes[1].In, routes[1].Out)
 			if err == nil {
-				routes[1].Exchange = ex.NID()
+				routes[1].Exchange = ex.Id()
 			}
 
 			return routes, nil
@@ -41,12 +41,12 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 	if err != nil {
 		return nil, fmt.Errorf("NoRouteFound")
 	}
-	routes[0].Exchange = ex.NID()
+	routes[0].Exchange = ex.Id()
 	ex, err = s.app.SelectExchangeByPair(routes[1].In, routes[1].Out)
 	if err != nil {
 		return nil, fmt.Errorf("NoRouteFound")
 	}
-	routes[1].Exchange = ex.NID()
+	routes[1].Exchange = ex.Id()
 
 	return routes, nil
 }

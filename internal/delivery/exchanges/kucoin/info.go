@@ -11,7 +11,7 @@ import (
 func (k *kucoinExchange) setPrice(p *entity.Pair) error {
 	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.C1.Coin.CoinId, pairDelimiter, p.C2.Coin.CoinId))
 	if err := handleSDKErr(err, res); err != nil {
-		k.l.Error(fmt.Sprintf("%s.setPrice", k.NID()), err.Error())
+		k.l.Error(fmt.Sprintf("%s.setPrice", k.Id()), err.Error())
 		return err
 	}
 
@@ -111,7 +111,7 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 }
 
 func (k *kucoinExchange) setAddress(pc *kuCoin) error {
-	op := errors.Op(fmt.Sprintf("%s.setChain", k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.setChain", k.Id()))
 	var coin string
 	var chain string
 	if pc.needChain {

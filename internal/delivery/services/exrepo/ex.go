@@ -6,7 +6,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"sync"
-	"time"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
@@ -32,7 +31,7 @@ func NewExchangeRepo(db *gorm.DB, v *viper.Viper, rc *redis.Client, l logger.Log
 	}
 }
 
-func (a *ExchangeRepo) Add(ex *app.Exchange) error {
+func (a *ExchangeRepo) Add(ex entity.Exchange) error {
 
 	e, err := a.encryptConfigs(ex)
 	if err != nil {
@@ -42,14 +41,10 @@ func (a *ExchangeRepo) Add(ex *app.Exchange) error {
 
 }
 
-func (a *ExchangeRepo) UpdateStatus(ex entity.Exchange, s string) error {
-	return a.db.Model(&Exchange{}).Where("id = ?", ex.NID()).Update("status", s).Error
-}
-
-func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
+func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 	agent := "ExchangeRepo.GetAll"
 
-	var exs []*app.Exchange
+	var exs []entity.Exchange
 	var exchanges []Exchange
 	if err := a.db.Find(&exchanges).Error; err != nil {
 		return nil, err
@@ -66,11 +61,7 @@ func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
 				return
 			}
 
-			exs = append(exs, &app.Exchange{
-				Exchange:       exc,
-				CurrentStatus:  ex.Status,
-				LastChangeTime: time.Now(),
-			})
+			exs = append(exs, exc)
 		}(exc)
 	}
 	wg.Wait()
@@ -78,5 +69,5 @@ func (a *ExchangeRepo) GetAll() ([]*app.Exchange, error) {
 }
 
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
-	return a.db.Delete(&Exchange{}, "id = ?", ex.NID()).Error
+	return a.db.Delete(&Exchange{}, "id = ?", ex.Id()).Error
 }

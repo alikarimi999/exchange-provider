@@ -4,11 +4,11 @@ import (
 	"exchange-provider/internal/entity"
 )
 
-func (o *OrderUseCase) AddPairs(ex *Exchange, data interface{}) (*entity.AddPairsResult, error) {
+func (o *OrderUseCase) AddPairs(ex entity.Exchange, data interface{}) (*entity.AddPairsResult, error) {
 	return ex.AddPairs(data)
 }
 
-func (o *OrderUseCase) GetAllPairsByExchange(ex *Exchange) ([]*entity.Pair, error) {
+func (o *OrderUseCase) GetAllPairsByExchange(ex entity.Exchange) ([]*entity.Pair, error) {
 
 	ps := ex.GetAllPairs()
 	// set spread_rate

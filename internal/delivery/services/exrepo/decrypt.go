@@ -3,6 +3,7 @@ package exrepo
 import (
 	"encoding/json"
 	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -23,7 +24,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		return nil, err
 	}
 
-	switch ex.Name {
+	switch ex.Id {
 	case "kucoin":
 		key, ok := jb["api_key"].(string)
 		if !ok {
@@ -59,17 +60,20 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 		cfg := &dex.Config{
 			Mnemonic: m,
-			Name:     ex.Name,
+			Id:       ex.Id,
 			Network:  n,
 		}
 		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
 
-		// case "multichain":
-		// 	m, ok := jb["mnemonic"].(string)
-		// 	if !ok {
-		// 		return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
-		// 	}
+	case "multichain":
+		m, ok := jb["mnemonic"].(string)
+		if !ok {
+			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
+		}
+
+		cfg := &multichain.Config{Name: ex.Id, Mnemonic: m}
+		return multichain.NewMultichain(cfg, r.v, r.l, true)
 
 	}
-	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Name)))
+	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Id)))
 }

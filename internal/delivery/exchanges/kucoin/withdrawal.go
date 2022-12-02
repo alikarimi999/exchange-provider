@@ -10,7 +10,7 @@ import (
 )
 
 func (k *kucoinExchange) Withdrawal(o *entity.Order) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.Id()))
 
 	c := o.Withdrawal.Coin
 	opts, err := k.withdrawalOpts(c, o.Withdrawal.Tag)

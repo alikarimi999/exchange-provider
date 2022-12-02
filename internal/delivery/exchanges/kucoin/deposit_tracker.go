@@ -35,7 +35,7 @@ func newDepositTracker(k *kucoinExchange, c *cache) *depositTracker {
 }
 
 func (t *depositTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	agent := fmt.Sprintf("%s.depositTracker.run", t.k.NID())
+	agent := fmt.Sprintf("%s.depositTracker.run", t.k.Id())
 
 	defer wg.Done()
 

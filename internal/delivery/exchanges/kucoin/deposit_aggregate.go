@@ -31,7 +31,7 @@ func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
 }
 
 func (a *depositAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	agent := fmt.Sprintf("%s.depositAggregator.run", a.k.NID())
+	agent := fmt.Sprintf("%s.depositAggregator.run", a.k.Id())
 
 	defer wg.Done()
 
@@ -74,7 +74,7 @@ func (a *depositAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 }
 
 func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*depositeRecord, error) {
-	op := errors.Op(fmt.Sprintf("%s.depositAggregator.aggregate", a.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.depositAggregator.aggregate", a.k.Id()))
 
 	ps := make(map[string]string)
 	ps["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)

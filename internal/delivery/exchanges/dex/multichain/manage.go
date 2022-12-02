@@ -12,10 +12,6 @@ func (*Multichain) Type() entity.ExType {
 
 func (*Multichain) Stop() {}
 
-func (*Multichain) StartAgain() (*entity.StartAgainResult, error) {
-	return nil, nil
-}
-
 func (*Multichain) Run(wg *sync.WaitGroup) {}
 
 func (m *Multichain) Configs() interface{} {

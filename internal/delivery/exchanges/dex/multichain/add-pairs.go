@@ -30,7 +30,7 @@ func (a *AddPairsRequest) Validate() error {
 }
 
 func (m *Multichain) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
-
+	agent := "multichain.AddPairs"
 	req, ok := data.(*AddPairsRequest)
 	if !ok {
 		return nil, errors.Wrap(errors.ErrBadRequest)
@@ -56,8 +56,15 @@ func (m *Multichain) AddPairs(data interface{}) (*entity.AddPairsResult, error) 
 			continue
 		}
 
-		m.pairs.add(p)
-		res.Added = append(res.Added, *p.toEntity())
+		if exists := m.pairs.exist(p.T1, p.T2); !exists {
+			m.pairs.add(p)
+			m.v.Set(fmt.Sprintf("%s.pairs.%s", m.Id(), p.String()), p)
+			res.Added = append(res.Added, *p.toEntity())
+		}
+
+		if err := m.v.WriteConfig(); err != nil {
+			m.l.Error(agent, err.Error())
+		}
 
 	}
 	return res, nil

@@ -2,10 +2,10 @@ package exrepo
 
 import (
 	"encoding/json"
-	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
 	"fmt"
@@ -13,9 +13,7 @@ import (
 
 type Exchange struct {
 	Id      string
-	Name    string
 	Configs string
-	Status  string
 }
 type KucoinExchange struct {
 	Id            string `gorm:"primary_key"`
@@ -25,19 +23,17 @@ type KucoinExchange struct {
 	Status        string
 }
 
-func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
+func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	op := errors.Op("ExchangeRepo.encryptConfigs")
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
-		Id:     ex.NID(),
-		Name:   ex.Name(),
-		Status: ex.CurrentStatus,
+		Id: ex.Id(),
 	}
 
 	jb := make(jsonb)
 
-	switch e.Name {
+	switch e.Id {
 	case "uniswapv3", "panckakeswapv2":
 		conf := ex.Configs().(*dex.Config)
 		jb["mnemonic"] = conf.Mnemonic
@@ -54,7 +50,7 @@ func (r *ExchangeRepo) encryptConfigs(ex *app.Exchange) (*Exchange, error) {
 		jb["api_passphrase"] = conf.ApiPassphrase
 
 	default:
-		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange name", e.Name))
+		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange Id", e.Id))
 	}
 
 	b, err := json.Marshal(jb)

@@ -34,7 +34,7 @@ func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator 
 }
 
 func (wa *withdrawalAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.run", wa.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.run", wa.k.Id()))
 	wa.l.Debug(string(op), "started")
 
 	defer wg.Done()
@@ -80,7 +80,7 @@ start:
 }
 
 func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) ([]*dto.Withdrawal, error) {
-	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.aggregate", wa.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.aggregate", wa.k.Id()))
 	wa.params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
 	wa.params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
 	wa.params["status"] = status

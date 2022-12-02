@@ -12,8 +12,7 @@ type GetAllPairsRequest struct {
 }
 
 type Exchange struct {
-	Status string       `json:"status"`
-	Pairs  []*AdminPair `json:"pairs"`
+	Pairs []*AdminPair `json:"pairs"`
 }
 
 type GetAllPairsResponse struct {

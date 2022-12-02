@@ -50,13 +50,12 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 		go func(ord *entity.Order) {
 
 			for i, route := range ord.SortedRoutes() {
-				exc, err := o.exStore.get(route.Exchange)
+				ex, err := o.exStore.get(route.Exchange)
 				if err != nil {
 					o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )",
 						route.Exchange, err.Error()))
 					return
 				}
-				ex := exc.Exchange
 
 				if i == 0 {
 

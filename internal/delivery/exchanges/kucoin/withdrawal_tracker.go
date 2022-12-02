@@ -34,7 +34,7 @@ func newWithdrawalTracker(k *kucoinExchange, c *cache) *withdrawalTracker {
 }
 
 func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
-	op := errors.Op(fmt.Sprintf("%s.withdrawalTracker.run", t.k.NID()))
+	op := errors.Op(fmt.Sprintf("%s.withdrawalTracker.run", t.k.Id()))
 	t.l.Debug(string(op), "started")
 
 	defer wg.Done()

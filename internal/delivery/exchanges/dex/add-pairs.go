@@ -26,7 +26,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	res := &entity.AddPairsResult{}
 	pwg := &sync.WaitGroup{}
 
-	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.NID()))
+	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.Id()))
 	for _, dp := range req.Pairs {
 		if d.pairs.exist(dp.C1, dp.C2) {
 			d.l.Debug(agent, fmt.Sprintf("pair %s already exists", dp.String()))
@@ -54,7 +54,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	}
 	pwg.Wait()
-	d.v.Set(fmt.Sprintf("%s.pairs", d.NID()), ps)
+	d.v.Set(fmt.Sprintf("%s.pairs", d.Id()), ps)
 	if err := d.v.WriteConfig(); err != nil {
 		d.l.Error(agent, err.Error())
 	}

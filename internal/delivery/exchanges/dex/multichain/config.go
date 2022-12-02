@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	Id           string
+	Name         string
 	Mnemonic     string
 	AccountCount uint64
 	// Accounts     []accounts.Account
