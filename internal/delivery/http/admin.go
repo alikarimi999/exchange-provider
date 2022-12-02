@@ -9,10 +9,13 @@ func (r *Router) adminRoutes() {
 		r.user: r.pass,
 	}))
 	{
+
 		ss := a.Group("/services")
 		{
 			ss.GET("", func(ctx *gin.Context) { r.GetServicesConfig(ctx) })
 			ss.POST("/:service", func(ctx *gin.Context) { r.ChangeSerivcesConfig(ctx) })
+			ss.POST("update_chains_fee", func(ctx *gin.Context) { r.srv.UpdateChainsFee(ctx) })
+
 		}
 
 		os := a.Group("/orders")
@@ -98,6 +101,12 @@ func (r *Router) adminRoutes() {
 				r.srv.ChangeStatus(newContext(ctx))
 			})
 			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
+
+			m := es.Group("/multichain")
+			{
+				m.POST("update_chains", func(ctx *gin.Context) { r.srv.UpdateChains(ctx) })
+			}
+
 		}
 
 		limiter := a.Group("/limiter")

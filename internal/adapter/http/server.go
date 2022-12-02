@@ -5,7 +5,6 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -34,12 +33,11 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 		cf: &chainsFee{
 			mux:   &sync.Mutex{},
 			chain: make(map[string]float64),
+			v:     v,
 		},
 	}
 
-	fmt.Println("Delete: http-server.go-NewServer")
-	s.cf.chain["97"] = 1
-	s.cf.chain["80001"] = 2
+	s.cf.readConfig()
 
 	return s
 

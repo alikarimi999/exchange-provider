@@ -10,7 +10,7 @@ import (
 type Multichain struct {
 	cfg *Config
 
-	cs map[chainId]*Chain
+	cs map[ChainId]*Chain
 
 	tt     *utils.TxTracker
 	pairs  *supportedPairs
@@ -22,7 +22,7 @@ func NewMultichain(cfg *Config, l logger.Logger) (entity.Exchange, error) {
 
 	m := &Multichain{
 		cfg:    cfg,
-		cs:     make(map[chainId]*Chain),
+		cs:     make(map[ChainId]*Chain),
 		apiUrl: "https://bridgeapi.anyswap.exchange/v2/history/details?params=",
 		l:      l,
 	}
@@ -31,37 +31,3 @@ func NewMultichain(cfg *Config, l logger.Logger) (entity.Exchange, error) {
 
 	return m, nil
 }
-
-// func readFile() (map[chainId]*tokens, error) {
-
-// 	var b []byte
-// 	f, err := os.Open("./tokenlistv4.json")
-// 	if err != nil {
-// 		res, err := http.Get("https://bridgeapi.anyswap.exchange/v4/tokenlistv4/all")
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		b, err := io.ReadAll(res.Body)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		file, err := os.Create("./tokenlistv4.json")
-// 		if err == nil {
-// 			file.Write(b)
-// 			file.Close()
-// 		}
-// 	} else {
-// 		b, err = io.ReadAll(f)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 	}
-
-// 	cs := make(map[chainId]*tokens)
-
-// 	json.Unmarshal(b, &cs)
-// 	return cs, nil
-
-// }

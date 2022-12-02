@@ -38,7 +38,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		return "", err
 	}
 
-	pr := m.cs[chainId(out.ChainId)].provider()
+	pr := m.cs[ChainId(out.ChainId)].provider()
 	contract, err := contracts.NewMain(common.HexToAddress(t.Address), pr)
 	if err != nil {
 		return "", err
@@ -56,7 +56,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			tx, err := m.cs[chainId(t.ChainId)].unwrap(sender, common.HexToAddress(t.Address), unwrapAmount)
+			tx, err := m.cs[ChainId(t.ChainId)].unwrap(sender, common.HexToAddress(t.Address), unwrapAmount)
 			if err != nil {
 				return "", err
 			}
@@ -87,7 +87,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 			}
 		}
 
-		tx, err := transferNative(m.cs[chainId(t.ChainId)].w, sender,
+		tx, err := transferNative(m.cs[ChainId(t.ChainId)].w, sender,
 			reciever, int64(cid), value, pr)
 		if err != nil {
 			return "", err
@@ -98,7 +98,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		return tx.Hash().String(), nil
 	}
 
-	opts, err := m.cs[chainId(t.ChainId)].w.NewKeyedTransactorWithChainID(sender,
+	opts, err := m.cs[ChainId(t.ChainId)].w.NewKeyedTransactorWithChainID(sender,
 		big.NewInt(0), int64(cid))
 	if err != nil {
 		return "", err
@@ -106,9 +106,9 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 
 	defer func() {
 		if err != nil {
-			m.cs[chainId(t.ChainId)].w.ReleaseNonce(sender, opts.Nonce.Uint64())
+			m.cs[ChainId(t.ChainId)].w.ReleaseNonce(sender, opts.Nonce.Uint64())
 		} else {
-			m.cs[chainId(t.ChainId)].w.BurnNonce(sender, opts.Nonce.Uint64())
+			m.cs[ChainId(t.ChainId)].w.BurnNonce(sender, opts.Nonce.Uint64())
 
 		}
 	}()

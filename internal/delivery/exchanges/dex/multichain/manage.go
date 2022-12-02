@@ -16,10 +16,6 @@ func (*Multichain) StartAgain() (*entity.StartAgainResult, error) {
 	return nil, nil
 }
 
-func (*Multichain) Command(entity.Command) (entity.CommandResult, error) {
-	return nil, nil
-}
-
 func (*Multichain) Run(wg *sync.WaitGroup) {}
 
 func (m *Multichain) Configs() interface{} {

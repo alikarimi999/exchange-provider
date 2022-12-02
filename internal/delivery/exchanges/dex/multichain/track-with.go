@@ -43,7 +43,7 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
-		P:        u.cs[chainId(t.ChainId)].provider(),
+		P:        u.cs[ChainId(t.ChainId)].provider(),
 		TxHash:   common.HexToHash(w.WId),
 		Receiver: &r,
 		NeedTx:   true,

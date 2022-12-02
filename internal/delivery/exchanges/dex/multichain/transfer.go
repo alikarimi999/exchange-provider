@@ -16,6 +16,7 @@ func transfer(in, out *Token, amount *big.Int, src common.Address,
 
 	srcChain, err := strconv.Atoi(in.ChainId)
 	if err != nil {
+		return nil, nil, err
 	}
 	c, err := tokenBridge.NewContracts(common.HexToAddress(in.Address), pr.Client)
 	if err != nil {

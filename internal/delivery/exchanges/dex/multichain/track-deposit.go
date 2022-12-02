@@ -34,7 +34,7 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 	}
 
 	tf := &utils.TtFeed{
-		P:          m.cs[chainId(f.t.ChainId)].provider(),
+		P:          m.cs[ChainId(f.t.ChainId)].provider(),
 		TxHash:     txHash,
 		Receiver:   &destAddress,
 		NeedTx:     f.t.Native,

@@ -14,20 +14,11 @@ type Config struct {
 	Mnemonic     string
 	AccountCount uint64
 	// Accounts     []accounts.Account
-	PL  *ProviderList
 	Msg string
 }
 
-func EmptyConfig() *Config {
-	return &Config{
-		PL: &ProviderList{
-			list: make(map[chainId][]*types.Provider),
-		},
-	}
-}
-
 type ProviderList struct {
-	list map[chainId][]*types.Provider
+	list map[ChainId][]*types.Provider
 }
 
 func (pl *ProviderList) Add(cId string, urls []string) error {
@@ -47,7 +38,7 @@ func (pl *ProviderList) Add(cId string, urls []string) error {
 		prs = append(prs, &types.Provider{Client: c, URL: url})
 	}
 
-	pl.list[chainId(cId)] = append(pl.list[chainId(cId)], prs...)
+	pl.list[ChainId(cId)] = append(pl.list[ChainId(cId)], prs...)
 	return nil
 }
 

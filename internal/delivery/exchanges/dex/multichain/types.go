@@ -1,6 +1,6 @@
 package multichain
 
-type chainId string
+type ChainId string
 
 // type pairId string
 // type tokenId string

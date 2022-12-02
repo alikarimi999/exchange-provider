@@ -1,7 +1,5 @@
 package entity
 
-type CommandContext string
+type Command map[string]interface{}
 
-type Command map[CommandContext]interface{}
-
-type CommandResult map[string]interface{}
+type CommandResult interface{}

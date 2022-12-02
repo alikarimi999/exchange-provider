@@ -37,31 +37,23 @@ func (m *Multichain) AddPairs(data interface{}) (*entity.AddPairsResult, error) 
 	}
 
 	res := &entity.AddPairsResult{}
-	// ps := []*Pair{}
+
 	for _, p := range req.Pairs {
 		if exist := m.pairs.exist(p.T1, p.T2); exist {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
 
-		if _, ok := m.cs[chainId(p.T1.ChainId)]; !ok {
-			c, err := m.newChain(p.T1.ChainId)
-			if err != nil {
-				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-					Err: err})
-				continue
-			}
-			m.cs[chainId(p.T1.ChainId)] = c
+		if _, ok := m.cs[ChainId(p.T1.ChainId)]; !ok {
+			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
+				Err: fmt.Errorf("chainId '%s' not supported", p.T1.ChainId)})
+			continue
 		}
 
-		if _, ok := m.cs[chainId(p.T2.ChainId)]; !ok {
-			c, err := m.newChain(p.T2.ChainId)
-			if err != nil {
-				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-					Err: err})
-				continue
-			}
-			m.cs[chainId(p.T2.ChainId)] = c
+		if _, ok := m.cs[ChainId(p.T2.ChainId)]; !ok {
+			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
+				Err: fmt.Errorf("chainId '%s' not supported", p.T2.ChainId)})
+			continue
 		}
 
 		m.pairs.add(p)

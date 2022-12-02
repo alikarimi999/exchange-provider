@@ -17,7 +17,7 @@ import (
 
 func (m *Multichain) Exchange(o *entity.Order, i int) (string, error) {
 	agent := "multichain.Exchange"
-	ch := m.cs[chainId(o.Routes[i].In.ChainId)]
+	ch := m.cs[ChainId(o.Routes[i].In.ChainId)]
 	src := common.HexToAddress(o.Deposit.Addr)
 	tx, nonce, err := m.swap(o, src, ch, i)
 	if err != nil {
