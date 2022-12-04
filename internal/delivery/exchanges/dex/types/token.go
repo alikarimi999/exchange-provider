@@ -2,7 +2,6 @@ package types
 
 import (
 	"exchange-provider/internal/entity"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -24,13 +23,12 @@ func (t *Token) String() string {
 	return t.Symbol
 }
 
-func (t *Token) ToEntity(standard string, blockTime time.Duration) *entity.PairCoin {
+func (t *Token) ToEntity(standard string) *entity.PairCoin {
 	return &entity.PairCoin{
 		Coin: &entity.Coin{
 			CoinId:  t.Symbol,
 			ChainId: standard,
 		},
-		BlockTime:       blockTime,
 		ContractAddress: t.Address.String(),
 	}
 }

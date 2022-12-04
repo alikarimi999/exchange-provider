@@ -13,6 +13,10 @@ func (k *kucoinExchange) Id() string {
 	return "kucoin"
 }
 
+func (k *kucoinExchange) Name() string {
+	return "kucoin"
+}
+
 func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Exchange", k.Id()))
 

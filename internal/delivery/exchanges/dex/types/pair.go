@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/entity"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -27,11 +26,11 @@ func (p *Pair) String() string {
 	return fmt.Sprintf("%s%s%s", p.T1.String(), Delimiter, p.T2.String())
 }
 
-func (p *Pair) ToEntity(native, chainId string, blockTime time.Duration) *entity.Pair {
+func (p *Pair) ToEntity(native, chainId string) *entity.Pair {
 
 	pair := &entity.Pair{
-		C1: p.T1.ToEntity(chainId, blockTime),
-		C2: p.T2.ToEntity(chainId, blockTime),
+		C1: p.T1.ToEntity(chainId),
+		C2: p.T2.ToEntity(chainId),
 
 		ContractAddress: p.Address.String(),
 
@@ -39,6 +38,10 @@ func (p *Pair) ToEntity(native, chainId string, blockTime time.Duration) *entity
 		BestAsk:     p.Price,
 		BestBid:     p.Price,
 		FeeCurrency: native,
+	}
+
+	if p.Address == common.HexToAddress("0x") {
+		pair.ContractAddress = ""
 	}
 
 	if p.FeeTier != nil {

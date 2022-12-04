@@ -32,7 +32,7 @@ type Config struct {
 
 func (cfg *Config) Map() (*dex.Config, error) {
 	c := &dex.Config{
-		Id:          cfg.Name,
+		Name:        cfg.Name,
 		ChainId:     cfg.ChianId,
 		Network:     cfg.Network,
 		NativeToken: cfg.NativeToken,

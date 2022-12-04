@@ -156,7 +156,7 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 }
 
 func (d *dex) setDEX() error {
-	switch d.cfg.Id {
+	switch d.cfg.Name {
 	case "uniswapv3":
 		dex, err := uv3.NewUniSwapV3(d.Id(), d.cfg.NativeToken, d.cfg.Providers,
 			d.cfg.Factory, d.cfg.Router, d.wallet, d.tt, d.l)
@@ -174,7 +174,7 @@ func (d *dex) setDEX() error {
 		d.Dex = dex
 		return nil
 	default:
-		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Id)
+		return fmt.Errorf("'%s' unknown exchange name", d.cfg.Name)
 	}
 
 }

@@ -37,7 +37,7 @@ type Swap struct {
 
 type Exchange interface {
 	Id() string
-
+	Name() string
 	Exchange(o *Order, index int) (string, error)
 	TrackExchangeOrder(o *Order, index int, done chan<- struct{}, proccessed <-chan bool)
 	TrackDeposit(o *Order, done chan<- struct{}, proccessed <-chan bool)

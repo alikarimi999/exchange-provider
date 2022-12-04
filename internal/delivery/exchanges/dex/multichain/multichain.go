@@ -57,3 +57,7 @@ func NewMultichain(cfg *Config, v *viper.Viper, l logger.Logger, readConfigs boo
 func (m *Multichain) Id() string {
 	return m.cfg.Name
 }
+
+func (m *Multichain) Name() string {
+	return m.cfg.Name
+}

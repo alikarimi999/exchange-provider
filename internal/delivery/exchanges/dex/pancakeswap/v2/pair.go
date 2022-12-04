@@ -13,24 +13,27 @@ func (p *Panckakeswapv2) Pair(bt, qt types.Token) (*types.Pair, error) {
 	return &types.Pair{T1: bt, T2: qt}, nil
 }
 
-func (p *Panckakeswapv2) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
+func (p *Panckakeswapv2) PairWithPrice(in, out types.Token) (*types.Pair, error) {
 
 	con, err := contracts.NewContract(p.router, p.provider())
 	if err != nil {
 		return nil, err
 	}
 
-	amounts, err := con.GetAmountsOut(nil, big.NewInt(int64(math.Pow10(6))), []common.Address{bt.Address, qt.Address})
+	amountIn := big.NewInt(int64(math.Pow10(6)))
+	amounts, err := con.GetAmountsOut(nil, amountIn, []common.Address{in.Address, out.Address})
 	if err != nil {
 		return nil, err
 	}
 
 	pair := &types.Pair{
-		T1: bt,
-		T2: qt,
+		T1: in,
+		T2: out,
 	}
 
-	pair.Price = big.NewInt(0).Div(amounts[1], big.NewInt(int64(math.Pow10(6)))).String()
+	inf := big.NewFloat(0).SetInt(amountIn)
+	outf := big.NewFloat(0).SetInt(amounts[1])
+	pair.Price = big.NewFloat(0).Quo(outf, inf).String()
 
 	return pair, nil
 }

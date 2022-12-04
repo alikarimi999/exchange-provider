@@ -13,6 +13,7 @@ import (
 
 type Exchange struct {
 	Id      string
+	Name    string
 	Configs string
 }
 type KucoinExchange struct {
@@ -28,12 +29,13 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
-		Id: ex.Id(),
+		Id:   ex.Id(),
+		Name: ex.Name(),
 	}
 
 	jb := make(jsonb)
 
-	switch e.Id {
+	switch e.Name {
 	case "uniswapv3", "panckakeswapv2":
 		conf := ex.Configs().(*dex.Config)
 		jb["mnemonic"] = conf.Mnemonic

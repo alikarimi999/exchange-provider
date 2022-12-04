@@ -155,7 +155,7 @@ func (am *ApproveManager) infinitApprove(t ts.Token, owner, spender common.Addre
 		return errors.Wrap(errors.Op(agent), fmt.Sprintf("`%s` approve tx failed `%s`", prefix, tx.Hash().String()))
 	}
 
-	am.l.Debug(agent, fmt.Sprintf("`%s` approved before, amount: `%s`", prefix, amount))
+	am.l.Debug(agent, fmt.Sprintf("`%s` approved before", prefix))
 	return nil
 }
 

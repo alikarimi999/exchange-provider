@@ -15,8 +15,12 @@ func (u *dex) Run(wg *sync.WaitGroup) {
 
 }
 
+func (u *dex) Name() string {
+	return u.cfg.Name
+}
+
 func (u *dex) Id() string {
-	return u.cfg.Id
+	return u.cfg.Name + "-" + u.cfg.Network
 }
 
 func (u *dex) Type() entity.ExType {
@@ -51,7 +55,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 				return
 			}
 
-			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.chainId, u.cfg.BlockTime))
+			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.chainId))
 		}(p)
 	}
 
@@ -73,7 +77,7 @@ func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ToEntity(u.cfg.NativeToken, u.cfg.chainId, u.cfg.BlockTime), nil
+	return p.ToEntity(u.cfg.NativeToken, u.cfg.chainId), nil
 }
 
 func (u *dex) Support(bc, qc *entity.Coin) bool {

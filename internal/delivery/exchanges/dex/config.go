@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Id          string
+	Name        string
 	ChainId     uint64
 	chainId     string
 	Network     string
@@ -55,7 +55,7 @@ func (cfg *Config) Validate(readConfig bool) error {
 		cfg.BlockTime += time.Duration(5 * time.Second)
 	}
 
-	if cfg.Id == "" {
+	if cfg.Name == "" {
 		return errors.New("name cannot be empty")
 	}
 

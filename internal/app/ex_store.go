@@ -33,6 +33,8 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 
 	for _, ex := range exs {
 		s.exchanges[ex.Id()] = ex
+		l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
+
 	}
 	return s
 }
@@ -53,6 +55,7 @@ func (a *exStore) add(ex entity.Exchange) error {
 		return err
 	}
 	a.exchanges[ex.Id()] = ex
+	a.l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
 	return nil
 }
 

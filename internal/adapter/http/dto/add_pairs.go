@@ -14,7 +14,7 @@ type Coin struct {
 	ContractAddress     string  `json:"contract_address,omitempty"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
-	BlockTime           string  `json:"block_time"`
+	BlockTime           string  `json:"block_time,omitempty"`
 	MinDeposit          float64 `json:"min_deposit"`
 	MinOrderSize        string  `json:"min_order_size,omitempty"`
 	MaxOrderSize        string  `json:"max_order_size,omitempty"`
@@ -89,6 +89,7 @@ type AdminPair struct {
 	ContractAddress      string   `json:"contract_address,omitempty"`
 	FeeTier              int64    `json:"fee_tier,omitempty"`
 	Liquidity            *big.Int `json:"liquidity,omitempty"`
+	Price                string   `json:"price,omitempty"`
 	BuyPrice             string   `json:"buy_price,omitempty"`
 	SellPrice            string   `json:"sell_price,omitempty"`
 	FeeCurrency          string   `json:"fee_currency"`
@@ -97,14 +98,13 @@ type AdminPair struct {
 }
 
 func PairDTO(p *entity.Pair) *AdminPair {
-	return &AdminPair{
+	ap := &AdminPair{
 		C1: &Coin{
 			CoinId:              p.C1.Coin.CoinId,
 			ChainId:             p.C1.Coin.ChainId,
 			ContractAddress:     p.C1.ContractAddress,
 			Address:             p.C1.Address,
 			Tag:                 p.C1.Tag,
-			BlockTime:           p.C1.BlockTime.String(),
 			MinDeposit:          p.C1.MinDeposit,
 			MinOrderSize:        p.C1.MinOrderSize,
 			MaxOrderSize:        p.C1.MaxOrderSize,
@@ -120,7 +120,6 @@ func PairDTO(p *entity.Pair) *AdminPair {
 			ContractAddress:     p.C2.ContractAddress,
 			Address:             p.C2.Address,
 			Tag:                 p.C2.Tag,
-			BlockTime:           p.C1.BlockTime.String(),
 			MinDeposit:          p.C2.MinDeposit,
 			MinOrderSize:        p.C2.MinOrderSize,
 			MaxOrderSize:        p.C2.MaxOrderSize,
@@ -140,6 +139,13 @@ func PairDTO(p *entity.Pair) *AdminPair {
 		FeeCurrency:          p.FeeCurrency,
 		ExchangeOrderFeeRate: p.OrderFeeRate,
 	}
+
+	if ap.BuyPrice == ap.SellPrice {
+		ap.Price = ap.BuyPrice
+		ap.BuyPrice = ""
+		ap.SellPrice = ""
+	}
+	return ap
 }
 
 type PairsErr struct {

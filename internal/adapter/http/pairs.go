@@ -22,7 +22,7 @@ func (s *Server) AddPairs(ctx Context) {
 
 	res := &entity.AddPairsResult{}
 
-	switch ex.Id() {
+	switch ex.Name() {
 	case "kucoin":
 		req := &dto.KucoinAddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
@@ -113,6 +113,7 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 		wg.Add(1)
 		go func(ex entity.Exchange) {
 			defer wg.Done()
+			resp.Exchanges[ex.Id()] = &dto.Exchange{}
 			ps, err := s.app.GetAllPairsByExchange(ex)
 			if err != nil {
 				resp.Messages = append(resp.Messages, err.Error())

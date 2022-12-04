@@ -24,7 +24,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		return nil, err
 	}
 
-	switch ex.Id {
+	switch ex.Name {
 	case "kucoin":
 		key, ok := jb["api_key"].(string)
 		if !ok {
@@ -60,7 +60,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 		cfg := &dex.Config{
 			Mnemonic: m,
-			Id:       ex.Id,
+			Name:     ex.Name,
 			Network:  n,
 		}
 		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
