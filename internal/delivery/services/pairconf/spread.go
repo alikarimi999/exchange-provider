@@ -103,11 +103,11 @@ func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
 	return nil
 }
 
-func (r *PairConfigs) ApplySpread(bc, qc *entity.Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
+func (r *PairConfigs) ApplySpread(in, out *entity.Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
 	var rate float64
-	rate, ok := r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]
+	rate, ok := r.spreadCache[fmt.Sprintf("%s/%s", in.String(), out.String())]
 	if !ok {
 		rate = r.defaultSpread
 	}
@@ -119,7 +119,8 @@ func (r *PairConfigs) ApplySpread(bc, qc *entity.Coin, vol string) (appliedVol, 
 
 	aVol := total * (1 - rate)
 	sVol := total - aVol
-	return strconv.FormatFloat(aVol, 'f', -1, 64), strconv.FormatFloat(sVol, 'f', -1, 64), strconv.FormatFloat(rate, 'f', -1, 64), nil
+	return strconv.FormatFloat(aVol, 'f', -1, 64), strconv.FormatFloat(sVol, 'f', -1, 64),
+		strconv.FormatFloat(rate, 'f', -1, 64), nil
 
 }
 

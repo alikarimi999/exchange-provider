@@ -33,7 +33,7 @@ func (p *Panckakeswapv2) PairWithPrice(in, out types.Token) (*types.Pair, error)
 
 	inf := big.NewFloat(0).SetInt(amountIn)
 	outf := big.NewFloat(0).SetInt(amounts[1])
-	pair.Price = big.NewFloat(0).Quo(outf, inf).String()
-
+	pair.Price1 = big.NewFloat(0).Quo(outf, inf).String()
+	pair.Price2 = big.NewFloat(0).Quo(inf, outf).String()
 	return pair, nil
 }

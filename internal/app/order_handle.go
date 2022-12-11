@@ -59,7 +59,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				if i == 0 {
 
-					aVol, sVol, rate, err := o.pc.ApplySpread(route.In, route.In, ord.Deposit.Volume)
+					aVol, sVol, rate, err := o.pc.ApplySpread(route.In, route.Out, ord.Deposit.Volume)
 					if err != nil {
 						ord.Status = entity.OSFailed
 						ord.FailedCode = entity.FCInternalError
@@ -80,7 +80,6 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				}
 
 				id, err := ex.Exchange(ord, i)
-
 				if err != nil {
 					ord.Status = entity.OSFailed
 					ord.FailedCode = entity.FCExOrdFailed

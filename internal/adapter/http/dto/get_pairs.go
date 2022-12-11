@@ -36,8 +36,8 @@ func ParseCoin(coin string) (*entity.Coin, error) {
 type UserPair struct {
 	Coin1           string  `json:"coin1"`
 	Coin2           string  `json:"coin2"`
-	BuyPrice        string  `json:"buy_price,omitempty"`
-	SellPrice       string  `json:"sell_price,omitempty"`
+	Price1          string  `json:"price1,omitempty"`
+	Price2          string  `json:"price2,omitempty"`
 	FeeRate         string  `json:"fee_rate,omitempty"`
 	BuyTransferFee  string  `json:"buy_transfer_fee,omitempty"`
 	SellTransferFee string  `json:"sell_transfer_fee,omitempty"`
@@ -48,11 +48,11 @@ type UserPair struct {
 
 func EntityPairToUserRequest(p *entity.Pair, exTyp entity.ExType) *UserPair {
 	pair := &UserPair{
-		Coin1:     p.C1.String(),
-		Coin2:     p.C2.String(),
-		BuyPrice:  p.BestAsk,
-		SellPrice: p.BestBid,
-		FeeRate:   p.FeeRate,
+		Coin1:   p.C1.String(),
+		Coin2:   p.C2.String(),
+		Price1:  p.Price1,
+		Price2:  p.Price2,
+		FeeRate: p.FeeRate,
 	}
 	if exTyp == entity.CEX {
 		pair.BuyTransferFee = fmt.Sprintf("%s/%s", p.C1.WithdrawalMinFee, p.C1.String())

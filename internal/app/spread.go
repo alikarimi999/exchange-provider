@@ -29,11 +29,11 @@ func (o *OrderUseCase) ApplySpread(p *entity.Pair) *entity.Pair {
 	rate := o.pc.GetPairSpread(p.C1.Coin, p.C2.Coin)
 
 	r, _ := strconv.ParseFloat(rate, 64)
-	bestAsk, _ := strconv.ParseFloat(p.BestAsk, 64)
-	bestBid, _ := strconv.ParseFloat(p.BestBid, 64)
+	p1, _ := strconv.ParseFloat(p.Price1, 64)
+	p2, _ := strconv.ParseFloat(p.Price2, 64)
 
-	p.BestAsk = strconv.FormatFloat(bestAsk*(1+r), 'f', 6, 64)
-	p.BestBid = strconv.FormatFloat(bestBid*(1-r), 'f', 6, 64)
+	p.Price1 = strconv.FormatFloat(p1*(1-r), 'f', 6, 64)
+	p.Price2 = strconv.FormatFloat(p2*(1-r), 'f', 6, 64)
 
 	return p
 }

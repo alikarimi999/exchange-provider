@@ -44,7 +44,8 @@ func (u *UniswapV3) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
 		pool.BaseIsZero = true
 	}
 
-	pool.Price = price.ToSignificant(10)
+	pool.Price1 = price.ToSignificant(10)
+	pool.Price2 = price.Invert().ToSignificant(10)
 
 	return pool, nil
 

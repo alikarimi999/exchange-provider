@@ -39,8 +39,8 @@ type Pair struct {
 	FeeTier         int64
 	Liquidity       *big.Int
 	MinDeposit      float64
-	BestAsk         string
-	BestBid         string
+	Price1          string
+	Price2          string
 	FeeCurrency     string
 	OrderFeeRate    string
 	SpreadRate      string

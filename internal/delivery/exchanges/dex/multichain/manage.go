@@ -71,6 +71,6 @@ func (m *Multichain) Pair(bt, qt types.Token) (*types.Pair, error) {
 }
 
 func (m *Multichain) PairWithPrice(bt, qt types.Token) (*types.Pair, error) {
-	return &types.Pair{T1: bt, T2: qt, Price: "1"}, nil
+	return &types.Pair{T1: bt, T2: qt, Price1: "1"}, nil
 
 }

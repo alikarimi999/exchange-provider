@@ -22,8 +22,8 @@ func (k *kucoinExchange) setPrice(p *entity.Pair) error {
 		return err
 	}
 
-	p.BestAsk = t.BestAsk
-	p.BestBid = t.BestBid
+	p.Price1 = t.BestAsk
+	p.Price2 = t.BestBid
 
 	return nil
 }

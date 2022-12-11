@@ -17,7 +17,8 @@ type Pair struct {
 
 	BaseIsZero bool
 
-	Price     string
+	Price1    string
+	Price2    string
 	Liquidity *big.Int
 	FeeTier   *big.Int
 }
@@ -35,8 +36,8 @@ func (p *Pair) ToEntity(native, chainId string) *entity.Pair {
 		ContractAddress: p.Address.String(),
 
 		Liquidity:   p.Liquidity,
-		BestAsk:     p.Price,
-		BestBid:     p.Price,
+		Price1:      p.Price1,
+		Price2:      p.Price2,
 		FeeCurrency: native,
 	}
 
