@@ -18,7 +18,11 @@ func (m *MySqlDB) GetPaginated(p *entity.PaginatedOrders) error {
 	}
 
 	for _, o := range osDTO {
-		p.Orders = append(p.Orders, o.ToEntity())
+		eo, err := o.ToEntity()
+		if err != nil {
+			continue
+		}
+		p.Orders = append(p.Orders, eo)
 	}
 
 	var count int64
@@ -41,7 +45,11 @@ func (m *MySqlDB) GetPaginatedByParams(page, perPage int, params map[string]stri
 	}
 	res := []*entity.Order{}
 	for _, o := range osDTO {
-		res = append(res, o.ToEntity())
+		eo, err := o.ToEntity()
+		if err != nil {
+			continue
+		}
+		res = append(res, eo)
 	}
 
 	return res, nil

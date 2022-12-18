@@ -30,8 +30,8 @@ func (p *Pair) String() string {
 func (p *Pair) ToEntity(native, chainId string) *entity.Pair {
 
 	pair := &entity.Pair{
-		C1: p.T1.ToEntity(chainId),
-		C2: p.T2.ToEntity(chainId),
+		T1: p.T1.ToEntity(chainId),
+		T2: p.T2.ToEntity(chainId),
 
 		ContractAddress: p.Address.String(),
 

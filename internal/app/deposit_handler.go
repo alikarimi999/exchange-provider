@@ -28,7 +28,7 @@ func (h *depositHandler) handle(wg *sync.WaitGroup) {
 	for de := range h.ch {
 		go func(o *entity.Order) {
 			d := o.Deposit
-			ex, err := h.o.exs.get(d.Exchange)
+			ex, err := h.o.exs.get(o.Routes[0].Exchange)
 			if err != nil {
 				d.FailedDesc = err.Error()
 				h.o.write(d)

@@ -63,12 +63,12 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 	return pairs
 }
 
-func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
+func (u *dex) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
 	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
 		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
 	}
 
-	p, err := u.pairs.get(bc.CoinId, qc.CoinId)
+	p, err := u.pairs.get(bc.TokenId, qc.TokenId)
 	if err != nil {
 		return nil, err
 	}
@@ -80,26 +80,26 @@ func (u *dex) GetPair(bc, qc *entity.Coin) (*entity.Pair, error) {
 	return p.ToEntity(u.cfg.NativeToken, u.cfg.chainId), nil
 }
 
-func (u *dex) Support(bc, qc *entity.Coin) bool {
+func (u *dex) Support(bc, qc *entity.Token) bool {
 	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
 		return false
 	}
-	_, err := u.pairs.get(bc.CoinId, qc.CoinId)
+	_, err := u.pairs.get(bc.TokenId, qc.TokenId)
 	return err == nil
 }
 
-func (u *dex) RemovePair(t1, t2 *entity.Coin) error {
+func (u *dex) RemovePair(t1, t2 *entity.Token) error {
 	if t1.ChainId != u.cfg.chainId || t2.ChainId != u.cfg.chainId {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 
-	if p, err := u.pairs.get(t1.CoinId, t2.CoinId); err == nil {
+	if p, err := u.pairs.get(t1.TokenId, t2.TokenId); err == nil {
 		id := pairId(p.T1.Symbol, p.T2.Symbol)
 		delete(u.v.Get(fmt.Sprintf("%s.pairs", u.Id())).(map[string]interface{}), strings.ToLower(id))
 		if err := u.v.WriteConfig(); err != nil {
 			return err
 		}
-		return u.pairs.remove(t1.CoinId, t2.CoinId)
+		return u.pairs.remove(t1.TokenId, t2.TokenId)
 	}
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }

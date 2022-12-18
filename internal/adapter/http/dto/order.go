@@ -4,28 +4,33 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
-	"strconv"
+	"exchange-provider/pkg/utils/numbers"
+	"math/big"
+	"strings"
 )
 
 type UserOrder struct {
-	Id          int64  `json:"id"`
-	Status      string `json:"status"`
-	FailReason  string `json:"fail_reason,omitempty"`
-	BaseCoin    string `json:"base_coin"`
-	QuoteCoin   string `json:"quote_coin"`
-	Side        string `json:"side"`
-	FinalSize   string `json:"final_size"`
-	FinalFunds  string `json:"final_funds"`
+	Id         int64  `json:"id"`
+	Status     string `json:"status"`
+	FailReason string `json:"fail_reason,omitempty"`
+
+	Input     string `json:"input"`
+	Output    string `json:"output"`
+	InAmount  string `json:"in_amount"`
+	OutAmount string `json:"out_amount"`
+
 	FilledPrice string `json:"filled_price"`
 	Fee         string `json:"fee"`
 	FeeCurrency string `json:"fee_currency"`
-	TransferFee string `json:"transfer_fee"`
+
+	TransferFee         string `json:"transfer_fee"`
+	TransferFeeCurrency string `json:"transfer_fee_currency"`
 
 	DepositAddress string `json:"deposit_address"`
-	DepositTag     string `json:"deposit_tag"`
+	DepositTag     string `json:"deposit_tag,omitempty"`
 
 	WithdrawalAddress string `json:"withdrawal_address"`
-	WithdrawalTag     string `json:"withdrawal_tag"`
+	WithdrawalTag     string `json:"withdrawal_tag,omitempty"`
 
 	WithdrawalTxId string `json:"withdrawal_tx_id"`
 	CreatedAt      int64  `json:"created_at"`
@@ -35,15 +40,23 @@ func UOFromEntity(oe *entity.Order) *UserOrder {
 	o := &UserOrder{
 		Id: oe.Id,
 
-		Fee:            oe.Withdrawal.Fee,
-		TransferFee:    oe.Withdrawal.ExchangeFee,
+		Input:     oe.Deposit.Token.String(),
+		Output:    oe.Withdrawal.Token.String(),
+		InAmount:  oe.Deposit.Volume,
+		OutAmount: oe.Withdrawal.Volume,
+
+		Fee:                 oe.Fee,
+		FeeCurrency:         oe.FeeCurrency,
+		TransferFee:         oe.Withdrawal.Fee,
+		TransferFeeCurrency: oe.Withdrawal.FeeCurrency,
+
 		DepositAddress: oe.Deposit.Addr,
 		DepositTag:     oe.Deposit.Tag,
 
 		WithdrawalAddress: oe.Withdrawal.Addr,
 		WithdrawalTag:     oe.Withdrawal.Tag,
 
-		WithdrawalTxId: oe.Withdrawal.TxId,
+		WithdrawalTxId: strings.Split(oe.Withdrawal.TxId, "-")[0],
 		CreatedAt:      oe.CreatedAt,
 	}
 
@@ -51,8 +64,16 @@ func UOFromEntity(oe *entity.Order) *UserOrder {
 	case entity.OSDepositeConfimred:
 		o.Status = string(oe.Status)
 
-	case entity.OSSucceed:
+	case entity.OSSucceed, entity.OSWaitForWithdrawalConfirm:
 		o.Status = string(oe.Status)
+		in, err := numbers.StringToBigFloat(oe.Deposit.Volume)
+		if err == nil {
+			out, err := numbers.StringToBigFloat(oe.Withdrawal.Volume)
+			if err == nil {
+				o.FilledPrice = new(big.Float).Quo(out, in).String()
+			}
+		}
+
 	case entity.OSFailed:
 		o.Status = string(oe.Status)
 
@@ -66,18 +87,6 @@ func UOFromEntity(oe *entity.Order) *UserOrder {
 		o.Status = "pending"
 	}
 
-	if oe.Withdrawal.Total != "" && oe.Deposit.Volume != "" {
-
-		wt, _ := strconv.ParseFloat(oe.Withdrawal.Total, 64)
-		dt, _ := strconv.ParseFloat(oe.Deposit.Volume, 64)
-		if o.Side == "buy" {
-			o.FilledPrice = strconv.FormatFloat(dt/wt, 'f', 8, 64)
-		} else {
-			o.FilledPrice = strconv.FormatFloat(wt/dt, 'f', 8, 64)
-		}
-
-	}
-
 	return o
 }
 
@@ -85,24 +94,24 @@ type AdminOrder struct {
 	Id     int64 `json:"order_id"`
 	UserId int64 `json:"user_id"`
 
-	Status    string `json:"status"`
-	BaseCoin  string `json:"base_coin"`
-	QuoteCoin string `json:"quote_coin"`
-	Side      string `json:"side"`
+	Status string `json:"status"`
 
-	SpreadRate string `json:"spread_rate"`
-	SpreadVol  string `json:"spread_vol"`
+	Deposit    *Deposit      `json:"deposit"`
+	Swaps      map[int]*Swap `json:"swaps"`
+	Withdrawal *Withdrawal   `json:"withdrawal"`
 
-	Exchange string `json:"exchange"`
+	Fee         string `json:"fee"`
+	FeeCurrency string `json:"fee_currency"`
 
-	Deposit         *Deposit `json:"deposit"`
-	Routes          map[int]*entity.Route
-	Swaps           map[int]*Swap `json:"swaps"`
-	Withdrawal      *Withdrawal   `json:"withdrawal"`
-	CreatedAt       int64         `json:"created_at"`
-	FaileCode       int64         `json:"failed_code"`
-	FailedDesc      string        `json:"failed_desc"`
-	entity.MetaData `json:"meta_data"`
+	SpreadRate     string `json:"spread_rate"`
+	SpreadVol      string `json:"spread_vol"`
+	SpreadCurrency string `json:"spread_currency"`
+
+	CreatedAt int64 `json:"created_at"`
+
+	FaileCode       int64  `json:"failed_code,omitempty"`
+	FailedDesc      string `json:"failed_desc,omitempty"`
+	entity.MetaData `json:"meta_data,omitempty"`
 }
 
 func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
@@ -113,18 +122,22 @@ func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
 		CreatedAt:  o.CreatedAt,
 		Status:     string(o.Status),
 		Deposit:    DFromEntity(o.Deposit),
-		Routes:     make(map[int]*entity.Route),
+		Swaps:      make(map[int]*Swap),
 		Withdrawal: WFromEntity(o.Withdrawal),
 
-		SpreadRate: o.SpreadRate,
-		SpreadVol:  o.SpreadVol,
+		Fee:         o.Fee,
+		FeeCurrency: o.FeeCurrency,
+
+		SpreadRate:     o.SpreadRate,
+		SpreadVol:      o.SpreadVol,
+		SpreadCurrency: o.SpreadCurrency,
 
 		FaileCode:  o.FailedCode,
 		FailedDesc: o.FailedDesc,
 		MetaData:   o.MetaData,
 	}
 	for k, v := range o.Swaps {
-		ord.Swaps[k] = SwapFromEntity(v, o.Routes[k])
+		ord.Swaps[k] = SwapFromEntity(v, o.Routes[k], k)
 	}
 	return ord
 }
@@ -154,7 +167,7 @@ func (r *CreateOrderRequest) Validate() error {
 
 type CreateOrderResponse struct {
 	OrderId         int64   `json:"order_id"`
-	DC              string  `json:"deposit_coin"`
+	DC              string  `json:"deposit_token"`
 	MinDeposit      float64 `json:"min_deposit"`
 	DepositeAddress string  `json:"deposit_address"`
 	AddressTag      string  `json:"address_tag"`

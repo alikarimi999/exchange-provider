@@ -94,7 +94,9 @@ func production() {
 	wg.Add(1)
 	go ou.Run(wg)
 
-	http.NewRouter(ou, v, rc, l, user, pass).Run(":8000")
+	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8000"); err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	wg.Wait()
 
@@ -167,7 +169,9 @@ func test() {
 	wg.Add(1)
 	go ou.Run(wg)
 
-	http.NewRouter(ou, v, rc, l, user, pass).Run(":8081")
+	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8081"); err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
 	wg.Wait()
 

@@ -16,23 +16,37 @@ type Order struct {
 	Swaps      []*Swap     `gorm:"foreignKey:OrderId"`
 	Withdrawal *Withdrawal `gorm:"foreignKey:OrderId"`
 
-	SpreadRate string
-	SpreadVol  string
+	Fee            string
+	FeeCurrency    string
+	SpreadRate     string
+	SpreadVol      string
+	SpreadCurrency string
 
 	FailedCode int64
 	FailedDesc string
 	MetaData   jsonb
 }
 
-func (o *Order) ToEntity() *entity.Order {
+func (o *Order) ToEntity() (*entity.Order, error) {
 	if o.MetaData == nil {
 		o.MetaData = make(jsonb)
 	}
 	if o.Deposit == nil {
 		o.Deposit = new(Deposit)
 	}
+
 	if o.Withdrawal == nil {
 		o.Withdrawal = new(Withdrawal)
+	}
+
+	d, err := o.Deposit.ToEntity()
+	if err != nil {
+		return nil, err
+	}
+
+	w, err := o.Withdrawal.ToEntity()
+	if err != nil {
+		return nil, err
 	}
 
 	order := &entity.Order{
@@ -41,25 +55,33 @@ func (o *Order) ToEntity() *entity.Order {
 		UserId:    o.UserId,
 		Status:    entity.OrderStatus(o.Status),
 
-		Routes: make(map[int]*entity.Route),
-
-		Deposit:    o.Deposit.ToEntity(),
+		Routes:     make(map[int]*entity.Route),
+		Deposit:    d,
 		Swaps:      make(map[int]*entity.Swap),
-		Withdrawal: o.Withdrawal.ToEntity(),
+		Withdrawal: w,
 
-		SpreadRate: o.SpreadRate,
-		SpreadVol:  o.SpreadVol,
+		Fee:         o.Fee,
+		FeeCurrency: o.FeeCurrency,
+
+		SpreadRate:     o.SpreadRate,
+		SpreadVol:      o.SpreadVol,
+		SpreadCurrency: o.SpreadCurrency,
 
 		FailedCode: o.FailedCode,
 		FailedDesc: o.FailedDesc,
 		MetaData:   entity.MetaData(o.MetaData),
 	}
+
 	for _, swap := range o.Swaps {
-		s, r, i := swap.ToEntity()
+		s, r, i, err := swap.ToEntity()
+		if err != nil {
+			return nil, err
+		}
 		order.Swaps[i] = s
 		order.Routes[i] = r
 	}
-	return order
+
+	return order, nil
 }
 
 func UoToDto(o *entity.Order) *Order {
@@ -72,21 +94,24 @@ func UoToDto(o *entity.Order) *Order {
 			ID:        uint(o.Id),
 			CreatedAt: time.Unix(o.CreatedAt, 0),
 		},
-		UserId:  o.UserId,
-		Status:  string(o.Status),
-		Deposit: DToDto(o.Deposit),
-
+		UserId:     o.UserId,
+		Status:     string(o.Status),
+		Deposit:    DToDto(o.Deposit),
 		Withdrawal: WToDto(o.Withdrawal),
 
-		SpreadRate: o.SpreadRate,
-		SpreadVol:  o.SpreadVol,
+		Fee:         o.Fee,
+		FeeCurrency: o.FeeCurrency,
+
+		SpreadRate:     o.SpreadRate,
+		SpreadVol:      o.SpreadVol,
+		SpreadCurrency: o.SpreadCurrency,
 
 		FailedCode: o.FailedCode,
 		FailedDesc: o.FailedDesc,
 		MetaData:   jsonb(o.MetaData),
 	}
-	for i, s := range o.Swaps {
-		order.Swaps = append(order.Swaps, SwapToDto(s, o.Routes[i], i))
+	for i, r := range o.Routes {
+		order.Swaps = append(order.Swaps, swapToDto(o.Swaps[i], r, i))
 	}
 	return order
 }

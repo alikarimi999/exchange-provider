@@ -19,5 +19,5 @@ func (d *depositeRecord) MarshalBinary() ([]byte, error) {
 }
 
 func (d *depositeRecord) MatchCurrency(de *entity.Deposit) bool {
-	return d.Currency == string(de.CoinId)
+	return d.Currency == string(de.TokenId)
 }

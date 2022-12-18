@@ -2,17 +2,16 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 	"fmt"
 )
 
-type PaginatedUserOrdersRequest struct {
+type PaginatedOrdersRequest struct {
 	CurrentPage int64     `json:"current_page"`
 	PageSize    int64     `json:"page_size"`
 	Fs          []*Filter `json:"filters"`
 }
 
-func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
+func (r *PaginatedOrdersRequest) Validate(userId int64) error {
 	if r.CurrentPage < 1 {
 		r.CurrentPage = 1
 	}
@@ -25,7 +24,7 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 	}
 
 	for _, f := range r.Fs {
-		if err := r.ValidateFiltersForUser(f); err != nil {
+		if err := r.ValidateFilters(f); err != nil {
 			return err
 		}
 
@@ -35,15 +34,10 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 		for _, f := range r.Fs {
 			if f.Param == "user_id" {
 				if f.Operator != "eq" || f.Values[0].(int64) != userId {
-					return errors.Wrap(errors.ErrForbidden, errors.NewMesssage(fmt.Sprintf("user_id must be equal to %d", userId)))
+					return fmt.Errorf("user_id must be equal to %d", userId)
 				}
 				return nil
 			}
-			// change param id with seq if exists
-			if f.Param == "id" {
-				f.Param = "seq"
-			}
-
 		}
 
 		r.Fs = append(r.Fs, &Filter{
@@ -56,7 +50,7 @@ func (r *PaginatedUserOrdersRequest) Validate(userId int64) error {
 	return nil
 }
 
-func (r *PaginatedUserOrdersRequest) Map() *entity.PaginatedOrders {
+func (r *PaginatedOrdersRequest) Map() *entity.PaginatedOrders {
 	fs := []*entity.Filter{}
 
 	for _, f := range r.Fs {

@@ -8,19 +8,7 @@ func (o *OrderUseCase) AddPairs(ex entity.Exchange, data interface{}) (*entity.A
 	return ex.AddPairs(data)
 }
 
-func (o *OrderUseCase) GetAllPairsByExchange(ex entity.Exchange) ([]*entity.Pair, error) {
-
-	ps := ex.GetAllPairs()
-	// set spread_rate
-	for _, p := range ps {
-		p.C1.MinDeposit, p.C2.MinDeposit = o.pc.PairMinDeposit(p.C1.Coin.String(), p.C2.Coin.String())
-		p.SpreadRate = o.pc.GetPairSpread(p.C1.Coin, p.C2.Coin)
-	}
-
-	return ps, nil
-}
-
-func (o *OrderUseCase) RemovePair(ex entity.Exchange, bc, qc *entity.Coin, force bool) error {
+func (o *OrderUseCase) RemovePair(ex entity.Exchange, t1, t2 *entity.Token, force bool) error {
 
 	// if !force {
 	// 	f1 := &entity.Filter{
@@ -58,5 +46,5 @@ func (o *OrderUseCase) RemovePair(ex entity.Exchange, bc, qc *entity.Coin, force
 
 	// }
 
-	return ex.RemovePair(bc, qc)
+	return ex.RemovePair(t1, t2)
 }

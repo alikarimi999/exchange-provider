@@ -42,7 +42,8 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 		select {
 		case feed := <-t.feedCh:
 			go func(f *wtFeed) {
-				wd, err := t.c.getWithdrawal(f.w.WId)
+				txId := f.w.TxId
+				wd, err := t.c.getWithdrawal(txId)
 				if err != nil {
 					if err != redis.Nil {
 						t.l.Error(string(op), err.Error())
@@ -55,9 +56,9 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				switch wd.Status {
 				case "SUCCESS":
 					f.w.Status = entity.WithdrawalSucceed
-					f.w.ExchangeFee = wd.Fee
-					f.w.Executed = wd.Amount
-					f.w.TxId = wd.FixTxId()
+					f.w.Fee = wd.Fee
+					f.w.TxId = wd.FixTxId() + "-" + txId
+					f.w.FeeCurrency = f.w.Token.String()
 				case "FAILURE":
 					f.w.Status = entity.WithdrawalFailed
 					f.w.FailedDesc = "failed by exchange"
@@ -65,10 +66,10 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 				f.done <- struct{}{}
 
 				if <-f.proccessedCh {
-					if err := t.c.delWithdrawal(f.w.WId); err != nil {
+					if err := t.c.delWithdrawal(txId); err != nil {
 						t.l.Error(string(op), errors.Wrap(err, op).Error())
 					}
-					if err := t.c.proccessedWithdrawal(f.w.WId); err != nil {
+					if err := t.c.proccessedWithdrawal(txId); err != nil {
 						t.l.Error(string(op), errors.Wrap(err, op).Error())
 					}
 				}

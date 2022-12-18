@@ -28,7 +28,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.Id()))
 	for _, dp := range req.Pairs {
-		if d.pairs.exist(dp.C1, dp.C2) {
+		if d.pairs.exist(dp.T1, dp.T2) {
 			d.l.Debug(agent, fmt.Sprintf("pair %s already exists", dp.String()))
 			res.Existed = append(res.Existed, dp.String())
 			continue
@@ -37,16 +37,16 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 		pwg.Add(1)
 		go func(p *dto.Pair) {
 			defer pwg.Done()
-			if err := d.addPair(p.C1, p.C2); err != nil {
+			if err := d.addPair(p.T1, p.T2); err != nil {
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
 				return
 			}
 			res.Added = append(res.Added, entity.Pair{
-				C1: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.C1, ChainId: d.cfg.chainId},
+				T1: &entity.PairCoin{
+					Token: &entity.Token{TokenId: p.T1, ChainId: d.cfg.chainId},
 				},
-				C2: &entity.PairCoin{
-					Coin: &entity.Coin{CoinId: p.C2, ChainId: d.cfg.chainId},
+				T2: &entity.PairCoin{
+					Token: &entity.Token{TokenId: p.T2, ChainId: d.cfg.chainId},
 				},
 			})
 			ps = append(ps, p.String())

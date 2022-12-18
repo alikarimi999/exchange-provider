@@ -1,9 +1,5 @@
 package entity
 
-import (
-	"fmt"
-)
-
 type WithdrawalStatus string
 
 const (
@@ -14,31 +10,18 @@ const (
 
 type Withdrawal struct {
 	Id      uint64
-	WId     string
 	OrderId int64
-	UserId  int64
 
 	Status WithdrawalStatus
-
+	TxId   string
 	*Address
 
-	Exchange string
+	*Token
+	Unwrapped bool
+	Volume    string
 
-	*Coin
-	Unwrapped   bool
-	Total       string
 	Fee         string
 	FeeCurrency string
 
-	ExchangeFee         string
-	ExchangeFeeCurrency string
-
-	Executed string
-
-	TxId       string
 	FailedDesc string
-}
-
-func (w *Withdrawal) String() string {
-	return fmt.Sprintf("%+v", *w)
 }

@@ -13,7 +13,7 @@ type AddPairsRequest struct {
 
 func (a *AddPairsRequest) Validate() error {
 	for _, p := range a.Pairs {
-		if p.T1.CoinId != p.T2.CoinId {
+		if p.T1.TokenId != p.T2.TokenId {
 			return fmt.Errorf("both tokens must have the same coinId")
 		}
 		if p.T1.ChainId == p.T2.ChainId {

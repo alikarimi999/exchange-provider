@@ -5,17 +5,18 @@ import (
 	"time"
 )
 
-type Coin struct {
-	CoinId  string
-	ChainId string
+type Token struct {
+	TokenId  string
+	ChainId  string
+	Standard string
 }
 
-func (c *Coin) String() string {
-	return c.CoinId + "-" + c.ChainId
+func (c *Token) String() string {
+	return c.TokenId + "-" + c.ChainId
 }
 
 type PairCoin struct {
-	*Coin
+	*Token
 
 	BlockTime           time.Duration
 	ContractAddress     string
@@ -32,8 +33,8 @@ type PairCoin struct {
 }
 
 type Pair struct {
-	C1 *PairCoin
-	C2 *PairCoin
+	T1 *PairCoin
+	T2 *PairCoin
 
 	ContractAddress string
 	FeeTier         int64
@@ -48,9 +49,9 @@ type Pair struct {
 }
 
 func (p *PairCoin) String() string {
-	return p.CoinId + "-" + p.ChainId
+	return p.Token.String()
 }
 
 func (p *Pair) String() string {
-	return p.C1.String() + "/" + p.C2.String()
+	return p.T1.String() + "/" + p.T2.String()
 }

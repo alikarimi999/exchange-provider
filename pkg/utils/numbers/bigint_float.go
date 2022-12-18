@@ -12,10 +12,20 @@ func BigIntToFloatString(bn *big.Int, decimal int) string {
 }
 
 func FloatStringToBigInt(s string, decimals int) (*big.Int, error) {
+	bf, err := StringToBigFloat(s)
+	if err != nil {
+		return nil, err
+	}
+	bn, _ := new(big.Float).Mul(bf, big.NewFloat(math.Pow10(decimals))).Int(nil)
+	return bn, nil
+
+}
+
+func StringToBigFloat(s string) (*big.Float, error) {
 	bf, ok := new(big.Float).SetString(s)
 	if ok {
-		bn, _ := new(big.Float).Mul(bf, big.NewFloat(math.Pow10(decimals))).Int(nil)
-		return bn, nil
+		return bf, nil
 	}
-	return nil, fmt.Errorf("invalid string")
+	return nil, fmt.Errorf("numbers: invalid string")
+
 }

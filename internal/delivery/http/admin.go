@@ -32,7 +32,7 @@ func (r *Router) adminRoutes() {
 			})
 
 			ps.POST("", func(ctx *gin.Context) {
-				r.srv.GetExchangesPairs(newContext(ctx))
+				r.srv.GetPairsToAdmin(newContext(ctx))
 			})
 
 			ps.POST("/get_min_deposit", func(ctx *gin.Context) {

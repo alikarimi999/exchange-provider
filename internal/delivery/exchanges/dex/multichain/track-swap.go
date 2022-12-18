@@ -29,14 +29,14 @@ type info struct {
 
 func (ex *Multichain) trackSwap(o *entity.Order, index int) {
 	err := try.Do(1000, func(attempt uint64) (retry bool, err error) {
-		i, err := ex.getInfo(o.Swaps[index].ExId)
+		i, err := ex.getInfo(o.Swaps[index].TxId)
 		if err != nil {
 			time.Sleep(time.Second * 30)
 			return true, err
 		}
 		switch i.Info.Status {
 		case ExceedLimit:
-			o.Swaps[index].Status = entity.ExOrderFailed
+			o.Swaps[index].Status = entity.SwapFailed
 			o.Swaps[index].FailedDesc = "LessThenMinAmount"
 			return false, nil
 
@@ -45,7 +45,7 @@ func (ex *Multichain) trackSwap(o *entity.Order, index int) {
 			return true, fmt.Errorf("Confirming")
 
 		case Success:
-			o.Swaps[index].Status = entity.ExOrderSucceed
+			o.Swaps[index].Status = entity.SwapSucceed
 			o.Swaps[index].OutAmount = i.Info.Formatswapvalue
 			o.Swaps[index].Fee = i.Info.FormatFee
 			o.Swaps[index].FeeCurrency = o.Routes[index].In.String()
@@ -56,7 +56,7 @@ func (ex *Multichain) trackSwap(o *entity.Order, index int) {
 	})
 
 	if err != nil {
-		o.Swaps[index].Status = entity.ExOrderFailed
+		o.Swaps[index].Status = entity.SwapFailed
 		o.Swaps[index].FailedDesc = err.Error()
 	}
 

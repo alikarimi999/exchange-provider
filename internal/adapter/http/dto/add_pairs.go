@@ -8,9 +8,10 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-type Coin struct {
-	CoinId              string  `json:"coin_id"`
-	ChainId             string  `json:"chain_id"`
+type Token struct {
+	TokenId             string  `json:"tokenId"`
+	ChainId             string  `json:"chainId"`
+	Standard            string  `json:"standard,omitempty"`
 	ContractAddress     string  `json:"contract_address,omitempty"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
@@ -22,31 +23,32 @@ type Coin struct {
 	MinWithdrawalFee    string  `json:"min_withdrawal_fee,omitempty"`
 	OrderPrecision      int     `json:"order_precision,omitempty"`
 	WithdrawalPrecision int     `json:"withdrawal_precision,omitempty"`
-	SetChain            bool    `json:"set_chain,omitempty"`
 }
 
 type kuPair struct {
-	C1 *Coin `json:"coin1"`
-	C2 *Coin `json:"coin2"`
+	T1 *Token `json:"t1"`
+	T2 *Token `json:"t2"`
 }
 
 func (p *kuPair) Map() *kdto.Pair {
 
 	pair := &kdto.Pair{
-		C1: &kdto.Coin{
-			CoinId:              p.C1.CoinId,
-			ChainId:             p.C1.ChainId,
-			WithdrawalPrecision: p.C1.WithdrawalPrecision,
+		T1: &kdto.Token{
+			TokenId:             p.T1.TokenId,
+			ChainId:             p.T1.ChainId,
+			Standard:            p.T1.Standard,
+			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
-		C2: &kdto.Coin{
-			CoinId:              p.C2.CoinId,
-			ChainId:             p.C2.ChainId,
-			WithdrawalPrecision: p.C2.WithdrawalPrecision,
+		T2: &kdto.Token{
+			TokenId:             p.T2.TokenId,
+			ChainId:             p.T2.ChainId,
+			Standard:            p.T2.Standard,
+			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},
 	}
 
-	pair.C1.BlockTime, _ = toTime(p.C1.BlockTime)
-	pair.C2.BlockTime, _ = toTime(p.C2.BlockTime)
+	pair.T1.BlockTime, _ = toTime(p.T1.BlockTime)
+	pair.T2.BlockTime, _ = toTime(p.T2.BlockTime)
 
 	return pair
 }
@@ -59,22 +61,22 @@ type KucoinAddPairsRequest struct {
 // if there was return an error that the value must set
 func (r *KucoinAddPairsRequest) Validate() error {
 	for _, p := range r.Pairs {
-		if p.C1.CoinId == "" || p.C1.ChainId == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin must have id"))
+		if p.T1.TokenId == "" || p.T1.ChainId == "" {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("token1 must have id"))
 		}
-		if p.C2.CoinId == "" || p.C2.ChainId == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("quote coin must have id"))
+		if p.T2.TokenId == "" || p.T2.ChainId == "" {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("token2 must have id"))
 		}
 
-		if p.C1.WithdrawalPrecision == 0 || p.C2.WithdrawalPrecision == 0 {
+		if p.T1.WithdrawalPrecision == 0 || p.T2.WithdrawalPrecision == 0 {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("withdrawal_precision must be set"))
 		}
 
-		if _, err := toTime(p.C1.BlockTime); err != nil {
+		if _, err := toTime(p.T1.BlockTime); err != nil {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
 		}
 
-		if _, err := toTime(p.C2.BlockTime); err != nil {
+		if _, err := toTime(p.T2.BlockTime); err != nil {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
 		}
 
@@ -83,15 +85,15 @@ func (r *KucoinAddPairsRequest) Validate() error {
 }
 
 type AdminPair struct {
-	C1 *Coin `json:"coin1"`
-	C2 *Coin `json:"coin2"`
+	T1 *Token `json:"t1"`
+	T2 *Token `json:"t2"`
 
 	ContractAddress      string   `json:"contract_address,omitempty"`
 	FeeTier              int64    `json:"fee_tier,omitempty"`
 	Liquidity            *big.Int `json:"liquidity,omitempty"`
 	Price                string   `json:"price,omitempty"`
-	BuyPrice             string   `json:"buy_price,omitempty"`
-	SellPrice            string   `json:"sell_price,omitempty"`
+	Price1               string   `json:"price1,omitempty"`
+	Price2               string   `json:"price2,omitempty"`
 	FeeCurrency          string   `json:"fee_currency"`
 	ExchangeOrderFeeRate string   `json:"exchange_order_fee_rate,omitempty"`
 	SpreadRate           string   `json:"spread_rate"`
@@ -99,51 +101,53 @@ type AdminPair struct {
 
 func PairDTO(p *entity.Pair) *AdminPair {
 	ap := &AdminPair{
-		C1: &Coin{
-			CoinId:              p.C1.Coin.CoinId,
-			ChainId:             p.C1.Coin.ChainId,
-			ContractAddress:     p.C1.ContractAddress,
-			Address:             p.C1.Address,
-			Tag:                 p.C1.Tag,
-			MinDeposit:          p.C1.MinDeposit,
-			MinOrderSize:        p.C1.MinOrderSize,
-			MaxOrderSize:        p.C1.MaxOrderSize,
-			MinWithdrawalSize:   p.C1.MinWithdrawalSize,
-			MinWithdrawalFee:    p.C1.WithdrawalMinFee,
-			OrderPrecision:      p.C1.OrderPrecision,
-			WithdrawalPrecision: p.C1.WithdrawalPrecision,
-			SetChain:            p.C1.SetChain,
+		T1: &Token{
+			TokenId:  p.T1.TokenId,
+			ChainId:  p.T1.ChainId,
+			Standard: p.T1.Standard,
+
+			ContractAddress:     p.T1.ContractAddress,
+			Address:             p.T1.Address,
+			Tag:                 p.T1.Tag,
+			MinDeposit:          p.T1.MinDeposit,
+			MinOrderSize:        p.T1.MinOrderSize,
+			MaxOrderSize:        p.T1.MaxOrderSize,
+			MinWithdrawalSize:   p.T1.MinWithdrawalSize,
+			MinWithdrawalFee:    p.T1.WithdrawalMinFee,
+			OrderPrecision:      p.T1.OrderPrecision,
+			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
-		C2: &Coin{
-			CoinId:              p.C2.Coin.CoinId,
-			ChainId:             p.C2.Coin.ChainId,
-			ContractAddress:     p.C2.ContractAddress,
-			Address:             p.C2.Address,
-			Tag:                 p.C2.Tag,
-			MinDeposit:          p.C2.MinDeposit,
-			MinOrderSize:        p.C2.MinOrderSize,
-			MaxOrderSize:        p.C2.MaxOrderSize,
-			MinWithdrawalSize:   p.C2.MinWithdrawalSize,
-			MinWithdrawalFee:    p.C2.WithdrawalMinFee,
-			OrderPrecision:      p.C2.OrderPrecision,
-			WithdrawalPrecision: p.C2.WithdrawalPrecision,
-			SetChain:            p.C2.SetChain,
+		T2: &Token{
+			TokenId:  p.T2.TokenId,
+			ChainId:  p.T2.ChainId,
+			Standard: p.T2.Standard,
+
+			ContractAddress:     p.T2.ContractAddress,
+			Address:             p.T2.Address,
+			Tag:                 p.T2.Tag,
+			MinDeposit:          p.T2.MinDeposit,
+			MinOrderSize:        p.T2.MinOrderSize,
+			MaxOrderSize:        p.T2.MaxOrderSize,
+			MinWithdrawalSize:   p.T2.MinWithdrawalSize,
+			MinWithdrawalFee:    p.T2.WithdrawalMinFee,
+			OrderPrecision:      p.T2.OrderPrecision,
+			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},
 
 		ContractAddress:      p.ContractAddress,
 		FeeTier:              p.FeeTier,
 		Liquidity:            p.Liquidity,
-		BuyPrice:             p.Price1,
-		SellPrice:            p.Price2,
+		Price1:               p.Price1,
+		Price2:               p.Price2,
 		SpreadRate:           p.SpreadRate,
 		FeeCurrency:          p.FeeCurrency,
 		ExchangeOrderFeeRate: p.OrderFeeRate,
 	}
 
-	if ap.BuyPrice == ap.SellPrice {
-		ap.Price = ap.BuyPrice
-		ap.BuyPrice = ""
-		ap.SellPrice = ""
+	if ap.Price1 == ap.Price2 {
+		ap.Price = ap.Price1
+		ap.Price1 = ""
+		ap.Price2 = ""
 	}
 	return ap
 }

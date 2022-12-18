@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
+func (s *Server) routing(in, out *entity.Token) (map[int]*entity.Route, error) {
 	routes := make(map[int]*entity.Route)
-	if in.CoinId == out.CoinId || in.ChainId == out.ChainId {
+	if in.TokenId == out.TokenId || in.ChainId == out.ChainId {
 
 		routes[0] = &entity.Route{In: in, Out: out}
 		ex, err := s.app.SelectExchangeByPair(in, out)
@@ -19,7 +19,7 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 
 	} else if s.cf.lowerEq(in.ChainId, out.ChainId) {
 
-		routes[0] = &entity.Route{In: in, Out: &entity.Coin{CoinId: out.CoinId, ChainId: in.ChainId}}
+		routes[0] = &entity.Route{In: in, Out: &entity.Token{TokenId: out.TokenId, ChainId: in.ChainId}}
 
 		ex, err := s.app.SelectExchangeByPair(routes[0].In, routes[0].Out)
 		if err == nil {
@@ -35,7 +35,7 @@ func (s *Server) routing(in, out *entity.Coin) (map[int]*entity.Route, error) {
 
 	}
 
-	routes[0] = &entity.Route{In: in, Out: &entity.Coin{CoinId: in.CoinId, ChainId: out.ChainId}}
+	routes[0] = &entity.Route{In: in, Out: &entity.Token{TokenId: in.TokenId, ChainId: out.ChainId}}
 	routes[1] = &entity.Route{In: routes[0].Out, Out: out}
 	ex, err := s.app.SelectExchangeByPair(routes[0].In, routes[0].Out)
 	if err != nil {

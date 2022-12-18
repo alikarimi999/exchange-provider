@@ -13,13 +13,10 @@ type Address struct {
 
 type Deposit struct {
 	Id      int64
-	UserId  int64
 	OrderId int64
 
-	Status   string
-	Exchange string
-
-	*Coin
+	Status string
+	*Token
 
 	TxId   string
 	Volume string

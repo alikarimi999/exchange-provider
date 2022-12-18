@@ -1,8 +1,8 @@
 package http
 
 import (
-	"fmt"
 	"exchange-provider/internal/adapter/http/dto"
+	"fmt"
 )
 
 func (s *Server) GetAllPairsSpread(ctx Context) {
@@ -30,14 +30,14 @@ func (s *Server) ChangePairSpread(ctx Context) {
 	resp := []*pair{}
 	for _, p := range req.Pairs {
 
-		bc, err := dto.ParseCoin(p.BC)
+		bc, err := dto.ParseToken(p.BC)
 		if err != nil {
 			p.Msg = err.Error()
 			resp = append(resp, p)
 			continue
 		}
 
-		qc, err := dto.ParseCoin(p.QC)
+		qc, err := dto.ParseToken(p.QC)
 		if err != nil {
 			p.Msg = err.Error()
 			resp = append(resp, p)

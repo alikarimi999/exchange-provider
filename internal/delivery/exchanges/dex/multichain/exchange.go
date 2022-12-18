@@ -63,7 +63,7 @@ func (m *Multichain) swap(o *entity.Order, src common.Address, chain *Chain,
 		if err != nil {
 			return nil, nil, err
 		}
-		if errs := chain.am.InfinitApproves(ts.Token{Symbol: tIn.CoinId,
+		if errs := chain.am.InfinitApproves(ts.Token{Symbol: tIn.TokenId,
 			Address: common.HexToAddress(tIn.Address), Decimals: tIn.Decimals},
 			common.HexToAddress(d.Router), src); len(errs) > 0 {
 			e := errors.New("")

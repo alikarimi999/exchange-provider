@@ -21,6 +21,10 @@ type Configs struct {
 	ApiPassphrase string `json:"api_passphrase"`
 	ApiVersion    string
 	ApiUrl        string
+	Chains        map[chainId]struct {
+		standard
+		time.Duration
+	}
 	// WsTopics      []string
 }
 
@@ -104,28 +108,52 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 				p := v.(map[string]interface{})
 				pc := &pair{}
 				if p["bc"] != nil && p["qc"] != nil {
-					pc.BC = &kuCoin{
-						CoinId:              p["bc"].(map[string]interface{})["coin_id"].(string),
-						ChainId:             p["bc"].(map[string]interface{})["chain_id"].(string),
+					pc.BC = &kuToken{
+						TokenId:  p["bc"].(map[string]interface{})["tokenid"].(string),
+						ChainId:  chainId(p["bc"].(map[string]interface{})["chainid"].(string)),
+						Standard: standard((p["bc"].(map[string]interface{})["standard"].(string))),
+
 						BlockTime:           time.Duration(p["bc"].(map[string]interface{})["block_time"].(float64)),
 						ConfirmBlocks:       int64(p["bc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["bc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
-					pc.QC = &kuCoin{
-						CoinId:              p["qc"].(map[string]interface{})["coin_id"].(string),
-						ChainId:             p["qc"].(map[string]interface{})["chain_id"].(string),
+					if _, ok := k.cfg.Chains[chainId(pc.BC.ChainId)]; !ok {
+						k.cfg.Chains[chainId(pc.BC.ChainId)] = struct {
+							standard
+							time.Duration
+						}{
+							pc.BC.Standard,
+							pc.BC.BlockTime,
+						}
+					}
+
+					pc.QC = &kuToken{
+						TokenId:  p["qc"].(map[string]interface{})["tokenid"].(string),
+						ChainId:  chainId(p["qc"].(map[string]interface{})["chainid"].(string)),
+						Standard: standard((p["qc"].(map[string]interface{})["standard"].(string))),
+
 						BlockTime:           time.Duration(p["qc"].(map[string]interface{})["block_time"].(float64)),
 						ConfirmBlocks:       int64(p["qc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["qc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
+					if _, ok := k.cfg.Chains[chainId(pc.QC.ChainId)]; !ok {
+						k.cfg.Chains[chainId(pc.QC.ChainId)] = struct {
+							standard
+							time.Duration
+						}{
+							pc.QC.Standard,
+							pc.QC.BlockTime,
+						}
+					}
+
 					ps[pc.Id()] = pc
 				}
 			}
 
 			newPs := []*pair{}
-			newCs := map[string]*kuCoin{}
+			newCs := map[string]*kuToken{}
 			for _, p := range ps {
 				ok, _ := k.pls.support(p)
 				if !ok {
@@ -144,8 +172,8 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 				}
 
 				newPs = append(newPs, p)
-				newCs[p.BC.CoinId+p.BC.ChainId] = p.BC.snapshot()
-				newCs[p.QC.CoinId+p.QC.ChainId] = p.QC.snapshot()
+				newCs[p.BC.TokenId+string(p.BC.ChainId)] = p.BC.snapshot()
+				newCs[p.QC.TokenId+string(p.QC.ChainId)] = p.QC.snapshot()
 
 			}
 

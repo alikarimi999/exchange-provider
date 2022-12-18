@@ -44,7 +44,7 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
 		P:        u.cs[ChainId(t.ChainId)].provider(),
-		TxHash:   common.HexToHash(w.WId),
+		TxHash:   common.HexToHash(w.TxId),
 		Receiver: &r,
 		NeedTx:   true,
 		DoneCh:   doneCh,
@@ -59,13 +59,13 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 
 		unwrapFee := new(big.Int)
 		var err error
-		if w.ExchangeFee != "" {
-			unwrapFee, err = numbers.FloatStringToBigInt(w.ExchangeFee, t.Decimals)
+		if w.Fee != "" {
+			unwrapFee, err = numbers.FloatStringToBigInt(w.Fee, t.Decimals)
 			if err != nil {
 				unwrapFee = big.NewInt(0)
 			}
 		}
-		w.ExchangeFee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), t.Decimals)
+		w.Fee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), t.Decimals)
 		// w.ExchangeFeeCurrency = u.cs[chainId(t.Chain)].nativeToken
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",

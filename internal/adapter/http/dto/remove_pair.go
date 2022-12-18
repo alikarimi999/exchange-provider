@@ -7,30 +7,30 @@ import (
 
 type RemovePairRequest struct {
 	Exchange string `json:"exchange"`
-	BC       string `json:"base_coin"`  // combined with chain id  ex: BTC-BTC
-	QC       string `json:"quote_coin"` // combined with chain id  ex: USDT-TRC20
+	T1       string `json:"t1"` // combined with chain id  ex: BTC-BTC
+	T2       string `json:"t2"` // combined with chain id  ex: USDT-TRC20
 	Force    bool   `json:"force"`
 }
 
-func (r *RemovePairRequest) Parse() (bc, qc *entity.Coin, err error) {
+func (r *RemovePairRequest) Parse() (t1, t2 *entity.Token, err error) {
 
-	if r.BC == "" || r.QC == "" {
-		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("base coin and quote coin must be set"))
+	if r.T1 == "" || r.T2 == "" {
+		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("t1 and quote t2 must be set"))
 	}
 
 	if r.Exchange == "" {
 		return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchanges must be set"))
 	}
 
-	bc, err = ParseCoin(r.BC)
+	t1, err = ParseToken(r.T1)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	qc, err = ParseCoin(r.QC)
+	t2, err = ParseToken(r.T2)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return bc, qc, nil
+	return t1, t2, nil
 }

@@ -14,7 +14,7 @@ func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
 
-	pair, err := d.pairs.get(in.CoinId, out.CoinId)
+	pair, err := d.pairs.get(in.TokenId, out.TokenId)
 	if err != nil {
 		return "", err
 	}
@@ -24,7 +24,7 @@ func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 	var tIn ts.Token
 	var tOut ts.Token
 
-	if in.CoinId == pair.T1.Symbol {
+	if in.TokenId == pair.T1.Symbol {
 		tIn = pair.T1
 		tOut = pair.T2
 	} else {
@@ -51,9 +51,9 @@ func (d *dex) Exchange(o *entity.Order, index int) (string, error) {
 func (d *dex) TrackExchangeOrder(o *entity.Order, index int,
 	done chan<- struct{}, proccessed <-chan bool) {
 
-	pair, err := d.pairs.get(o.Routes[index].In.CoinId, o.Routes[index].Out.CoinId)
+	pair, err := d.pairs.get(o.Routes[index].In.TokenId, o.Routes[index].Out.TokenId)
 	if err != nil {
-		o.Swaps[index].Status = entity.ExOrderFailed
+		o.Swaps[index].Status = entity.SwapFailed
 		o.Swaps[index].FailedDesc = err.Error()
 		done <- struct{}{}
 		<-proccessed

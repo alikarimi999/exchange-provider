@@ -1,6 +1,9 @@
 package kucoin
 
-import "exchange-provider/pkg/errors"
+import (
+	"exchange-provider/pkg/errors"
+	"time"
+)
 
 func (k *kucoinExchange) Configs() interface{} {
 	return k.cfg
@@ -29,6 +32,12 @@ func validateConfigs(cfgi interface{}) (*Configs, error) {
 	}
 	if cfg.ApiUrl == "" {
 		cfg.ApiUrl = "https://api.kucoin.com"
+	}
+	if cfg.Chains == nil {
+		cfg.Chains = make(map[chainId]struct {
+			standard
+			time.Duration
+		})
 	}
 
 	return cfg, nil

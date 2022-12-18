@@ -18,7 +18,7 @@ func (m *Multichain) Configs() interface{} {
 	return m.cfg
 }
 
-func (m *Multichain) Support(in, out *entity.Coin) bool {
+func (m *Multichain) Support(in, out *entity.Token) bool {
 	p, err := m.pairs.get(c2T(in), c2T(out))
 	if err != nil {
 		return false
@@ -31,7 +31,7 @@ func (m *Multichain) Support(in, out *entity.Coin) bool {
 	}
 }
 
-func (m *Multichain) GetPair(c1, c2 *entity.Coin) (*entity.Pair, error) {
+func (m *Multichain) GetPair(c1, c2 *entity.Token) (*entity.Pair, error) {
 	p, err := m.pairs.get(c2T(c1), c2T(c2))
 	if err != nil {
 		return nil, err
@@ -49,18 +49,18 @@ func (m *Multichain) GetAllPairs() []*entity.Pair {
 	return eps
 }
 
-func (m *Multichain) RemovePair(c1, c2 *entity.Coin) error {
+func (m *Multichain) RemovePair(c1, c2 *entity.Token) error {
 	return m.pairs.remove(c2T(c1), c2T(c2))
 }
 
 func (p *Pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		C1: &entity.PairCoin{
-			Coin:            p.T1.toCoin(),
+		T1: &entity.PairCoin{
+			Token:           p.T1.toCoin(),
 			ContractAddress: p.T1.Address,
 		},
-		C2: &entity.PairCoin{
-			Coin:            p.T2.toCoin(),
+		T2: &entity.PairCoin{
+			Token:           p.T2.toCoin(),
 			ContractAddress: p.T2.Address,
 		},
 	}

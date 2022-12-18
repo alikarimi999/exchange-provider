@@ -52,7 +52,7 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 				return
 			}
 
-			ex, err := t.exs.get(o.Withdrawal.Exchange)
+			ex, err := t.exs.get(o.Routes[len(o.Routes)-1].Exchange)
 			if err != nil {
 				t.l.Error(agent, errors.Wrap(err, op, "exchange not found").Error())
 				return

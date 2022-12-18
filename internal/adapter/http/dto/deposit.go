@@ -8,26 +8,24 @@ import (
 type Deposit struct {
 	Id int64 `json:"id"`
 
-	Status   string `json:"status"`
-	Exchange string `json:"exchange,omitempty"`
-	Coin     string `json:"coin"`
+	Status string `json:"status"`
+	Token  string `json:"token"`
 
-	TxId   string `json:"tx_d"`
+	TxId   string `json:"tx_id"`
 	Volume string `json:"volume"`
 
 	Address string `json:"address"`
 	Tag     string `json:"tag"`
 
-	FailedDesc string `json:"failed_descritpion"`
+	FailedDesc string `json:"failed_descritpion,omitempty"`
 }
 
 func DFromEntity(d *entity.Deposit) *Deposit {
 	return &Deposit{
 		Id: d.Id,
 
-		Status:   d.Status,
-		Exchange: d.Exchange,
-		Coin:     d.Coin.String(),
+		Status: d.Status,
+		Token:  d.Token.String(),
 
 		TxId:   d.TxId,
 		Volume: d.Volume,

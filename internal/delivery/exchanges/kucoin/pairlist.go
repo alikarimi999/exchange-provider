@@ -63,7 +63,7 @@ func (pl *pairList) support(p *pair) (bool, error) {
 	defer pl.mux.Unlock()
 
 	for _, pair := range pl.pairs {
-		if pair.BaseCurrency == p.BC.CoinId && pair.QuoteCurrency == p.QC.CoinId {
+		if pair.BaseCurrency == p.BC.TokenId && pair.QuoteCurrency == p.QC.TokenId {
 			p.BC.minOrderSize = pair.BaseMinSize
 			p.BC.maxOrderSize = pair.BaseMaxSize
 			p.BC.orderPrecision = calcPrecision(pair.BaseIncrement)
@@ -74,7 +74,7 @@ func (pl *pairList) support(p *pair) (bool, error) {
 			p.feeCurrency = pair.FeeCurrency
 
 			return true, nil
-		} else if pair.BaseCurrency == p.QC.CoinId && pair.QuoteCurrency == p.BC.CoinId {
+		} else if pair.BaseCurrency == p.QC.TokenId && pair.QuoteCurrency == p.BC.TokenId {
 			x := p.QC
 			p.QC = p.BC
 			p.BC = x
@@ -87,6 +87,8 @@ func (pl *pairList) support(p *pair) (bool, error) {
 			p.QC.orderPrecision = calcPrecision(pair.QuoteIncrement)
 
 			p.feeCurrency = pair.FeeCurrency
+
+			return true, nil
 		}
 	}
 

@@ -10,7 +10,7 @@ import (
 func (k *kucoinExchange) createOrderRequest(p *pair, side, size, funds string) (*kucoin.CreateOrderModel, error) {
 	return &kucoin.CreateOrderModel{
 		ClientOid: uuid.New().String(),
-		Symbol:    p.Symbol(),
+		Symbol:    p.BC.TokenId + "-" + p.QC.TokenId,
 		Side:      side,
 		Type:      "market",
 		Size:      trim(size, p.BC.orderPrecision),

@@ -6,24 +6,19 @@ import (
 
 type Withdrawal struct {
 	Id      uint64 `gorm:"primary_key"`
-	WId     string
-	UserId  int64
 	OrderId int64
 
 	Status  string
 	Address string
 	Tag     string
 
-	Coin      string
-	Chain     string
+	Token string
+
 	Unwrapped bool
 
-	Exchange string
-
-	Total       string
+	Volume      string
 	Fee         string
-	ExchangeFee string
-	Executed    string
+	FeeCurrency string
 
 	TxId       string
 	FailedDesc string
@@ -37,23 +32,17 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 
 	return &Withdrawal{
 		Id:      w.Id,
-		WId:     w.WId,
-		UserId:  w.UserId,
 		OrderId: w.OrderId,
 
 		Address: w.Addr,
 		Tag:     w.Tag,
 
-		Coin:      w.CoinId,
-		Chain:     w.ChainId,
+		Token:     w.Token.String(),
 		Unwrapped: w.Unwrapped,
 
-		Exchange: w.Exchange,
-
-		Total:       w.Total,
+		Volume:      w.Volume,
 		Fee:         w.Fee,
-		ExchangeFee: w.ExchangeFee,
-		Executed:    w.Executed,
+		FeeCurrency: w.FeeCurrency,
 
 		TxId:       w.TxId,
 		Status:     string(w.Status),
@@ -61,30 +50,28 @@ func WToDto(w *entity.Withdrawal) *Withdrawal {
 	}
 }
 
-func (w *Withdrawal) ToEntity() *entity.Withdrawal {
-	return &entity.Withdrawal{
+func (w *Withdrawal) ToEntity() (*entity.Withdrawal, error) {
+	ew := &entity.Withdrawal{
 		Id:      w.Id,
-		WId:     w.WId,
-		UserId:  w.UserId,
 		OrderId: w.OrderId,
 
-		Address: &entity.Address{Addr: w.Address, Tag: w.Tag},
-
-		Coin: &entity.Coin{
-			CoinId:  w.Coin,
-			ChainId: w.Chain,
-		},
+		Address:   &entity.Address{Addr: w.Address, Tag: w.Tag},
 		Unwrapped: w.Unwrapped,
 
-		Exchange: w.Exchange,
-
-		Total:       w.Total,
+		Volume:      w.Volume,
 		Fee:         w.Fee,
-		ExchangeFee: w.ExchangeFee,
-		Executed:    w.Executed,
+		FeeCurrency: w.FeeCurrency,
 
 		TxId:       w.TxId,
 		Status:     entity.WithdrawalStatus(w.Status),
 		FailedDesc: w.FailedDesc,
 	}
+
+	t, c, err := parseToken(w.Token)
+	if err != nil {
+		return nil, err
+	}
+	ew.Token = &entity.Token{TokenId: t, ChainId: c}
+
+	return ew, nil
 }

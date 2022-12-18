@@ -4,7 +4,7 @@ import (
 	"exchange-provider/internal/entity"
 )
 
-func (m *Multichain) GetAddress(c *entity.Coin) (*entity.Address, error) {
+func (m *Multichain) GetAddress(c *entity.Token) (*entity.Address, error) {
 	a, err := m.cs[ChainId(c.ChainId)].w.RandAddress()
 	if err != nil {
 		return nil, err

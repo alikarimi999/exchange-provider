@@ -81,7 +81,7 @@ func (s *Server) AddPairs(ctx Context) {
 	ctx.JSON(200, dto.FromEntity(res))
 }
 
-func (s *Server) GetExchangesPairs(ctx Context) {
+func (s *Server) GetPairsToAdmin(ctx Context) {
 	req := &dto.GetAllPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
 		ctx.JSON(http.StatusBadRequest, err.Error())
@@ -114,13 +114,11 @@ func (s *Server) GetExchangesPairs(ctx Context) {
 		go func(ex entity.Exchange) {
 			defer wg.Done()
 			resp.Exchanges[ex.Id()] = &dto.Exchange{}
-			ps, err := s.app.GetAllPairsByExchange(ex)
-			if err != nil {
-				resp.Messages = append(resp.Messages, err.Error())
-				return
-			}
-
+			ps := ex.GetAllPairs()
 			for _, p := range ps {
+				p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
+				p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
+
 				dp := dto.PairDTO(p)
 				resp.Exchanges[ex.Id()].Pairs = append(resp.Exchanges[ex.Id()].Pairs, dp)
 			}
@@ -137,7 +135,7 @@ func (s *Server) RemovePair(ctx Context) {
 		return
 	}
 
-	bc, qc, err := req.Parse()
+	t1, t2, err := req.Parse()
 	if err != nil {
 		handlerErr(ctx, err)
 		return
@@ -149,11 +147,11 @@ func (s *Server) RemovePair(ctx Context) {
 		return
 	}
 
-	err = s.app.RemovePair(ex, bc, qc, req.Force)
+	err = s.app.RemovePair(ex, t1, t2, req.Force)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
 
-	ctx.JSON(200, fmt.Sprintf("pair '%s/%s' removed from %s", bc, qc, ex.Id()))
+	ctx.JSON(200, fmt.Sprintf("pair '%s/%s' removed from %s", t1, t2, ex.Id()))
 }

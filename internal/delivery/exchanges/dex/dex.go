@@ -116,20 +116,12 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 						ex.l.Error(agent, err.Error())
 						return
 					}
-					ex.l.Debug(agent, fmt.Sprintf("pair %s added", v))
+					ex.l.Debug(agent, fmt.Sprintf("pair %s added", t1+"/"+t2))
 				}(p[0], p[1])
 			}
 		}
 		wg.Wait()
 	} else {
-
-		if err := ex.generalSets(); err != nil {
-			return nil, err
-		}
-
-		if err := ex.setDEX(); err != nil {
-			return nil, err
-		}
 
 		ex.v.Set(fmt.Sprintf("%s.factory", ex.Id()), ex.cfg.Factory)
 		ex.v.Set(fmt.Sprintf("%s.router", ex.Id()), ex.cfg.Router)
@@ -142,6 +134,14 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 		for i, p := range ex.cfg.Providers {
 			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Id(), i), p.URL)
+		}
+
+		if err := ex.generalSets(); err != nil {
+			return nil, err
+		}
+
+		if err := ex.setDEX(); err != nil {
+			return nil, err
 		}
 
 		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)

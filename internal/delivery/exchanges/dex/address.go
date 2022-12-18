@@ -4,7 +4,7 @@ import (
 	"exchange-provider/internal/entity"
 )
 
-func (u *dex) GetAddress(c *entity.Coin) (*entity.Address, error) {
+func (u *dex) GetAddress(c *entity.Token) (*entity.Address, error) {
 	addr, err := u.wallet.RandAddress()
 	if err != nil {
 		return nil, err

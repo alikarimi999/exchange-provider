@@ -20,43 +20,43 @@ type GetAllPairsResponse struct {
 	Messages  []string             `json:"messages"`
 }
 
-func ParseCoin(coin string) (*entity.Coin, error) {
-	parts := strings.Split(coin, "-")
+func ParseToken(t string) (*entity.Token, error) {
+	parts := strings.Split(t, "-")
 	if len(parts) != 2 {
 		return nil, errors.Wrap(errors.ErrBadRequest,
-			errors.NewMesssage("coin must be in format: <coin_id>-<chain_id>"))
+			errors.NewMesssage("token must be in format: <tokenId>-<chainId>"))
 	}
 
-	return &entity.Coin{
-		CoinId:  strings.ToUpper(parts[0]),
+	return &entity.Token{
+		TokenId: strings.ToUpper(parts[0]),
 		ChainId: strings.ToUpper(parts[1]),
 	}, nil
 }
 
 type UserPair struct {
-	Coin1           string  `json:"coin1"`
-	Coin2           string  `json:"coin2"`
-	Price1          string  `json:"price1,omitempty"`
-	Price2          string  `json:"price2,omitempty"`
-	FeeRate         string  `json:"fee_rate,omitempty"`
-	BuyTransferFee  string  `json:"buy_transfer_fee,omitempty"`
-	SellTransferFee string  `json:"sell_transfer_fee,omitempty"`
-	MinDepositCoin1 float64 `json:"min_deposit_coin1,omitempty"`
-	MinDepositCoin2 float64 `json:"min_deposit_coin2,omitempty"`
-	Msg             string  `json:"message,omitempty"`
+	T1               string  `json:"t1"`
+	T2               string  `json:"t2"`
+	Price1           string  `json:"price1,omitempty"`
+	Price2           string  `json:"price2,omitempty"`
+	FeeRate          string  `json:"fee_rate,omitempty"`
+	TransferFee1     string  `json:"transfer_fee1,omitempty"`
+	TransferFee2     string  `json:"transfer_fee2,omitempty"`
+	MinDepositToken1 float64 `json:"min_deposit_token1,omitempty"`
+	MinDepositToken2 float64 `json:"min_deposit_token2,omitempty"`
+	Msg              string  `json:"message,omitempty"`
 }
 
 func EntityPairToUserRequest(p *entity.Pair, exTyp entity.ExType) *UserPair {
 	pair := &UserPair{
-		Coin1:   p.C1.String(),
-		Coin2:   p.C2.String(),
+		T1:      p.T1.String(),
+		T2:      p.T2.String(),
 		Price1:  p.Price1,
 		Price2:  p.Price2,
 		FeeRate: p.FeeRate,
 	}
 	if exTyp == entity.CEX {
-		pair.BuyTransferFee = fmt.Sprintf("%s/%s", p.C1.WithdrawalMinFee, p.C1.String())
-		pair.SellTransferFee = fmt.Sprintf("%s/%s", p.C2.WithdrawalMinFee, p.C2.String())
+		pair.TransferFee1 = fmt.Sprintf("%s/%s", p.T2.WithdrawalMinFee, p.T2.String())
+		pair.TransferFee2 = fmt.Sprintf("%s/%s", p.T1.WithdrawalMinFee, p.T1.String())
 	}
 	return pair
 }
@@ -66,12 +66,12 @@ type GetPairsToUserResponse struct {
 }
 
 type Pair struct {
-	Coin1 *entity.Coin
-	Coin2 *entity.Coin
+	T1 *entity.Token
+	T2 *entity.Token
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s/%s", p.Coin1.String(), p.Coin2.String())
+	return fmt.Sprintf("%s/%s", p.T1.String(), p.T2.String())
 }
 
 type GetPairsToUserRequest struct {
@@ -81,17 +81,17 @@ type GetPairsToUserRequest struct {
 func (r *GetPairsToUserRequest) Parse() ([]*Pair, error) {
 	pairs := []*Pair{}
 	for _, p := range r.Pairs {
-		bc, err := ParseCoin(p.Coin1)
+		bc, err := ParseToken(p.T1)
 		if err != nil {
 			return nil, err
 		}
-		qc, err := ParseCoin(p.Coin2)
+		qc, err := ParseToken(p.T2)
 		if err != nil {
 			return nil, err
 		}
 		pairs = append(pairs, &Pair{
-			Coin1: bc,
-			Coin2: qc,
+			T1: bc,
+			T2: qc,
 		})
 	}
 	return pairs, nil

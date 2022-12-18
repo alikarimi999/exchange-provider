@@ -32,8 +32,8 @@ const (
 )
 
 type Route struct {
-	In       *Coin
-	Out      *Coin
+	In       *Token
+	Out      *Token
 	Exchange string
 }
 
@@ -51,8 +51,12 @@ type Order struct {
 
 	Withdrawal *Withdrawal
 
-	SpreadVol  string
-	SpreadRate string
+	Fee         string
+	FeeCurrency string
+
+	SpreadVol      string
+	SpreadRate     string
+	SpreadCurrency string
 
 	FailedCode int64
 	FailedDesc string
@@ -67,29 +71,23 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 		Routes:    routes,
 
 		Deposit: &Deposit{
-			UserId:   userId,
-			Status:   "",
-			Exchange: routes[0].Exchange,
-			Address:  dAddress,
-			Coin:     routes[0].In,
+			Status:  "",
+			Address: dAddress,
+			Token:   routes[0].In,
 		},
 
 		Swaps: make(map[int]*Swap),
 
 		Withdrawal: &Withdrawal{
-			UserId:   userId,
-			Address:  wAddress,
-			Exchange: routes[len(routes)-1].Exchange,
-			Status:   "",
-			Coin:     routes[len(routes)-1].Out,
+			Address: wAddress,
+			Status:  "",
+			Token:   routes[len(routes)-1].Out,
 		},
 		MetaData: make(MetaData),
 	}
 
-	for i := range o.Routes {
-		o.Swaps[i] = &Swap{
-			UserId: o.UserId,
-		}
+	for i := range routes {
+		o.Swaps[i] = &Swap{Status: SwapPending}
 	}
 
 	return o

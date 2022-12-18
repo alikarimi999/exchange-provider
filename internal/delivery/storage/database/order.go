@@ -55,7 +55,7 @@ func (m *MySqlDB) Get(orderId int64) (*entity.Order, error) {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 
 	}
-	return o.ToEntity(), nil
+	return o.ToEntity()
 }
 
 func (m *MySqlDB) GetAll(UserId int64) ([]*entity.Order, error) {
@@ -73,7 +73,11 @@ func (m *MySqlDB) GetAll(UserId int64) ([]*entity.Order, error) {
 
 	os := []*entity.Order{}
 	for _, o := range osDTO {
-		os = append(os, o.ToEntity())
+		eo, err := o.ToEntity()
+		if err != nil {
+			continue
+		}
+		os = append(os, eo)
 	}
 	return os, nil
 }

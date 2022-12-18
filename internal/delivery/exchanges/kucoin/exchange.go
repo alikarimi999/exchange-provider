@@ -29,7 +29,7 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 	}
 
 	var side, size, funds string
-	if p.BC.CoinId == in.CoinId && p.QC.ChainId == in.ChainId {
+	if p.BC.TokenId == in.TokenId && string(p.QC.ChainId) == in.ChainId {
 		size = o.Swaps[index].InAmount
 		side = "sell"
 	} else {
@@ -42,19 +42,17 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	// transfer from main account to trade account
-	// if it's a buy order, we transfer the qoute coin from main account to trade account
-	// if it's a sell order, we transfer the base coin from main account to trade account
-
-	res, err := k.api.InnerTransferV2(uuid.New().String(), in.CoinId, "main", "trade", req.Funds)
+	res, err := k.api.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", req.Funds)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 	switch req.Side {
 	case "buy":
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Funds, in.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
+			req.Funds, in.TokenId))
 	case "sell":
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account", req.Size, in.CoinId))
+		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
+			req.Size, in.TokenId))
 	}
 
 	// create order, after transfer is done
@@ -76,10 +74,10 @@ func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done cha
 	op := errors.Op(fmt.Sprintf("%s.TrackExchangeOrder", k.Id()))
 
 	s := o.Swaps[index]
-	resp, err := k.api.Order(s.ExId)
+	resp, err := k.api.Order(s.TxId)
 	if err = handleSDKErr(err, resp); err != nil {
 		k.l.Error(string(op), err.Error())
-		s.Status = entity.ExOrderFailed
+		s.Status = entity.SwapFailed
 		s.FailedDesc = err.Error()
 		done <- struct{}{}
 		<-p
@@ -89,7 +87,7 @@ func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done cha
 	order := &kucoin.OrderModel{}
 	if err = resp.ReadData(order); err != nil {
 		k.l.Error(string(op), err.Error())
-		s.Status = entity.ExOrderFailed
+		s.Status = entity.SwapFailed
 		s.FailedDesc = err.Error()
 		done <- struct{}{}
 		<-p
@@ -107,7 +105,7 @@ func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done cha
 
 	s.Fee = order.Fee
 	s.FeeCurrency = order.FeeCurrency
-	s.Status = entity.ExOrderSucceed
+	s.Status = entity.SwapSucceed
 	done <- struct{}{}
 	<-p
 
@@ -139,7 +137,7 @@ func (k *kucoinExchange) ping() error {
 func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
 	proccessed <-chan bool) {
 	d := o.Deposit
-	c, err := k.supportedCoins.get(d.CoinId, d.ChainId)
+	c, err := k.supportedCoins.get(d.TokenId, d.ChainId)
 	if err != nil {
 		d.Status = entity.DepositFailed
 		d.FailedDesc = err.Error()
@@ -147,7 +145,6 @@ func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
 		<-proccessed
 		return
 	}
-
 	f := &dtFeed{
 		d:         d,
 		blockTime: c.BlockTime,
@@ -159,8 +156,8 @@ func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
 	k.dt.fCh <- f
 }
 
-func (k *kucoinExchange) GetAddress(c *entity.Coin) (*entity.Address, error) {
-	kc, err := k.supportedCoins.get(c.CoinId, c.ChainId)
+func (k *kucoinExchange) GetAddress(c *entity.Token) (*entity.Address, error) {
+	kc, err := k.supportedCoins.get(c.TokenId, c.ChainId)
 	if err != nil {
 		return nil, err
 	}

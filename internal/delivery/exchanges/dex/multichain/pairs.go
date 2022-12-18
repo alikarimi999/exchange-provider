@@ -74,5 +74,5 @@ func (s *supportedPairs) remove(t1, t2 *Token) error {
 }
 
 func id(t1, t2 *Token) string {
-	return t1.CoinId + "-" + t1.ChainId + types.Delimiter + t2.CoinId + "-" + t2.ChainId
+	return t1.TokenId + "-" + t1.ChainId + types.Delimiter + t2.TokenId + "-" + t2.ChainId
 }

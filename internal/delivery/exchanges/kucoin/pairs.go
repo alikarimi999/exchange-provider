@@ -9,47 +9,43 @@ import (
 	"time"
 )
 
-const (
-	pairDelimiter = "-"
-)
+type kuToken struct {
+	TokenId  string   `json:"tokenId"`
+	ChainId  chainId  `json:"chainId"`
+	Standard standard `json:"standard"`
 
-type kuCoin struct {
-	CoinId              string `json:"coin_id"`
-	ChainId             string `json:"chain_id"`
-	address             string
-	tag                 string
-	BlockTime           time.Duration `json:"block_time"`
-	ConfirmBlocks       int64         `json:"confirm_blocks"`
-	minOrderSize        string
-	maxOrderSize        string
-	minWithdrawalSize   string
-	minWithdrawalFee    string
+	address string
+	tag     string
+
+	BlockTime     time.Duration `json:"block_time"`
+	ConfirmBlocks int64         `json:"confirm_blocks"`
+
+	minOrderSize string
+	maxOrderSize string
+
+	minWithdrawalSize string
+	minWithdrawalFee  string
+
 	WithdrawalPrecision int `json:"withdrawal_precision"`
 	orderPrecision      int
 
 	needChain bool
 }
 
-func (k *kuCoin) String() string {
-	return fmt.Sprintf("%s-%s", k.CoinId, k.ChainId)
+func (k *kuToken) String() string {
+	return fmt.Sprintf("%s-%s", k.TokenId, k.ChainId)
 }
 
-func coinFromEntity(c *entity.Coin) *kuCoin {
-	return &kuCoin{
-		CoinId:  c.CoinId,
-		ChainId: c.ChainId,
-	}
-}
-
-func (k *kuCoin) snapshot() *kuCoin {
-	return &kuCoin{
-		CoinId:              k.CoinId,
+func (k *kuToken) snapshot() *kuToken {
+	return &kuToken{
+		TokenId:             k.TokenId,
 		ChainId:             k.ChainId,
+		Standard:            k.Standard,
 		address:             k.address,
 		tag:                 k.tag,
 		BlockTime:           k.BlockTime,
 		ConfirmBlocks:       k.ConfirmBlocks,
-		minOrderSize:        k.maxOrderSize,
+		minOrderSize:        k.minOrderSize,
 		maxOrderSize:        k.maxOrderSize,
 		minWithdrawalSize:   k.minWithdrawalSize,
 		minWithdrawalFee:    k.minWithdrawalFee,
@@ -59,12 +55,13 @@ func (k *kuCoin) snapshot() *kuCoin {
 	}
 }
 
-func (k *kuCoin) toEntityCoin() *entity.PairCoin {
+func (k *kuToken) toEntityCoin() *entity.PairCoin {
 	return &entity.PairCoin{
 
-		Coin: &entity.Coin{
-			CoinId:  k.CoinId,
-			ChainId: k.ChainId,
+		Token: &entity.Token{
+			TokenId:  k.TokenId,
+			ChainId:  string(k.ChainId),
+			Standard: string(k.Standard),
 		},
 		Address:             k.address,
 		Tag:                 k.tag,
@@ -80,13 +77,15 @@ func (k *kuCoin) toEntityCoin() *entity.PairCoin {
 }
 
 type pair struct {
-	BC          *kuCoin // base coin
-	QC          *kuCoin // quote coin
+	BC          *kuToken // base coin
+	QC          *kuToken // quote coin
 	feeCurrency string
 }
 
-func (p *pair) Id() string     { return p.BC.CoinId + p.BC.ChainId + p.QC.CoinId + p.QC.ChainId }
-func (p *pair) Symbol() string { return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String()) }
+func (p *pair) Id() string {
+	return p.BC.TokenId + string(p.BC.ChainId) +
+		p.QC.TokenId + string(p.QC.ChainId)
+}
 
 func (p *pair) String() string {
 	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
@@ -102,25 +101,27 @@ func (p *pair) snapshot() *pair {
 
 func fromDto(p *dto.Pair) *pair {
 	return &pair{
-		BC: &kuCoin{
-			CoinId:              p.C1.CoinId,
-			ChainId:             p.C1.ChainId,
-			BlockTime:           p.C1.BlockTime,
-			WithdrawalPrecision: p.C1.WithdrawalPrecision,
+		BC: &kuToken{
+			TokenId:             p.T1.TokenId,
+			ChainId:             chainId(p.T1.ChainId),
+			Standard:            standard(p.T1.Standard),
+			BlockTime:           p.T1.BlockTime,
+			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
-		QC: &kuCoin{
-			CoinId:              p.C2.CoinId,
-			ChainId:             p.C2.ChainId,
-			BlockTime:           p.C2.BlockTime,
-			WithdrawalPrecision: p.C2.WithdrawalPrecision,
+		QC: &kuToken{
+			TokenId:             p.T2.TokenId,
+			ChainId:             chainId(p.T2.ChainId),
+			Standard:            standard(p.T2.Standard),
+			BlockTime:           p.T2.BlockTime,
+			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},
 	}
 }
 
 func (p *pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		C1:          p.BC.toEntityCoin(),
-		C2:          p.QC.toEntityCoin(),
+		T1:          p.BC.toEntityCoin(),
+		T2:          p.QC.toEntityCoin(),
 		FeeCurrency: p.feeCurrency,
 	}
 }
@@ -145,7 +146,7 @@ func (sp *exPairs) add(pairs ...*pair) {
 	}
 }
 
-func (sp *exPairs) get(c1, c2 *entity.Coin) (*pair, error) {
+func (sp *exPairs) get(c1, c2 *entity.Token) (*pair, error) {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
 
@@ -164,12 +165,6 @@ func (sp *exPairs) remove(id string) {
 	delete(sp.pairs, id)
 }
 
-func (sp *exPairs) purge() {
-	sp.mux.Lock()
-	defer sp.mux.Unlock()
-	sp.pairs = make(map[string]*pair)
-}
-
 func (sp *exPairs) snapshot() []*pair {
 	sp.mux.Lock()
 	defer sp.mux.Unlock()
@@ -180,6 +175,6 @@ func (sp *exPairs) snapshot() []*pair {
 	}
 	return pairs
 }
-func pId(bc, qc *entity.Coin) string {
-	return bc.CoinId + bc.ChainId + qc.CoinId + qc.ChainId
+func pId(bc, qc *entity.Token) string {
+	return bc.TokenId + bc.ChainId + qc.TokenId + qc.ChainId
 }

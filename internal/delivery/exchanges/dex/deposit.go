@@ -15,7 +15,7 @@ func (d *dex) TrackDeposit(o *entity.Order, done chan<- struct{},
 		return
 	}
 
-	t, err := d.tokens.get(de.CoinId)
+	t, err := d.tokens.get(de.TokenId)
 	if err != nil {
 		de.Status = entity.DepositFailed
 		de.FailedDesc = err.Error()

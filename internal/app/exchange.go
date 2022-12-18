@@ -28,7 +28,7 @@ func (o *OrderUseCase) AllExchanges(names ...string) []entity.Exchange {
 	return o.exs.all(names...)
 }
 
-func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Coin) (entity.Exchange, error) {
+func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Token) (entity.Exchange, error) {
 	exs := []entity.Exchange{}
 	for _, ex := range o.exs.getAll() {
 		if ex.Support(in, out) {

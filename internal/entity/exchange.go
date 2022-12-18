@@ -12,20 +12,20 @@ const (
 	Cross ExType = "Cross"
 )
 
-type ExOrderStatus string
+type SwapStatus string
 
 const (
-	ExOrderSucceed ExOrderStatus = "succeed"
-	ExOrderFailed  ExOrderStatus = "failed"
+	SwapPending SwapStatus = "pending"
+	SwapSucceed SwapStatus = "succeed"
+	SwapFailed  SwapStatus = "failed"
 )
 
 type Swap struct {
 	Id   uint64
-	ExId string
+	TxId string
 
-	UserId  int64
 	OrderId int64
-	Status  ExOrderStatus // succed, failed
+	Status  SwapStatus // succed, failed
 
 	InAmount    string
 	OutAmount   string
@@ -61,14 +61,14 @@ type ExchangeManager interface {
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	// get all pairs from the exchange
 	GetAllPairs() []*Pair
-	GetPair(c1, c2 *Coin) (*Pair, error)
+	GetPair(c1, c2 *Token) (*Pair, error)
 
-	RemovePair(c1, c2 *Coin) error
+	RemovePair(c1, c2 *Token) error
 
 	// check if the exchange support a pair with combination of two coins
-	Support(in, out *Coin) bool
+	Support(in, out *Token) bool
 
-	GetAddress(c *Coin) (*Address, error)
+	GetAddress(c *Token) (*Address, error)
 }
 
 type AddPairsResult struct {

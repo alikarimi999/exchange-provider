@@ -73,6 +73,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						return
 					}
 					ord.Swaps[i].InAmount = aVol
+					ord.SpreadCurrency = route.In.String()
 					ord.SpreadVol = sVol
 					ord.SpreadRate = rate
 				} else {
@@ -94,7 +95,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					return
 				}
 
-				ord.Swaps[i].ExId = id
+				ord.Swaps[i].TxId = id
 				ord.Status = entity.OSWaitForExchangeOrderConfirm
 				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), err.Error())
@@ -108,10 +109,9 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 				<-done
 
 				switch ord.Swaps[i].Status {
-				case entity.ExOrderSucceed:
+				case entity.SwapSucceed:
 
 					ord.Status = entity.OSExchangeOrderConfirmed
-					// o.l.Debug(string(op), fmt.Sprintf("exchange order: '%s' confirmed", ord.ExchangeOrder.ExId))
 					if err = o.ouc.write(ord); err != nil {
 						o.l.Error(string(op), err.Error())
 						pCh <- false
@@ -119,12 +119,11 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					}
 					pCh <- true
 
-					if i == 0 && len(ord.Routes) > 1 {
+					if i < (len(ord.Routes) - 1) {
 						continue
 					}
 
-					ord.Withdrawal.Total = ord.Swaps[i].OutAmount
-					r, f, err := o.fee.ApplyFee(ord.UserId, ord.Withdrawal.Total)
+					r, f, err := o.fee.ApplyFee(ord.UserId, ord.Swaps[len(ord.Swaps)-1].OutAmount)
 					if err != nil {
 						ord.Status = entity.OSFailed
 						ord.FailedCode = entity.FCInternalError
@@ -139,9 +138,10 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 					}
 
-					ord.Withdrawal.Coin = route.Out
-					ord.Withdrawal.Executed = r
-					ord.Withdrawal.Fee = f
+					ord.Withdrawal.Token = route.Out
+					ord.Withdrawal.Volume = r
+					ord.Fee = f
+					ord.FeeCurrency = route.Out.String()
 
 					id, err = ex.Withdrawal(ord)
 					if err != nil {
@@ -158,7 +158,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 					}
 
-					ord.Withdrawal.WId = id
+					ord.Withdrawal.TxId = id
 					ord.Withdrawal.Status = entity.WithdrawalPending
 					ord.Status = entity.OSWaitForWithdrawalConfirm
 
@@ -174,7 +174,7 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					}
 					return
 
-				case entity.ExOrderFailed:
+				case entity.SwapFailed:
 					ord.Status = entity.OSFailed
 					ord.FailedCode = entity.FCExOrdFailed
 					if err := o.ouc.write(ord); err != nil {

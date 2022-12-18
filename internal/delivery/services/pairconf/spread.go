@@ -81,7 +81,7 @@ func (r *PairConfigs) ChangeDefaultSpread(s float64) error {
 	return nil
 }
 
-func (r *PairConfigs) GetPairSpread(bc, qc *entity.Coin) string {
+func (r *PairConfigs) GetPairSpread(bc, qc *entity.Token) string {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
 	if s, ok := r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]; ok {
@@ -90,7 +90,7 @@ func (r *PairConfigs) GetPairSpread(bc, qc *entity.Coin) string {
 	return strconv.FormatFloat(r.defaultSpread, 'f', -1, 64)
 }
 
-func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
+func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Token, s float64) error {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
 	if s <= 0 || s >= 1 {
@@ -103,7 +103,7 @@ func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Coin, s float64) error {
 	return nil
 }
 
-func (r *PairConfigs) ApplySpread(in, out *entity.Coin, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
+func (r *PairConfigs) ApplySpread(in, out *entity.Token, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
 	r.sMux.Lock()
 	defer r.sMux.Unlock()
 	var rate float64

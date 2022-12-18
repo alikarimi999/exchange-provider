@@ -5,7 +5,7 @@ import (
 )
 
 type Token struct {
-	CoinId   string `json:"coinId"`
+	TokenId  string `json:"tokenId"`
 	ChainId  string `json:"chainId"`
 	Address  string `json:"address"`
 	Decimals int    `json:"decimals"`
@@ -14,7 +14,7 @@ type Token struct {
 }
 
 type Data struct {
-	CoinId   string `json:"coinId"`
+	TokenId  string `json:"tokenId"`
 	ChainId  string `json:"chainId"`
 	Address  string `json:"address"`
 	Decimals int    `json:"decimals"`
@@ -30,19 +30,19 @@ type Data struct {
 }
 
 func (t *Token) String() string {
-	return t.CoinId + "-" + t.ChainId
+	return t.TokenId + "-" + t.ChainId
 }
 
-func (t *Token) toCoin() *entity.Coin {
-	return &entity.Coin{
-		CoinId:  t.CoinId,
+func (t *Token) toCoin() *entity.Token {
+	return &entity.Token{
+		TokenId: t.TokenId,
 		ChainId: t.ChainId,
 	}
 }
 
-func c2T(c *entity.Coin) *Token {
+func c2T(c *entity.Token) *Token {
 	return &Token{
-		CoinId:  c.CoinId,
+		TokenId: c.TokenId,
 		ChainId: c.ChainId,
 	}
 }

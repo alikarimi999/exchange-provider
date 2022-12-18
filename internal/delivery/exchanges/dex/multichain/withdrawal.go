@@ -33,7 +33,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 	}
 	cid, _ := strconv.Atoi(t.ChainId)
 
-	value, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
+	value, err := numbers.FloatStringToBigInt(o.Withdrawal.Volume, t.Decimals)
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 
 		if !o.Withdrawal.Unwrapped {
 
-			unwrapAmount, err := numbers.FloatStringToBigInt(o.Withdrawal.Total, t.Decimals)
+			unwrapAmount, err := numbers.FloatStringToBigInt(o.Withdrawal.Volume, t.Decimals)
 			if err != nil {
 				return "", err
 			}
@@ -80,7 +80,7 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 				return "", errors.Wrap(errors.NewMesssage(fmt.Sprintf("unwrap-tx `%s` failed (%s)", tx.Hash(), tf.Faildesc)))
 			case utils.TxSuccess:
 				o.Withdrawal.Unwrapped = true
-				o.Withdrawal.ExchangeFee = utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
+				o.Withdrawal.Fee = utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
 				// o.Withdrawal.ExchangeFeeCurrency = m.cs[chainId(t.Chain)].nativeToken
 				m.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
 					o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
@@ -92,7 +92,6 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		o.Withdrawal.Executed = o.Withdrawal.Total
 		o.Withdrawal.TxId = tx.Hash().String()
 		m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 		return tx.Hash().String(), nil
@@ -118,7 +117,6 @@ func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
 		return "", err
 	}
 
-	o.Withdrawal.Executed = o.Withdrawal.Total
 	o.Withdrawal.TxId = tx.Hash().String()
 	m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`", o.Id, tx.Hash()))
 

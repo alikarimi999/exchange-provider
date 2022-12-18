@@ -57,16 +57,18 @@ func (s *Server) NewUserOrder(ctx Context) {
 		return
 	}
 
-	in, err := dto.ParseCoin(req.In)
+	in, err := dto.ParseToken(req.In)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
-	out, err := dto.ParseCoin(req.Out)
+	out, err := dto.ParseToken(req.Out)
 	if err != nil {
 		handlerErr(ctx, err)
 		return
 	}
+
+	md, _ := s.app.GetMinPairDeposit(in.String(), out.String())
 
 	routes, err := s.routing(in, out)
 	if err != nil {
@@ -81,9 +83,9 @@ func (s *Server) NewUserOrder(ctx Context) {
 	}
 
 	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
-		OrderId: o.Id,
-		// DC:              dc,
-		// MinDeposit:      minD,
+		OrderId:         o.Id,
+		DC:              in.String(),
+		MinDeposit:      md,
 		DepositeAddress: o.Deposit.Addr,
 		AddressTag:      o.Deposit.Tag,
 	})
@@ -92,7 +94,7 @@ func (s *Server) NewUserOrder(ctx Context) {
 func (s *Server) GetPaginatedForUser(ctx Context) {
 	userId, _ := ctx.GetKey("user_id")
 
-	pa := &dto.PaginatedUserOrdersRequest{}
+	pa := &dto.PaginatedOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, err.Error()))
 		return
@@ -115,7 +117,7 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 
 func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
-	pa := &dto.PaginatedUserOrdersRequest{}
+	pa := &dto.PaginatedOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
 		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
 		return

@@ -15,7 +15,7 @@ func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
 		P:        ex.provider(),
-		TxHash:   common.HexToHash(o.Swaps[i].ExId),
+		TxHash:   common.HexToHash(o.Swaps[i].TxId),
 		Receiver: &ex.router,
 		NeedTx:   true,
 		DoneCh:   doneCh,
@@ -29,12 +29,12 @@ func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
 	case utils.TxSuccess:
 		vol, err := ex.parseSwapLogs(o, tf.Tx, tf.Receipt)
 		if err != nil {
-			o.Swaps[i].Status = entity.ExOrderFailed
+			o.Swaps[i].Status = entity.SwapFailed
 			o.Swaps[i].FailedDesc = err.Error()
 		}
 
 		var decimals int
-		if o.Routes[i].Out.CoinId == p.T1.Symbol {
+		if o.Routes[i].Out.TokenId == p.T1.Symbol {
 			decimals = p.T1.Decimals
 		} else {
 			decimals = p.T2.Decimals
@@ -43,7 +43,7 @@ func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
 		fee := utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
 
 		o.Swaps[i].OutAmount = amount
-		o.Swaps[i].Status = entity.ExOrderSucceed
+		o.Swaps[i].Status = entity.SwapSucceed
 		o.Swaps[i].Fee = fee
 		o.Swaps[i].FeeCurrency = ex.nt
 
@@ -51,7 +51,7 @@ func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
 			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 
 	case utils.TxFailed:
-		o.Swaps[i].Status = entity.ExOrderFailed
+		o.Swaps[i].Status = entity.SwapFailed
 		o.Swaps[i].FailedDesc = tf.Faildesc
 	}
 

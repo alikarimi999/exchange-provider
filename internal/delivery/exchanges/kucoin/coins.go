@@ -9,17 +9,17 @@ import (
 
 type supportedCoins struct {
 	mux   *sync.Mutex
-	coins map[string]*kuCoin // map[coin.Id+chain.Id]*withdrawalCoin
+	coins map[string]*kuToken // map[coin.Id+chain.Id]*withdrawalCoin
 }
 
 func newSupportedCoins() *supportedCoins {
 	return &supportedCoins{
 		mux:   &sync.Mutex{},
-		coins: make(map[string]*kuCoin),
+		coins: make(map[string]*kuToken),
 	}
 }
 
-func (s *supportedCoins) add(coins map[string]*kuCoin) {
+func (s *supportedCoins) add(coins map[string]*kuToken) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -29,7 +29,7 @@ func (s *supportedCoins) add(coins map[string]*kuCoin) {
 
 }
 
-func (s *supportedCoins) get(coinId, chainId string) (*kuCoin, error) {
+func (s *supportedCoins) get(coinId, chainId string) (*kuToken, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	wc, exist := s.coins[coinId+chainId]
@@ -50,39 +50,19 @@ func (s *supportedCoins) needChain(coinId, chainId string) (bool, error) {
 	return false, errors.New("coin not found")
 }
 
-func (k *kucoinExchange) withdrawalOpts(c *entity.Coin, tag string) (map[string]string, error) {
+func (k *kucoinExchange) withdrawalOpts(c *entity.Token, tag string) (map[string]string, error) {
 
 	opts := map[string]string{}
 
-	need, err := k.supportedCoins.needChain(c.CoinId, c.ChainId)
+	need, err := k.supportedCoins.needChain(c.TokenId, c.ChainId)
 	if err != nil {
 		return nil, err
 	}
 
 	if need {
-		opts["chain"] = c.ChainId
+		opts["chain"] = c.Standard
 	}
 	opts["memo"] = tag
 	return opts, nil
 
-}
-
-func (s *supportedCoins) snapshot() map[string]*kuCoin {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	res := make(map[string]*kuCoin)
-	for id, wc := range s.coins {
-		res[id] = &kuCoin{
-			WithdrawalPrecision: wc.WithdrawalPrecision,
-			needChain:           wc.needChain,
-		}
-	}
-
-	return res
-}
-
-func (s *supportedCoins) purge() {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.coins = make(map[string]*kuCoin)
 }

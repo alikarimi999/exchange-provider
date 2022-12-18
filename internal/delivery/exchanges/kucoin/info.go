@@ -1,55 +1,56 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/utils/numbers"
 	"fmt"
+	"math/big"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) setPrice(p *entity.Pair) error {
-	res, err := k.api.TickerLevel1(fmt.Sprintf("%s%s%s", p.C1.Coin.CoinId, pairDelimiter, p.C2.Coin.CoinId))
+func (k *kucoinExchange) getPrice(p *pair) (string, string, error) {
+	res, err := k.api.TickerLevel1(p.BC.TokenId + "-" + p.QC.TokenId)
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error(fmt.Sprintf("%s.setPrice", k.Id()), err.Error())
-		return err
+		return "", "", err
 	}
 
 	t := &kucoin.TickerLevel1Model{}
 	err = res.ReadData(t)
 	if err != nil {
 		k.l.Error("Kucoin.setPrice", err.Error())
-		return err
+		return "", "", err
 	}
 
-	p.Price1 = t.BestAsk
-	p.Price2 = t.BestBid
+	f, err := numbers.StringToBigFloat(t.BestBid)
+	if err != nil {
+		return "", "", err
+	}
 
-	return nil
+	return t.BestAsk, new(big.Float).Quo(big.NewFloat(1), f).String(), nil
 }
 
-func (k *kucoinExchange) setOrderFeeRate(p *entity.Pair) error {
-	res, err := k.api.ActualFee(fmt.Sprintf("%s%s%s", p.C1.Coin.CoinId, pairDelimiter, p.C2.Coin.CoinId))
+func (k *kucoinExchange) orderFeeRate(p *pair) string {
+	res, err := k.api.ActualFee(p.BC.TokenId + "-" + p.QC.TokenId)
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
-		return err
+		return ""
 	}
 
 	m := kucoin.TradeFeesResultModel{}
 	err = res.ReadData(&m)
 	if err != nil {
 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
-		return err
+		return ""
 	}
 
-	p.OrderFeeRate = m[0].TakerFeeRate
-
-	return nil
+	return m[0].TakerFeeRate
 
 }
 
 func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
-	res, err := k.api.CurrencyV2(p.BC.CoinId, "")
+	res, err := k.api.CurrencyV2(p.BC.TokenId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == p.BC.ChainId {
+		if c.ChainName == string(p.BC.Standard) {
 			p.BC.ConfirmBlocks = c.Confirms
 			p.BC.minWithdrawalSize = c.WithdrawalMinSize
 			p.BC.minWithdrawalFee = c.WithdrawalMinFee
@@ -76,11 +77,11 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			p.BC.CoinId, p.BC.ChainId, p.BC.CoinId, ch)))
+			p.BC.TokenId, p.BC.Standard, p.BC.TokenId, ch)))
 }
 
 func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
-	res, err := k.api.CurrencyV2(p.QC.CoinId, "")
+	res, err := k.api.CurrencyV2(p.QC.TokenId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == p.QC.ChainId {
+		if c.ChainName == string(p.QC.Standard) {
 			p.QC.ConfirmBlocks = c.Confirms
 			p.QC.minWithdrawalSize = c.WithdrawalMinSize
 			p.QC.minWithdrawalFee = c.WithdrawalMinFee
@@ -107,18 +108,18 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			p.QC.CoinId, p.QC.ChainId, p.QC.CoinId, ch)))
+			p.QC.TokenId, p.QC.Standard, p.QC.TokenId, ch)))
 }
 
-func (k *kucoinExchange) setAddress(pc *kuCoin) error {
+func (k *kucoinExchange) setAddress(pc *kuToken) error {
 	op := errors.Op(fmt.Sprintf("%s.setChain", k.Id()))
 	var coin string
 	var chain string
 	if pc.needChain {
-		coin = pc.CoinId
-		chain = pc.ChainId
+		coin = pc.TokenId
+		chain = string(pc.Standard)
 	} else {
-		coin = pc.CoinId
+		coin = pc.TokenId
 		chain = ""
 	}
 

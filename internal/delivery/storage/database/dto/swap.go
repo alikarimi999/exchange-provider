@@ -2,27 +2,24 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
+	"fmt"
+	"strings"
 )
 
 type Swap struct {
 	Id      uint64 `gorm:"primary_key"`
-	UserId  int64
 	OrderId int64
 	Status  string // succed, failed
 
 	Index int
-	ExId  string
+	TxId  string
 
-	InCoin  string
-	InChain string
-
-	OutCoin  string
-	OutChain string
-
-	Exchange string
-
+	In        string
+	Out       string
 	InAmount  string
 	OutAmount string
+
+	Exchange string
 
 	Fee         string
 	FeeCurrency string
@@ -31,9 +28,9 @@ type Swap struct {
 	MetaData   jsonb
 }
 
-func SwapToDto(s *entity.Swap, r *entity.Route, index int) *Swap {
+func swapToDto(s *entity.Swap, r *entity.Route, index int) *Swap {
 	if s == nil {
-		return &Swap{}
+		return &Swap{Index: index}
 	}
 	if r == nil {
 		r = &entity.Route{}
@@ -41,19 +38,15 @@ func SwapToDto(s *entity.Swap, r *entity.Route, index int) *Swap {
 
 	return &Swap{
 		Id:   uint64(s.Id),
-		ExId: s.ExId,
+		TxId: s.TxId,
 
 		Index: index,
 
-		InCoin:  r.In.CoinId,
-		InChain: r.In.ChainId,
-
-		OutCoin:  r.Out.CoinId,
-		OutChain: r.Out.ChainId,
+		In:  r.In.String(),
+		Out: r.Out.String(),
 
 		Exchange: r.Exchange,
 
-		UserId:  s.UserId,
 		OrderId: s.OrderId,
 		Status:  string(s.Status),
 
@@ -68,18 +61,17 @@ func SwapToDto(s *entity.Swap, r *entity.Route, index int) *Swap {
 	}
 }
 
-func (s *Swap) ToEntity() (*entity.Swap, *entity.Route, int) {
+func (s *Swap) ToEntity() (*entity.Swap, *entity.Route, int, error) {
 	if s.MetaData == nil {
 		s.MetaData = make(jsonb)
 	}
 
 	swap := &entity.Swap{
 		Id:   s.Id,
-		ExId: s.ExId,
+		TxId: s.TxId,
 
-		UserId:  s.UserId,
 		OrderId: s.OrderId,
-		Status:  entity.ExOrderStatus(s.Status),
+		Status:  entity.SwapStatus(s.Status),
 
 		InAmount:  s.InAmount,
 		OutAmount: s.OutAmount,
@@ -91,12 +83,32 @@ func (s *Swap) ToEntity() (*entity.Swap, *entity.Route, int) {
 		MetaData:   entity.MetaData(s.MetaData),
 	}
 
+	in1, in2, err := parseToken(s.In)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	out1, out2, err := parseToken(s.Out)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
 	route := &entity.Route{
-		In:       &entity.Coin{CoinId: s.InCoin, ChainId: s.InChain},
-		Out:      &entity.Coin{CoinId: s.OutCoin, ChainId: s.OutChain},
+		In:       &entity.Token{TokenId: in1, ChainId: in2},
+		Out:      &entity.Token{TokenId: out1, ChainId: out2},
 		Exchange: s.Exchange,
 	}
 
-	return swap, route, s.Index
+	return swap, route, s.Index, nil
 
+}
+
+func parseToken(t string) (string, string, error) {
+	if t == "" {
+		return "", "", nil
+	}
+	ss := strings.Split(t, "-")
+	if len(ss) != 2 {
+		return "", "", fmt.Errorf("corrupted token string %s", t)
+	}
+	return ss[0], ss[1], nil
 }

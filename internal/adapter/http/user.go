@@ -40,7 +40,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 
 				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
-				dp.MinDepositCoin1, dp.MinDepositCoin2 = s.app.GetMinPairDeposit(p.C1.Coin.String(), p.C2.Coin.String())
+				dp.MinDepositToken1, dp.MinDepositToken2 = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
 
 				pairs[p.String()] = dp
 			}
@@ -51,13 +51,13 @@ func (s *Server) GetPairsToUser(ctx Context) {
 					continue
 				}
 
-				ep, err := ex.GetPair(p.Coin1, p.Coin2)
+				ep, err := ex.GetPair(p.T1, p.T2)
 				if err != nil {
 					if errors.ErrorCode(err) == errors.ErrNotFound && i == lenExs-1 {
 						resp.Pairs = append(resp.Pairs, &dto.UserPair{
-							Coin1: p.Coin1.String(),
-							Coin2: p.Coin2.String(),
-							Msg:   "pair not found",
+							T1:  p.T1.String(),
+							T2:  p.T2.String(),
+							Msg: "pair not found",
 						})
 					}
 					continue
@@ -65,7 +65,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 
 				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(ep), ex.Type())
 				dp.FeeRate = s.app.GetUserFee(userId.(int64))
-				dp.MinDepositCoin1, dp.MinDepositCoin2 = s.app.GetMinPairDeposit(p.Coin1.String(), p.Coin2.String())
+				dp.MinDepositToken1, dp.MinDepositToken2 = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
 				pairs[p.String()] = dp
 
 			}

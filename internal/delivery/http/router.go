@@ -26,8 +26,8 @@ type Router struct {
 	gls *limiters
 }
 
-func (r *Router) Run(addr ...string) {
-	r.gin.Run(addr...)
+func (r *Router) Run(addr ...string) error {
+	return r.gin.Run(addr...)
 }
 
 func NewRouter(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger, user, pass string) *Router {

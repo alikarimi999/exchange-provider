@@ -4,14 +4,10 @@ import "exchange-provider/internal/entity"
 
 type Deposit struct {
 	Id      int64
-	UserId  int64
 	OrderId int64
 
-	Status   string
-	Exchange string
-
-	CoinId  string
-	ChainId string
+	Status string
+	Token  string
 
 	TxId   string
 	Volume string
@@ -29,14 +25,10 @@ func DToDto(d *entity.Deposit) *Deposit {
 
 	return &Deposit{
 		Id:      d.Id,
-		UserId:  d.UserId,
 		OrderId: d.OrderId,
 
-		Status:   d.Status,
-		Exchange: d.Exchange,
-
-		CoinId:  d.CoinId,
-		ChainId: d.ChainId,
+		Status: d.Status,
+		Token:  d.Token.String(),
 
 		TxId:   d.TxId,
 		Volume: d.Volume,
@@ -48,17 +40,12 @@ func DToDto(d *entity.Deposit) *Deposit {
 	}
 }
 
-func (d *Deposit) ToEntity() *entity.Deposit {
-	return &entity.Deposit{
+func (d *Deposit) ToEntity() (*entity.Deposit, error) {
+	ed := &entity.Deposit{
 		Id:      d.Id,
-		UserId:  d.UserId,
 		OrderId: d.OrderId,
 
-		Status:   d.Status,
-		Exchange: d.Exchange,
-
-		Coin: &entity.Coin{CoinId: d.CoinId, ChainId: d.ChainId},
-
+		Status: d.Status,
 		TxId:   d.TxId,
 		Volume: d.Volume,
 
@@ -66,4 +53,11 @@ func (d *Deposit) ToEntity() *entity.Deposit {
 
 		FailedDesc: d.FailedDesc,
 	}
+
+	t, c, err := parseToken(d.Token)
+	if err != nil {
+		return nil, err
+	}
+	ed.Token = &entity.Token{TokenId: t, ChainId: c}
+	return ed, nil
 }

@@ -16,7 +16,7 @@ func (u *dex) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 	agent := u.agent("TrackWithdrawal")
 
 	w := o.Withdrawal
-	t, err := u.tokens.get(w.CoinId)
+	t, err := u.tokens.get(w.TokenId)
 	if err != nil {
 		w.Status = entity.WithdrawalFailed
 		w.FailedDesc = err.Error()
@@ -35,7 +35,7 @@ func (u *dex) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
 		P:        u.provider(),
-		TxHash:   common.HexToHash(w.WId),
+		TxHash:   common.HexToHash(w.TxId),
 		Receiver: &r,
 		NeedTx:   true,
 		DoneCh:   doneCh,
@@ -50,14 +50,14 @@ func (u *dex) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 
 		unwrapFee := new(big.Int)
 		var err error
-		if w.ExchangeFee != "" {
-			unwrapFee, err = numbers.FloatStringToBigInt(w.ExchangeFee, t.Decimals)
+		if w.Fee != "" {
+			unwrapFee, err = numbers.FloatStringToBigInt(w.Fee, t.Decimals)
 			if err != nil {
 				unwrapFee = big.NewInt(0)
 			}
 		}
-		w.ExchangeFee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), t.Decimals)
-		w.ExchangeFeeCurrency = u.cfg.NativeToken
+		w.Fee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), t.Decimals)
+		w.FeeCurrency = u.cfg.NativeToken
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			w.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
