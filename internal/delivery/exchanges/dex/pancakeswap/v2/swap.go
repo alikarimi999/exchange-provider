@@ -6,6 +6,7 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -45,7 +46,7 @@ func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
 		o.Swaps[i].OutAmount = amount
 		o.Swaps[i].Status = entity.SwapSucceed
 		o.Swaps[i].Fee = fee
-		o.Swaps[i].FeeCurrency = ex.nt
+		o.Swaps[i].FeeCurrency = ex.nativToken + "-" + strconv.Itoa(int(ex.chainId))
 
 		ex.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))

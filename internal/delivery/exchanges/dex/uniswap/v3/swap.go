@@ -8,6 +8,7 @@ import (
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -31,7 +32,7 @@ func (u *UniswapV3) Swap(o *entity.Order, tIn, tOut ts.Token, value string, sour
 	if tIn.IsNative() {
 		val = amount
 	}
-	opts, err := u.wallet.NewKeyedTransactorWithChainID(source, val, u.chaindId)
+	opts, err := u.wallet.NewKeyedTransactorWithChainID(source, val, u.chainId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -117,7 +118,7 @@ func (ex *UniswapV3) TrackSwap(o *entity.Order, p *ts.Pair, i int) {
 		o.Swaps[i].OutAmount = amount
 		o.Swaps[i].Status = entity.SwapSucceed
 		o.Swaps[i].Fee = fee
-		o.Swaps[i].FeeCurrency = ex.nt
+		o.Swaps[i].FeeCurrency = ex.nativToken + "-" + strconv.Itoa(int(ex.chainId))
 
 		ex.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))

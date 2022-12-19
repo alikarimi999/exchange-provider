@@ -32,8 +32,8 @@ func (o *OrderUseCase) ApplySpread(p *entity.Pair) *entity.Pair {
 	p1, _ := strconv.ParseFloat(p.Price1, 64)
 	p2, _ := strconv.ParseFloat(p.Price2, 64)
 
-	p.Price1 = strconv.FormatFloat(p1*(1+r), 'f', 6, 64)
-	p.Price2 = strconv.FormatFloat(p2*(1+r), 'f', 6, 64)
+	p.Price1 = strconv.FormatFloat(p1*(1-r), 'f', 6, 64)
+	p.Price2 = strconv.FormatFloat(p2*(1-r), 'f', 6, 64)
 
 	return p
 }

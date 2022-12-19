@@ -22,6 +22,10 @@ func FloatStringToBigInt(s string, decimals int) (*big.Int, error) {
 }
 
 func StringToBigFloat(s string) (*big.Float, error) {
+	if s == "" {
+		return big.NewFloat(0), nil
+	}
+
 	bf, ok := new(big.Float).SetString(s)
 	if ok {
 		return bf, nil

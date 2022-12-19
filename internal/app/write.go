@@ -25,7 +25,7 @@ func (o *OrderUseCase) write(data interface{}) error {
 func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 	switch d := data.(type) {
 	case *entity.Order:
-		if d.Status == entity.OSNew {
+		if d.Status == "" {
 			return o.repo.Add(d)
 		}
 		return o.repo.Update(d)

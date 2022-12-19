@@ -6,30 +6,29 @@ import (
 
 type Swap struct {
 	Id      uint64 `json:"id"`
-	OrderId int64  `json:"order_id,omitempty"`
+	OrderId int64  `json:"order_id"`
 	Status  string `json:"status"`
-	TxId    string `json:"tx_id,omitempty"`
+	TxId    string `json:"tx_id"`
 
-	Index    int    `json:"index,omitempty"`
-	Input    string `json:"input,omitempty"`
-	InAmount string `json:"inAmount,omitempty"`
+	Index  int    `json:"index"`
+	Input  string `json:"input"`
+	Output string `json:"output"`
 
-	Output    string `json:"output,omitempty"`
-	OutAmount string `json:"outAmount,omitempty"`
+	InAmount  string `json:"inAmount"`
+	OutAmount string `json:"outAmount"`
 
-	FilledPrice     string `json:"filled_price,omitempty"`
+	FilledPrice     string `json:"filled_price"`
 	Fee             string `json:"fee"`
 	FeeCurrency     string `json:"fee_currency"`
 	entity.MetaData `json:"meta_data,omitempty"`
 }
 
-func SwapFromEntity(e *entity.Swap, r *entity.Route, index int) *Swap {
+func swapFromEntity(e *entity.Swap, r *entity.Route) *Swap {
 	return &Swap{
 		Id:      e.Id,
 		OrderId: e.OrderId,
 		TxId:    e.TxId,
 
-		Index:    index,
 		Input:    r.In.String(),
 		InAmount: e.InAmount,
 

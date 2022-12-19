@@ -7,17 +7,13 @@ import (
 type ExType string
 
 const (
-	DEX   ExType = "DEX"
-	CEX   ExType = "CEX"
-	Cross ExType = "Cross"
+	DEX ExType = "DEX"
+	CEX ExType = "CEX"
 )
 
-type SwapStatus string
-
 const (
-	SwapPending SwapStatus = "pending"
-	SwapSucceed SwapStatus = "succeed"
-	SwapFailed  SwapStatus = "failed"
+	SwapSucceed string = "succeed"
+	SwapFailed  string = "failed"
 )
 
 type Swap struct {
@@ -25,7 +21,7 @@ type Swap struct {
 	TxId string
 
 	OrderId int64
-	Status  SwapStatus // succed, failed
+	Status  string // succed, failed
 
 	InAmount    string
 	OutAmount   string

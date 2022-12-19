@@ -3,7 +3,6 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"fmt"
 	"sync"
 
 	"exchange-provider/pkg/errors"
@@ -52,30 +51,12 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 			for i, route := range ord.SortedRoutes() {
 				ex, err := o.exStore.get(route.Exchange)
 				if err != nil {
-					o.l.Error(string(op), fmt.Sprintf("failed to get exchange: '%s' due to error: ( %s )",
-						route.Exchange, err.Error()))
+					o.l.Error(string(op), err.Error())
 					return
 				}
 
 				if i == 0 {
-
-					aVol, sVol, rate, err := o.pc.ApplySpread(route.In, route.Out, ord.Deposit.Volume)
-					if err != nil {
-						ord.Status = entity.OSFailed
-						ord.FailedCode = entity.FCInternalError
-						ord.FailedDesc = err.Error()
-
-						o.l.Error(string(op), err.Error())
-						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), fmt.Sprintf("failed to write order: '%d' due to error: ( %s )",
-								ord.Id, err.Error()))
-						}
-						return
-					}
-					ord.Swaps[i].InAmount = aVol
-					ord.SpreadCurrency = route.In.String()
-					ord.SpreadVol = sVol
-					ord.SpreadRate = rate
+					ord.Swaps[i].InAmount = ord.Deposit.Volume
 				} else {
 					ord.Swaps[i].InAmount = ord.Swaps[i-1].OutAmount
 				}
@@ -85,18 +66,16 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 					ord.Status = entity.OSFailed
 					ord.FailedCode = entity.FCExOrdFailed
 					ord.FailedDesc = err.Error()
-
 					o.l.Error(string(op), err.Error())
-
 					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), fmt.Sprintf("failed to write order: '%d' due to error: ( %s )",
-							ord.Id, err.Error()))
+						o.l.Error(string(op), err.Error())
+
 					}
 					return
 				}
 
 				ord.Swaps[i].TxId = id
-				ord.Status = entity.OSWaitForExchangeOrderConfirm
+				ord.Status = entity.OSWaitForSwapConfirm
 				if err = o.ouc.write(ord); err != nil {
 					o.l.Error(string(op), err.Error())
 					return
@@ -110,8 +89,10 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 
 				switch ord.Swaps[i].Status {
 				case entity.SwapSucceed:
+					if i == (len(ord.Routes) - 1) {
+						ord.Status = entity.OSSwapConfirmed
+					}
 
-					ord.Status = entity.OSExchangeOrderConfirmed
 					if err = o.ouc.write(ord); err != nil {
 						o.l.Error(string(op), err.Error())
 						pCh <- false
@@ -123,25 +104,13 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						continue
 					}
 
-					r, f, err := o.fee.ApplyFee(ord.UserId, ord.Swaps[len(ord.Swaps)-1].OutAmount)
-					if err != nil {
-						ord.Status = entity.OSFailed
-						ord.FailedCode = entity.FCInternalError
-						ord.FailedDesc = err.Error()
-
+					if err := o.applySpreadAndFee(ord, route); err != nil {
 						o.l.Error(string(op), err.Error())
-
 						if err := o.ouc.write(ord); err != nil {
 							o.l.Error(string(op), err.Error())
 						}
 						return
-
 					}
-
-					ord.Withdrawal.Token = route.Out
-					ord.Withdrawal.Volume = r
-					ord.Fee = f
-					ord.FeeCurrency = route.Out.String()
 
 					id, err = ex.Withdrawal(ord)
 					if err != nil {
@@ -167,8 +136,6 @@ func (o *orderHandler) run(wg *sync.WaitGroup) {
 						return
 					}
 
-					// add to withdrawal cache
-					// and wait for withdrawal confirm
 					if err := o.wc.AddPendingWithdrawal(ord.Id); err != nil {
 						o.l.Error(string(op), err.Error())
 					}

@@ -64,15 +64,12 @@ func UOFromEntity(oe *entity.Order) *UserOrder {
 	case entity.OSDepositeConfimred:
 		o.Status = string(oe.Status)
 
-	case entity.OSSucceed, entity.OSWaitForWithdrawalConfirm:
+	case entity.OSSucceed:
 		o.Status = string(oe.Status)
-		in, err := numbers.StringToBigFloat(oe.Deposit.Volume)
-		if err == nil {
-			out, err := numbers.StringToBigFloat(oe.Withdrawal.Volume)
-			if err == nil {
-				o.FilledPrice = new(big.Float).Quo(out, in).String()
-			}
-		}
+		in, _ := numbers.StringToBigFloat(oe.Deposit.Volume)
+		out, _ := numbers.StringToBigFloat(oe.Withdrawal.Volume)
+		fee, _ := numbers.StringToBigFloat(oe.Fee)
+		o.FilledPrice = new(big.Float).Quo(new(big.Float).Add(out, fee), in).Text('f', 10)
 
 	case entity.OSFailed:
 		o.Status = string(oe.Status)
@@ -137,7 +134,7 @@ func AdminOrderFromEntity(o *entity.Order) *AdminOrder {
 		MetaData:   o.MetaData,
 	}
 	for k, v := range o.Swaps {
-		ord.Swaps[k] = SwapFromEntity(v, o.Routes[k], k)
+		ord.Swaps[k] = swapFromEntity(v, o.Routes[k])
 	}
 	return ord
 }

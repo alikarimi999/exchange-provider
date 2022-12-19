@@ -6,22 +6,18 @@ import (
 	"time"
 )
 
-type OrderStatus string
-
 const (
-	OSNew OrderStatus = ""
+	OSTxIdSetted        string = "txId_setted"
+	OSDepositeConfimred string = "deposite_confirmed"
 
-	OSTxIdSetted        OrderStatus = "txId_setted"
-	OSDepositeConfimred OrderStatus = "deposite_confirmed"
+	OSWaitForSwapConfirm string = "wait_for_swap_confirm"
+	OSSwapConfirmed      string = "swap_confirmed"
 
-	OSWaitForExchangeOrderConfirm OrderStatus = "wait_for_exchange_order_confirm"
-	OSExchangeOrderConfirmed      OrderStatus = "exchange_order_confirmed"
+	OSWaitForWithdrawalConfirm string = "wait_for_withdrawal_confirm"
+	OSWithdrawalConfirmed      string = "withdrawal_confirmed"
 
-	OSWaitForWithdrawalConfirm OrderStatus = "wait_for_withdrawal_confirm"
-	OSWithdrawalConfirmed      OrderStatus = "withdrawal_confirmed"
-
-	OSSucceed OrderStatus = "succeed"
-	OSFailed  OrderStatus = "failed"
+	OSSucceed string = "succeed"
+	OSFailed  string = "failed"
 )
 
 const (
@@ -42,7 +38,7 @@ type Order struct {
 	UserId int64
 
 	CreatedAt int64
-	Status    OrderStatus
+	Status    string
 
 	Deposit *Deposit
 
@@ -67,7 +63,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 	o := &Order{
 		UserId:    userId,
 		CreatedAt: time.Now().Unix(),
-		Status:    OSNew,
+		Status:    "",
 		Routes:    routes,
 
 		Deposit: &Deposit{
@@ -87,7 +83,7 @@ func NewOrder(userId int64, wAddress, dAddress *Address, routes map[int]*Route) 
 	}
 
 	for i := range routes {
-		o.Swaps[i] = &Swap{Status: SwapPending}
+		o.Swaps[i] = &Swap{}
 	}
 
 	return o

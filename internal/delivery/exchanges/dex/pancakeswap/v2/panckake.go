@@ -23,8 +23,8 @@ type Panckakeswapv2 struct {
 	wallet *eth.HDWallet
 	router common.Address
 
-	nt string
-	tt *utils.TxTracker
+	nativToken string
+	tt         *utils.TxTracker
 
 	chainId int64
 	abi     abi.ABI
@@ -40,8 +40,8 @@ func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker,
 		wallet: wallet,
 		router: router,
 
-		nt: nt,
-		tt: tt,
+		nativToken: nt,
+		tt:         tt,
 
 		ps: ps,
 		l:  l,

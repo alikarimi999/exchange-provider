@@ -55,18 +55,10 @@ func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 	switch tf.Status {
 	case utils.TxSuccess:
 		f := utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
-		fee, _ := numbers.FloatStringToBigInt(f, t.Decimals)
+		fee, _ := numbers.StringToBigFloat(f)
+		unwrapFee, _ := numbers.StringToBigFloat(w.Fee)
 
-		unwrapFee := new(big.Int)
-		var err error
-		if w.Fee != "" {
-			unwrapFee, err = numbers.FloatStringToBigInt(w.Fee, t.Decimals)
-			if err != nil {
-				unwrapFee = big.NewInt(0)
-			}
-		}
-		w.Fee = numbers.BigIntToFloatString(new(big.Int).Add(fee, unwrapFee), t.Decimals)
-		// w.ExchangeFeeCurrency = u.cs[chainId(t.Chain)].nativeToken
+		w.Fee = new(big.Float).Add(fee, unwrapFee).Text('f', utils.EthDecimals)
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			w.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))

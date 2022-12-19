@@ -1,18 +1,16 @@
 package entity
 
-type WithdrawalStatus string
-
 const (
-	WithdrawalSucceed WithdrawalStatus = "succeed"
-	WithdrawalFailed  WithdrawalStatus = "failed"
-	WithdrawalPending WithdrawalStatus = "pending"
+	WithdrawalSucceed string = "succeed"
+	WithdrawalFailed  string = "failed"
+	WithdrawalPending string = "pending"
 )
 
 type Withdrawal struct {
 	Id      uint64
 	OrderId int64
 
-	Status WithdrawalStatus
+	Status string
 	TxId   string
 	*Address
 

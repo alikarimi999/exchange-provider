@@ -71,7 +71,7 @@ func (s *Swap) ToEntity() (*entity.Swap, *entity.Route, int, error) {
 		TxId: s.TxId,
 
 		OrderId: s.OrderId,
-		Status:  entity.SwapStatus(s.Status),
+		Status:  s.Status,
 
 		InAmount:  s.InAmount,
 		OutAmount: s.OutAmount,

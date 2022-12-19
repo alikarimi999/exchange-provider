@@ -53,7 +53,7 @@ func (o *Order) ToEntity() (*entity.Order, error) {
 		Id:        int64(o.ID),
 		CreatedAt: o.CreatedAt.Unix(),
 		UserId:    o.UserId,
-		Status:    entity.OrderStatus(o.Status),
+		Status:    o.Status,
 
 		Routes:     make(map[int]*entity.Route),
 		Deposit:    d,

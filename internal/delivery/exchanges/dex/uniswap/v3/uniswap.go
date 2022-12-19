@@ -15,13 +15,13 @@ type UniswapV3 struct {
 	id string
 	ps []*types.Provider
 
-	factory common.Address
-	router  common.Address
-	nt      string
+	factory    common.Address
+	router     common.Address
+	nativToken string
+	chainId    int64
 
-	tt       *utils.TxTracker
-	wallet   *eth.HDWallet
-	chaindId int64
+	tt     *utils.TxTracker
+	wallet *eth.HDWallet
 
 	l logger.Logger
 }
@@ -31,9 +31,9 @@ func NewUniSwapV3(id, nt string, ps []*types.Provider, f, r common.Address, w *e
 		id: id,
 		ps: ps,
 
-		factory: f,
-		router:  r,
-		nt:      nt,
+		factory:    f,
+		router:     r,
+		nativToken: nt,
 
 		tt:     tt,
 		wallet: w,
@@ -44,7 +44,7 @@ func NewUniSwapV3(id, nt string, ps []*types.Provider, f, r common.Address, w *e
 	if err != nil {
 		return nil, err
 	}
-	u.chaindId = c.Int64()
+	u.chainId = c.Int64()
 	return u, nil
 }
 

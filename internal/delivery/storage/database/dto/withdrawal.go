@@ -63,7 +63,7 @@ func (w *Withdrawal) ToEntity() (*entity.Withdrawal, error) {
 		FeeCurrency: w.FeeCurrency,
 
 		TxId:       w.TxId,
-		Status:     entity.WithdrawalStatus(w.Status),
+		Status:     w.Status,
 		FailedDesc: w.FailedDesc,
 	}
 
