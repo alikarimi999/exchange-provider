@@ -2,7 +2,7 @@ package uniswapv3
 
 import (
 	"context"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/wallet/eth"
@@ -13,7 +13,7 @@ import (
 
 type UniswapV3 struct {
 	id string
-	ps []*types.Provider
+	ps []*ts.EthProvider
 
 	factory    common.Address
 	router     common.Address
@@ -26,7 +26,7 @@ type UniswapV3 struct {
 	l logger.Logger
 }
 
-func NewUniSwapV3(id, nt string, ps []*types.Provider, f, r common.Address, w *eth.HDWallet, tt *utils.TxTracker, l logger.Logger) (*UniswapV3, error) {
+func NewUniSwapV3(id, nt string, ps []*ts.EthProvider, f, r common.Address, w *eth.HDWallet, tt *utils.TxTracker, l logger.Logger) (*UniswapV3, error) {
 	u := &UniswapV3{
 		id: id,
 		ps: ps,

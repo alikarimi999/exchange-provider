@@ -1,8 +1,10 @@
 package dex
 
 import (
+	"exchange-provider/internal/app"
 	pv2 "exchange-provider/internal/delivery/exchanges/dex/pancakeswap/v2"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	uv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 
@@ -26,7 +28,7 @@ type dex struct {
 	cfg *Config
 
 	wallet *eth.HDWallet
-
+	ws     app.WalletStore
 	types.Dex
 
 	confirms uint64
@@ -44,7 +46,7 @@ type dex struct {
 	stoppedAt time.Time
 }
 
-func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
+func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
 	l logger.Logger, readConfig bool) (entity.Exchange, error) {
 
 	agent := "NewDEX"
@@ -56,8 +58,8 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 	ex := &dex{
 		mux: &sync.Mutex{},
 
-		cfg: cfg,
-
+		cfg:      cfg,
+		ws:       ws,
 		confirms: 1,
 
 		tokens: newSupportedTokens(),
@@ -92,11 +94,15 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 
 		psi := i.(map[string]interface{})
 		for _, v := range psi {
-			ex.cfg.Providers = append(ex.cfg.Providers, &types.Provider{URL: v.(string)})
+			ex.cfg.Providers = append(ex.cfg.Providers, &ts.EthProvider{URL: v.(string)})
 		}
 		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
 
-		if err := ex.generalSets(); err != nil {
+		if err := ex.checkProviders(); err != nil {
+			return nil, err
+		}
+
+		if err := ex.setupWallet(); err != nil {
 			return nil, err
 		}
 
@@ -136,7 +142,11 @@ func NewDEX(cfg *Config, rc *redis.Client, v *viper.Viper,
 			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Id(), i), p.URL)
 		}
 
-		if err := ex.generalSets(); err != nil {
+		if err := ex.checkProviders(); err != nil {
+			return nil, err
+		}
+
+		if err := ex.setupWallet(); err != nil {
 			return nil, err
 		}
 

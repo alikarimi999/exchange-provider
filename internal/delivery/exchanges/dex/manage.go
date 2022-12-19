@@ -34,7 +34,7 @@ func (u *dex) Stop() {
 }
 
 func (u *dex) Configs() interface{} {
-	u.cfg.Accounts, _ = u.wallet.AllAccounts()
+	u.cfg.Accounts, _ = u.wallet.AllAccounts(u.cfg.AccountCount)
 	return u.cfg
 }
 

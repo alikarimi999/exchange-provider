@@ -2,14 +2,16 @@ package dex
 
 import (
 	"context"
-	"exchange-provider/pkg/wallet/eth"
 	"fmt"
+	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func (u *dex) generalSets() error {
-	for _, p := range u.cfg.Providers {
+func (u *dex) checkProviders() error {
+	var chainId *big.Int
+	for i, p := range u.cfg.Providers {
 		c, err := ethclient.Dial(p.URL)
 		if err != nil {
 			return err
@@ -17,33 +19,28 @@ func (u *dex) generalSets() error {
 		cId, err := c.ChainID(context.Background())
 		if err != nil {
 			return err
-		} else {
-			u.cfg.ChainId = cId.Uint64()
-			u.cfg.chainId = fmt.Sprintf("%d", u.cfg.ChainId)
 		}
-
+		if i == 0 {
+			chainId = cId
+		} else {
+			if cId != chainId {
+				return fmt.Errorf("providers mismatch for chain Id")
+			}
+		}
 		p.Client = c
 	}
 
-	if err := u.setWallet(); err != nil {
-		return err
-	}
-
+	u.cfg.ChainId = chainId.Uint64()
+	u.cfg.chainId = strconv.Itoa(int(u.cfg.ChainId))
 	return nil
 }
 
-func (u *dex) setWallet() error {
-	if u.cfg.AccountCount == 0 {
-		u.cfg.AccountCount = 1
-	}
-	if u.cfg.Mnemonic == "" {
-		u.cfg.Mnemonic, _ = eth.NewMnemonic(128)
-	}
-	w, err := eth.NewWallet(u.cfg.Mnemonic, u.provider().Client, u.cfg.AccountCount)
+func (u *dex) setupWallet() error {
+	w, err := u.ws.AddWallet(u.cfg.Mnemonic, u.cfg.chainId, u.provider().URL, u.cfg.AccountCount)
 	if err != nil {
 		return err
 	}
 	u.wallet = w
-	u.cfg.Accounts, _ = w.AllAccounts()
+	u.cfg.Accounts, _ = w.AllAccounts(u.cfg.AccountCount)
 	return nil
 }

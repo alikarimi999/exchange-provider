@@ -53,7 +53,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := dex.NewDEX(conf, s.rc, s.v, s.l, false)
+		ex, err := dex.NewDEX(conf, s.app.WalletStore, s.rc, s.v, s.l, false)
 		if err != nil {
 			cfg.Msg = err.Error()
 			ctx.JSON(http.StatusOK, cfg)
@@ -85,7 +85,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := multichain.NewMultichain(cfg, s.v, s.l, false)
+		ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
 		if err != nil {
 			ctx.JSON(200, err.Error())
 			return

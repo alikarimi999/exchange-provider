@@ -28,13 +28,13 @@ type Panckakeswapv2 struct {
 
 	chainId int64
 	abi     abi.ABI
-	ps      []*ts.Provider
+	ps      []*ts.EthProvider
 
 	l logger.Logger
 }
 
 func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker, router common.Address,
-	ps []*ts.Provider, l logger.Logger) (*Panckakeswapv2, error) {
+	ps []*ts.EthProvider, l logger.Logger) (*Panckakeswapv2, error) {
 	p := &Panckakeswapv2{
 		id:     id,
 		wallet: wallet,

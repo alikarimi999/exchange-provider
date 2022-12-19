@@ -1,7 +1,7 @@
 package dex
 
 import (
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/wallet/eth"
 	"fmt"
@@ -19,7 +19,7 @@ type Config struct {
 	NativeToken string
 	// TokenStandard string
 
-	Providers []*types.Provider
+	Providers []*ts.EthProvider
 
 	Factory       common.Address
 	Router        common.Address
@@ -52,7 +52,12 @@ func (cfg *Config) Validate(readConfig bool) error {
 		if cfg.BlockTime == time.Duration(0) {
 			return errors.New("block_time cannot be empty")
 		}
+
 		cfg.BlockTime += time.Duration(5 * time.Second)
+	}
+
+	if cfg.AccountCount == 0 {
+		cfg.AccountCount = 1
 	}
 
 	if cfg.Name == "" {

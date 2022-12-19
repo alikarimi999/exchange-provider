@@ -5,7 +5,7 @@ import (
 )
 
 func (u *dex) GetAddress(c *entity.Token) (*entity.Address, error) {
-	addr, err := u.wallet.RandAddress()
+	addr, err := u.wallet.RandAddress(u.cfg.AccountCount)
 	if err != nil {
 		return nil, err
 	}

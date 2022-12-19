@@ -13,7 +13,7 @@ import (
 )
 
 func transferNative(w *eth.HDWallet, from, to common.Address,
-	chainId int64, value *big.Int, p *ts.Provider) (*types.Transaction, error) {
+	chainId int64, value *big.Int, p *ts.EthProvider) (*types.Transaction, error) {
 
 	head, err := p.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -40,7 +40,8 @@ func transferNative(w *eth.HDWallet, from, to common.Address,
 	return tx, nil
 }
 
-func sendLegacyTx(w *eth.HDWallet, from, to common.Address, chainId int64, value *big.Int, p *ts.Provider) (*types.Transaction, *big.Int, error) {
+func sendLegacyTx(w *eth.HDWallet, from, to common.Address, chainId int64,
+	value *big.Int, p *ts.EthProvider) (*types.Transaction, *big.Int, error) {
 
 	gasPrice, err := p.SuggestGasPrice(context.Background())
 	if err != nil {
@@ -94,7 +95,7 @@ func sendLegacyTx(w *eth.HDWallet, from, to common.Address, chainId int64, value
 }
 
 func sendDynamicTx(wallet *eth.HDWallet, from, to common.Address, chainId int64, value *big.Int,
-	head *types.Header, p *ts.Provider) (*types.Transaction, *big.Int, error) {
+	head *types.Header, p *ts.EthProvider) (*types.Transaction, *big.Int, error) {
 
 	gasPrice, err := p.SuggestGasPrice(context.Background())
 	if err != nil {

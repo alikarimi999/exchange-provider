@@ -14,7 +14,7 @@ import (
 )
 
 func anySwapOutNative(in, out *Token, amount *big.Int, src common.Address,
-	pr *ts.Provider, w *eth.HDWallet) (tx *types.Transaction, nonce *big.Int, err error) {
+	pr *ts.EthProvider, w *eth.HDWallet) (tx *types.Transaction, nonce *big.Int, err error) {
 
 	srcChain, err := strconv.Atoi(in.ChainId)
 	if err != nil {

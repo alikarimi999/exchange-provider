@@ -5,6 +5,7 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/multichain/contracts/MultichainV7Router"
 	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/wallet/eth"
+
 	"fmt"
 	"math/big"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 )
 
 func anySwapOut(in, out *Token, amount *big.Int, src common.Address,
-	pr *ts.Provider, w *eth.HDWallet) (tx *types.Transaction, nonce *big.Int, err error) {
+	pr *ts.EthProvider, w *eth.HDWallet) (tx *types.Transaction, nonce *big.Int, err error) {
 
 	srcChain, err := strconv.Atoi(in.ChainId)
 	if err != nil {

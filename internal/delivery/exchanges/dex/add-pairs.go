@@ -110,7 +110,7 @@ func (d *dex) addPair(t1 string, t2 string) error {
 					}
 
 					// check pair's tokens allowance
-					adds, err := d.wallet.AllAddresses()
+					adds, err := d.wallet.AllAddresses(d.cfg.AccountCount)
 					if err != nil {
 						return err
 					}

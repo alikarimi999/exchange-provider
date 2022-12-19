@@ -90,7 +90,8 @@ func production() {
 
 	wg := &sync.WaitGroup{}
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
+		ss.PairConfigs, s.Oc, ss.FeeService, l)
 	wg.Add(1)
 	go ou.Run(wg)
 
@@ -165,7 +166,8 @@ func test() {
 
 	wg := &sync.WaitGroup{}
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExRepo, ss.PairConf, s.Oc, ss.Fee, l)
+	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
+		ss.PairConfigs, s.Oc, ss.FeeService, l)
 	wg.Add(1)
 	go ou.Run(wg)
 

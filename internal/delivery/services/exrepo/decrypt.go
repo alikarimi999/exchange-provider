@@ -63,7 +63,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			Name:     ex.Name,
 			Network:  n,
 		}
-		return dex.NewDEX(cfg, r.rc, r.v, r.l, true)
+		return dex.NewDEX(cfg, r.WalletStore, r.rc, r.v, r.l, true)
 
 	case "multichain":
 		m, ok := jb["mnemonic"].(string)
@@ -72,7 +72,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		}
 
 		cfg := &multichain.Config{Name: ex.Id, Mnemonic: m}
-		return multichain.NewMultichain(cfg, r.v, r.l, true)
+		return multichain.NewMultichain(cfg, r.WalletStore, r.v, r.l, true)
 
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Id)))

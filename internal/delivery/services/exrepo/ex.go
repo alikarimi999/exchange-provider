@@ -17,17 +17,18 @@ type ExchangeRepo struct {
 	v  *viper.Viper
 	l  logger.Logger
 	rc *redis.Client
-
+	app.WalletStore
 	prv *rsa.PrivateKey
 }
 
-func NewExchangeRepo(db *gorm.DB, v *viper.Viper, rc *redis.Client, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
+func NewExchangeRepo(db *gorm.DB, ws app.WalletStore, v *viper.Viper, rc *redis.Client, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
-		db:  db,
-		v:   v,
-		l:   l,
-		rc:  rc,
-		prv: prvKey,
+		db:          db,
+		v:           v,
+		l:           l,
+		rc:          rc,
+		WalletStore: ws,
+		prv:         prvKey,
 	}
 }
 

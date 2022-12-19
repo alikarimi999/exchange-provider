@@ -1,6 +1,7 @@
 package multichain
 
 import (
+	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
@@ -13,8 +14,8 @@ import (
 type Multichain struct {
 	cfg *Config
 
-	cs map[ChainId]*Chain
-
+	cs     map[ChainId]*Chain
+	ws     app.WalletStore
 	tt     *utils.TxTracker
 	pairs  *supportedPairs
 	apiUrl string
@@ -23,11 +24,12 @@ type Multichain struct {
 	l logger.Logger
 }
 
-func NewMultichain(cfg *Config, v *viper.Viper, l logger.Logger, readConfigs bool) (entity.Exchange, error) {
+func NewMultichain(cfg *Config, ws app.WalletStore, v *viper.Viper, l logger.Logger, readConfigs bool) (entity.Exchange, error) {
 
 	m := &Multichain{
 		cfg:    cfg,
 		cs:     make(map[ChainId]*Chain),
+		ws:     ws,
 		apiUrl: "https://bridgeapi.anyswap.exchange/v2/history/details?params=",
 		v:      v,
 		l:      l,

@@ -19,7 +19,7 @@ type Chain struct {
 	w  *eth.HDWallet
 
 	// nativeToken string
-	Providers []*ts.Provider
+	Providers []*ts.EthProvider
 
 	l logger.Logger
 }
@@ -41,10 +41,11 @@ func (m *Multichain) newChain(id ChainId, urls ...string) (*Chain, []URL, error)
 	}
 
 	if len(c.Providers) > 0 {
-		w, err := eth.NewWallet(m.cfg.Mnemonic, c.provider().Client, m.cfg.AccountCount)
+		w, err := m.ws.AddWallet(m.cfg.Mnemonic, c.provider().URL, string(id), m.cfg.AccountCount)
 		if err != nil {
 			return nil, us, err
 		}
+
 		c.w = w
 		c.am = utils.NewApproveManager(int64(cId), m.tt, w, m.l, c.Providers)
 		return c, us, nil
@@ -59,7 +60,7 @@ func (c *Chain) addProvider(url string) error {
 		}
 	}
 
-	p := &ts.Provider{URL: url}
+	p := &ts.EthProvider{URL: url}
 	cl, err := ethclient.Dial(url)
 	if err != nil {
 		return err

@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func swapOut(in, out *Token, amount *big.Int, src common.Address, pr *ts.Provider,
+func swapOut(in, out *Token, amount *big.Int, src common.Address, pr *ts.EthProvider,
 	w *eth.HDWallet) (*types.Transaction, *big.Int, error) {
 
 	srcChain, err := strconv.Atoi(in.ChainId)

@@ -28,11 +28,12 @@ type ApproveManager struct {
 	pending  *amQueue
 	approved *amQueue
 
-	ps []*ts.Provider
+	ps []*ts.EthProvider
 	l  logger.Logger
 }
 
-func NewApproveManager(chainId int64, tt *TxTracker, w *eth.HDWallet, l logger.Logger, ps []*ts.Provider) *ApproveManager {
+func NewApproveManager(chainId int64, tt *TxTracker, w *eth.HDWallet,
+	l logger.Logger, ps []*ts.EthProvider) *ApproveManager {
 	return &ApproveManager{
 
 		tt: tt,

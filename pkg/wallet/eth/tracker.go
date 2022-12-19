@@ -31,6 +31,12 @@ func (t *tracker) addAccount(address common.Address, latest_nonce uint64) {
 	t.accounts[address.String()] = newAccount(address, latest_nonce)
 }
 
+func (t *tracker) removeAccount(address common.Address) {
+	t.mux.Lock()
+	defer t.mux.Unlock()
+	delete(t.accounts, address.String())
+}
+
 func (t *tracker) nonce(address common.Address) (uint64, error) {
 	t.mux.Lock()
 	defer t.mux.Unlock()

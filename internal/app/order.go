@@ -20,21 +20,23 @@ type OrderUseCase struct {
 	wh    *withdrawalHandler
 	fs    entity.FeeService
 
+	WalletStore
 	exs *exStore
 	l   logger.Logger
 }
 
-func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo,
+func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo, ws WalletStore,
 	pc entity.PairConfigs, oc entity.OrderCache, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
-		repo:  repo,
-		cache: oc,
-		rc:    rc,
-		pc:    pc,
-		exs:   newExStore(l, exRepo),
-		fs:    fee,
-		l:     l,
+		repo:        repo,
+		cache:       oc,
+		rc:          rc,
+		pc:          pc,
+		WalletStore: ws,
+		exs:         newExStore(l, exRepo),
+		fs:          fee,
+		l:           l,
 	}
 
 	o.oh = newOrderHandler(o, repo, oc, pc, oc, fee, o.exs, l)

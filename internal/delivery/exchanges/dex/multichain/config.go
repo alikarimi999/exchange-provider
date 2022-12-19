@@ -2,7 +2,7 @@ package multichain
 
 import (
 	"context"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/wallet/eth"
 	"fmt"
 
@@ -18,11 +18,11 @@ type Config struct {
 }
 
 type ProviderList struct {
-	list map[ChainId][]*types.Provider
+	list map[ChainId][]*ts.EthProvider
 }
 
 func (pl *ProviderList) Add(cId string, urls []string) error {
-	prs := []*types.Provider{}
+	prs := []*ts.EthProvider{}
 	for _, url := range urls {
 		c, err := ethclient.Dial(url)
 		if err != nil {
@@ -35,7 +35,7 @@ func (pl *ProviderList) Add(cId string, urls []string) error {
 		if id.String() != cId {
 			return fmt.Errorf("wrong provider")
 		}
-		prs = append(prs, &types.Provider{Client: c, URL: url})
+		prs = append(prs, &ts.EthProvider{Client: c, URL: url})
 	}
 
 	pl.list[ChainId(cId)] = append(pl.list[ChainId(cId)], prs...)

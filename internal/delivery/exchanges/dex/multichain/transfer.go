@@ -12,7 +12,7 @@ import (
 )
 
 func transfer(in, out *Token, amount *big.Int, src common.Address,
-	pr *ts.Provider, w *eth.HDWallet) (*types.Transaction, *big.Int, error) {
+	pr *ts.EthProvider, w *eth.HDWallet) (*types.Transaction, *big.Int, error) {
 
 	srcChain, err := strconv.Atoi(in.ChainId)
 	if err != nil {

@@ -2,7 +2,7 @@ package dto
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -55,7 +55,7 @@ func (cfg *Config) Map() (*dex.Config, error) {
 	c.BlockTime = bt
 
 	for _, url := range cfg.Providers {
-		c.Providers = append(c.Providers, &types.Provider{URL: url})
+		c.Providers = append(c.Providers, &ts.EthProvider{URL: url})
 	}
 
 	return c, nil

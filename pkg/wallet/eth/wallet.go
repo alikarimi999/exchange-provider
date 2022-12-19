@@ -15,9 +15,9 @@ import (
 )
 
 type HDWallet struct {
-	w      *hdwallet.Wallet
-	client *ethclient.Client
-	*tracker
+	w        *hdwallet.Wallet
+	client   *ethclient.Client
+	tracker  *tracker
 	mu       *sync.Mutex
 	mnemonic string
 	p        string
@@ -56,7 +56,12 @@ func walletFromMnemonic(mn string, c *ethclient.Client, count uint64) (*HDWallet
 	hd.w = w
 
 	for i := 0; i < int(count); i++ {
-		hd.AddAccount(uint64(i))
+		if _, err := hd.AddAccount(uint64(i)); err != nil {
+			for j := 0; j < i; j++ {
+				hd.RemoveAccount(uint64(j))
+			}
+			return nil, err
+		}
 	}
 	return hd, nil
 }
@@ -85,6 +90,15 @@ func (hd *HDWallet) AddAccount(index uint64) (accounts.Account, error) {
 	return acc, nil
 }
 
+func (hd *HDWallet) RemoveAccount(index uint64) {
+	a, err := hd.getAccount(index)
+	if err != nil {
+		return
+	}
+	hd.w.Unpin(a)
+	hd.tracker.removeAccount(a.Address)
+}
+
 func (hd *HDWallet) Nonce(address common.Address) (uint64, error) {
 	return hd.tracker.nonce(address)
 }
@@ -95,14 +109,6 @@ func (hd *HDWallet) BurnNonce(address common.Address, nonce uint64) {
 
 func (hd *HDWallet) ReleaseNonce(address common.Address, nonce uint64) {
 	hd.tracker.releaseNonce(address, nonce)
-}
-
-func (hd *HDWallet) Account(index uint64) (accounts.Account, error) {
-	return hd.getAccount(index)
-}
-
-func (hd *HDWallet) AccountByAddress(address common.Address) (accounts.Account, error) {
-	return hd.getAccountByAddress(address)
 }
 
 func (hd *HDWallet) getAccount(index uint64) (accounts.Account, error) {
@@ -126,8 +132,8 @@ func (hd *HDWallet) getAccountByAddress(address common.Address) (accounts.Accoun
 	return accounts.Account{}, errors.Wrap(errors.ErrNotFound)
 }
 
-func (hd *HDWallet) AllAddresses() ([]common.Address, error) {
-	acc := hd.w.Accounts()
+func (hd *HDWallet) AllAddresses(count uint64) ([]common.Address, error) {
+	acc := hd.w.Accounts()[:count]
 	addresses := []common.Address{}
 	for _, a := range acc {
 		addresses = append(addresses, a.Address)
@@ -136,13 +142,14 @@ func (hd *HDWallet) AllAddresses() ([]common.Address, error) {
 	return addresses, nil
 }
 
-func (hd *HDWallet) AllAccounts() ([]accounts.Account, error) {
-	return hd.w.Accounts(), nil
+func (hd *HDWallet) AllAccounts(count uint64) ([]accounts.Account, error) {
+	return hd.w.Accounts()[:count], nil
 }
 
-func (hd *HDWallet) Address(index uint64) (common.Address, error) {
-	return hd.getAddress(index)
+func (hd *HDWallet) Len() int {
+	return len(hd.w.Accounts())
 }
+
 func (hd *HDWallet) getAddress(index uint64) (common.Address, error) {
 	acc, err := hd.getAccount(index)
 	if err != nil {
@@ -151,15 +158,10 @@ func (hd *HDWallet) getAddress(index uint64) (common.Address, error) {
 	return acc.Address, nil
 }
 
-func (hd *HDWallet) RandAddress() (common.Address, error) {
-	count := len(hd.w.Accounts())
-	if count == 0 {
-		return common.Address{}, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("address not found"))
-	}
-
+func (hd *HDWallet) RandAddress(count uint64) (common.Address, error) {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	return hd.getAddress(uint64(r.Intn(count)))
+	return hd.getAddress(uint64(r.Intn(int(count))))
 }
 
 func (hd *HDWallet) PrivateKey(address common.Address) (*ecdsa.PrivateKey, error) {

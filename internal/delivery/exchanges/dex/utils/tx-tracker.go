@@ -23,7 +23,7 @@ const (
 var ErrTxNotFound = "not found"
 
 type TtFeed struct {
-	P        *ts.Provider
+	P        *ts.EthProvider
 	TxHash   common.Hash
 	Receiver *common.Address
 	NeedTx   bool
