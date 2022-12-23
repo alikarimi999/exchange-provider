@@ -3,7 +3,7 @@ package multichain
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
-	"sync"
+	"fmt"
 )
 
 func (*Multichain) Type() entity.ExType {
@@ -12,7 +12,9 @@ func (*Multichain) Type() entity.ExType {
 
 func (*Multichain) Stop() {}
 
-func (*Multichain) Run(wg *sync.WaitGroup) {}
+func (m *Multichain) Run() {
+	m.l.Debug(fmt.Sprintf("%s.Run", m.Id()), "started")
+}
 
 func (m *Multichain) Configs() interface{} {
 	return m.cfg

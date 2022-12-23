@@ -11,7 +11,6 @@ import (
 type Token struct {
 	TokenId             string  `json:"tokenId"`
 	ChainId             string  `json:"chainId"`
-	Standard            string  `json:"standard,omitempty"`
 	ContractAddress     string  `json:"contract_address,omitempty"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
@@ -36,13 +35,11 @@ func (p *kuPair) Map() *kdto.Pair {
 		T1: &kdto.Token{
 			TokenId:             p.T1.TokenId,
 			ChainId:             p.T1.ChainId,
-			Standard:            p.T1.Standard,
 			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
 		T2: &kdto.Token{
 			TokenId:             p.T2.TokenId,
 			ChainId:             p.T2.ChainId,
-			Standard:            p.T2.Standard,
 			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},
 	}
@@ -102,9 +99,8 @@ type AdminPair struct {
 func PairDTO(p *entity.Pair) *AdminPair {
 	ap := &AdminPair{
 		T1: &Token{
-			TokenId:  p.T1.TokenId,
-			ChainId:  p.T1.ChainId,
-			Standard: p.T1.Standard,
+			TokenId: p.T1.TokenId,
+			ChainId: p.T1.ChainId,
 
 			ContractAddress:     p.T1.ContractAddress,
 			Address:             p.T1.Address,
@@ -118,9 +114,8 @@ func PairDTO(p *entity.Pair) *AdminPair {
 			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
 		T2: &Token{
-			TokenId:  p.T2.TokenId,
-			ChainId:  p.T2.ChainId,
-			Standard: p.T2.Standard,
+			TokenId: p.T2.TokenId,
+			ChainId: p.T2.ChainId,
 
 			ContractAddress:     p.T2.ContractAddress,
 			Address:             p.T2.Address,

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
@@ -26,15 +25,12 @@ func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
 		l:     k.l,
 		t:     time.NewTicker(time.Second * 5),
 		c:     c,
-		wSize: time.Minute * 60,
+		wSize: time.Hour * 2,
 	}
 }
 
-func (a *depositAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
+func (a *depositAggregator) run(stopCh chan struct{}) {
 	agent := fmt.Sprintf("%s.depositAggregator.run", a.k.Id())
-
-	defer wg.Done()
-
 	for {
 		select {
 		case <-a.t.C:
@@ -71,6 +67,7 @@ func (a *depositAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
 			return
 		}
 	}
+
 }
 
 func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*depositeRecord, error) {

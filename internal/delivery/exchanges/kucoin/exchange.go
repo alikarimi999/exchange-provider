@@ -28,12 +28,14 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 		return "", err
 	}
 
-	var side, size, funds string
+	var side, size, funds, amount string
 	if p.BC.TokenId == in.TokenId && string(p.QC.ChainId) == in.ChainId {
 		size = o.Swaps[index].InAmount
+		amount = size
 		side = "sell"
 	} else {
 		funds = o.Swaps[index].InAmount
+		amount = funds
 		side = "buy"
 	}
 
@@ -42,18 +44,13 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	res, err := k.api.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", req.Funds)
+	res, err := k.api.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", amount)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
-	switch req.Side {
-	case "buy":
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
-			req.Funds, in.TokenId))
-	case "sell":
-		k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
-			req.Size, in.TokenId))
-	}
+
+	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
+		amount, in.TokenId))
 
 	// create order, after transfer is done
 	res, err = k.api.CreateOrder(req)
@@ -153,7 +150,7 @@ func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
 		pCh:       proccessed,
 	}
 
-	k.dt.fCh <- f
+	k.dt.track(f)
 }
 
 func (k *kucoinExchange) GetAddress(c *entity.Token) (*entity.Address, error) {

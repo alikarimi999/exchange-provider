@@ -10,9 +10,8 @@ import (
 )
 
 type kuToken struct {
-	TokenId  string   `json:"tokenId"`
-	ChainId  chainId  `json:"chainId"`
-	Standard standard `json:"standard"`
+	TokenId string  `json:"tokenId"`
+	ChainId chainId `json:"chainId"`
 
 	address string
 	tag     string
@@ -40,7 +39,6 @@ func (k *kuToken) snapshot() *kuToken {
 	return &kuToken{
 		TokenId:             k.TokenId,
 		ChainId:             k.ChainId,
-		Standard:            k.Standard,
 		address:             k.address,
 		tag:                 k.tag,
 		BlockTime:           k.BlockTime,
@@ -59,9 +57,8 @@ func (k *kuToken) toEntityCoin() *entity.PairCoin {
 	return &entity.PairCoin{
 
 		Token: &entity.Token{
-			TokenId:  k.TokenId,
-			ChainId:  string(k.ChainId),
-			Standard: string(k.Standard),
+			TokenId: k.TokenId,
+			ChainId: string(k.ChainId),
 		},
 		Address:             k.address,
 		Tag:                 k.tag,
@@ -104,14 +101,12 @@ func fromDto(p *dto.Pair) *pair {
 		BC: &kuToken{
 			TokenId:             p.T1.TokenId,
 			ChainId:             chainId(p.T1.ChainId),
-			Standard:            standard(p.T1.Standard),
 			BlockTime:           p.T1.BlockTime,
 			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
 		QC: &kuToken{
 			TokenId:             p.T2.TokenId,
 			ChainId:             chainId(p.T2.ChainId),
-			Standard:            standard(p.T2.Standard),
 			BlockTime:           p.T2.BlockTime,
 			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},

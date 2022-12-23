@@ -6,9 +6,8 @@ import (
 )
 
 type Token struct {
-	TokenId  string
-	ChainId  string
-	Standard string
+	TokenId string
+	ChainId string
 }
 
 func (c *Token) String() string {

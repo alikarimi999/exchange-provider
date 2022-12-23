@@ -6,7 +6,6 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strings"
-	"time"
 )
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
@@ -20,44 +19,6 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 	cs := map[string]*kuToken{}
 	ps := []*pair{}
 	for _, p := range req.Pairs {
-		s1, ok := k.cfg.Chains[chainId(p.T1.ChainId)]
-		if !ok {
-			if p.T1.Standard == "" || p.T1.BlockTime == 0 {
-				res.Failed = append(res.Failed, &entity.PairsErr{
-					Pair: p.String(),
-					Err:  fmt.Errorf("set 'standard' and 'block_time' for %s", p.T1.String()),
-				})
-				continue
-			}
-			k.cfg.Chains[chainId(p.T1.ChainId)] = struct {
-				standard
-				time.Duration
-			}{standard(p.T1.Standard), p.T1.BlockTime}
-		} else if s1.standard != standard(p.T1.Standard) {
-			p.T1.Standard = string(s1.standard)
-		} else if s1.Duration != p.T1.BlockTime {
-			p.T1.BlockTime = s1.Duration
-		}
-
-		s2, ok := k.cfg.Chains[chainId(p.T2.ChainId)]
-		if !ok {
-			if p.T2.Standard == "" || p.T2.BlockTime == 0 {
-				res.Failed = append(res.Failed, &entity.PairsErr{
-					Pair: p.String(),
-					Err:  fmt.Errorf("set 'standard' and 'block_time' for %s", p.T2.String()),
-				})
-				continue
-			}
-			k.cfg.Chains[chainId(p.T2.ChainId)] = struct {
-				standard
-				time.Duration
-			}{standard(p.T2.Standard), p.T2.BlockTime}
-		} else if s2.standard != standard(p.T2.Standard) {
-			p.T2.Standard = string(s2.standard)
-		} else if s2.Duration != p.T2.BlockTime {
-			p.T2.BlockTime = s2.Duration
-		}
-
 		ps = append(ps, fromDto(p))
 	}
 

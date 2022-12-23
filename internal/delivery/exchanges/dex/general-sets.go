@@ -31,12 +31,11 @@ func (u *dex) checkProviders() error {
 	}
 
 	u.cfg.ChainId = chainId.Uint64()
-	u.cfg.chainId = strconv.Itoa(int(u.cfg.ChainId))
 	return nil
 }
 
 func (u *dex) setupWallet() error {
-	w, err := u.ws.AddWallet(u.cfg.Mnemonic, u.cfg.chainId, u.provider().URL, u.cfg.AccountCount)
+	w, err := u.ws.AddWallet(u.cfg.Mnemonic, strconv.Itoa(int(u.cfg.ChainId)), u.provider().URL, u.cfg.AccountCount)
 	if err != nil {
 		return err
 	}

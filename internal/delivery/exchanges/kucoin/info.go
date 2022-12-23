@@ -62,7 +62,7 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == string(p.BC.Standard) {
+		if c.ChainName == string(p.BC.ChainId) {
 			p.BC.ConfirmBlocks = c.Confirms
 			p.BC.minWithdrawalSize = c.WithdrawalMinSize
 			p.BC.minWithdrawalFee = c.WithdrawalMinFee
@@ -77,7 +77,7 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			p.BC.TokenId, p.BC.Standard, p.BC.TokenId, ch)))
+			p.BC.TokenId, p.BC.ChainId, p.BC.TokenId, ch)))
 }
 
 func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
@@ -93,7 +93,7 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == string(p.QC.Standard) {
+		if c.ChainName == string(p.QC.ChainId) {
 			p.QC.ConfirmBlocks = c.Confirms
 			p.QC.minWithdrawalSize = c.WithdrawalMinSize
 			p.QC.minWithdrawalFee = c.WithdrawalMinFee
@@ -108,7 +108,7 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			p.QC.TokenId, p.QC.Standard, p.QC.TokenId, ch)))
+			p.QC.TokenId, p.QC.ChainId, p.QC.TokenId, ch)))
 }
 
 func (k *kucoinExchange) setAddress(pc *kuToken) error {
@@ -117,7 +117,7 @@ func (k *kucoinExchange) setAddress(pc *kuToken) error {
 	var chain string
 	if pc.needChain {
 		coin = pc.TokenId
-		chain = string(pc.Standard)
+		chain = string(pc.ChainId)
 	} else {
 		coin = pc.TokenId
 		chain = ""

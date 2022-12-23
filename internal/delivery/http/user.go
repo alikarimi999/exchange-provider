@@ -14,7 +14,7 @@ func (o *Router) userRoutes() {
 
 		u.POST("/create", Limiter(o.col), o.auth.CheckAccess("orders", "write", o.l),
 			func(ctx *gin.Context) {
-				o.srv.NewUserOrder(newContext(ctx))
+				o.srv.NewOrder(newContext(ctx))
 			})
 
 		u.POST("/set_tx_id", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "write", o.l),

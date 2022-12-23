@@ -12,11 +12,11 @@ import (
 )
 
 type Config struct {
-	Name        string
-	ChainId     uint64
-	chainId     string
-	Network     string
-	NativeToken string
+	Name          string
+	ChainId       uint64
+	TokenStandard string
+	Network       string
+	NativeToken   string
 	// TokenStandard string
 
 	Providers []*ts.EthProvider
@@ -36,7 +36,10 @@ func (cfg *Config) Validate(readConfig bool) error {
 
 	if !readConfig {
 		if cfg.NativeToken == "" {
-			return errors.New("native-token cannot be empty")
+			return errors.New("native_token cannot be empty")
+		}
+		if cfg.TokenStandard == "" {
+			return errors.New("token_standard cannot be empty")
 		}
 		if cfg.Factory == common.BytesToAddress([]byte{0}) {
 			return errors.New("factory address cannot be empty")

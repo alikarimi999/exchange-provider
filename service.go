@@ -13,7 +13,6 @@ import (
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
@@ -88,19 +87,14 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	wg := &sync.WaitGroup{}
-
 	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, s.Oc, ss.FeeService, l)
-	wg.Add(1)
-	go ou.Run(wg)
+
+	go ou.Run()
 
 	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
-
-	wg.Wait()
-
 }
 
 func test() {
@@ -164,19 +158,14 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	wg := &sync.WaitGroup{}
-
 	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, s.Oc, ss.FeeService, l)
-	wg.Add(1)
-	go ou.Run(wg)
+
+	go ou.Run()
 
 	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
-
-	wg.Wait()
-
 }
 
 func getPrivateKey(v *viper.Viper) (*rsa.PrivateKey, error) {

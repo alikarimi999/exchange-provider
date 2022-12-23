@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"fmt"
-	"sync"
 
 	"exchange-provider/pkg/errors"
 )
@@ -37,10 +36,9 @@ func newWithdrawalTracker(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.Or
 	return w
 }
 
-func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
+func (t *withdrawalTracker) run() {
 	const op = errors.Op("Withdrawal-Tracker.run")
 	const agent = "WithdrawalTracker"
-	defer wg.Done()
 
 	for wd := range t.wCh {
 		go func(oId int64) {
@@ -61,7 +59,6 @@ func (t *withdrawalTracker) run(wg *sync.WaitGroup) {
 			done := make(chan struct{})
 			pCh := make(chan bool)
 
-			t.l.Debug(agent, fmt.Sprintf("order %d", oId))
 			go ex.TrackWithdrawal(o, done, pCh)
 
 			<-done

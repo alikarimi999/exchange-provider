@@ -10,14 +10,13 @@ type Swap struct {
 	Status  string `json:"status"`
 	TxId    string `json:"tx_id"`
 
-	Index  int    `json:"index"`
-	Input  string `json:"input"`
-	Output string `json:"output"`
+	Exchange string `json:"exchange"`
+	Input    string `json:"input"`
+	Output   string `json:"output"`
 
 	InAmount  string `json:"inAmount"`
 	OutAmount string `json:"outAmount"`
 
-	FilledPrice     string `json:"filled_price"`
 	Fee             string `json:"fee"`
 	FeeCurrency     string `json:"fee_currency"`
 	entity.MetaData `json:"meta_data,omitempty"`
@@ -29,6 +28,7 @@ func swapFromEntity(e *entity.Swap, r *entity.Route) *Swap {
 		OrderId: e.OrderId,
 		TxId:    e.TxId,
 
+		Exchange: r.Exchange,
 		Input:    r.In.String(),
 		InAmount: e.InAmount,
 

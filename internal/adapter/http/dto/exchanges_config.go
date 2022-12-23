@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	Id          string `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	ChianId     uint64 `json:"chian_id,omitempty"`
-	Network     string `json:"network,omitempty"`
-	NativeToken string `json:"native_token,omitempty"`
+	Id            string `json:"id,omitempty"`
+	Name          string `json:"name,omitempty"`
+	ChianId       uint64 `json:"chian_id,omitempty"`
+	Network       string `json:"network,omitempty"`
+	NativeToken   string `json:"native_token,omitempty"`
+	TokenStandard string `json:"token_standard,omitempty"`
 
 	Factory string `json:"factory,omitempty"`
 	Router  string `json:"router,omitempty"`
@@ -27,15 +28,16 @@ type Config struct {
 	BlockTime     string `json:"block_time,omitempty"`
 	ConfirmBlocks uint64 `json:"confirm_blocks,omitempty"`
 	TokensFile    string `json:"tokens_file,omitempty"`
-	Msg           string `json:"msg,omitempty"`
+	Msg           string `json:"message,omitempty"`
 }
 
 func (cfg *Config) Map() (*dex.Config, error) {
 	c := &dex.Config{
-		Name:        cfg.Name,
-		ChainId:     cfg.ChianId,
-		Network:     cfg.Network,
-		NativeToken: cfg.NativeToken,
+		Name:          cfg.Name,
+		ChainId:       cfg.ChianId,
+		Network:       cfg.Network,
+		NativeToken:   cfg.NativeToken,
+		TokenStandard: cfg.TokenStandard,
 
 		Factory: common.HexToAddress(cfg.Factory),
 		Router:  common.HexToAddress(cfg.Router),

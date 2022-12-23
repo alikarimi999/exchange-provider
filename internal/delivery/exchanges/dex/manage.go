@@ -10,9 +10,8 @@ import (
 	"time"
 )
 
-func (u *dex) Run(wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (u *dex) Run() {
+	u.l.Debug(fmt.Sprintf("%s.Run", u.Id()), "started")
 }
 
 func (u *dex) Name() string {
@@ -55,7 +54,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 				return
 			}
 
-			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.chainId))
+			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard))
 		}(p)
 	}
 
@@ -64,7 +63,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 }
 
 func (u *dex) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
-	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
+	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
 	}
 
@@ -77,11 +76,11 @@ func (u *dex) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ToEntity(u.cfg.NativeToken, u.cfg.chainId), nil
+	return p.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard), nil
 }
 
 func (u *dex) Support(bc, qc *entity.Token) bool {
-	if bc.ChainId != u.cfg.chainId || qc.ChainId != u.cfg.chainId {
+	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return false
 	}
 	_, err := u.pairs.get(bc.TokenId, qc.TokenId)
@@ -89,7 +88,7 @@ func (u *dex) Support(bc, qc *entity.Token) bool {
 }
 
 func (u *dex) RemovePair(t1, t2 *entity.Token) error {
-	if t1.ChainId != u.cfg.chainId || t2.ChainId != u.cfg.chainId {
+	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 

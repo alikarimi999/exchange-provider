@@ -50,7 +50,7 @@ func (u *dex) TrackWithdrawal(o *entity.Order, done chan<- struct{},
 		unwrapFee, _ := numbers.StringToBigFloat(w.Fee)
 
 		w.Fee = new(big.Float).Add(fee, unwrapFee).Text('f', utils.EthDecimals)
-		w.FeeCurrency = u.cfg.NativeToken + "-" + u.cfg.chainId
+		w.FeeCurrency = u.cfg.NativeToken + "-" + u.cfg.TokenStandard
 		w.Status = entity.WithdrawalSucceed
 		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			w.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))

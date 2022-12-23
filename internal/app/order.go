@@ -3,7 +3,6 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"sync"
 
 	"exchange-provider/pkg/errors"
 
@@ -16,9 +15,9 @@ type OrderUseCase struct {
 	pc    entity.PairConfigs
 	rc    *redis.Client
 	oh    *orderHandler
-	dh    *depositHandler
-	wh    *withdrawalHandler
-	fs    entity.FeeService
+
+	wh *withdrawalHandler
+	fs entity.FeeService
 
 	WalletStore
 	exs *exStore
@@ -40,32 +39,21 @@ func NewOrderUseCase(rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRep
 	}
 
 	o.oh = newOrderHandler(o, repo, oc, pc, oc, fee, o.exs, l)
-	o.dh = newDepositHandler(o)
 	o.wh = newWithdrawalHandler(o, repo, oc, oc, o.exs, l)
 	return o
 }
 
-func (o *OrderUseCase) Run(wg *sync.WaitGroup) {
+func (o *OrderUseCase) Run() {
 	const agent = "Order-UseCase"
-	defer wg.Done()
-	w := &sync.WaitGroup{}
-	w.Add(1)
-	go o.oh.run(w)
-	w.Add(1)
-	go o.wh.handle(w)
 
-	wg.Add(1)
-	go o.dh.handle(wg)
-	wg.Add(1)
-	go o.wh.tracker.run(wg)
-
+	go o.wh.handle()
+	go o.wh.tracker.run()
 	o.l.Debug(agent, "started")
-
-	w.Wait()
-
 }
 
-func (u *OrderUseCase) NewOrder(userId int64, wa *entity.Address, routes map[int]*entity.Route) (*entity.Order, error) {
+func (u *OrderUseCase) NewOrder(userId int64, wa *entity.Address,
+	routes map[int]*entity.Route) (*entity.Order, error) {
+
 	const op = errors.Op("Order-Usecase.NewUserOrder")
 
 	ex, err := u.GetExchange(routes[0].Exchange)

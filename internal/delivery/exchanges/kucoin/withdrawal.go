@@ -13,11 +13,6 @@ func (k *kucoinExchange) Withdrawal(o *entity.Order) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.Id()))
 
 	c := o.Withdrawal.Token
-	t, err := k.supportedCoins.get(c.TokenId, c.ChainId)
-	if err != nil {
-		return "", err
-	}
-	c.Standard = string(t.Standard)
 
 	opts, err := k.withdrawalOpts(c, o.Withdrawal.Tag)
 	if err != nil {

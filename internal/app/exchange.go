@@ -37,7 +37,7 @@ func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Token) (entity.Excha
 	}
 
 	if len(exs) == 0 {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("no exchange support %s/%s", in.String(), out.String())))
+		return nil, fmt.Errorf("no exchange support %s/%s", in.String(), out.String())
 	}
 
 	// pick one randomly

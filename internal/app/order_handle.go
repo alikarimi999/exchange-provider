@@ -3,7 +3,6 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"sync"
 
 	"exchange-provider/pkg/errors"
 )
@@ -16,7 +15,7 @@ type orderHandler struct {
 	oc  entity.OrderCache
 	wc  entity.WithdrawalCache
 	*exStore
-	oCh chan *entity.Order
+
 	fee entity.FeeService
 
 	l logger.Logger
@@ -32,7 +31,6 @@ func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCa
 		wc:      wc,
 		exStore: exs,
 
-		oCh: make(chan *entity.Order, 1024),
 		fee: fee,
 
 		l: l,
@@ -40,127 +38,144 @@ func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCa
 	return oh
 }
 
-func (o *orderHandler) run(wg *sync.WaitGroup) {
-	defer wg.Done()
-	const op = errors.Op("User-Order-Handler.run")
+func (h *orderHandler) handle(o *entity.Order) {
+	const op = errors.Op("User-Order-Handler.handle")
 
-	for order := range o.oCh {
+	ex, err := h.exStore.get(o.Routes[0].Exchange)
+	if err != nil {
+		o.Deposit.FailedDesc = err.Error()
+		h.ouc.write(o.Deposit)
+		return
+	}
 
-		go func(ord *entity.Order) {
+	done := make(chan struct{})
+	pCh := make(chan bool)
+	go ex.TrackDeposit(o, done, pCh)
 
-			for i, route := range ord.SortedRoutes() {
-				ex, err := o.exStore.get(route.Exchange)
-				if err != nil {
-					o.l.Error(string(op), err.Error())
-					return
+	<-done
+	if err := h.ouc.write(o.Deposit); err != nil {
+		h.l.Error(string(op), err.Error())
+		pCh <- false
+		return
+	}
+	pCh <- true
+	if o.Deposit.Status != entity.DepositConfirmed {
+		o.FailedCode = entity.FCDepositFailed
+		if err := h.ouc.write(o); err != nil {
+			h.l.Error(string(op), err.Error())
+		}
+		return
+	}
+
+	if err := h.ouc.write(o); err != nil {
+		h.l.Error(string(op), err.Error())
+		return
+	}
+
+	for i, route := range o.SortedRoutes() {
+		ex, err := h.exStore.get(route.Exchange)
+		if err != nil {
+			h.l.Error(string(op), err.Error())
+			return
+		}
+
+		if i == 0 {
+			o.Swaps[i].InAmount = o.Deposit.Volume
+		} else {
+			o.Swaps[i].InAmount = o.Swaps[i-1].OutAmount
+		}
+
+		id, err := ex.Exchange(o, i)
+		if err != nil {
+			o.Status = entity.OSFailed
+			o.FailedCode = entity.FCExOrdFailed
+			o.FailedDesc = err.Error()
+			h.l.Error(string(op), err.Error())
+			if err := h.ouc.write(o); err != nil {
+				h.l.Error(string(op), err.Error())
+
+			}
+			return
+		}
+
+		o.Swaps[i].TxId = id
+		o.Status = entity.OSWaitForSwapConfirm
+		if err = h.ouc.write(o); err != nil {
+			h.l.Error(string(op), err.Error())
+			return
+		}
+
+		done := make(chan struct{})
+		pCh := make(chan bool)
+
+		go ex.TrackExchangeOrder(o, i, done, pCh)
+		<-done
+
+		switch o.Swaps[i].Status {
+		case entity.SwapSucceed:
+			if i == (len(o.Routes) - 1) {
+				o.Status = entity.OSSwapConfirmed
+			}
+
+			if err = h.ouc.write(o); err != nil {
+				h.l.Error(string(op), err.Error())
+				pCh <- false
+				return
+			}
+			pCh <- true
+
+			if i < (len(o.Routes) - 1) {
+				continue
+			}
+
+			if err := h.applySpreadAndFee(o, route); err != nil {
+				h.l.Error(string(op), err.Error())
+				if err := h.ouc.write(o); err != nil {
+					h.l.Error(string(op), err.Error())
 				}
+				return
+			}
 
-				if i == 0 {
-					ord.Swaps[i].InAmount = ord.Deposit.Volume
-				} else {
-					ord.Swaps[i].InAmount = ord.Swaps[i-1].OutAmount
+			id, err = ex.Withdrawal(o)
+			if err != nil {
+				o.Status = entity.OSFailed
+				o.FailedCode = entity.FCInternalError
+				o.FailedDesc = err.Error()
+
+				h.l.Error(string(op), err.Error())
+
+				if err := h.ouc.write(o); err != nil {
+					h.l.Error(string(op), err.Error())
 				}
-
-				id, err := ex.Exchange(ord, i)
-				if err != nil {
-					ord.Status = entity.OSFailed
-					ord.FailedCode = entity.FCExOrdFailed
-					ord.FailedDesc = err.Error()
-					o.l.Error(string(op), err.Error())
-					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), err.Error())
-
-					}
-					return
-				}
-
-				ord.Swaps[i].TxId = id
-				ord.Status = entity.OSWaitForSwapConfirm
-				if err = o.ouc.write(ord); err != nil {
-					o.l.Error(string(op), err.Error())
-					return
-				}
-
-				done := make(chan struct{})
-				pCh := make(chan bool)
-
-				go ex.TrackExchangeOrder(ord, i, done, pCh)
-				<-done
-
-				switch ord.Swaps[i].Status {
-				case entity.SwapSucceed:
-					if i == (len(ord.Routes) - 1) {
-						ord.Status = entity.OSSwapConfirmed
-					}
-
-					if err = o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), err.Error())
-						pCh <- false
-						return
-					}
-					pCh <- true
-
-					if i < (len(ord.Routes) - 1) {
-						continue
-					}
-
-					if err := o.applySpreadAndFee(ord, route); err != nil {
-						o.l.Error(string(op), err.Error())
-						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), err.Error())
-						}
-						return
-					}
-
-					id, err = ex.Withdrawal(ord)
-					if err != nil {
-						ord.Status = entity.OSFailed
-						ord.FailedCode = entity.FCInternalError
-						ord.FailedDesc = err.Error()
-
-						o.l.Error(string(op), err.Error())
-
-						if err := o.ouc.write(ord); err != nil {
-							o.l.Error(string(op), err.Error())
-						}
-						return
-
-					}
-
-					ord.Withdrawal.TxId = id
-					ord.Withdrawal.Status = entity.WithdrawalPending
-					ord.Status = entity.OSWaitForWithdrawalConfirm
-
-					if err = o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), err.Error())
-						return
-					}
-
-					if err := o.wc.AddPendingWithdrawal(ord.Id); err != nil {
-						o.l.Error(string(op), err.Error())
-					}
-					return
-
-				case entity.SwapFailed:
-					ord.Status = entity.OSFailed
-					ord.FailedCode = entity.FCExOrdFailed
-					if err := o.ouc.write(ord); err != nil {
-						o.l.Error(string(op), err.Error())
-						pCh <- false
-						return
-					}
-					pCh <- true
-					return
-				}
+				return
 
 			}
 
-		}(order)
+			o.Withdrawal.TxId = id
+			o.Withdrawal.Status = entity.WithdrawalPending
+			o.Status = entity.OSWaitForWithdrawalConfirm
+
+			if err = h.ouc.write(o); err != nil {
+				h.l.Error(string(op), err.Error())
+				return
+			}
+
+			if err := h.wc.AddPendingWithdrawal(o.Id); err != nil {
+				h.l.Error(string(op), err.Error())
+			}
+			return
+
+		case entity.SwapFailed:
+			o.Status = entity.OSFailed
+			o.FailedCode = entity.FCExOrdFailed
+			if err := h.ouc.write(o); err != nil {
+				h.l.Error(string(op), err.Error())
+				pCh <- false
+				return
+			}
+			pCh <- true
+			return
+		}
 
 	}
-
-}
-
-func (h *orderHandler) handle(o *entity.Order) {
-	h.oCh <- o
 }

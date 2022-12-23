@@ -43,52 +43,57 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 
 }
 
-func (s *Server) NewUserOrder(ctx Context) {
+func (s *Server) NewOrder(ctx Context) {
 
 	userId, _ := ctx.GetKey("user_id")
-	req := dto.CreateOrderRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+	req := &dto.CreateOrderRequest{}
+	if err := ctx.Bind(req); err != nil {
+		ctx.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
+	rsp := &dto.CreateOrderResponse{}
+
 	if err := req.Validate(); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		rsp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, rsp)
 		return
 	}
 
 	in, err := dto.ParseToken(req.In)
 	if err != nil {
-		handlerErr(ctx, err)
+		rsp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, rsp)
 		return
 	}
 	out, err := dto.ParseToken(req.Out)
 	if err != nil {
-		handlerErr(ctx, err)
+		rsp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, rsp)
 		return
 	}
 
-	md, _ := s.app.GetMinPairDeposit(in.String(), out.String())
-
 	routes, err := s.routing(in, out)
 	if err != nil {
-		handlerErr(ctx, err)
+		rsp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, rsp)
 		return
 	}
 
 	o, err := s.app.NewOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, routes)
 	if err != nil {
-		handlerErr(ctx, err)
+		rsp.Msg = err.Error()
+		ctx.JSON(http.StatusOK, rsp)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &dto.CreateOrderResponse{
-		OrderId:         o.Id,
-		DC:              in.String(),
-		MinDeposit:      md,
-		DepositeAddress: o.Deposit.Addr,
-		AddressTag:      o.Deposit.Tag,
-	})
+	rsp.MinDeposit, _ = s.app.GetMinPairDeposit(in.String(), out.String())
+	rsp.OrderId = o.Id
+	rsp.DC = in.String()
+	rsp.DepositeAddress = o.Deposit.Addr
+	rsp.AddressTag = o.Deposit.Tag
+
+	ctx.JSON(http.StatusOK, rsp)
 }
 
 func (s *Server) GetPaginatedForUser(ctx Context) {

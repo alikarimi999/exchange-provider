@@ -22,34 +22,37 @@ func (s *Server) AddExchange(ctx Context) {
 		}
 		ex, err := kucoin.NewKucoinExchange(cfg, s.rc, s.v, s.l, false)
 		if err != nil {
-			handlerErr(ctx, err)
+			cfg.Message = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
 		if err := s.app.AddExchange(ex); err != nil {
-			handlerErr(ctx, err)
+			cfg.Message = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
-		ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s added", ex.Id()))
+		cfg.Message = "kucoin exchange added successfully"
+		ctx.JSON(http.StatusOK, cfg)
 		return
 
 	case "dex":
-
 		cfg := &dto.Config{}
-
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
 
 		if len(cfg.Providers) == 0 {
-			ctx.JSON(http.StatusBadRequest, "at least one provider must be specified")
+			cfg.Msg = "at least one provider must be specified"
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
 		conf, err := cfg.Map()
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			cfg.Msg = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
@@ -81,24 +84,27 @@ func (s *Server) AddExchange(ctx Context) {
 		}
 
 		if err := cfg.Validate(); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			cfg.Msg = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
 		ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
 		if err != nil {
-			ctx.JSON(200, err.Error())
+			cfg.Msg = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
 		cfg.Name = "multichain"
 		if err := s.app.AddExchange(ex); err != nil {
-			ctx.JSON(200, err.Error())
+			cfg.Msg = err.Error()
+			ctx.JSON(http.StatusOK, cfg)
 			return
 		}
 
 		cfg.Msg = "exchange added"
-		ctx.JSON(200, cfg)
+		ctx.JSON(http.StatusOK, cfg)
 		return
 	default:
 		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))

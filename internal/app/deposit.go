@@ -38,7 +38,6 @@ func (o *OrderUseCase) SetTxId(Id int64, txId string) error {
 		return err
 	}
 
-	o.dh.ch <- ord
-
+	go o.oh.handle(ord)
 	return nil
 }

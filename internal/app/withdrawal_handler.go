@@ -34,10 +34,9 @@ func newWithdrawalHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.Or
 	return w
 }
 
-func (wh *withdrawalHandler) handle(wg *sync.WaitGroup) {
+func (wh *withdrawalHandler) handle() {
 	const op = errors.Op("chainTicker.tick")
 
-	defer wg.Done()
 	for t := range wh.ticker.C {
 		ws, err := wh.cache.GetPendingWithdrawals(t.Add(-wh.windowsSize))
 		if err != nil {

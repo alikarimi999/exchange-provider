@@ -68,7 +68,7 @@ func (u *dex) Withdrawal(o *entity.Order) (string, error) {
 			case utils.TxSuccess:
 				o.Withdrawal.Unwrapped = true
 				o.Withdrawal.Fee = utils.TxFee(tf.Tx.GasPrice(), tf.Receipt.GasUsed)
-				o.Withdrawal.FeeCurrency = u.cfg.NativeToken + "-" + u.cfg.chainId
+				o.Withdrawal.FeeCurrency = u.cfg.NativeToken + "-" + u.cfg.TokenStandard
 				u.l.Debug(agent, fmt.Sprintf("order: `%d`, unwrap-tx: `%s`, confirm: `%d/%d`",
 					o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 			}

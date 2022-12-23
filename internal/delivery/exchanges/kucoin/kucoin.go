@@ -21,11 +21,7 @@ type Configs struct {
 	ApiPassphrase string `json:"api_passphrase"`
 	ApiVersion    string
 	ApiUrl        string
-	Chains        map[chainId]struct {
-		standard
-		time.Duration
-	}
-	// WsTopics      []string
+	Message       string
 }
 
 // kucoinExchange is a concrete implementation of entity.Exchange interface.
@@ -109,43 +105,23 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 				pc := &pair{}
 				if p["bc"] != nil && p["qc"] != nil {
 					pc.BC = &kuToken{
-						TokenId:  p["bc"].(map[string]interface{})["tokenid"].(string),
-						ChainId:  chainId(p["bc"].(map[string]interface{})["chainid"].(string)),
-						Standard: standard((p["bc"].(map[string]interface{})["standard"].(string))),
+						TokenId: p["bc"].(map[string]interface{})["tokenid"].(string),
+						ChainId: chainId(p["bc"].(map[string]interface{})["chainid"].(string)),
 
 						BlockTime:           time.Duration(p["bc"].(map[string]interface{})["block_time"].(float64)),
 						ConfirmBlocks:       int64(p["bc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["bc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
 					}
-					if _, ok := k.cfg.Chains[chainId(pc.BC.ChainId)]; !ok {
-						k.cfg.Chains[chainId(pc.BC.ChainId)] = struct {
-							standard
-							time.Duration
-						}{
-							pc.BC.Standard,
-							pc.BC.BlockTime,
-						}
-					}
 
 					pc.QC = &kuToken{
-						TokenId:  p["qc"].(map[string]interface{})["tokenid"].(string),
-						ChainId:  chainId(p["qc"].(map[string]interface{})["chainid"].(string)),
-						Standard: standard((p["qc"].(map[string]interface{})["standard"].(string))),
+						TokenId: p["qc"].(map[string]interface{})["tokenid"].(string),
+						ChainId: chainId(p["qc"].(map[string]interface{})["chainid"].(string)),
 
 						BlockTime:           time.Duration(p["qc"].(map[string]interface{})["block_time"].(float64)),
 						ConfirmBlocks:       int64(p["qc"].(map[string]interface{})["confirm_blocks"].(float64)),
 						WithdrawalPrecision: int(p["qc"].(map[string]interface{})["withdrawal_precision"].(float64)),
 						needChain:           true,
-					}
-					if _, ok := k.cfg.Chains[chainId(pc.QC.ChainId)]; !ok {
-						k.cfg.Chains[chainId(pc.QC.ChainId)] = struct {
-							standard
-							time.Duration
-						}{
-							pc.QC.Standard,
-							pc.QC.BlockTime,
-						}
 					}
 
 					ps[pc.Id()] = pc
@@ -182,28 +158,17 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
-			k.l.Info(string(op), fmt.Sprintf("exchange %s started again successfully", k.Id()))
+			k.l.Info(string(op), fmt.Sprintf("exchange %s started successfully", k.Id()))
 
 		}
 	}
 	return k, nil
 }
 
-func (k *kucoinExchange) Run(wg *sync.WaitGroup) {
-	defer wg.Done()
-	w := &sync.WaitGroup{}
-
-	w.Add(1)
-	go k.wt.run(w, k.stopCh)
-	w.Add(1)
-	go k.da.run(w, k.stopCh)
-	wg.Add(1)
-	go k.dt.run(w, k.stopCh)
-	w.Add(1)
-	go k.wa.run(w, k.stopCh)
-
+func (k *kucoinExchange) Run() {
+	go k.da.run(k.stopCh)
+	go k.wa.run(k.stopCh)
 	k.l.Debug(fmt.Sprintf("%s.Run", k.Id()), "started")
-	w.Wait()
 }
 
 func (k *kucoinExchange) Stop() {

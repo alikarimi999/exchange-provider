@@ -33,6 +33,7 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 
 	for _, ex := range exs {
 		s.exchanges[ex.Id()] = ex
+		ex.Run()
 		l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
 
 	}
@@ -55,6 +56,7 @@ func (a *exStore) add(ex entity.Exchange) error {
 		return err
 	}
 	a.exchanges[ex.Id()] = ex
+	go ex.Run()
 	a.l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
 	return nil
 }
@@ -114,5 +116,5 @@ func (a *exStore) remove(nid string) error {
 		return nil
 	}
 
-	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("exchange %s not found", nid)))
+	return fmt.Errorf("exchange %s not found", nid)
 }

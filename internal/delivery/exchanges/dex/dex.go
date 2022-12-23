@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/app"
 	pv2 "exchange-provider/internal/delivery/exchanges/dex/pancakeswap/v2"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
-	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	uv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 
@@ -79,11 +78,12 @@ func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
 			ex.cfg.AccountCount = uint64(acc)
 		}
 
-		ex.cfg.NativeToken = ex.v.Get(fmt.Sprintf("%s.native_token", ex.Id())).(string)
-		ex.cfg.Factory = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.factory", ex.Id())).(string))
-		ex.cfg.Router = common.HexToAddress(ex.v.Get(fmt.Sprintf("%s.router", ex.Id())).(string))
-		ex.cfg.TokensFile = ex.v.Get(fmt.Sprintf("%s.tokens_file", ex.Id())).(string)
-		ex.cfg.BlockTime = time.Duration(ex.v.Get(fmt.Sprintf("%s.block_time", ex.Id())).(float64))
+		ex.cfg.NativeToken = ex.v.GetString(fmt.Sprintf("%s.native_token", ex.Id()))
+		ex.cfg.TokenStandard = ex.v.GetString(fmt.Sprintf("%s.token_standard", ex.Id()))
+		ex.cfg.Factory = common.HexToAddress(ex.v.GetString(fmt.Sprintf("%s.factory", ex.Id())))
+		ex.cfg.Router = common.HexToAddress(ex.v.GetString(fmt.Sprintf("%s.router", ex.Id())))
+		ex.cfg.TokensFile = ex.v.GetString(fmt.Sprintf("%s.tokens_file", ex.Id()))
+		ex.cfg.BlockTime = time.Duration(ex.v.GetFloat64(fmt.Sprintf("%s.block_time", ex.Id())))
 
 		ex.tt = utils.NewTxTracker(ex.Id(), ex.cfg.BlockTime, ex.confirms, l)
 
@@ -94,7 +94,7 @@ func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
 
 		psi := i.(map[string]interface{})
 		for _, v := range psi {
-			ex.cfg.Providers = append(ex.cfg.Providers, &ts.EthProvider{URL: v.(string)})
+			ex.cfg.Providers = append(ex.cfg.Providers, &types.EthProvider{URL: v.(string)})
 		}
 		ex.am = utils.NewApproveManager(int64(ex.cfg.ChainId), ex.tt, ex.wallet, ex.l, ex.cfg.Providers)
 
@@ -132,6 +132,7 @@ func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
 		ex.v.Set(fmt.Sprintf("%s.factory", ex.Id()), ex.cfg.Factory)
 		ex.v.Set(fmt.Sprintf("%s.router", ex.Id()), ex.cfg.Router)
 		ex.v.Set(fmt.Sprintf("%s.native_token", ex.Id()), ex.cfg.NativeToken)
+		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.Id()), ex.cfg.TokenStandard)
 		ex.v.Set(fmt.Sprintf("%s.account_count", ex.Id()), ex.cfg.AccountCount)
 		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.Id()), ex.cfg.TokensFile)
 		ex.v.Set(fmt.Sprintf("%s.block_time", ex.Id()), ex.cfg.BlockTime)

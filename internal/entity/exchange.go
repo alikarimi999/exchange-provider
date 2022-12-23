@@ -1,9 +1,5 @@
 package entity
 
-import (
-	"sync"
-)
-
 type ExType string
 
 const (
@@ -50,7 +46,7 @@ type ExchangeManager interface {
 
 	Command(Command) (CommandResult, error)
 
-	Run(wg *sync.WaitGroup)
+	Run()
 	Configs() interface{}
 
 	// add pairs to the exchange, if pair exist ignore it

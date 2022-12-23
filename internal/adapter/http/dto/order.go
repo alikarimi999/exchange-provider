@@ -145,6 +145,7 @@ type CreateOrderRequest struct {
 
 	Address string `json:"address"`
 	Tag     string `json:"tag"`
+	Msg     string `json:"message"`
 }
 
 func (r *CreateOrderRequest) Validate() error {
@@ -168,6 +169,7 @@ type CreateOrderResponse struct {
 	MinDeposit      float64 `json:"min_deposit"`
 	DepositeAddress string  `json:"deposit_address"`
 	AddressTag      string  `json:"address_tag"`
+	Msg             string  `json:"message"`
 }
 
 type GetOrderResponse struct {

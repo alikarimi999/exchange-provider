@@ -5,7 +5,6 @@ import (
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"exchange-provider/pkg/errors"
@@ -33,11 +32,10 @@ func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator 
 	}
 }
 
-func (wa *withdrawalAggregator) run(wg *sync.WaitGroup, stopCh chan struct{}) {
+func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.run", wa.k.Id()))
 	wa.l.Debug(string(op), "started")
 
-	defer wg.Done()
 start:
 	for {
 		select {
