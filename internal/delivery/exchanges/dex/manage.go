@@ -41,21 +41,21 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 	agent := u.agent("GetAllPairs")
 
 	ps := u.pairs.getAll()
-	pairs := []*entity.Pair{}
+	pairs := make([]*entity.Pair, len(ps))
 
 	wg := sync.WaitGroup{}
-	for _, p := range ps {
+	for i, p := range ps {
 		wg.Add(1)
-		go func(p types.Pair) {
+		go func(p types.Pair, i int) {
 			defer wg.Done()
 			newPair, err := u.PairWithPrice(p.T1, p.T2)
 			if err != nil {
 				u.l.Error(agent, err.Error())
-				return
+				newPair = &p
 			}
 
-			pairs = append(pairs, newPair.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard))
-		}(p)
+			pairs[i] = newPair.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard)
+		}(p, i)
 	}
 
 	wg.Wait()

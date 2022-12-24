@@ -2,8 +2,10 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"net/http"
+	"sync"
 )
 
 func (s *Server) GetPairsToUser(ctx Context) {
@@ -27,23 +29,36 @@ func (s *Server) GetPairsToUser(ctx Context) {
 	}
 
 	pairs := make(map[string]*dto.UserPair)
+	pmux := &sync.RWMutex{}
+	wg := &sync.WaitGroup{}
+
 	exs := s.app.AllExchanges()
 	lenExs := len(exs)
 	for i, ex := range exs {
 		if len(dps) == 0 {
-			ps := ex.GetAllPairs()
-			for _, p := range ps {
-				// if pair is exist in pairs, skip it
-				if _, ok := pairs[p.String()]; ok {
-					continue
+			wg.Add(1)
+			go func(ex entity.Exchange) {
+				defer wg.Done()
+
+				ps := ex.GetAllPairs()
+				for _, p := range ps {
+					// if pair is exist in pairs, skip it
+					pmux.RLock()
+					if _, ok := pairs[p.String()]; ok {
+						pmux.RUnlock()
+						continue
+					}
+					pmux.RUnlock()
+
+					dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p), ex.Type())
+					dp.FeeRate = s.app.GetUserFee(userId.(int64))
+					dp.MinDepositToken1, dp.MinDepositToken2 = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
+
+					pmux.Lock()
+					pairs[p.String()] = dp
+					pmux.Unlock()
 				}
-
-				dp := dto.EntityPairToUserRequest(s.app.ApplySpread(p), ex.Type())
-				dp.FeeRate = s.app.GetUserFee(userId.(int64))
-				dp.MinDepositToken1, dp.MinDepositToken2 = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
-
-				pairs[p.String()] = dp
-			}
+			}(ex)
 		} else {
 			for _, p := range dps {
 				// if pair is exist in pairs, skip it
@@ -71,6 +86,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 			}
 		}
 	}
+	wg.Wait()
 
 	for _, p := range pairs {
 		resp.Pairs = append(resp.Pairs, p)

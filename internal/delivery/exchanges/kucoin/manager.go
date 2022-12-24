@@ -6,6 +6,7 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
@@ -84,25 +85,28 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 func (k *kucoinExchange) GetAllPairs() []*entity.Pair {
 	agent := fmt.Sprintf("%s.GetAllPairs", k.Id())
 
-	pairs := []*entity.Pair{}
 	ps := k.exchangePairs.snapshot()
-	for _, p := range ps {
-		pe := p.toEntity()
+	pairs := make([]*entity.Pair, len(ps))
+	wg := &sync.WaitGroup{}
+	for i, p := range ps {
+		wg.Add(1)
+		go func(p *pair, i int) {
+			defer wg.Done()
+			pe := p.toEntity()
 
-		price1, price2, err := k.getPrice(p)
-		if err != nil {
-			k.l.Error(agent, err.Error())
-			continue
-		}
-		pe.Price1 = price1
-		pe.Price2 = price2
+			price1, price2, err := k.getPrice(p)
+			if err != nil {
+				k.l.Error(agent, err.Error())
+			}
+			pe.Price1 = price1
+			pe.Price2 = price2
 
-		f := k.orderFeeRate(p)
-		if f != "" {
+			f := k.orderFeeRate(p)
 			pe.FeeRate = f
-			pairs = append(pairs, pe)
-		}
+			pairs[i] = pe
+		}(p, i)
 	}
+	wg.Wait()
 	return pairs
 }
 
