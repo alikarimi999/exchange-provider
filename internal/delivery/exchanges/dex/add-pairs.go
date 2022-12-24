@@ -27,6 +27,7 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	pwg := &sync.WaitGroup{}
 
 	ps := d.v.GetStringSlice(fmt.Sprintf("%s.pairs", d.Id()))
+	pMux := &sync.Mutex{}
 	for _, dp := range req.Pairs {
 		if d.pairs.exist(dp.T1, dp.T2) {
 			d.l.Debug(agent, fmt.Sprintf("pair %s already exists", dp.String()))
@@ -49,7 +50,9 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 					Token: &entity.Token{TokenId: p.T2, ChainId: d.cfg.TokenStandard},
 				},
 			})
+			pMux.Lock()
 			ps = append(ps, p.String())
+			pMux.Unlock()
 		}(dp)
 
 	}

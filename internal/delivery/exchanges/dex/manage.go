@@ -5,7 +5,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 )
@@ -94,7 +93,13 @@ func (u *dex) RemovePair(t1, t2 *entity.Token) error {
 
 	if p, err := u.pairs.get(t1.TokenId, t2.TokenId); err == nil {
 		id := pairId(p.T1.Symbol, p.T2.Symbol)
-		delete(u.v.Get(fmt.Sprintf("%s.pairs", u.Id())).(map[string]interface{}), strings.ToLower(id))
+		ps := u.v.GetStringSlice(fmt.Sprintf("%s.pairs", u.Id()))
+		for i, p := range ps {
+			if p == id {
+				ps = append(ps[:i], ps[i+1:]...)
+			}
+		}
+		u.v.Set(fmt.Sprintf("%s.pairs", u.Id()), ps)
 		if err := u.v.WriteConfig(); err != nil {
 			return err
 		}

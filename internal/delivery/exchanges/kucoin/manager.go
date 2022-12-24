@@ -136,17 +136,18 @@ func (k *kucoinExchange) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
 }
 
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
-	if p, err := k.exchangePairs.get(bc, qc); err != nil {
-		delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Id())).(map[string]interface{}),
-			strings.ToLower(p.Id()))
-		if err := k.v.WriteConfig(); err != nil {
-			return err
-		}
-
-		k.exchangePairs.remove(p.Id())
-		return nil
+	p, err := k.exchangePairs.get(bc, qc)
+	if err != nil {
+		return err
 	}
-	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
+	delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Id())).(map[string]interface{}),
+		strings.ToLower(p.Id()))
+	if err := k.v.WriteConfig(); err != nil {
+		return err
+	}
+
+	k.exchangePairs.remove(p.Id())
+	return nil
 }
 
 func (k *kucoinExchange) Support(c1, c2 *entity.Token) bool {
