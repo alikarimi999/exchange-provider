@@ -111,7 +111,7 @@ func (a *exStore) remove(nid string) error {
 		if err := a.repo.Remove(ex); err != nil {
 			return err
 		}
-
+		ex.Stop()
 		delete(a.exchanges, nid)
 		return nil
 	}
