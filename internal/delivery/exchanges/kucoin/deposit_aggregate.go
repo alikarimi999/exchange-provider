@@ -23,7 +23,7 @@ func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
 	return &depositAggregator{
 		k:     k,
 		l:     k.l,
-		t:     time.NewTicker(time.Second * 5),
+		t:     time.NewTicker(time.Second * 30),
 		c:     c,
 		wSize: time.Hour * 2,
 	}

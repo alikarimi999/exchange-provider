@@ -1,20 +1,34 @@
 package database
 
 import (
+	"context"
 	"exchange-provider/internal/delivery/storage/database/dto"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (m *MySqlDB) GetPaginated(p *entity.PaginatedOrders) error {
-	const op = errors.Op("MySqlDB.GetAllPaging")
+func (m *MongoDb) GetPaginated(p *entity.Paginated) error {
+	agent := m.agent("GetPaginated")
 
-	osDTO := []*dto.Order{}
-	if err := setClauses(m.db, p.Filters).Scopes(paginate(p.Page, p.PerPage)).
-		Preload("Deposit").Preload("Withdrawal").Preload("Swaps").Find(&osDTO).Error; err != nil {
-		return errors.Wrap(op, err, errors.ErrInternal)
+	filter := wrapFilter(p.Filters)
+	count, err := m.orders.CountDocuments(context.Background(), filter)
+	if err != nil {
+		m.l.Error(agent, err.Error())
+		return err
+	}
+	p.Total = count
+
+	osDTO := []dto.Order{}
+	cur, err := m.orders.Find(context.Background(), filter, wrapOptions(p.Page, p.PerPage))
+	if err != nil {
+		m.l.Error(agent, err.Error())
+		return err
+	}
+
+	if err := cur.All(context.Background(), &osDTO); err != nil {
+		m.l.Error(agent, err.Error())
+		return err
 	}
 
 	for _, o := range osDTO {
@@ -25,49 +39,11 @@ func (m *MySqlDB) GetPaginated(p *entity.PaginatedOrders) error {
 		p.Orders = append(p.Orders, eo)
 	}
 
-	var count int64
-	if err := setClauses(m.db, p.Filters).Model(&dto.Order{}).Count(&count).Error; err != nil {
-		return errors.Wrap(op, err, errors.ErrInternal)
-	}
-
-	p.Total = count
-
 	return nil
 }
 
-func (m *MySqlDB) GetPaginatedByParams(page, perPage int, params map[string]string) ([]*entity.Order, error) {
-	const op = errors.Op("MySqlDB.GetPaging")
-
-	osDTO := []*dto.Order{}
-	if err := m.db.Where(params).Preload("Deposit").Preload("Withdrawal").Preload("Swaps").
-		Offset(page * perPage).Limit(perPage).Find(&osDTO).Error; err != nil {
-		return nil, errors.Wrap(op, err, errors.ErrInternal)
-	}
-	res := []*entity.Order{}
-	for _, o := range osDTO {
-		eo, err := o.ToEntity()
-		if err != nil {
-			continue
-		}
-		res = append(res, eo)
-	}
-
-	return res, nil
-}
-
-func paginate(page, perPage int64) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if page <= 0 {
-			page = 1
-		}
-
-		if perPage <= 0 {
-			perPage = 10
-		}
-		if perPage >= 100 {
-			perPage = 100
-		}
-
-		return db.Offset(int((page - 1) * perPage)).Limit(int(perPage))
-	}
+func wrapOptions(page, perPage int64) *options.FindOptions {
+	limit := perPage
+	skip := perPage * (page - 1)
+	return &options.FindOptions{Limit: &limit, Skip: &skip}
 }

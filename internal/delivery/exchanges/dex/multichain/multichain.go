@@ -24,7 +24,7 @@ type Multichain struct {
 	l logger.Logger
 }
 
-func NewMultichain(cfg *Config, ws app.WalletStore, v *viper.Viper, l logger.Logger, readConfigs bool) (entity.Exchange, error) {
+func NewMultichain(cfg *Config, ws app.WalletStore, v *viper.Viper, l logger.Logger, readConfigs bool) (entity.Cex, error) {
 
 	m := &Multichain{
 		cfg:    cfg,

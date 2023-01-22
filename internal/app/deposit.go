@@ -5,25 +5,21 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (o *OrderUseCase) SetTxId(Id int64, txId string) error {
+func (o *OrderUseCase) SetTxId(Id string, txId string) error {
 	const op = errors.Op("OrderUseCase.SetTxId")
 
-	ord := &entity.Order{
+	ord := &entity.CexOrder{
 		Id: Id,
 	}
 	if err := o.read(ord); err != nil {
-		if errors.ErrorCode(err) == errors.ErrNotFound {
-			return err
-		}
-		o.l.Error(string(op), err.Error())
-		return errors.Wrap(errors.ErrInternal)
+		return err
 	}
 
 	if ord.Deposit.TxId != "" {
 		return errors.Wrap(errors.NewMesssage("order already has tx id"))
 	}
 
-	exist, err := o.repo.CheckTxId(txId)
+	exist, err := o.repo.TxIdExists(txId)
 	if err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
@@ -33,7 +29,7 @@ func (o *OrderUseCase) SetTxId(Id int64, txId string) error {
 
 	ord.Deposit.TxId = txId
 	ord.Deposit.Status = entity.DepositTxIdSet
-	ord.Status = entity.OSTxIdSetted
+	ord.Status = entity.OConfimDeposit
 	if err := o.write(ord); err != nil {
 		return err
 	}

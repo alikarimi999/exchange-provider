@@ -27,7 +27,7 @@ type info struct {
 	} `json:"info"`
 }
 
-func (ex *Multichain) trackSwap(o *entity.Order, index int) {
+func (ex *Multichain) trackSwap(o *entity.CexOrder, index int) {
 	err := try.Do(1000, func(attempt uint64) (retry bool, err error) {
 		i, err := ex.getInfo(o.Swaps[index].TxId)
 		if err != nil {

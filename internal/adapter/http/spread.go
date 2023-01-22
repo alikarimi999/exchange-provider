@@ -2,20 +2,20 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
-	"fmt"
+	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) GetAllPairsSpread(ctx Context) {
-	ctx.JSON(200, s.app.GetAllPairsSpread())
+	ctx.JSON(s.app.GetAllPairsSpread(), nil)
 }
 
 func (s *Server) ChangePairSpread(ctx Context) {
 
 	type pair struct {
-		BC     string  `json:"base_coin"`
-		QC     string  `json:"quote_coin"`
+		T1     string  `json:"t1"`
+		T2     string  `json:"t2"`
 		Spread float64 `json:"spread"`
-		Msg    string  `json:"msg"`
+		Msg    string  `json:"message"`
 	}
 
 	req := struct {
@@ -23,21 +23,21 @@ func (s *Server) ChangePairSpread(ctx Context) {
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		ctx.JSON(500, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
 
 	resp := []*pair{}
 	for _, p := range req.Pairs {
 
-		bc, err := dto.ParseToken(p.BC)
+		bc, err := dto.ParseToken(p.T1)
 		if err != nil {
 			p.Msg = err.Error()
 			resp = append(resp, p)
 			continue
 		}
 
-		qc, err := dto.ParseToken(p.QC)
+		qc, err := dto.ParseToken(p.T2)
 		if err != nil {
 			p.Msg = err.Error()
 			resp = append(resp, p)
@@ -56,36 +56,38 @@ func (s *Server) ChangePairSpread(ctx Context) {
 			continue
 		}
 
-		p.Msg = fmt.Sprintf("spread changed to %f", p.Spread)
+		p.Msg = "done"
 		resp = append(resp, p)
-
 	}
-	ctx.JSON(200, resp)
+	ctx.JSON(resp, nil)
 }
 
 func (s *Server) GetDefaultSpread(ctx Context) {
-	ctx.JSON(200, s.app.GetDefaultSpread())
+	ctx.JSON(s.app.GetDefaultSpread(), nil)
 }
 
 func (s *Server) ChangeDefaultSpread(ctx Context) {
 	req := struct {
 		Spread float64 `json:"default_spread_rate"`
+		Msg    string  `json:"message"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		ctx.JSON(500, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if req.Spread <= 0 || req.Spread >= 1 {
-		ctx.JSON(500, "default spread rate must be > 0 and < 1")
+		err := errors.Wrap(errors.ErrBadRequest,
+			errors.New("default spread rate must be > 0 and < 1"))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if err := s.app.ChangeDefaultSpread(req.Spread); err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
-
-	ctx.JSON(200, fmt.Sprintf("default spread rate changed to %f", req.Spread))
+	req.Msg = "done"
+	ctx.JSON(req, nil)
 }

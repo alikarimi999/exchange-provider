@@ -22,7 +22,7 @@ func (u *dex) Id() string {
 }
 
 func (u *dex) Type() entity.ExType {
-	return entity.DEX
+	return entity.EvmDEX
 }
 func (u *dex) Stop() {
 	op := fmt.Sprintf("%s.Stop", u.Id())
@@ -53,7 +53,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 				newPair = &p
 			}
 
-			pairs[i] = newPair.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard)
+			pairs[i] = newPair.ToEntity(u.Id(), u.cfg.NativeToken, u.cfg.TokenStandard)
 		}(p, i)
 	}
 
@@ -61,7 +61,7 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 	return pairs
 }
 
-func (u *dex) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
+func (u *dex) Price(bc, qc *entity.Token) (*entity.Pair, error) {
 	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
 		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
 	}
@@ -75,7 +75,7 @@ func (u *dex) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ToEntity(u.cfg.NativeToken, u.cfg.TokenStandard), nil
+	return p.ToEntity(u.Id(), u.cfg.NativeToken, u.cfg.TokenStandard), nil
 }
 
 func (u *dex) Support(bc, qc *entity.Token) bool {

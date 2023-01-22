@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (ex *Panckakeswapv2) TrackSwap(o *entity.Order, p *types.Pair, i int) {
+func (ex *Panckakeswapv2) TrackSwap(o *entity.CexOrder, p *types.Pair, i int) {
 	agent := ex.id + "TrackSwap"
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{

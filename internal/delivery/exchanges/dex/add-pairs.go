@@ -43,10 +43,10 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				return
 			}
 			res.Added = append(res.Added, entity.Pair{
-				T1: &entity.PairCoin{
+				T1: &entity.PairToken{
 					Token: &entity.Token{TokenId: p.T1, ChainId: d.cfg.TokenStandard},
 				},
-				T2: &entity.PairCoin{
+				T2: &entity.PairToken{
 					Token: &entity.Token{TokenId: p.T2, ChainId: d.cfg.TokenStandard},
 				},
 			})

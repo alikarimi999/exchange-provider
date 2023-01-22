@@ -23,8 +23,8 @@ func (t *Token) String() string {
 	return t.Symbol
 }
 
-func (t *Token) ToEntity(standard string) *entity.PairCoin {
-	return &entity.PairCoin{
+func (t *Token) ToEntity(standard string) *entity.PairToken {
+	return &entity.PairToken{
 		Token: &entity.Token{
 			TokenId: t.Symbol,
 			ChainId: standard,

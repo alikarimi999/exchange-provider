@@ -1,29 +1,35 @@
 package exrepo
 
 import (
+	"context"
 	"crypto/rsa"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 	"sync"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ExchangeRepo struct {
-	db *gorm.DB
-	v  *viper.Viper
-	l  logger.Logger
-	rc *redis.Client
+	db    *mongo.Collection
+	pairs entity.PairRepo
+	v     *viper.Viper
+	l     logger.Logger
+	rc    *redis.Client
 	app.WalletStore
 	prv *rsa.PrivateKey
 }
 
-func NewExchangeRepo(db *gorm.DB, ws app.WalletStore, v *viper.Viper, rc *redis.Client, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
+func NewExchangeRepo(db *mongo.Database, pairs entity.PairRepo, ws app.WalletStore, v *viper.Viper,
+	rc *redis.Client, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
-		db:          db,
+		db:          db.Collection("exchange-repository"),
+		pairs:       pairs,
 		v:           v,
 		l:           l,
 		rc:          rc,
@@ -38,8 +44,8 @@ func (a *ExchangeRepo) Add(ex entity.Exchange) error {
 	if err != nil {
 		return err
 	}
-	return a.db.Save(e).Error
-
+	_, err = a.db.InsertOne(context.Background(), e)
+	return err
 }
 
 func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
@@ -47,10 +53,11 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 
 	var exs []entity.Exchange
 	var exchanges []Exchange
-	if err := a.db.Find(&exchanges).Error; err != nil {
+	cur, err := a.db.Find(context.Background(), bson.D{})
+	if err != nil {
 		return nil, err
 	}
-
+	cur.All(context.Background(), &exchanges)
 	wg := &sync.WaitGroup{}
 	for _, exc := range exchanges {
 		wg.Add(1)
@@ -70,5 +77,9 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 }
 
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
-	return a.db.Delete(&Exchange{}, "id = ?", ex.Id()).Error
+	d, err := a.db.DeleteOne(context.Background(), bson.D{{"id", ex.Id()}})
+	if d.DeletedCount > 0 {
+		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %s deleted", ex.Id()))
+	}
+	return err
 }

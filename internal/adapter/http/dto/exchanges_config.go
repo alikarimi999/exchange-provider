@@ -11,10 +11,10 @@ import (
 type Config struct {
 	Id            string `json:"id,omitempty"`
 	Name          string `json:"name,omitempty"`
-	ChianId       uint64 `json:"chian_id,omitempty"`
+	ChianId       uint64 `json:"chianId,omitempty"`
 	Network       string `json:"network,omitempty"`
-	NativeToken   string `json:"native_token,omitempty"`
-	TokenStandard string `json:"token_standard,omitempty"`
+	NativeToken   string `json:"nativeToken,omitempty"`
+	TokenStandard string `json:"tokenStandard,omitempty"`
 
 	Factory string `json:"factory,omitempty"`
 	Router  string `json:"router,omitempty"`
@@ -25,9 +25,9 @@ type Config struct {
 	AccountCount uint64             `json:"account_count,omitempty"`
 	Accounts     []accounts.Account `json:"accounts,omitempty"`
 
-	BlockTime     string `json:"block_time,omitempty"`
-	ConfirmBlocks uint64 `json:"confirm_blocks,omitempty"`
-	TokensFile    string `json:"tokens_file,omitempty"`
+	BlockTime     string `json:"blockTime,omitempty"`
+	ConfirmBlocks uint64 `json:"confirmBlocks,omitempty"`
+	TokensFile    string `json:"tokensFile,omitempty"`
 	Msg           string `json:"message,omitempty"`
 }
 

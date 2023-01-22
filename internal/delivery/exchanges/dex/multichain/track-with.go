@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *Multichain) TrackWithdrawal(o *entity.Order, done chan<- struct{},
+func (u *Multichain) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
 	agent := "TrackWithdrawal"

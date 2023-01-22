@@ -9,8 +9,8 @@ type Pair struct {
 
 func (p *Pair) toEntiy() *entity.Pair {
 	return &entity.Pair{
-		T1: &entity.PairCoin{Token: p.T1.toCoin()},
-		T2: &entity.PairCoin{Token: p.T2.toCoin()},
+		T1: &entity.PairToken{Token: p.T1.toCoin()},
+		T2: &entity.PairToken{Token: p.T2.toCoin()},
 	}
 }
 

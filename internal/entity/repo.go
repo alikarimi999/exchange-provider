@@ -1,18 +1,17 @@
 package entity
 
 type OrderRepo interface {
-	Add(order *Order) error
-	Update(order *Order) error
-	UpdateDeposit(d *Deposit) error
-	Get(id int64) (*Order, error)
-	GetAll(userId int64) ([]*Order, error)
-	// get paginated orders
-	GetPaginated(ps *PaginatedOrders) error
-	CheckTxId(txId string) (bool, error)
+	Add(Order) error
+	Update(Order) error
+	Get(id string) (Order, error)
+	GetAll(userId uint64) ([]Order, error)
+	GetPaginated(ps *Paginated) error
+	TxIdExists(txId string) (bool, error)
 }
 
-type PaginatedOrders struct {
+type Paginated struct {
 	Page, PerPage, Total int64
 	Filters              []*Filter
-	Orders               []*Order
+	Orders               []Order
+	Pairs                []*Pair
 }

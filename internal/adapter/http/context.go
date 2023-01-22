@@ -5,7 +5,7 @@ import "net/http"
 type Context interface {
 	Param(string) string
 	Bind(interface{}) error
-	JSON(int, interface{})
+	JSON(obj interface{}, err error)
 	GetKey(key string) (interface{}, bool)
 	SetKey(key string, value interface{})
 	Request() *http.Request

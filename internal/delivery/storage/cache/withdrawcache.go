@@ -11,7 +11,7 @@ import (
 
 var prefix_pending_key = "pending_withdrawals"
 
-func (c *OrderCache) AddPendingWithdrawal(orderId int64) error {
+func (c *OrderCache) AddPendingWithdrawal(orderId string) error {
 	const op = errors.Op("WithdrawalCache.AddPendingWithdrawal")
 
 	if err := c.r.ZAdd(c.ctx, prefix_pending_key, redis.Z{
@@ -23,10 +23,10 @@ func (c *OrderCache) AddPendingWithdrawal(orderId int64) error {
 	return nil
 }
 
-func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]int64, error) {
+func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]string, error) {
 	const op = errors.Op("WithdrawalCache.GetPendingWithdrawals")
 
-	ids := []int64{}
+	ids := []string{}
 	err := c.r.ZRangeByScore(c.ctx, prefix_pending_key, &redis.ZRangeBy{
 		Min: "-inf",
 		Max: fmt.Sprintf("%d", end.Unix()),
@@ -42,7 +42,7 @@ func (c *OrderCache) GetPendingWithdrawals(end time.Time) ([]int64, error) {
 	return ids, nil
 }
 
-func (c *OrderCache) DelPendingWithdrawal(orderId int64) error {
+func (c *OrderCache) DelPendingWithdrawal(orderId string) error {
 	const op = errors.Op("WithdrawalCache.DelPendingWithdrawal")
 
 	if err := c.r.ZRem(c.ctx, prefix_pending_key, orderId).Err(); err != nil {

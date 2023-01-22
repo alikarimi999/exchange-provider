@@ -12,7 +12,7 @@ func (m *Multichain) GetAddress(c *entity.Token) (*entity.Address, error) {
 	return &entity.Address{Addr: a.String()}, nil
 }
 
-func (m *Multichain) TrackDeposit(o *entity.Order, done chan<- struct{},
+func (m *Multichain) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 
 	in := c2T(o.Routes[0].In)

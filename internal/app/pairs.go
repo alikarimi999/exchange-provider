@@ -4,6 +4,8 @@ import (
 	"exchange-provider/internal/entity"
 )
 
+// func (o *OrderUseCase) GetAllPairs()
+
 func (o *OrderUseCase) AddPairs(ex entity.Exchange, data interface{}) (*entity.AddPairsResult, error) {
 	return ex.AddPairs(data)
 }

@@ -7,19 +7,24 @@ func (o *Router) userRoutes() {
 	u := o.gin.Group("/orders")
 	{
 
+		u.GET("/:orderId/:step", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+			func(ctx *gin.Context) {
+				o.srv.GetStep(newContext(ctx, false))
+			})
+
 		u.POST("/get", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
 			func(ctx *gin.Context) {
-				o.srv.GetPaginatedForUser(newContext(ctx))
+				o.srv.GetPaginatedForUser(newContext(ctx, false))
 			})
 
 		u.POST("/create", Limiter(o.col), o.auth.CheckAccess("orders", "write", o.l),
 			func(ctx *gin.Context) {
-				o.srv.NewOrder(newContext(ctx))
+				o.srv.NewOrder(newContext(ctx, false))
 			})
 
 		u.POST("/set_tx_id", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "write", o.l),
 			func(ctx *gin.Context) {
-				o.srv.SetTxId(newContext(ctx))
+				o.srv.SetTxId(newContext(ctx, false))
 			})
 
 	}
@@ -28,17 +33,8 @@ func (o *Router) userRoutes() {
 	{
 		p.POST("", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
 			func(ctx *gin.Context) {
-				o.srv.GetPairsToUser(newContext(ctx))
+				o.srv.GetPairsToUser(newContext(ctx, false))
 			})
 
-	}
-
-	f := o.gin.Group("/fee")
-
-	{
-		f.GET("", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
-			func(ctx *gin.Context) {
-				o.srv.GetFeeToUser(newContext(ctx))
-			})
 	}
 }

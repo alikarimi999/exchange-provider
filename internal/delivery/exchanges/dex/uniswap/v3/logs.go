@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniswapV3) parseSwapLogs(o *entity.Order,
+func (u *UniswapV3) parseSwapLogs(o *entity.CexOrder,
 	tx *types.Transaction, receipt *types.Receipt) (*big.Int, error) {
 	for _, log := range receipt.Logs {
 		if len(log.Topics) == 3 && log.Topics[0] == erc20TransferSignature &&

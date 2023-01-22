@@ -5,31 +5,30 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"net/http"
 	"sync"
 
-	"exchange-provider/pkg/errors"
-
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
 type Server struct {
-	app *app.OrderUseCase
-
-	l  logger.Logger
-	v  *viper.Viper
-	rc *redis.Client
-	cf *chainsFee
+	app   *app.OrderUseCase
+	pairs entity.PairRepo
+	l     logger.Logger
+	v     *viper.Viper
+	rc    *redis.Client
+	cf    *chainsFee
 }
 
-func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger.Logger) *Server {
+func NewServer(pairs entity.PairRepo, app *app.OrderUseCase, v *viper.Viper,
+	rc *redis.Client, l logger.Logger) *Server {
 	s := &Server{
-		app: app,
-
-		l:  l,
-		v:  v,
-		rc: rc,
+		app:   app,
+		pairs: pairs,
+		l:     l,
+		v:     v,
+		rc:    rc,
 		cf: &chainsFee{
 			mux:   &sync.Mutex{},
 			chain: make(map[string]float64),
@@ -44,125 +43,119 @@ func NewServer(app *app.OrderUseCase, v *viper.Viper, rc *redis.Client, l logger
 }
 
 func (s *Server) NewOrder(ctx Context) {
+	// userId, _ := ctx.GetKey("user_id")
 
-	userId, _ := ctx.GetKey("user_id")
 	req := &dto.CreateOrderRequest{}
 	if err := ctx.Bind(req); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
-
-	rsp := &dto.CreateOrderResponse{}
-
 	if err := req.Validate(); err != nil {
-		rsp.Msg = err.Error()
-		ctx.JSON(http.StatusOK, rsp)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	in, err := dto.ParseToken(req.In)
 	if err != nil {
-		rsp.Msg = err.Error()
-		ctx.JSON(http.StatusOK, rsp)
+		ctx.JSON(nil, err)
 		return
 	}
 	out, err := dto.ParseToken(req.Out)
 	if err != nil {
-		rsp.Msg = err.Error()
-		ctx.JSON(http.StatusOK, rsp)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	routes, err := s.routing(in, out)
 	if err != nil {
-		rsp.Msg = err.Error()
-		ctx.JSON(http.StatusOK, rsp)
+		ctx.JSON(nil, err)
 		return
 	}
 
-	o, err := s.app.NewOrder(userId.(int64), &entity.Address{Addr: req.Address, Tag: req.Tag}, routes)
-	if err != nil {
-		rsp.Msg = err.Error()
-		ctx.JSON(http.StatusOK, rsp)
-		return
+	ex, _ := s.app.GetExchange(routes[0].Exchange)
+	var o entity.Order
+	switch ex.Type() {
+	case entity.CEX:
+		o, err = s.app.NewCexOrder(req.UserId, &entity.Address{Addr: req.Receiver, Tag: req.Tag}, routes)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+	case entity.EvmDEX:
+		o, err = s.app.NewEvmOrder(req.UserId, common.HexToAddress(req.Sender),
+			common.HexToAddress(req.Receiver), req.AmountIn, routes[0])
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 	}
 
-	rsp.MinDeposit, _ = s.app.GetMinPairDeposit(in.String(), out.String())
-	rsp.OrderId = o.Id
-	rsp.DC = in.String()
-	rsp.DepositeAddress = o.Deposit.Addr
-	rsp.AddressTag = o.Deposit.Tag
-
-	ctx.JSON(http.StatusOK, rsp)
+	ctx.JSON(dto.CreateOrderResponse(o), nil)
 }
 
 func (s *Server) GetPaginatedForUser(ctx Context) {
-	userId, _ := ctx.GetKey("user_id")
+	// userId, _ := ctx.GetKey("user_id")
 
-	pa := &dto.PaginatedOrdersRequest{}
-	if err := ctx.Bind(pa); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, err.Error()))
+	req := &dto.PaginatedOrdersRequest{}
+	if err := ctx.Bind(req); err != nil {
+		ctx.JSON(nil, err)
 		return
 	}
 
-	if err := pa.Validate(userId.(int64)); err != nil {
-		handlerErr(ctx, err)
+	if err := req.Validate(0); err != nil {
+		ctx.JSON(nil, err)
 		return
 	}
 
-	pao := pa.Map()
-	if err := s.app.GetPaginated(pao); err != nil {
-		handlerErr(ctx, err)
+	pa := req.Map()
+	if err := s.app.GetPaginated(pa); err != nil {
+		ctx.JSON(nil, err)
 		return
 	}
-	r := &dto.PaginatedUserOrdersResponse{}
-	r.Map(pao, false)
-	ctx.JSON(http.StatusOK, r)
+
+	ctx.JSON(dto.OrderResponse(pa, false), nil)
 }
 
 func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
 	pa := &dto.PaginatedOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if err := pa.Validate(0); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	pao := pa.Map()
 	if err := s.app.GetPaginated(pao); err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
-	r := &dto.PaginatedUserOrdersResponse{}
-	r.Map(pao, true)
-	ctx.JSON(http.StatusOK, r)
+
+	ctx.JSON(dto.OrderResponse(pao, true), nil)
 }
 
 func (s *Server) SetTxId(ctx Context) {
 	// userId, _ := ctx.GetKey("user_id")
 	r := &dto.SetTxIdRequest{}
 	if err := ctx.Bind(r); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid request")))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if err := r.Validate(); err != nil {
-		r.Msg = errors.ErrorMsg(err)
-		ctx.JSON(http.StatusBadRequest, r)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if err := s.app.SetTxId(r.Id, r.TxId); err != nil {
-		r.Msg = errors.ErrorMsg(err)
-		ctx.JSON(http.StatusBadRequest, r)
+		ctx.JSON(nil, err)
 		return
 	}
+	r.Msg = "done"
+	ctx.JSON(r, nil)
 
-	r.Msg = "transaction id setted successfully"
-	ctx.JSON(http.StatusOK, r)
 }

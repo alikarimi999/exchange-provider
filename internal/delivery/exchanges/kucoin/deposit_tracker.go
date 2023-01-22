@@ -57,7 +57,6 @@ func (t *depositTracker) track(f *dtFeed) {
 	})
 
 	if err != nil {
-		t.l.Debug(agent, err.Error())
 		f.d.Status = entity.DepositFailed
 		f.d.FailedDesc = err.Error()
 		f.done <- struct{}{}

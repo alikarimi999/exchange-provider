@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) Withdrawal(o *entity.Order) (string, error) {
+func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 	op := errors.Op(fmt.Sprintf("%s.Withdrawal", k.Id()))
 
 	c := o.Withdrawal.Token

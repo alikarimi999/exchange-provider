@@ -24,13 +24,16 @@ func (o *OrderUseCase) write(data interface{}) error {
 // WriteToPersistentStorage writes the given data to the persistent storage.
 func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 	switch d := data.(type) {
-	case *entity.Order:
-		if d.Status == "" {
+	case *entity.CexOrder:
+		if d.Status == entity.ONew {
 			return o.repo.Add(d)
 		}
 		return o.repo.Update(d)
-	case *entity.Deposit:
-		return o.repo.UpdateDeposit(d)
+	case *entity.EvmOrder:
+		if d.Status == entity.ONew {
+			return o.repo.Add(d)
+		}
+		return o.repo.Update(d)
 	default:
 		return nil
 	}
@@ -39,15 +42,16 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 // WriteToCache writes the given data to the cache.
 func (o *OrderUseCase) writeToCache(data interface{}) error {
 	switch d := data.(type) {
-	case *entity.Order:
-		if d.Status == entity.OSSucceed || d.Status == entity.OSFailed {
+	case *entity.CexOrder:
+		if d.Status == entity.Oucceeded || d.Status == entity.OFailed {
 			return nil
 		}
-
 		return o.cache.Add(d)
-
-	case *entity.Deposit:
-		return o.cache.UpdateDeposit(d)
+	case *entity.EvmOrder:
+		if d.Status == entity.Oucceeded || d.Status == entity.OFailed {
+			return nil
+		}
+		return o.cache.Add(d)
 	default:
 		return nil
 	}

@@ -21,53 +21,53 @@ func (r *Router) adminRoutes() {
 		os := a.Group("/orders")
 		{
 			os.POST("/", func(ctx *gin.Context) {
-				r.srv.GetPaginatedForAdmin(newContext(ctx))
+				r.srv.GetPaginatedForAdmin(newContext(ctx, true))
 			})
 		}
 
 		ps := a.Group("/pairs")
 		{
 			ps.POST("/add/:id", func(ctx *gin.Context) {
-				r.srv.AddPairs(newContext(ctx))
+				r.srv.AddPairs(newContext(ctx, true))
 			})
 
 			ps.POST("", func(ctx *gin.Context) {
-				r.srv.GetPairsToAdmin(newContext(ctx))
+				r.srv.GetPairsToAdmin(newContext(ctx, true))
 			})
 
 			ps.POST("/get_min_deposit", func(ctx *gin.Context) {
-				r.srv.GetMinPairDeposit(newContext(ctx))
+				r.srv.GetMinPairDeposit(newContext(ctx, true))
 			})
 
 			ps.POST("/change_min_deposit", func(ctx *gin.Context) {
-				r.srv.ChangeMinDeposit(newContext(ctx))
+				r.srv.ChangeMinDeposit(newContext(ctx, true))
 			})
 
 			ps.POST("/get_all_min_deposit", func(ctx *gin.Context) {
-				r.srv.GetAllMinDeposit(newContext(ctx))
+				r.srv.GetAllMinDeposit(newContext(ctx, true))
 			})
 
 			ps.DELETE("", func(ctx *gin.Context) {
-				r.srv.RemovePair(newContext(ctx))
+				r.srv.RemovePair(newContext(ctx, true))
 			})
 		}
 
 		fee := a.Group("/fee")
 		{
 			fee.POST("/default", func(ctx *gin.Context) {
-				r.srv.ChangeDefaultFee(newContext(ctx))
+				r.srv.ChangeDefaultFee(newContext(ctx, true))
 			})
 
 			fee.GET("/default", func(ctx *gin.Context) {
-				r.srv.GetDefaultFee(newContext(ctx))
+				r.srv.GetDefaultFee(newContext(ctx, true))
 			})
 
 			fee.POST("/get_by_users", func(ctx *gin.Context) {
-				r.srv.GetUsersFee(newContext(ctx))
+				r.srv.GetUsersFee(newContext(ctx, true))
 			})
 
 			fee.POST("/change_by_user", func(ctx *gin.Context) {
-				r.srv.ChangeUserFee(newContext(ctx))
+				r.srv.ChangeUserFee(newContext(ctx, true))
 			})
 
 		}
@@ -76,31 +76,31 @@ func (r *Router) adminRoutes() {
 		{
 
 			spread.GET("/get_all", func(ctx *gin.Context) {
-				r.srv.GetAllPairsSpread(newContext(ctx))
+				r.srv.GetAllPairsSpread(newContext(ctx, true))
 			})
 
 			spread.POST("/change", func(ctx *gin.Context) {
-				r.srv.ChangePairSpread(newContext(ctx))
+				r.srv.ChangePairSpread(newContext(ctx, true))
 			})
 
 			spread.GET("/default", func(ctx *gin.Context) {
-				r.srv.GetDefaultSpread(newContext(ctx))
+				r.srv.GetDefaultSpread(newContext(ctx, true))
 			})
 
 			spread.POST("/default", func(ctx *gin.Context) {
-				r.srv.ChangeDefaultSpread(newContext(ctx))
+				r.srv.ChangeDefaultSpread(newContext(ctx, true))
 			})
 		}
 
 		es := a.Group("/exchanges")
 		{
 			es.POST("/list", func(ctx *gin.Context) {
-				r.srv.GetExchangeList(newContext(ctx))
+				r.srv.GetExchangeList(newContext(ctx, true))
 			})
 			es.DELETE("/:id", func(ctx *gin.Context) {
-				r.srv.RemoveExchange(newContext(ctx))
+				r.srv.RemoveExchange(newContext(ctx, true))
 			})
-			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx)) })
+			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
 
 			m := es.Group("/multichain")
 			{

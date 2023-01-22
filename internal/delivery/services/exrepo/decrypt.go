@@ -2,7 +2,7 @@ package exrepo
 
 import (
 	"encoding/json"
-	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
@@ -45,11 +45,11 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			ApiPassphrase: passphrase,
 		}
 
-		return kucoin.NewKucoinExchange(cfg, r.rc, r.v, r.l, true)
+		return kucoin.NewKucoinExchange(cfg, r.pairs, r.rc, r.v, r.l, true)
 
-	case "uniswapv3", "panckakeswapv2":
+	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 
-		m, ok := jb["mnemonic"].(string)
+		hk, ok := jb["hex_key"].(string)
 		if !ok {
 			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
 		}
@@ -58,12 +58,12 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have network paramether", ex)))
 		}
 
-		cfg := &dex.Config{
-			Mnemonic: m,
-			Name:     ex.Name,
-			Network:  n,
+		cfg := &evm.Config{
+			HexKey:  hk,
+			Name:    ex.Name,
+			Network: n,
 		}
-		return dex.NewDEX(cfg, r.WalletStore, r.rc, r.v, r.l, true)
+		return evm.NewEvmDex(cfg, r.pairs, r.v, r.l, true)
 
 	case "multichain":
 		m, ok := jb["mnemonic"].(string)

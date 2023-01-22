@@ -17,8 +17,8 @@ func (k *kucoinExchange) Name() string {
 	return "kucoin"
 }
 
-func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Exchange", k.Id()))
+func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
+	op := errors.Op(fmt.Sprintf("%s.Swap", k.Id()))
 
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
@@ -67,8 +67,8 @@ func (k *kucoinExchange) Exchange(o *entity.Order, index int) (string, error) {
 
 }
 
-func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done chan<- struct{}, p <-chan bool) {
-	op := errors.Op(fmt.Sprintf("%s.TrackExchangeOrder", k.Id()))
+func (k *kucoinExchange) TrackSwap(o *entity.CexOrder, index int, done chan<- struct{}, p <-chan bool) {
+	op := errors.Op(fmt.Sprintf("%s.TrackSap", k.Id()))
 
 	s := o.Swaps[index]
 	resp, err := k.api.Order(s.TxId)
@@ -108,7 +108,7 @@ func (k *kucoinExchange) TrackExchangeOrder(o *entity.Order, index int, done cha
 
 }
 
-func (k *kucoinExchange) TrackWithdrawal(o *entity.Order, done chan<- struct{},
+func (k *kucoinExchange) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
 	feed := &wtFeed{
@@ -131,7 +131,7 @@ func (k *kucoinExchange) ping() error {
 	return nil
 }
 
-func (k *kucoinExchange) TrackDeposit(o *entity.Order, done chan<- struct{},
+func (k *kucoinExchange) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 	d := o.Deposit
 	c, err := k.supportedCoins.get(d.TokenId, d.ChainId)

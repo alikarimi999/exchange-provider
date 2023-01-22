@@ -7,7 +7,7 @@ import (
 )
 
 func (*Multichain) Type() entity.ExType {
-	return entity.DEX
+	return entity.EvmDEX
 }
 
 func (*Multichain) Stop() {}
@@ -33,7 +33,7 @@ func (m *Multichain) Support(in, out *entity.Token) bool {
 	}
 }
 
-func (m *Multichain) GetPair(c1, c2 *entity.Token) (*entity.Pair, error) {
+func (m *Multichain) Price(c1, c2 *entity.Token) (*entity.Pair, error) {
 	p, err := m.pairs.get(c2T(c1), c2T(c2))
 	if err != nil {
 		return nil, err
@@ -57,11 +57,11 @@ func (m *Multichain) RemovePair(c1, c2 *entity.Token) error {
 
 func (p *Pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		T1: &entity.PairCoin{
+		T1: &entity.PairToken{
 			Token:           p.T1.toCoin(),
 			ContractAddress: p.T1.Address,
 		},
-		T2: &entity.PairCoin{
+		T2: &entity.PairToken{
 			Token:           p.T2.toCoin(),
 			ContractAddress: p.T2.Address,
 		},

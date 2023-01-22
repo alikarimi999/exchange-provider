@@ -1,7 +1,7 @@
 package entity
 
 const (
-	DepositTxIdSet   string = "tx_id_setted"
+	DepositTxIdSet   string = "txId setted"
 	DepositConfirmed string = "confirmed"
 	DepositFailed    string = "failed"
 )
@@ -12,16 +12,16 @@ type Address struct {
 }
 
 type Deposit struct {
-	Id      int64
-	OrderId int64
+	Id      string
+	OrderId string `bson:"orderId"`
 
 	Status string
 	*Token
 
-	TxId   string
+	TxId   string `bson:"txId"`
 	Volume string
 
 	*Address
 
-	FailedDesc string
+	FailedDesc string `bson:"failedDesc"`
 }

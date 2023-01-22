@@ -12,7 +12,7 @@ type Dex interface {
 	PairWithPrice(bt, qt Token) (*Pair, error)
 	Pair(bt, qt Token) (*Pair, error)
 
-	Swap(o *entity.Order, tIn, tOut Token, value string,
+	Swap(o *entity.CexOrder, tIn, tOut Token, value string,
 		source, dest common.Address) (tx *types.Transaction, nonce *big.Int, err error)
-	TrackSwap(o *entity.Order, p *Pair, index int)
+	TrackSwap(o *entity.CexOrder, p *Pair, index int)
 }

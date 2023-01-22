@@ -46,7 +46,7 @@ type dex struct {
 }
 
 func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
-	l logger.Logger, readConfig bool) (entity.Exchange, error) {
+	l logger.Logger, readConfig bool) (entity.Cex, error) {
 
 	agent := "NewDEX"
 

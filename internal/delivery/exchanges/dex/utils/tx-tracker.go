@@ -146,6 +146,7 @@ func (tr *TxTracker) Track(f *TtFeed) {
 			return true, fmt.Errorf("confirmed `%d` blocks", confirmed)
 		default:
 			f.Status = TxFailed
+			f.Faildesc = "Tx Failed"
 			f.DoneCh <- struct{}{}
 			return false, nil
 		}

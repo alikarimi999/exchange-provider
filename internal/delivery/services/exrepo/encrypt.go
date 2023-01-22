@@ -2,7 +2,7 @@ package exrepo
 
 import (
 	"encoding/json"
-	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
@@ -12,16 +12,9 @@ import (
 )
 
 type Exchange struct {
-	Id      string
-	Name    string
-	Configs string
-}
-type KucoinExchange struct {
-	Id            string `gorm:"primary_key"`
-	ApiKey        string
-	ApiSecret     string
-	ApiPassphrase string
-	Status        string
+	Id      string `bson:"id"`
+	Name    string `bson:"name"`
+	Configs string `bson:"configs"`
 }
 
 func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
@@ -36,9 +29,9 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	jb := make(jsonb)
 
 	switch e.Name {
-	case "uniswapv3", "panckakeswapv2":
-		conf := ex.Configs().(*dex.Config)
-		jb["mnemonic"] = conf.Mnemonic
+	case "uniswapv3", "uniswapv2", "panckakeswapv2":
+		conf := ex.Configs().(*evm.Config)
+		jb["hex_key"] = conf.HexKey
 		jb["network"] = conf.Network
 
 	case "multichain":

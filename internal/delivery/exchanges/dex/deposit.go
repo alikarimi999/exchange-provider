@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (d *dex) TrackDeposit(o *entity.Order, done chan<- struct{},
+func (d *dex) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 
 	de := o.Deposit

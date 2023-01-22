@@ -27,12 +27,12 @@ func (p *Pair) String() string {
 	return fmt.Sprintf("%s%s%s", p.T1.String(), Delimiter, p.T2.String())
 }
 
-func (p *Pair) ToEntity(native, chainId string) *entity.Pair {
+func (p *Pair) ToEntity(exchange, native, chainId string) *entity.Pair {
 
 	pair := &entity.Pair{
-		T1: p.T1.ToEntity(chainId),
-		T2: p.T2.ToEntity(chainId),
-
+		T1:              p.T1.ToEntity(chainId),
+		T2:              p.T2.ToEntity(chainId),
+		Exchange:        exchange,
 		ContractAddress: p.Address.String(),
 
 		Liquidity:   p.Liquidity,

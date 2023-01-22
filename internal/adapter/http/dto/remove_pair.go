@@ -10,6 +10,7 @@ type RemovePairRequest struct {
 	T1       string `json:"t1"` // combined with chain id  ex: BTC-BTC
 	T2       string `json:"t2"` // combined with chain id  ex: USDT-TRC20
 	Force    bool   `json:"force"`
+	Msg      string `json:"message"`
 }
 
 func (r *RemovePairRequest) Parse() (t1, t2 *entity.Token, err error) {

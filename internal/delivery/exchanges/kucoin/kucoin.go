@@ -42,14 +42,15 @@ type kucoinExchange struct {
 	l logger.Logger
 
 	exchangePairs  *exPairs
+	pairs          entity.PairRepo
 	supportedCoins *supportedCoins
 
 	stopCh   chan struct{}
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
-	l logger.Logger, readConfig bool) (entity.Exchange, error) {
+func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, rc *redis.Client, v *viper.Viper,
+	l logger.Logger, readConfig bool) (entity.Cex, error) {
 	const op = errors.Op("Kucoin-Exchange.NewKucoinExchange")
 
 	cfg, err := validateConfigs(cfgi)
@@ -70,6 +71,7 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 		),
 		exchangePairs:  newExPairs(),
 		supportedCoins: newSupportedCoins(),
+		pairs:          pairs,
 		v:              v,
 		l:              l,
 
@@ -155,6 +157,11 @@ func NewKucoinExchange(cfgi interface{}, rc *redis.Client, v *viper.Viper,
 
 			k.exchangePairs.add(newPs...)
 			k.supportedCoins.add(newCs)
+			eps := []*entity.Pair{}
+			for _, p := range newPs {
+				eps = append(eps, p.toEntity())
+			}
+			k.pairs.Add(k, eps...)
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))

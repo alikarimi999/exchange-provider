@@ -9,16 +9,17 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services"
+	"exchange-provider/internal/delivery/services/pairconf"
 	"exchange-provider/internal/delivery/storage"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	glogger "gorm.io/gorm/logger"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -65,18 +66,27 @@ func production() {
 		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		os.Getenv("MYSQL_USER"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("MYSQL_HOST"), "exchange-provider")
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	uri := fmt.Sprintf("mongodb://%s/?maxPoolSize=20&w=majority", os.Getenv("MONGO_Address"))
+	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(5*time.Second).ApplyURI(uri))
 	if err != nil {
-		l.Fatal(agent, "failed to connect to mysql")
+		panic(err)
 	}
-	l.Debug(agent, "connected to mysql")
-	s := storage.NewStorage(db, rc, l)
+	if err := client.Ping(context.Background(), nil); err != nil {
+		l.Fatal(agent, "failed to ping mongo")
+	}
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+	db := client.Database("exchange-provider")
+	l.Debug(agent, "connected to mongo")
 
+	s := storage.NewStorage(db, rc, l)
+	pairs := pairconf.NewPairRepo(l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
+		Pairs:  pairs,
 		V:      v,
 		L:      l,
 		RC:     rc,
@@ -87,12 +97,11 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
+	ou := app.NewOrderUseCase(pairs, rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, s.Oc, ss.FeeService, l)
 
 	go ou.Run()
-
-	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8000"); err != nil {
+	if err := http.NewRouter(ou, pairs, v, rc, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }
@@ -135,19 +144,27 @@ func test() {
 		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		"root", "root_L0d92Jlf0HfNmV01", "localhost:3306", "exchange-provider")
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	uri := "mongodb://root:123@127.0.0.1:27017/?maxPoolSize=20&w=majority"
+	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(5*time.Second).ApplyURI(uri))
 	if err != nil {
-		l.Fatal(agent, "failed to connect to mysql")
+		panic(err)
 	}
-	db.Logger.LogMode(glogger.Silent)
-	l.Debug(agent, "connected to mysql")
-	s := storage.NewStorage(db, rc, l)
+	if err := client.Ping(context.Background(), nil); err != nil {
+		l.Fatal(agent, "failed to ping mongo")
+	}
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			l.Fatal(agent, err.Error())
+		}
+	}()
+	db := client.Database("exchange-provider")
+	l.Debug(agent, "connected to mongo")
 
+	s := storage.NewStorage(db, rc, l)
+	pairs := pairconf.NewPairRepo(l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
+		Pairs:  pairs,
 		V:      v,
 		L:      l,
 		RC:     rc,
@@ -158,12 +175,11 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
+	ou := app.NewOrderUseCase(pairs, rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, s.Oc, ss.FeeService, l)
 
 	go ou.Run()
-
-	if err := http.NewRouter(ou, v, rc, l, user, pass).Run(":8081"); err != nil {
+	if err := http.NewRouter(ou, pairs, v, rc, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }

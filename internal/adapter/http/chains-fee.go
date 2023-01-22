@@ -60,7 +60,7 @@ func (s *Server) UpdateChainsFee(ctx *gin.Context) {
 		return
 	}
 
-	c.Msg = "update chains fee was successfull"
+	c.Msg = "done"
 	ctx.JSON(200, c)
 
 }

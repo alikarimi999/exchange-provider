@@ -53,8 +53,8 @@ func (k *kuToken) snapshot() *kuToken {
 	}
 }
 
-func (k *kuToken) toEntityCoin() *entity.PairCoin {
-	return &entity.PairCoin{
+func (k *kuToken) toEntityCoin() *entity.PairToken {
+	return &entity.PairToken{
 
 		Token: &entity.Token{
 			TokenId: k.TokenId,

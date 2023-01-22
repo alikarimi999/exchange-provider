@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u *UniswapV3) Swap(o *entity.Order, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
+func (u *UniswapV3) Swap(o *entity.CexOrder, tIn, tOut ts.Token, value string, source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	var err error
 	pair, err := u.Pair(tIn, tOut)
@@ -82,7 +82,7 @@ func (u *UniswapV3) Swap(o *entity.Order, tIn, tOut ts.Token, value string, sour
 	return tx, opts.Nonce, err
 }
 
-func (ex *UniswapV3) TrackSwap(o *entity.Order, p *ts.Pair, i int) {
+func (ex *UniswapV3) TrackSwap(o *entity.CexOrder, p *ts.Pair, i int) {
 	agent := ex.id + "TrackSwap"
 	doneCh := make(chan struct{})
 	tf := &utils.TtFeed{
@@ -118,9 +118,9 @@ func (ex *UniswapV3) TrackSwap(o *entity.Order, p *ts.Pair, i int) {
 		o.Swaps[i].OutAmount = amount
 		o.Swaps[i].Status = entity.SwapSucceed
 		o.Swaps[i].Fee = fee
-		o.Swaps[i].FeeCurrency = ex.nativToken + "-" + strconv.Itoa(int(ex.chainId))
+		o.Swaps[i].FeeCurrency = ex.nativeToken + "-" + strconv.Itoa(int(ex.chainId))
 
-		ex.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
+		ex.l.Debug(agent, fmt.Sprintf("order: `%s`, tx: `%s`, confirm: `%d/%d`",
 			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 
 	case utils.TxFailed:

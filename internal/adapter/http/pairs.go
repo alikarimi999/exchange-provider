@@ -6,9 +6,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
-	"fmt"
-	"net/http"
 	"sync"
 )
 
@@ -16,7 +13,7 @@ func (s *Server) AddPairs(ctx Context) {
 	nid := ctx.Param("id")
 	ex, err := s.app.GetExchange(nid)
 	if err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
 
@@ -26,12 +23,12 @@ func (s *Server) AddPairs(ctx Context) {
 	case "kucoin":
 		req := &dto.KucoinAddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
-			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			ctx.JSON(nil, err)
 			return
 		}
 
 		if err := req.Validate(); err != nil {
-			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			ctx.JSON(nil, err)
 			return
 		}
 
@@ -42,116 +39,121 @@ func (s *Server) AddPairs(ctx Context) {
 
 		res, err = s.app.AddPairs(ex, kps)
 		if err != nil {
-			handlerErr(ctx, err)
+			ctx.JSON(nil, err)
 			return
 		}
 
 	case "uniswapv3", "panckakeswapv2":
 		req := &udto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
-			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			ctx.JSON(nil, err)
 			return
 		}
 
 		if err := req.Validate(); err != nil {
-			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			ctx.JSON(nil, err)
 			return
 		}
 
 		res, err = s.app.AddPairs(ex, req)
 		if err != nil {
-			handlerErr(ctx, err)
+			ctx.JSON(nil, err)
 			return
 		}
 
 	case "multichain":
 		req := &multichain.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
-			handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+			ctx.JSON(nil, err)
 			return
 		}
 		res, err = s.app.AddPairs(ex, req)
 		if err != nil {
-			handlerErr(ctx, err)
+			ctx.JSON(nil, err)
 			return
 		}
 
 	}
 
-	ctx.JSON(200, dto.FromEntity(res))
+	ctx.JSON(dto.FromEntity(res), nil)
 }
 
 func (s *Server) GetPairsToAdmin(ctx Context) {
-	req := &dto.GetAllPairsRequest{}
+	req := &dto.PaginatedPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(nil, err)
+		return
+	}
+	if err := req.Validate(true); err != nil {
+		ctx.JSON(nil, err)
 		return
 	}
 
-	resp := &dto.GetAllPairsResponse{
-		Exchanges: make(map[string]*dto.Exchange),
+	pa := req.ToEntity()
+	if err := s.pairs.GetPaginated(pa); err != nil {
+		ctx.JSON(nil, err)
+		return
 	}
 
-	var exs []entity.Exchange
-	if len(req.Es) == 0 || len(req.Es) == 1 && req.Es[0] == "*" {
-		exs = s.app.AllExchanges()
-
-	} else {
-		for _, nid := range req.Es {
-			ex, err := s.app.GetExchange(nid)
+	exs := make(map[string]entity.Exchange)
+	ps := []*entity.Pair{}
+	wg := &sync.WaitGroup{}
+	for _, p := range pa.Pairs {
+		ex, ok := exs[p.Exchange]
+		if !ok {
+			var err error
+			ex, err = s.app.GetExchange(p.Exchange)
 			if err != nil {
-				resp.Messages = append(resp.Messages, err.Error())
 				continue
 			}
-
-			exs = append(exs, ex)
+			exs[p.Exchange] = ex
 		}
-	}
-
-	wg := &sync.WaitGroup{}
-	for _, exc := range exs {
 		wg.Add(1)
-		go func(ex entity.Exchange) {
+		go func(p *entity.Pair, ex entity.Exchange) {
 			defer wg.Done()
-			resp.Exchanges[ex.Id()] = &dto.Exchange{}
-			ps := ex.GetAllPairs()
-			for _, p := range ps {
-				p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
-				p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
-
-				dp := dto.PairDTO(p)
-				resp.Exchanges[ex.Id()].Pairs = append(resp.Exchanges[ex.Id()].Pairs, dp)
+			if req.Price {
+				var err error
+				p, err = ex.Price(p.T1.Token, p.T2.Token)
+				if err != nil {
+					return
+				}
 			}
-		}(exc)
+
+			p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
+			p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
+			ps = append(ps, p)
+		}(p, ex)
 	}
 	wg.Wait()
-	ctx.JSON(200, resp)
+	pa.Pairs = ps
+	ctx.JSON(dto.PairsResp(pa, true), nil)
 }
 
 func (s *Server) RemovePair(ctx Context) {
 	req := &dto.RemovePairRequest{}
 	if err := ctx.Bind(req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	t1, t2, err := req.Parse()
 	if err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	ex, err := s.app.GetExchange(req.Exchange)
 	if err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	err = s.app.RemovePair(ex, t1, t2, req.Force)
 	if err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
 
-	ctx.JSON(200, fmt.Sprintf("pair '%s/%s' removed from %s", t1, t2, ex.Id()))
+	req.Msg = "done"
+	ctx.JSON(req, nil)
 }

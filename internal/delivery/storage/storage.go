@@ -7,7 +7,7 @@ import (
 	"exchange-provider/pkg/logger"
 
 	"github.com/go-redis/redis/v9"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Storage struct {
@@ -15,9 +15,9 @@ type Storage struct {
 	Oc   entity.OrderCache
 }
 
-func NewStorage(db *gorm.DB, rc *redis.Client, l logger.Logger) *Storage {
+func NewStorage(db *mongo.Database, rc *redis.Client, l logger.Logger) *Storage {
 	return &Storage{
-		Repo: database.NewUserRepo(db),
+		Repo: database.NewUserRepo(db, l),
 		Oc:   cache.NewOrderCache(rc),
 	}
 

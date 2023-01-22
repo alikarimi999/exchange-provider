@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (m *Multichain) Withdrawal(o *entity.Order) (string, error) {
+func (m *Multichain) Withdrawal(o *entity.CexOrder) (string, error) {
 	agent := "Withdrawal"
 
 	in := c2T(o.Routes[len(o.Routes)-1].In)

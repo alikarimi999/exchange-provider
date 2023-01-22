@@ -15,10 +15,10 @@ type UniswapV3 struct {
 	id string
 	ps []*ts.EthProvider
 
-	factory    common.Address
-	router     common.Address
-	nativToken string
-	chainId    int64
+	factory     common.Address
+	router      common.Address
+	nativeToken string
+	chainId     int64
 
 	tt     *utils.TxTracker
 	wallet *eth.HDWallet
@@ -31,9 +31,9 @@ func NewUniSwapV3(id, nt string, ps []*ts.EthProvider, f, r common.Address, w *e
 		id: id,
 		ps: ps,
 
-		factory:    f,
-		router:     r,
-		nativToken: nt,
+		factory:     f,
+		router:      r,
+		nativeToken: nt,
 
 		tt:     tt,
 		wallet: w,

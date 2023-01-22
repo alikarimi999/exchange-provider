@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *dex) Withdrawal(o *entity.Order) (string, error) {
+func (u *dex) Withdrawal(o *entity.CexOrder) (string, error) {
 	agent := u.agent("Withdrawal")
 
 	var err error

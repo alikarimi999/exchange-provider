@@ -25,42 +25,33 @@ func NewOrderCache(c *redis.Client) entity.OrderCache {
 	}
 }
 
-func (c *OrderCache) Add(o *entity.Order) error {
+func (c *OrderCache) Add(o entity.Order) error {
 	return c.save(o)
 }
 
-func (c *OrderCache) UpdateDeposit(d *entity.Deposit) error {
+func (c *OrderCache) save(o entity.Order) error {
+	const op = errors.Op("OrderCache.save")
 
-	o, err := c.get(d.OrderId)
+	do, err := dto.ToDto(o)
 	if err != nil {
 		return err
 	}
-
-	o.Deposit = d
-	return c.save(o)
-}
-
-func (c *OrderCache) save(o *entity.Order) error {
-	const op = errors.Op("OrderCache.save")
-
-	key := fmt.Sprintf("order:%d", o.Id)
-	if err := c.r.Set(c.ctx, key, &dto.Order{Order: o}, time.Duration(48*time.Hour)).Err(); err != nil {
+	if err := c.r.Set(c.ctx, c.key(o.ID()), do,
+		time.Duration(48*time.Hour)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
 }
 
-func (c *OrderCache) Get(id int64) (*entity.Order, error) {
+func (c *OrderCache) Get(id string) (entity.Order, error) {
 	return c.get(id)
 }
 
-func (c *OrderCache) get(id int64) (*entity.Order, error) {
+func (c *OrderCache) get(id string) (entity.Order, error) {
 	const op = errors.Op("OrderCache.get")
 
-	key := fmt.Sprintf("order:%d", id)
-	o := &entity.Order{}
-	b, err := c.r.Get(c.ctx, key).Bytes()
-
+	o := &dto.Order{}
+	b, err := c.r.Get(c.ctx, c.key(id)).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, errors.Wrap(err, op, errors.ErrNotFound)
@@ -71,45 +62,22 @@ func (c *OrderCache) get(id int64) (*entity.Order, error) {
 		return nil, errors.Wrap(err, op, errors.ErrInternal)
 	}
 
-	if o.MetaData == nil {
-		o.MetaData = make(map[string]interface{})
-	}
-	for _, s := range o.Swaps {
-		if s.MetaData == nil {
-			s.MetaData = make(map[string]interface{})
-		}
-	}
-	return o, nil
+	return o.ToEntity()
 }
 
-func (c *OrderCache) Update(o *entity.Order) error {
-	const op = errors.Op("OrderCache.Update")
-	if err := c.Add(o); err != nil {
-		return errors.Wrap(err, op)
-	}
-	return nil
+func (c *OrderCache) Update(o *entity.CexOrder) error {
+	return c.save(o)
 }
 
-func (c *OrderCache) Delete(id int64) error {
+func (c *OrderCache) Delete(id string) error {
 	const op = errors.Op("OrderCache.Delete")
 
-	key := fmt.Sprintf("order:%d", id)
-	if err := c.r.Del(c.ctx, key).Err(); err != nil {
+	if err := c.r.Del(c.ctx, c.key(id)).Err(); err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	return nil
 }
 
-func (c *OrderCache) UpdateWithdrawal(w *entity.Withdrawal) error {
-	const op = errors.Op("OrderCache.UpdateWithdrawal")
-
-	o, err := c.Get(w.OrderId)
-	if err != nil {
-		return errors.Wrap(err, op)
-	}
-	o.Withdrawal = w
-	if err := c.Add(o); err != nil {
-		return errors.Wrap(err, op)
-	}
-	return nil
+func (c *OrderCache) key(id string) string {
+	return fmt.Sprintf("order:%s", id)
 }

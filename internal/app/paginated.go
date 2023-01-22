@@ -5,7 +5,11 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (u *OrderUseCase) GetPaginated(pa *entity.PaginatedOrders) error {
+func (u *OrderUseCase) GetOrder(id string) (entity.Order, error) {
+	return u.repo.Get(id)
+}
+
+func (u *OrderUseCase) GetPaginated(pa *entity.Paginated) error {
 	const op = errors.Op("Order-UseCase.GetAllUserOrders")
 
 	if err := u.read(pa); err != nil {

@@ -1,73 +1,79 @@
 package http
 
 import (
-	"fmt"
 	"exchange-provider/pkg/errors"
 )
 
 func (s *Server) ChangeDefaultFee(ctx Context) {
 	req := struct {
 		DefaultFeeRate float64 `json:"default_fee_rate"`
+		Msg            string  `json:"message"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if req.DefaultFeeRate <= 0 || req.DefaultFeeRate >= 1 {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("default fee rate must be > 0 and < 1")))
+		err := errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("default fee rate must be > 0 and < 1"))
+		ctx.JSON(nil, err)
 		return
 	}
 
 	if err := s.app.ChangeDefaultFee(req.DefaultFeeRate); err != nil {
-		ctx.JSON(500, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
-	ctx.JSON(200, fmt.Sprintf("fee rate changed to %f", req.DefaultFeeRate))
+	req.Msg = "done"
+	ctx.JSON(req, nil)
 }
 
 func (s *Server) GetDefaultFee(ctx Context) {
-	ctx.JSON(200, fmt.Sprintf("fee is %s", s.app.GetDefaultFee()))
+	ctx.JSON(
+		struct {
+			D string `json:"defaultFee"`
+		}{
+			D: s.app.GetDefaultFee(),
+		}, nil)
 }
 
 func (s *Server) GetUsersFee(ctx Context) {
 	req := struct {
-		Users []int64 `json:"users"`
-		All   bool    `json:"all"`
+		Users []uint64 `json:"users"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		ctx.JSON(nil, err)
 		return
 	}
 
-	if req.All {
-		ctx.JSON(200, s.app.GetAllUsersFee())
+	if len(req.Users) == 0 {
+		ctx.JSON(s.app.GetAllUsersFee(), nil)
 		return
 	}
 
-	resp := make(map[int64]string)
+	resp := make(map[uint64]string)
 
 	for _, userId := range req.Users {
 		resp[userId] = s.app.GetUserFee(userId)
 	}
 
-	ctx.JSON(200, resp)
+	ctx.JSON(resp, nil)
 }
 
 func (s *Server) ChangeUserFee(ctx Context) {
 	type userFee struct {
-		Id int64   `json:"user_id"`
+		Id uint64  `json:"user_id"`
 		F  float64 `json:"fee_rate"`
-		M  string  `json:"msg"`
+		M  string  `json:"message"`
 	}
 	req := struct {
 		Users []*userFee `json:"users"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		handlerErr(ctx, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+		ctx.JSON(nil, err)
 		return
 	}
 
@@ -90,5 +96,5 @@ func (s *Server) ChangeUserFee(ctx Context) {
 		u.M = "fee rate changed"
 		resp.Users = append(resp.Users, u)
 	}
-	ctx.JSON(200, resp)
+	ctx.JSON(resp, nil)
 }

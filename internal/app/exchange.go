@@ -9,40 +9,54 @@ import (
 )
 
 func (o *OrderUseCase) AddExchange(ex entity.Exchange) error {
-
 	if exists := o.exs.exists(ex.Id()); !exists {
-		return o.exs.add(ex)
+		return o.exs.AddExchange0(ex)
 	}
-	return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("exchange %s  already exists!", ex.Id())))
+	return fmt.Errorf("exchange %s  already exists", ex.Id())
 }
 
 func (o *OrderUseCase) GetExchange(id string) (entity.Exchange, error) {
-	ex, err := o.exs.get(id)
-	if err != nil {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("exchange %s not found", id)))
-	}
-	return ex, nil
+	return o.exs.get(id)
 }
 
 func (o *OrderUseCase) AllExchanges(names ...string) []entity.Exchange {
-	return o.exs.all(names...)
+	return o.exs.getByNames(names...)
 }
 
 func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Token) (entity.Exchange, error) {
-	exs := []entity.Exchange{}
-	for _, ex := range o.exs.getAll() {
-		if ex.Support(in, out) {
-			exs = append(exs, ex)
+
+	exs := o.exs.getAll()
+	sCexs := []entity.Exchange{}
+	sDexs := []entity.Exchange{}
+	for _, ex := range exs {
+		if o.pairs.Exists(ex.Id(), in, out) {
+			if ex.Type() == entity.EvmDEX {
+				sDexs = append(sDexs, ex)
+			} else {
+				sCexs = append(sCexs, ex)
+			}
 		}
 	}
 
-	if len(exs) == 0 {
-		return nil, fmt.Errorf("no exchange support %s/%s", in.String(), out.String())
+	if len(sDexs) > 0 {
+		return sDexs[randInt(len(sDexs))], nil
 	}
 
-	// pick one randomly
+	for _, ex := range exs {
+		if o.pairs.Exists(ex.Id(), in, out) {
+			sCexs = append(sCexs, ex)
+		}
+	}
+
+	if len(sCexs) > 0 {
+		return sCexs[randInt(len(sCexs))], nil
+	}
+
+	return nil, errors.Wrap(errors.ErrNotFound)
+}
+
+func randInt(n int) int {
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	return exs[r.Intn(len(exs))], nil
-
+	return r.Intn(n)
 }

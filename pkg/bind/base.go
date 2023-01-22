@@ -47,10 +47,10 @@ type CallOpts struct {
 // TransactOpts is the collection of authorization data required to create a
 // valid Ethereum transaction.
 type TransactOpts struct {
-	From   common.Address // Ethereum account to send the transaction from
-	Nonce  *big.Int       // Nonce to use for the transaction execution (nil = use pending state)
-	Signer SignerFn       // Method to use for signing the transaction (mandatory)
-
+	From      common.Address // Ethereum account to send the transaction from
+	Nonce     *big.Int       // Nonce to use for the transaction execution (nil = use pending state)
+	Signer    SignerFn       // Method to use for signing the transaction (mandatory)
+	Sign      bool
 	Value     *big.Int // Funds to transfer along the transaction (nil = 0 = no funds)
 	GasPrice  *big.Int // Gas price to use for the transaction execution (nil = gas price oracle)
 	GasFeeCap *big.Int // Gas fee cap to use for the 1559 transaction execution (nil = gas price oracle)
@@ -391,10 +391,14 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")
 	}
+	if !opts.Sign {
+		return rawTx, nil
+	}
 	signedTx, err := opts.Signer(opts.From, rawTx)
 	if err != nil {
 		return nil, err
 	}
+
 	if opts.NoSend {
 		return signedTx, nil
 	}

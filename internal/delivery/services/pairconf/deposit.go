@@ -1,7 +1,10 @@
 package pairconf
 
 import (
+	"context"
 	"exchange-provider/internal/entity"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type PairDepositLimit struct {
@@ -59,9 +62,6 @@ func (r *PairConfigs) AllMinDeposit() []*entity.PairMinDeposit {
 }
 
 func (r *PairConfigs) allMinDeposit() []*entity.PairMinDeposit {
-	r.dMux.Lock()
-	defer r.dMux.Unlock()
-
 	var m []*entity.PairMinDeposit
 	for _, v := range r.minDpositCache {
 		m = append(m, &entity.PairMinDeposit{
@@ -74,7 +74,12 @@ func (r *PairConfigs) allMinDeposit() []*entity.PairMinDeposit {
 
 func (r *PairConfigs) retriveMinDeposits() error {
 	var pairs []*PairDepositLimit
-	if err := r.db.Find(&pairs).Error; err != nil {
+	cur, err := r.db.Find(context.Background(), bson.D{})
+	if err != nil {
+		return err
+	}
+
+	if err := cur.All(context.Background(), &pairs); err != nil {
 		return err
 	}
 	for _, v := range pairs {
@@ -84,9 +89,6 @@ func (r *PairConfigs) retriveMinDeposits() error {
 }
 
 func (c *PairConfigs) getCoins(c1, c2 string) (first, second *entity.CoinMinDeposit) {
-	c.dMux.Lock()
-	defer c.dMux.Unlock()
-
 	if v, ok := c.minDpositCache[pairId(c1, c2)]; ok {
 		return &entity.CoinMinDeposit{Coin: v.Coin1, Min: v.MinC1},
 			&entity.CoinMinDeposit{Coin: v.Coin2, Min: v.MinC2}
@@ -99,9 +101,6 @@ func (c *PairConfigs) getCoins(c1, c2 string) (first, second *entity.CoinMinDepo
 }
 
 func (c *PairConfigs) add(c1, c2 *entity.CoinMinDeposit) error {
-	c.dMux.Lock()
-	defer c.dMux.Unlock()
-
 	pId := pairId(c1.Coin, c2.Coin)
 	p := &PairDepositLimit{
 		Pair: pId,
@@ -113,11 +112,9 @@ func (c *PairConfigs) add(c1, c2 *entity.CoinMinDeposit) error {
 		MinC2: c2.Min,
 	}
 
-	err := c.db.Save(p).Error
+	if _, err := c.db.InsertOne(context.Background(), p); err != nil {
+		return err
+	}
 	c.minDpositCache[pId] = p
-	return err
-}
-
-func pairId(c1, c2 string) string {
-	return c1 + "/" + c2
+	return nil
 }

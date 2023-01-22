@@ -2,12 +2,12 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
-	"exchange-provider/internal/delivery/exchanges/dex"
+	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"fmt"
-	"net/http"
 )
 
 func (s *Server) AddExchange(ctx Context) {
@@ -17,97 +17,77 @@ func (s *Server) AddExchange(ctx Context) {
 	case "kucoin":
 		cfg := &kucoin.Configs{}
 		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(nil, err)
 			return
 		}
-		ex, err := kucoin.NewKucoinExchange(cfg, s.rc, s.v, s.l, false)
+		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.rc, s.v, s.l, false)
 		if err != nil {
-			cfg.Message = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
 		if err := s.app.AddExchange(ex); err != nil {
-			cfg.Message = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
-		cfg.Message = "kucoin exchange added successfully"
-		ctx.JSON(http.StatusOK, cfg)
+		cfg.Message = "done"
+		ctx.JSON(cfg, nil)
 		return
 
 	case "dex":
-		cfg := &dto.Config{}
+		cfg := &evm.Config{}
 		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(nil, err)
 			return
 		}
 
-		if len(cfg.Providers) == 0 {
-			cfg.Msg = "at least one provider must be specified"
-			ctx.JSON(http.StatusOK, cfg)
-			return
-		}
-
-		conf, err := cfg.Map()
+		ex, err := evm.NewEvmDex(cfg, s.pairs, s.v, s.l, false)
 		if err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
-			return
-		}
-
-		ex, err := dex.NewDEX(conf, s.app.WalletStore, s.rc, s.v, s.l, false)
-		if err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
 		if err := s.app.AddExchange(ex); err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
-		cfg.Id = ex.Id()
-		cfg.Accounts = conf.Accounts
-		cfg.Msg = "exchange added"
-		ctx.JSON(http.StatusOK, cfg)
+		cfg.Message = "done"
+		ctx.JSON(cfg, nil)
 		return
 
 	case "multichain":
 
 		cfg := &multichain.Config{}
 		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(http.StatusBadRequest, err.Error())
+			ctx.JSON(nil, err)
 			return
 		}
 
 		if err := cfg.Validate(); err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
 		ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
 		if err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
 		cfg.Name = "multichain"
 		if err := s.app.AddExchange(ex); err != nil {
-			cfg.Msg = err.Error()
-			ctx.JSON(http.StatusOK, cfg)
+			ctx.JSON(nil, err)
 			return
 		}
 
-		cfg.Msg = "exchange added"
-		ctx.JSON(http.StatusOK, cfg)
+		cfg.Msg = "done"
+		ctx.JSON(cfg, nil)
 		return
 	default:
-		ctx.JSON(http.StatusBadRequest, fmt.Sprintf("exchange %s not supported", id))
+		err := errors.Wrap(errors.ErrNotFound,
+			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", id)))
+		ctx.JSON(nil, err)
 		return
 	}
 
@@ -119,7 +99,7 @@ func (s *Server) GetExchangeList(ctx Context) {
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
 
@@ -136,7 +116,6 @@ func (s *Server) GetExchangeList(ctx Context) {
 				res.Msgs = append(res.Msgs, err.Error())
 				continue
 			}
-
 			exs = append(exs, ex)
 		}
 	}
@@ -148,27 +127,33 @@ func (s *Server) GetExchangeList(ctx Context) {
 	}
 
 	if len(res.Exchanges) == 0 {
-		ctx.JSON(http.StatusNotFound, "no exchange found")
+		err := errors.Wrap(errors.ErrNotFound,
+			errors.NewMesssage("set at least one exchange"))
+		ctx.JSON(nil, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(res, nil)
 }
 
 func (s *Server) RemoveExchange(ctx Context) {
 	id := ctx.Param("id")
 
 	if err := s.app.RemoveExchange(id, true); err != nil {
-		handlerErr(ctx, err)
+		ctx.JSON(nil, err)
 		return
 	}
 
 	s.v.Set(id, struct{}{})
 	if err := s.v.WriteConfig(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, err.Error())
+		ctx.JSON(nil, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, fmt.Sprintf("exchange %s removed!", id))
-
+	ctx.JSON(
+		struct {
+			M string `json:"message"`
+		}{
+			M: "done",
+		}, nil)
 }

@@ -12,11 +12,12 @@ import (
 
 	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Config struct {
-	DB     *gorm.DB
+	DB     *mongo.Database
+	Pairs  entity.PairRepo
 	V      *viper.Viper
 	L      logger.Logger
 	RC     *redis.Client
@@ -33,7 +34,7 @@ type Services struct {
 func WrapServices(cfg *Config) (*Services, error) {
 	ws := walletstore.NewWalletStore()
 	ss := &Services{
-		ExchangeRepo: exrepo.NewExchangeRepo(cfg.DB, ws, cfg.V, cfg.RC, cfg.L, cfg.PrvKey),
+		ExchangeRepo: exrepo.NewExchangeRepo(cfg.DB, cfg.Pairs, ws, cfg.V, cfg.RC, cfg.L, cfg.PrvKey),
 		WalletStore:  ws,
 	}
 

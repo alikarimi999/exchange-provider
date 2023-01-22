@@ -63,10 +63,10 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 		}
 		aps = append(aps, p)
 		res.Added = append(res.Added, entity.Pair{
-			T1: &entity.PairCoin{
+			T1: &entity.PairToken{
 				Token: &entity.Token{TokenId: p.BC.TokenId, ChainId: string(p.BC.ChainId)},
 			},
-			T2: &entity.PairCoin{
+			T2: &entity.PairToken{
 				Token: &entity.Token{TokenId: p.QC.TokenId, ChainId: string(p.QC.ChainId)},
 			},
 		})
@@ -77,7 +77,11 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 	k.exchangePairs.add(aps...)
 	k.supportedCoins.add(cs)
-
+	eps := []*entity.Pair{}
+	for _, p := range aps {
+		eps = append(eps, p.toEntity())
+	}
+	k.pairs.Add(k, eps...)
 	return res, nil
 
 }
@@ -110,7 +114,7 @@ func (k *kucoinExchange) GetAllPairs() []*entity.Pair {
 	return pairs
 }
 
-func (k *kucoinExchange) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
+func (k *kucoinExchange) Price(bc, qc *entity.Token) (*entity.Pair, error) {
 	agent := fmt.Sprintf("%s.GetPair", k.Id())
 	p, err := k.exchangePairs.get(bc, qc)
 	if err != nil {
@@ -126,13 +130,9 @@ func (k *kucoinExchange) GetPair(bc, qc *entity.Token) (*entity.Pair, error) {
 	pe.Price1 = price1
 	pe.Price2 = price2
 
-	f := k.orderFeeRate(p)
-	if f != "" {
-		pe.FeeRate = f
-		return pe, nil
-	}
+	pe.FeeRate = k.orderFeeRate(p)
 
-	return nil, errors.New("")
+	return pe, nil
 }
 
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
@@ -147,6 +147,7 @@ func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
 	}
 
 	k.exchangePairs.remove(p.Id())
+	k.pairs.Remove(k.Id(), bc, qc)
 	return nil
 }
 

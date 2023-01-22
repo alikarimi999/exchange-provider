@@ -1,15 +1,16 @@
 package pairconf
 
 import (
+	"context"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -24,27 +25,24 @@ type PairSpread struct {
 type PairConfigs struct {
 	v *viper.Viper
 
-	sMux          *sync.Mutex
 	spreadCache   map[string]float64
 	defaultSpread float64
-	db            *gorm.DB
+	db            *mongo.Collection
 
-	dMux           *sync.Mutex
 	minDpositCache map[string]*PairDepositLimit
 
 	l logger.Logger
 }
 
-func NewPairConfigs(db *gorm.DB, v *viper.Viper, l logger.Logger) (entity.PairConfigs, error) {
+func NewPairConfigs(db *mongo.Database, v *viper.Viper, l logger.Logger) (entity.PairConfigs, error) {
 	s := &PairConfigs{
-		v:             v,
-		l:             l,
-		sMux:          &sync.Mutex{},
+		v: v,
+		l: l,
+
 		spreadCache:   make(map[string]float64),
-		db:            db,
+		db:            db.Collection("pairconfigs"),
 		defaultSpread: 0.00,
 
-		dMux:           &sync.Mutex{},
 		minDpositCache: make(map[string]*PairDepositLimit),
 	}
 
@@ -60,8 +58,6 @@ func NewPairConfigs(db *gorm.DB, v *viper.Viper, l logger.Logger) (entity.PairCo
 }
 
 func (r *PairConfigs) GetDefaultSpread() string {
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	return strconv.FormatFloat(r.defaultSpread, 'f', -1, 64)
 }
 
@@ -75,15 +71,11 @@ func (r *PairConfigs) ChangeDefaultSpread(s float64) error {
 		return errors.Wrap(errors.NewMesssage(err.Error()))
 	}
 
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	r.defaultSpread = s
 	return nil
 }
 
 func (r *PairConfigs) GetPairSpread(bc, qc *entity.Token) string {
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	if s, ok := r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())]; ok {
 		return strconv.FormatFloat(s, 'f', -1, 64)
 	}
@@ -91,12 +83,12 @@ func (r *PairConfigs) GetPairSpread(bc, qc *entity.Token) string {
 }
 
 func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Token, s float64) error {
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	if s <= 0 || s >= 1 {
 		return errors.New("spread rate must be > 0 and < 1")
 	}
-	if err := r.db.Save(&PairSpread{Pair: fmt.Sprintf("%s/%s", bc.String(), qc.String()), Spread: s}).Error; err != nil {
+	p := &PairSpread{Pair: fmt.Sprintf("%s/%s", bc.String(), qc.String()), Spread: s}
+	_, err := r.db.InsertOne(context.Background(), p)
+	if err != nil {
 		return err
 	}
 	r.spreadCache[fmt.Sprintf("%s/%s", bc.String(), qc.String())] = s
@@ -104,12 +96,13 @@ func (r *PairConfigs) ChangePairSpread(bc, qc *entity.Token, s float64) error {
 }
 
 func (r *PairConfigs) ApplySpread(in, out *entity.Token, vol string) (appliedVol, spreadVol, spreadRate string, err error) {
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	var rate float64
 	rate, ok := r.spreadCache[fmt.Sprintf("%s/%s", in.String(), out.String())]
 	if !ok {
-		rate = r.defaultSpread
+		rate, ok = r.spreadCache[fmt.Sprintf("%s/%s", out.String(), in.String())]
+		if !ok {
+			rate = r.defaultSpread
+		}
 	}
 
 	total, err := strconv.ParseFloat(vol, 64)
@@ -125,28 +118,26 @@ func (r *PairConfigs) ApplySpread(in, out *entity.Token, vol string) (appliedVol
 }
 
 func (r *PairConfigs) GetAllPairsSpread() map[string]float64 {
-	r.sMux.Lock()
-	defer r.sMux.Unlock()
 	return r.spreadCache
 }
 
 func (r *PairConfigs) retriveSpreads() error {
-
 	if err := r.retriveDefaultSpread(); err != nil {
 		return err
 	}
 
 	pairs := []PairSpread{}
-	if err := r.db.Find(&pairs).Error; err != nil {
-		return errors.Wrap(errors.NewMesssage(err.Error()))
+	cur, err := r.db.Find(context.Background(), bson.D{})
+	if err != nil {
+		return err
 	}
+	if err = cur.All(context.Background(), &pairs); err != nil {
+		return err
+	}
+
 	for _, p := range pairs {
 		if p.Spread <= 0 || p.Spread >= 1 {
 			p.Spread = r.defaultSpread
-		}
-
-		if err := r.db.Save(&p).Error; err != nil {
-			return errors.Wrap(errors.NewMesssage(err.Error()))
 		}
 		r.spreadCache[p.Pair] = p.Spread
 	}

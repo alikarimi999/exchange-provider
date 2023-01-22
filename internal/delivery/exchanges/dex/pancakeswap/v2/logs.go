@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (p *Panckakeswapv2) parseSwapLogs(o *entity.Order,
+func (p *Panckakeswapv2) parseSwapLogs(o *entity.CexOrder,
 	tx *types.Transaction, r *types.Receipt) (*big.Int, error) {
 
 	if r.Logs[len(r.Logs)-1].Topics[0] == p.abi.Events["Withdrawal"].ID {

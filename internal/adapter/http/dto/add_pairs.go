@@ -11,17 +11,17 @@ import (
 type Token struct {
 	TokenId             string  `json:"tokenId"`
 	ChainId             string  `json:"chainId"`
-	ContractAddress     string  `json:"contract_address,omitempty"`
+	ContractAddress     string  `json:"contractAddress,omitempty"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
-	BlockTime           string  `json:"block_time,omitempty"`
-	MinDeposit          float64 `json:"min_deposit"`
-	MinOrderSize        string  `json:"min_order_size,omitempty"`
-	MaxOrderSize        string  `json:"max_order_size,omitempty"`
-	MinWithdrawalSize   string  `json:"min_withdrawal_size,omitempty"`
-	MinWithdrawalFee    string  `json:"min_withdrawal_fee,omitempty"`
-	OrderPrecision      int     `json:"order_precision,omitempty"`
-	WithdrawalPrecision int     `json:"withdrawal_precision,omitempty"`
+	BlockTime           string  `json:"blockTime,omitempty"`
+	MinDeposit          float64 `json:"minDeposit"`
+	MinOrderSize        string  `json:"minOrderSize,omitempty"`
+	MaxOrderSize        string  `json:"maxOrderSize,omitempty"`
+	MinWithdrawSize     string  `json:"minWithdrawSize,omitempty"`
+	MinWithdrawFee      string  `json:"minWithdrawFee,omitempty"`
+	OrderPrecision      int     `json:"orderPrecision,omitempty"`
+	WithdrawalPrecision int     `json:"withdrawPrecision,omitempty"`
 }
 
 type kuPair struct {
@@ -66,7 +66,7 @@ func (r *KucoinAddPairsRequest) Validate() error {
 		}
 
 		if p.T1.WithdrawalPrecision == 0 || p.T2.WithdrawalPrecision == 0 {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("withdrawal_precision must be set"))
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("withdrawPrecision must be set"))
 		}
 
 		if _, err := toTime(p.T1.BlockTime); err != nil {
@@ -85,18 +85,18 @@ type AdminPair struct {
 	T1 *Token `json:"t1"`
 	T2 *Token `json:"t2"`
 
-	ContractAddress      string   `json:"contract_address,omitempty"`
-	FeeTier              int64    `json:"fee_tier,omitempty"`
-	Liquidity            *big.Int `json:"liquidity,omitempty"`
-	Price                string   `json:"price,omitempty"`
-	Price1               string   `json:"price1,omitempty"`
-	Price2               string   `json:"price2,omitempty"`
-	FeeCurrency          string   `json:"fee_currency"`
-	ExchangeOrderFeeRate string   `json:"exchange_order_fee_rate,omitempty"`
-	SpreadRate           string   `json:"spread_rate"`
+	ContractAddress string   `json:"contractAddress,omitempty"`
+	FeeTier         int64    `json:"feeTier,omitempty"`
+	Liquidity       *big.Int `json:"liquidity,omitempty"`
+	Price           string   `json:"price,omitempty"`
+	Price1          string   `json:"price1,omitempty"`
+	Price2          string   `json:"price2,omitempty"`
+	FeeCurrency     string   `json:"feeCurrency"`
+	ExchangeFeeRate string   `json:"exchangeFeeRate,omitempty"`
+	SpreadRate      string   `json:"spreadRate"`
 }
 
-func PairDTO(p *entity.Pair) *AdminPair {
+func entityToAdminPair(p *entity.Pair) *AdminPair {
 	ap := &AdminPair{
 		T1: &Token{
 			TokenId: p.T1.TokenId,
@@ -108,8 +108,8 @@ func PairDTO(p *entity.Pair) *AdminPair {
 			MinDeposit:          p.T1.MinDeposit,
 			MinOrderSize:        p.T1.MinOrderSize,
 			MaxOrderSize:        p.T1.MaxOrderSize,
-			MinWithdrawalSize:   p.T1.MinWithdrawalSize,
-			MinWithdrawalFee:    p.T1.WithdrawalMinFee,
+			MinWithdrawSize:     p.T1.MinWithdrawalSize,
+			MinWithdrawFee:      p.T1.WithdrawalMinFee,
 			OrderPrecision:      p.T1.OrderPrecision,
 			WithdrawalPrecision: p.T1.WithdrawalPrecision,
 		},
@@ -123,20 +123,20 @@ func PairDTO(p *entity.Pair) *AdminPair {
 			MinDeposit:          p.T2.MinDeposit,
 			MinOrderSize:        p.T2.MinOrderSize,
 			MaxOrderSize:        p.T2.MaxOrderSize,
-			MinWithdrawalSize:   p.T2.MinWithdrawalSize,
-			MinWithdrawalFee:    p.T2.WithdrawalMinFee,
+			MinWithdrawSize:     p.T2.MinWithdrawalSize,
+			MinWithdrawFee:      p.T2.WithdrawalMinFee,
 			OrderPrecision:      p.T2.OrderPrecision,
 			WithdrawalPrecision: p.T2.WithdrawalPrecision,
 		},
 
-		ContractAddress:      p.ContractAddress,
-		FeeTier:              p.FeeTier,
-		Liquidity:            p.Liquidity,
-		Price1:               p.Price1,
-		Price2:               p.Price2,
-		SpreadRate:           p.SpreadRate,
-		FeeCurrency:          p.FeeCurrency,
-		ExchangeOrderFeeRate: p.OrderFeeRate,
+		ContractAddress: p.ContractAddress,
+		FeeTier:         p.FeeTier,
+		Liquidity:       p.Liquidity,
+		Price1:          p.Price1,
+		Price2:          p.Price2,
+		SpreadRate:      p.SpreadRate,
+		FeeCurrency:     p.FeeCurrency,
+		ExchangeFeeRate: p.OrderFeeRate,
 	}
 
 	if ap.Price1 == ap.Price2 {
@@ -152,10 +152,9 @@ type PairsErr struct {
 	Err  string `json:"error"`
 }
 type AddPairsResult struct {
-	Addedd []string    `json:"added_pairs"`
-	Exs    []string    `json:"existed_pairs"`
-	Failed []*PairsErr `json:"failed_pairs"`
-	Error  string      `json:"error"`
+	Addedd []string    `json:"addedPairs"`
+	Exs    []string    `json:"existedPairs"`
+	Failed []*PairsErr `json:"failedPairs"`
 }
 
 func FromEntity(r *entity.AddPairsResult) *AddPairsResult {

@@ -10,7 +10,6 @@ import (
 	"exchange-provider/pkg/utils/numbers"
 	"exchange-provider/pkg/wallet/eth"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -47,11 +46,11 @@ func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker,
 		l:  l,
 	}
 
-	abi, err := abi.JSON(strings.NewReader(string(contracts.EventsABI)))
-	if err != nil {
-		return nil, err
-	}
-	p.abi = abi
+	// abi, err := abi.JSON(strings.NewReader(string(contracts.EventsABI)))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// p.abi = abi
 	c, err := p.provider().ChainID(context.Background())
 	if err != nil {
 		return nil, err
@@ -60,7 +59,7 @@ func NewPanckakeswapV2(id, nt string, wallet *eth.HDWallet, tt *utils.TxTracker,
 	return p, nil
 }
 
-func (p *Panckakeswapv2) Swap(o *entity.Order, tIn, tOut ts.Token, value string,
+func (p *Panckakeswapv2) Swap(o *entity.CexOrder, tIn, tOut ts.Token, value string,
 	source, dest common.Address) (*types.Transaction, *big.Int, error) {
 
 	contract, err := contracts.NewContract(p.router, p.provider())
