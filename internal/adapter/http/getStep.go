@@ -45,7 +45,7 @@ func (s *Server) GetStep(ctx Context) {
 			ctx.JSON(nil, err)
 			return
 		}
-		ctx.JSON(dto.MultiStep(o.Id, o.Sender.Hex(), tx, step, len(o.Steps)), nil)
+		ctx.JSON(dto.MultiStep(o.Id, o.Sender.Hex(), tx, step, len(o.Steps), st.IsApprove), nil)
 		return
 	}
 }

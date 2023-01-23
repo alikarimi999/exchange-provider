@@ -37,12 +37,14 @@ func SingleStepResponse(o *entity.CexOrder) *SingleStep {
 
 type multiStep struct {
 	*OrderStep
+	IsApproveTx bool        `json:"isApproveTx"`
 	Transaction interface{} `json:"transaction"`
 }
 
-func MultiStep(oId, sender string, tx interface{}, step, steps int) *multiStep {
+func MultiStep(oId, sender string, tx interface{}, step, steps int, isApprove bool) *multiStep {
 	ms := &multiStep{
-		OrderStep: &OrderStep{OrderId: oId, CurrentStep: step, TotalSteps: steps},
+		OrderStep:   &OrderStep{OrderId: oId, CurrentStep: step, TotalSteps: steps},
+		IsApproveTx: isApprove,
 	}
 	switch t := tx.(type) {
 	case *types.Transaction:
