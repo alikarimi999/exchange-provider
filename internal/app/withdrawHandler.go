@@ -10,22 +10,21 @@ import (
 
 type withdrawalHandler struct {
 	tracker     *withdrawalTracker
+	r           entity.OrderRepo
 	wg          *sync.WaitGroup
 	ticker      *time.Ticker
-	cache       entity.WithdrawalCache
 	windowsSize time.Duration
 	l           logger.Logger
 }
 
-func newWithdrawalHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache,
-	wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalHandler {
+func newWithdrawalHandler(ouc *OrderUseCase, repo entity.OrderRepo,
+	exs *exStore, l logger.Logger) *withdrawalHandler {
 
 	w := &withdrawalHandler{
-
-		tracker:     newWithdrawalTracker(ouc, repo, oc, wc, exs, l),
+		r:           repo,
+		tracker:     newWithdrawalTracker(ouc, repo, exs, l),
 		ticker:      time.NewTicker(time.Second * 30),
 		windowsSize: time.Second * 30,
-		cache:       wc,
 		wg:          &sync.WaitGroup{},
 
 		l: l,
@@ -38,7 +37,7 @@ func (wh *withdrawalHandler) handle() {
 	const op = errors.Op("chainTicker.tick")
 
 	for t := range wh.ticker.C {
-		ws, err := wh.cache.GetPendingWithdrawals(t.Add(-wh.windowsSize))
+		ws, err := wh.r.GetPendingWithdrawals(t.Add(-wh.windowsSize))
 		if err != nil {
 			wh.l.Error(string(op), errors.Wrap(err, op, "pending withdrawals").Error())
 			continue

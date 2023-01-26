@@ -20,13 +20,15 @@ type depositAggregator struct {
 }
 
 func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
-	return &depositAggregator{
+	da := &depositAggregator{
 		k:     k,
 		l:     k.l,
-		t:     time.NewTicker(time.Second * 30),
+		t:     time.NewTicker(time.Minute),
 		c:     c,
 		wSize: time.Hour * 2,
 	}
+	go da.run(k.stopCh)
+	return da
 }
 
 func (a *depositAggregator) run(stopCh chan struct{}) {
@@ -34,7 +36,6 @@ func (a *depositAggregator) run(stopCh chan struct{}) {
 	for {
 		select {
 		case <-a.t.C:
-
 			s := time.Now().Add(-a.wSize)
 			e := time.Now()
 			ds, err := a.aggregate("SUCCESS", s, e)
@@ -51,13 +52,9 @@ func (a *depositAggregator) run(stopCh chan struct{}) {
 			ds = append(ds, dsf...)
 
 			for _, d := range ds {
-				exist, err := a.c.ExistD(d.TxId)
-				if err != nil {
-					a.l.Error(agent, err.Error())
-					continue
-				}
+				exist := a.c.existsOrProccessedD(d.TxId)
 				if !exist {
-					a.c.SaveD(d)
+					a.c.saveD(d)
 					continue
 				}
 			}
@@ -97,7 +94,7 @@ func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*d
 
 		rds := []*depositeRecord{}
 		for _, d := range ds {
-			if !d.IsInner {
+			if !d.IsInner && d.WalletTxId != "" {
 				rds = append(rds, mapDeposit(d))
 			}
 		}

@@ -12,8 +12,6 @@ type orderHandler struct {
 
 	ouc *OrderUseCase
 	pc  entity.PairConfigs
-	oc  entity.OrderCache
-	wc  entity.WithdrawalCache
 	*exStore
 
 	fee entity.FeeService
@@ -21,14 +19,12 @@ type orderHandler struct {
 	l logger.Logger
 }
 
-func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, pc entity.PairConfigs, wc entity.WithdrawalCache, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
+func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, pc entity.PairConfigs, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
 	oh := &orderHandler{
 		repo: repo,
 
 		ouc:     ouc,
 		pc:      pc,
-		oc:      oc,
-		wc:      wc,
 		exStore: exs,
 
 		fee: fee,
@@ -155,7 +151,7 @@ func (h *orderHandler) handle(o *entity.CexOrder) {
 				return
 			}
 
-			if err := h.wc.AddPendingWithdrawal(o.Id); err != nil {
+			if err := h.repo.AddPendingWithdrawal(o.Id); err != nil {
 				h.l.Error(string(op), err.Error())
 			}
 			return

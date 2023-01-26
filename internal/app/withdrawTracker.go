@@ -13,25 +13,21 @@ type withdrawalTracker struct {
 
 	ouc *OrderUseCase
 
-	repo entity.OrderRepo
-	oc   entity.OrderCache
-	wc   entity.WithdrawalCache
-	exs  *exStore
+	r   entity.OrderRepo
+	exs *exStore
 
 	list []string
 
 	l logger.Logger
 }
 
-func newWithdrawalTracker(ouc *OrderUseCase, repo entity.OrderRepo, oc entity.OrderCache, wc entity.WithdrawalCache, exs *exStore, l logger.Logger) *withdrawalTracker {
+func newWithdrawalTracker(ouc *OrderUseCase, repo entity.OrderRepo, exs *exStore, l logger.Logger) *withdrawalTracker {
 	w := &withdrawalTracker{
-		wCh:  make(chan string, 1024),
-		ouc:  ouc,
-		repo: repo,
-		oc:   oc,
-		wc:   wc,
-		exs:  exs,
-		l:    l,
+		wCh: make(chan string, 1024),
+		ouc: ouc,
+		r:   repo,
+		exs: exs,
+		l:   l,
 	}
 	return w
 }
@@ -78,11 +74,7 @@ func (t *withdrawalTracker) run() {
 				}
 				pCh <- true
 
-				if err := t.oc.Delete(oId); err != nil {
-					t.l.Error(agent, fmt.Sprintf("order: '%s'", oId))
-				}
-
-				if err := t.wc.DelPendingWithdrawal(oId); err != nil {
+				if err := t.r.DelPendingWithdrawal(oId); err != nil {
 					t.l.Error(agent, fmt.Sprintf("order: '%s'", oId))
 				}
 
@@ -100,7 +92,7 @@ func (t *withdrawalTracker) run() {
 				}
 				pCh <- true
 
-				if err := t.wc.DelPendingWithdrawal(oId); err != nil {
+				if err := t.r.DelPendingWithdrawal(oId); err != nil {
 					t.l.Error(agent, fmt.Sprintf("order: '%s'", oId))
 				}
 				return

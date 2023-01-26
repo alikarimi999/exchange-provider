@@ -11,7 +11,6 @@ import (
 	"exchange-provider/pkg/errors"
 
 	"github.com/Kucoin/kucoin-go-sdk"
-	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
@@ -24,19 +23,18 @@ type Configs struct {
 	Message       string
 }
 
-// kucoinExchange is a concrete implementation of entity.Exchange interface.
 type kucoinExchange struct {
 	cfg *Configs
 	mux *sync.Mutex
 
 	api *kucoin.ApiService
-	// ws   *webSocket
 
-	wt  *withdrawalTracker
-	da  *depositAggregator
-	dt  *depositTracker
-	wa  *withdrawalAggregator
-	pls *pairList
+	cache *cache
+	wt    *withdrawalTracker
+	da    *depositAggregator
+	dt    *depositTracker
+	wa    *withdrawalAggregator
+	pls   *pairList
 
 	v *viper.Viper
 	l logger.Logger
@@ -49,7 +47,7 @@ type kucoinExchange struct {
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, rc *redis.Client, v *viper.Viper,
+func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 	l logger.Logger, readConfig bool) (entity.Cex, error) {
 	const op = errors.Op("Kucoin-Exchange.NewKucoinExchange")
 
@@ -82,12 +80,12 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, rc *redis.Client
 		return nil, err
 	}
 	k.l.Debug(string(op), "ping was successful")
-	c := newCache(k, rc, k.l)
+	k.cache = newCache(k, k.l)
 
-	k.wt = newWithdrawalTracker(k, c)
-	k.da = newDepositAggregator(k, c)
-	k.dt = newDepositTracker(k, c)
-	k.wa = newWithdrawalAggregator(k, c)
+	k.wt = newWithdrawalTracker(k, k.cache)
+	k.da = newDepositAggregator(k, k.cache)
+	k.dt = newDepositTracker(k, k.cache)
+	k.wa = newWithdrawalAggregator(k, k.cache)
 	k.pls = newPairList(k, k.api, l)
 
 	if readConfig {
@@ -173,8 +171,9 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, rc *redis.Client
 }
 
 func (k *kucoinExchange) Run() {
-	go k.da.run(k.stopCh)
-	go k.wa.run(k.stopCh)
+	// go k.da.run(k.stopCh)
+	// go k.wa.run(k.stopCh)
+	// go k.cache.run(k.stopCh)
 	k.l.Debug(fmt.Sprintf("%s.Run", k.Id()), "started")
 }
 

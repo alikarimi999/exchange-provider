@@ -1,152 +1,165 @@
 package kucoin
 
 import (
-	"context"
-	"encoding/json"
 	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/pkg/logger"
-	"fmt"
+	"sync"
 	"time"
-
-	"exchange-provider/pkg/errors"
-
-	"github.com/go-redis/redis/v9"
 )
 
 type cache struct {
-	k   *kucoinExchange
-	r   *redis.Client
-	ctx context.Context
-	l   logger.Logger
+	k    *kucoinExchange
+	wMux *sync.RWMutex
+	ws   map[string]dto.Withdrawal
+	prW  map[string]struct{ t time.Time }
+
+	dMux *sync.RWMutex
+	ds   map[string]depositeRecord
+	prD  map[string]struct{ t time.Time }
+
+	t  *time.Ticker
+	pt *time.Ticker
+
+	l logger.Logger
 }
 
-func newCache(k *kucoinExchange, r *redis.Client, l logger.Logger) *cache {
-	return &cache{
-		k:   k,
-		r:   r,
-		ctx: context.Background(),
-		l:   l,
+func newCache(k *kucoinExchange, l logger.Logger) *cache {
+	c := &cache{
+		k: k,
+
+		wMux: &sync.RWMutex{},
+		ws:   make(map[string]dto.Withdrawal),
+		prW:  make(map[string]struct{ t time.Time }),
+
+		dMux: &sync.RWMutex{},
+		ds:   make(map[string]depositeRecord),
+		prD:  make(map[string]struct{ t time.Time }),
+
+		t:  time.NewTicker(12 * time.Hour),
+		pt: time.NewTicker(2 * time.Hour),
+		l:  l,
+	}
+	go c.run(k.stopCh)
+	return c
+}
+
+func (c *cache) run(stopCh chan struct{}) {
+	agnet := "kucoin.cache.run"
+	for {
+		select {
+		case <-c.t.C:
+			c.wMux.Lock()
+			for id, w := range c.ws {
+				if time.Now().After(w.DownloadedAt.Add(12 * time.Hour)) {
+					delete(c.ws, id)
+				}
+			}
+			c.wMux.Unlock()
+			c.dMux.Lock()
+			for id, d := range c.ds {
+				if time.Now().After(d.DownloadedAt.Add(12 * time.Hour)) {
+					delete(c.ds, id)
+				}
+			}
+			c.dMux.Unlock()
+		case <-c.pt.C:
+			c.wMux.Lock()
+			for id, w := range c.prW {
+				if time.Now().After(w.t.Add(2 * time.Hour)) {
+					delete(c.prW, id)
+				}
+			}
+			c.wMux.Unlock()
+			c.dMux.Lock()
+			for id, d := range c.prD {
+				if time.Now().After(d.t.Add(2 * time.Hour)) {
+					delete(c.prD, id)
+				}
+			}
+			c.dMux.Unlock()
+
+		case <-stopCh:
+			c.l.Debug(agnet, "stopped")
+			return
+		}
 	}
 }
 
-func (c *cache) recordWithdrawal(w *dto.Withdrawal) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.recordWithdrawal", c.k.Id()))
-	key := fmt.Sprintf("kucoin:withdrawals:%s", w.Id)
-	if err := c.r.Set(c.ctx, key, w, time.Duration(24*time.Hour)).Err(); err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return nil
+func (c *cache) recordWithdrawal(w *dto.Withdrawal) {
+	w.DownloadedAt = time.Now()
+	c.wMux.Lock()
+	defer c.wMux.Unlock()
+	c.ws[w.Id] = *w
 }
 
-func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.getWithdrawal", c.k.Id()))
-
-	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
-	v, err := c.r.Get(c.ctx, key).Result()
-	if err != nil {
-		return nil, err
+func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, bool) {
+	c.wMux.RLock()
+	defer c.wMux.RUnlock()
+	w, ok := c.ws[id]
+	if !ok {
+		return nil, false
 	}
-	if v == "" {
-		return nil, nil
-	}
-	w := &dto.Withdrawal{}
-
-	if err = json.Unmarshal([]byte(v), w); err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return w, nil
+	return w.SnapShot(), true
 }
 
-func (c *cache) delWithdrawal(id string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.delWithdrawal", c.k.Id()))
-
-	key := fmt.Sprintf("kucoin:withdrawals:%s", id)
-	if err := c.r.Del(c.ctx, key).Err(); err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return nil
+func (c *cache) delWithdrawal(id string) {
+	c.wMux.Lock()
+	defer c.wMux.Unlock()
+	delete(c.ws, id)
 }
 
-func (c *cache) proccessedWithdrawal(id string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.proccessedWithdrawal", c.k.Id()))
-
-	key := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
-	if err := c.r.Set(c.ctx, key, "", time.Duration(2*time.Hour)).Err(); err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return nil
+func (c *cache) proccessedW(id string) {
+	c.wMux.Lock()
+	defer c.wMux.Unlock()
+	c.prW[id] = struct{ t time.Time }{t: time.Now()}
 }
 
 // check if withdrawal is processed
-func (c *cache) isAddable(id string) (bool, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.isAddable", c.k.Id()))
-
-	key1 := fmt.Sprintf("kucoin:proccessed:withdrawals:%s", id)
-	key2 := fmt.Sprintf("kucoin:withdrawals:%s", id)
-
-	i, err := c.r.Exists(c.ctx, key1, key2).Result()
-	if err != nil {
-		return false, errors.Wrap(err, op, errors.ErrInternal)
+func (c *cache) existsOrProccessedW(id string) bool {
+	c.wMux.RLock()
+	defer c.wMux.RUnlock()
+	_, ok := c.ws[id]
+	if ok {
+		return ok
 	}
-	if i == 0 {
-		return false, nil
-	}
-
-	return true, nil
+	_, ok = c.prW[id]
+	return ok
 }
 
-func (c *cache) SaveD(de *depositeRecord) error {
-	op := fmt.Sprintf("%s.cache.recordDeposite", c.k.Id())
-
-	key := fmt.Sprintf("kucoin:deposites:%s", de.TxId)
-	err := c.r.Set(c.ctx, key, de, time.Duration(12*time.Hour)).Err()
-	if err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return nil
+func (c *cache) saveD(de *depositeRecord) {
+	c.dMux.Lock()
+	defer c.dMux.Unlock()
+	c.ds[de.TxId] = *de
 }
 
-func (c *cache) GetD(txid string) (*depositeRecord, error) {
-	op := errors.Op(fmt.Sprintf("%s.cache.getDepositRecord", c.k.Id()))
-
-	key := fmt.Sprintf("kucoin:deposites:%s", txid)
-	d := &depositeRecord{}
-	b, err := c.r.Get(c.ctx, key).Bytes()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, err
-		}
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
+func (c *cache) getD(txid string) (*depositeRecord, bool) {
+	c.dMux.Lock()
+	defer c.dMux.Unlock()
+	d, ok := c.ds[txid]
+	if !ok {
+		return nil, false
 	}
-
-	if err := json.Unmarshal(b, d); err != nil {
-		return nil, errors.Wrap(err, op, errors.ErrInternal)
-	}
-	d.TxId = txid
-	return d, nil
+	return d.snapShot(), true
 }
 
-func (c *cache) RemoveD(txid string) error {
-	op := errors.Op(fmt.Sprintf("%s.cache.purgeDepositRecord", c.k.Id()))
-
-	key := fmt.Sprintf("kucoin:deposites:%s", txid)
-	err := c.r.Del(c.ctx, key).Err()
-	if err != nil {
-		return errors.Wrap(err, op, errors.ErrInternal)
-	}
-	return nil
+func (c *cache) removeD(txid string) {
+	c.dMux.Lock()
+	defer c.dMux.Unlock()
+	delete(c.ds, txid)
 }
 
-func (c *cache) ExistD(txid string) (bool, error) {
-
-	key := fmt.Sprintf("kucoin:deposites:%s", txid)
-	i, err := c.r.Exists(c.ctx, key).Result()
-	if err != nil {
-		return false, err
+func (c *cache) proccessedD(txid string) {
+	c.dMux.Lock()
+	defer c.dMux.Unlock()
+	c.prD[txid] = struct{ t time.Time }{t: time.Now()}
+}
+func (c *cache) existsOrProccessedD(txid string) bool {
+	c.dMux.Lock()
+	defer c.dMux.Unlock()
+	_, ok := c.ds[txid]
+	if ok {
+		return ok
 	}
-
-	if i == 1 {
-		return true, nil
-	}
-	return false, nil
+	_, ok = c.prD[txid]
+	return ok
 }

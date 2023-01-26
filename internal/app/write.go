@@ -46,12 +46,12 @@ func (o *OrderUseCase) writeToCache(data interface{}) error {
 		if d.Status == entity.Oucceeded || d.Status == entity.OFailed {
 			return nil
 		}
-		return o.cache.Add(d)
+		return o.repo.Add(d)
 	case *entity.EvmOrder:
 		if d.Status == entity.Oucceeded || d.Status == entity.OFailed {
 			return nil
 		}
-		return o.cache.Add(d)
+		return o.repo.Add(d)
 	default:
 		return nil
 	}

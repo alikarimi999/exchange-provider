@@ -2,6 +2,6 @@ package database
 
 import "fmt"
 
-func (d *MongoDb) agent(fn string) string {
+func (d *mongoDb) agent(fn string) string {
 	return fmt.Sprintf("MongoDB.%s", fn)
 }

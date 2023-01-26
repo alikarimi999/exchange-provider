@@ -32,10 +32,9 @@ func newDepositTracker(k *kucoinExchange, c *cache) *depositTracker {
 }
 
 func (t *depositTracker) track(f *dtFeed) {
-	agent := fmt.Sprintf("%s.depositTracker.track", t.k.Id())
 	err := try.Do(10, func(attempt uint64) (bool, error) {
-		d, err := t.c.GetD(f.d.TxId)
-		if err == nil {
+		d, ok := t.c.getD(f.d.TxId)
+		if ok {
 			if !d.MatchCurrency(f.d) {
 				f.d.Status = entity.DepositFailed
 				f.d.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ",
@@ -53,7 +52,7 @@ func (t *depositTracker) track(f *dtFeed) {
 		t := (f.blockTime + (5 * time.Second)) * time.Duration(f.confirms)
 		time.Sleep(t / 2)
 
-		return true, err
+		return true, errors.Wrap(errors.ErrNotFound)
 	})
 
 	if err != nil {
@@ -63,8 +62,7 @@ func (t *depositTracker) track(f *dtFeed) {
 	}
 	// remove the deposit from the cache if tracker's signal successfuly proccessed by consumer.
 	if <-f.pCh {
-		if err := t.c.RemoveD(f.d.TxId); err != nil {
-			t.l.Error(agent, errors.Wrap(agent, err, fmt.Sprintf("TxId: `%s`", f.d.TxId)).Error())
-		}
+		t.c.removeD(f.d.TxId)
+		t.c.proccessedD(f.d.TxId)
 	}
 }

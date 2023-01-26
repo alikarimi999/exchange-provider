@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 type OrderRepo interface {
 	Add(Order) error
 	Update(Order) error
@@ -7,6 +9,9 @@ type OrderRepo interface {
 	GetAll(userId uint64) ([]Order, error)
 	GetPaginated(ps *Paginated) error
 	TxIdExists(txId string) (bool, error)
+	AddPendingWithdrawal(orderId string) error
+	GetPendingWithdrawals(end time.Time) ([]string, error)
+	DelPendingWithdrawal(orderId string) error
 }
 
 type Paginated struct {

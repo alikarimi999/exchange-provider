@@ -22,7 +22,7 @@ type withdrawalAggregator struct {
 }
 
 func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator {
-	return &withdrawalAggregator{
+	wa := &withdrawalAggregator{
 		k:          k,
 		l:          k.l,
 		c:          c,
@@ -30,13 +30,14 @@ func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator 
 		ticker:     time.NewTicker(time.Minute * 2),
 		windowSize: time.Hour * 1,
 	}
+	go wa.run(k.stopCh)
+	return wa
 }
 
 func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.run", wa.k.Id()))
 	wa.l.Debug(string(op), "started")
 
-start:
 	for {
 		select {
 		case t := <-wa.ticker.C:
@@ -55,18 +56,10 @@ start:
 			wss = append(wss, wsf...)
 
 			for _, w := range wss {
-				p, err := wa.c.isAddable(w.Id)
-				if err != nil {
-					wa.l.Error(string(op), errors.Wrap(err, op).Error())
+				exists := wa.c.existsOrProccessedW(w.Id)
+				if !exists {
+					wa.c.recordWithdrawal(w)
 				}
-				if p {
-					continue
-				}
-				if err := wa.c.recordWithdrawal(w); err != nil {
-					wa.l.Error(string(op), errors.Wrap(err, op, w.String()).Error())
-					continue start
-				}
-
 			}
 
 		case <-stopCh:

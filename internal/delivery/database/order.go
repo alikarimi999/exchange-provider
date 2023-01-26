@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"exchange-provider/internal/delivery/storage/database/dto"
+	"exchange-provider/internal/delivery/database/dto"
 	"exchange-provider/internal/entity"
 
 	"exchange-provider/pkg/errors"
@@ -13,19 +13,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MongoDb struct {
+type mongoDb struct {
 	orders *mongo.Collection
+	c      *cache
 	l      logger.Logger
 }
 
-func NewUserRepo(db *mongo.Database, l logger.Logger) entity.OrderRepo {
-	return &MongoDb{
+func NewOrderRepo(db *mongo.Database, l logger.Logger) (entity.OrderRepo, error) {
+	m := &mongoDb{
 		orders: db.Collection("orders"),
+		c:      newCache(db),
 		l:      l,
 	}
+	return m, m.retrivePendingWithd()
 }
 
-func (m *MongoDb) Add(order entity.Order) error {
+func (m *mongoDb) Add(order entity.Order) error {
 	agent := m.agent("Add")
 
 	id := primitive.NewObjectID()
@@ -43,7 +46,7 @@ func (m *MongoDb) Add(order entity.Order) error {
 	return nil
 }
 
-func (m *MongoDb) Get(id string) (entity.Order, error) {
+func (m *mongoDb) Get(id string) (entity.Order, error) {
 	agent := m.agent("Get")
 	oId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -69,7 +72,7 @@ func (m *MongoDb) Get(id string) (entity.Order, error) {
 	return eo, nil
 }
 
-func (m *MongoDb) GetAll(UserId uint64) ([]entity.Order, error) {
+func (m *mongoDb) GetAll(UserId uint64) ([]entity.Order, error) {
 	agent := m.agent("GetAll")
 
 	osDTO := []*dto.Order{}
@@ -95,7 +98,7 @@ func (m *MongoDb) GetAll(UserId uint64) ([]entity.Order, error) {
 	return os, nil
 }
 
-func (m *MongoDb) Update(order entity.Order) error {
+func (m *mongoDb) Update(order entity.Order) error {
 	agent := m.agent("Update")
 
 	id, _ := primitive.ObjectIDFromHex(order.ID())
@@ -117,7 +120,7 @@ func (m *MongoDb) Update(order entity.Order) error {
 }
 
 // check if any deposit has this tx_id
-func (m *MongoDb) TxIdExists(txId string) (bool, error) {
+func (m *mongoDb) TxIdExists(txId string) (bool, error) {
 	agent := m.agent("CheckTxId")
 
 	res := m.orders.FindOne(context.Background(), bson.D{{"order.deposit.txId", txId}})

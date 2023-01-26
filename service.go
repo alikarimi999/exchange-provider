@@ -7,16 +7,15 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"exchange-provider/internal/app"
+	"exchange-provider/internal/delivery/database"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services"
 	"exchange-provider/internal/delivery/services/pairconf"
-	"exchange-provider/internal/delivery/storage"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -59,37 +58,32 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	rc := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_ADDR")})
-
-	if err := rc.Ping(context.Background()).Err(); err != nil {
-		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
-	}
-
 	uri := fmt.Sprintf("mongodb://%s/?maxPoolSize=20&w=majority", os.Getenv("MONGO_Address"))
 	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(5*time.Second).ApplyURI(uri))
 	if err != nil {
-		panic(err)
+		l.Fatal(agent, err.Error())
 	}
 	if err := client.Ping(context.Background(), nil); err != nil {
 		l.Fatal(agent, "failed to ping mongo")
 	}
 	defer func() {
 		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
+			l.Fatal(agent, err.Error())
 		}
 	}()
 	db := client.Database("exchange-provider")
 	l.Debug(agent, "connected to mongo")
 
-	s := storage.NewStorage(db, rc, l)
+	repo, err := database.NewOrderRepo(db, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 	pairs := pairconf.NewPairRepo(l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Pairs:  pairs,
 		V:      v,
 		L:      l,
-		RC:     rc,
 		PrvKey: prv,
 	})
 
@@ -97,11 +91,11 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(pairs, rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
-		ss.PairConfigs, s.Oc, ss.FeeService, l)
+	ou := app.NewOrderUseCase(pairs, repo, ss.ExchangeRepo, ss.WalletStore,
+		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, pairs, v, rc, l, user, pass).Run(":8000"); err != nil {
+	if err := http.NewRouter(ou, pairs, v, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }
@@ -137,17 +131,10 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	rc := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_ADDR")})
-
-	if err := rc.Ping(context.Background()).Err(); err != nil {
-		l.Fatal(agent, fmt.Sprintf("failed to ping redis: %s", err))
-	}
-
 	uri := "mongodb://root:123@127.0.0.1:27017/?maxPoolSize=20&w=majority"
 	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(5*time.Second).ApplyURI(uri))
 	if err != nil {
-		panic(err)
+		l.Fatal(agent, err.Error())
 	}
 	if err := client.Ping(context.Background(), nil); err != nil {
 		l.Fatal(agent, "failed to ping mongo")
@@ -160,14 +147,16 @@ func test() {
 	db := client.Database("exchange-provider")
 	l.Debug(agent, "connected to mongo")
 
-	s := storage.NewStorage(db, rc, l)
+	repo, err := database.NewOrderRepo(db, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 	pairs := pairconf.NewPairRepo(l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Pairs:  pairs,
 		V:      v,
 		L:      l,
-		RC:     rc,
 		PrvKey: prv,
 	})
 
@@ -175,11 +164,11 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(pairs, rc, s.Repo, ss.ExchangeRepo, ss.WalletStore,
-		ss.PairConfigs, s.Oc, ss.FeeService, l)
+	ou := app.NewOrderUseCase(pairs, repo, ss.ExchangeRepo, ss.WalletStore,
+		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, pairs, v, rc, l, user, pass).Run(":8081"); err != nil {
+	if err := http.NewRouter(ou, pairs, v, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }

@@ -3,15 +3,11 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-
-	"github.com/go-redis/redis/v9"
 )
 
 type OrderUseCase struct {
 	repo  entity.OrderRepo
-	cache entity.OrderCache
 	pc    entity.PairConfigs
-	rc    *redis.Client
 	oh    *orderHandler
 	pairs entity.PairRepo
 	wh    *withdrawalHandler
@@ -22,13 +18,11 @@ type OrderUseCase struct {
 	l   logger.Logger
 }
 
-func NewOrderUseCase(pairs entity.PairRepo, rc *redis.Client, repo entity.OrderRepo, exRepo ExchangeRepo, ws WalletStore,
-	pc entity.PairConfigs, oc entity.OrderCache, fee entity.FeeService, l logger.Logger) *OrderUseCase {
+func NewOrderUseCase(pairs entity.PairRepo, repo entity.OrderRepo, exRepo ExchangeRepo, ws WalletStore,
+	pc entity.PairConfigs, fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
 		repo:        repo,
-		cache:       oc,
-		rc:          rc,
 		pc:          pc,
 		pairs:       pairs,
 		WalletStore: ws,
@@ -37,8 +31,8 @@ func NewOrderUseCase(pairs entity.PairRepo, rc *redis.Client, repo entity.OrderR
 		l:           l,
 	}
 
-	o.oh = newOrderHandler(o, repo, oc, pc, oc, fee, o.exs, l)
-	o.wh = newWithdrawalHandler(o, repo, oc, oc, o.exs, l)
+	o.oh = newOrderHandler(o, repo, pc, fee, o.exs, l)
+	o.wh = newWithdrawalHandler(o, repo, o.exs, l)
 	return o
 }
 

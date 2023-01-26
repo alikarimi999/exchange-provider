@@ -8,7 +8,6 @@ import (
 	"exchange-provider/internal/entity"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
@@ -31,13 +30,13 @@ func (r *Router) Run(addr ...string) error {
 	return r.gin.Run(addr...)
 }
 
-func NewRouter(app *app.OrderUseCase, pairs entity.PairRepo, v *viper.Viper, rc *redis.Client, l logger.Logger, user, pass string) *Router {
+func NewRouter(app *app.OrderUseCase, pairs entity.PairRepo, v *viper.Viper, l logger.Logger, user, pass string) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
 	router := &Router{
 		gin: engine,
-		srv: http.NewServer(pairs, app, v, rc, l),
+		srv: http.NewServer(pairs, app, v, l),
 		l:   l,
 		v:   v,
 

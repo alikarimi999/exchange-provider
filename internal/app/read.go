@@ -12,7 +12,7 @@ func (o *OrderUseCase) read(v interface{}) error {
 	switch d := v.(type) {
 	case *entity.CexOrder:
 		if d.Id != "" {
-			dd, err := readOrder(o.repo, o.cache, d.Id)
+			dd, err := o.repo.Get(d.Id)
 			if err != nil {
 				return err
 			}
@@ -25,7 +25,7 @@ func (o *OrderUseCase) read(v interface{}) error {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("orderId not found"))
 
 	case *entity.EvmOrder:
-		dd, err := readOrder(o.repo, o.cache, d.Id)
+		dd, err := o.repo.Get(d.Id)
 		if err != nil {
 			return err
 		}
@@ -39,21 +39,6 @@ func (o *OrderUseCase) read(v interface{}) error {
 	default:
 		return fmt.Errorf("unsupported type %T", d)
 	}
-}
-
-func readOrder(r entity.OrderRepo, c entity.OrderCache, orderId string) (entity.Order, error) {
-	ord, er1 := c.Get(orderId)
-	if er1 != nil {
-		var er2 error
-		ord, er2 = r.Get(orderId)
-		if er2 != nil {
-			if errors.ErrorCode(er2) == errors.ErrNotFound {
-				return nil, fmt.Errorf("order %s not found", orderId)
-			}
-			return nil, fmt.Errorf("error ( %s ),\n error ( %s )", er1, er2)
-		}
-	}
-	return ord, nil
 }
 
 func readPaginateUserOrders(r entity.OrderRepo, pa *entity.Paginated) error {

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,19 +19,17 @@ type ExchangeRepo struct {
 	pairs entity.PairRepo
 	v     *viper.Viper
 	l     logger.Logger
-	rc    *redis.Client
 	app.WalletStore
 	prv *rsa.PrivateKey
 }
 
 func NewExchangeRepo(db *mongo.Database, pairs entity.PairRepo, ws app.WalletStore, v *viper.Viper,
-	rc *redis.Client, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
+	l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
 		db:          db.Collection("exchange-repository"),
 		pairs:       pairs,
 		v:           v,
 		l:           l,
-		rc:          rc,
 		WalletStore: ws,
 		prv:         prvKey,
 	}

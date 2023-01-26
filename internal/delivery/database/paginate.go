@@ -2,13 +2,13 @@ package database
 
 import (
 	"context"
-	"exchange-provider/internal/delivery/storage/database/dto"
+	"exchange-provider/internal/delivery/database/dto"
 	"exchange-provider/internal/entity"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (m *MongoDb) GetPaginated(p *entity.Paginated) error {
+func (m *mongoDb) GetPaginated(p *entity.Paginated) error {
 	agent := m.agent("GetPaginated")
 
 	filter := wrapFilter(p.Filters)

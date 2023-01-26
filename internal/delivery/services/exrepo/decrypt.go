@@ -45,7 +45,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			ApiPassphrase: passphrase,
 		}
 
-		return kucoin.NewKucoinExchange(cfg, r.pairs, r.rc, r.v, r.l, true)
+		return kucoin.NewKucoinExchange(cfg, r.pairs, r.v, r.l, true)
 
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 

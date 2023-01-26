@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/go-redis/redis/v9"
 	"github.com/spf13/viper"
 )
 
@@ -17,18 +16,16 @@ type Server struct {
 	pairs entity.PairRepo
 	l     logger.Logger
 	v     *viper.Viper
-	rc    *redis.Client
 	cf    *chainsFee
 }
 
 func NewServer(pairs entity.PairRepo, app *app.OrderUseCase, v *viper.Viper,
-	rc *redis.Client, l logger.Logger) *Server {
+	l logger.Logger) *Server {
 	s := &Server{
 		app:   app,
 		pairs: pairs,
 		l:     l,
 		v:     v,
-		rc:    rc,
 		cf: &chainsFee{
 			mux:   &sync.Mutex{},
 			chain: make(map[string]float64),

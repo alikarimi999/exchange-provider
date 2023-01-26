@@ -3,11 +3,6 @@ package kucoin
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"fmt"
-
-	"exchange-provider/pkg/errors"
-
-	"github.com/go-redis/redis/v9"
 )
 
 type wtFeed struct {
@@ -31,13 +26,9 @@ func newWithdrawalTracker(k *kucoinExchange, c *cache) *withdrawalTracker {
 }
 
 func (t *withdrawalTracker) track(f *wtFeed) {
-	op := errors.Op(fmt.Sprintf("%s.withdrawalTracker.track", t.k.Id()))
 	txId := f.w.TxId
-	wd, err := t.c.getWithdrawal(txId)
-	if err != nil {
-		if err != redis.Nil {
-			t.l.Error(string(op), err.Error())
-		}
+	wd, ok := t.c.getWithdrawal(txId)
+	if !ok {
 		f.w.Status = entity.WithdrawalPending
 		f.done <- struct{}{}
 		<-f.proccessedCh
@@ -56,11 +47,7 @@ func (t *withdrawalTracker) track(f *wtFeed) {
 	f.done <- struct{}{}
 
 	if <-f.proccessedCh {
-		if err := t.c.delWithdrawal(txId); err != nil {
-			t.l.Error(string(op), errors.Wrap(err, op).Error())
-		}
-		if err := t.c.proccessedWithdrawal(txId); err != nil {
-			t.l.Error(string(op), errors.Wrap(err, op).Error())
-		}
+		t.c.delWithdrawal(txId)
+		t.c.proccessedW(txId)
 	}
 }
