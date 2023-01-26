@@ -27,7 +27,7 @@ func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 	vol := trim(o.Withdrawal.Volume, wc.WithdrawalPrecision)
 	o.Withdrawal.Volume = vol
 	// first transfer from trade account to main account
-	res, err := k.api.InnerTransferV2(uuid.New().String(), c.TokenId, "trade", "main", vol)
+	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), c.TokenId, "trade", "main", vol)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
@@ -35,7 +35,7 @@ func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from trade account to main account", vol, c.TokenId))
 
 	// then withdraw from main account
-	res, err = k.api.ApplyWithdrawal(c.TokenId, o.Withdrawal.Addr, vol, opts)
+	res, err = k.writeApi.ApplyWithdrawal(c.TokenId, o.Withdrawal.Addr, vol, opts)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}

@@ -47,6 +47,7 @@ func (ec *ginContext) JSON(obj interface{}, err error) {
 			Error = err.Error()
 		} else {
 			Error = errors.ErrorMsg(err)
+
 		}
 		obj = struct {
 			Timestamp string

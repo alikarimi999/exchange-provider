@@ -44,7 +44,7 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	res, err := k.api.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", amount)
+	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", amount)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
@@ -53,7 +53,7 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 		amount, in.TokenId))
 
 	// create order, after transfer is done
-	res, err = k.api.CreateOrder(req)
+	res, err = k.writeApi.CreateOrder(req)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
@@ -71,7 +71,7 @@ func (k *kucoinExchange) TrackSwap(o *entity.CexOrder, index int, done chan<- st
 	op := errors.Op(fmt.Sprintf("%s.TrackSap", k.Id()))
 
 	s := o.Swaps[index]
-	resp, err := k.api.Order(s.TxId)
+	resp, err := k.readApi.Order(s.TxId)
 	if err = handleSDKErr(err, resp); err != nil {
 		k.l.Error(string(op), err.Error())
 		s.Status = entity.SwapFailed
@@ -123,7 +123,7 @@ func (k *kucoinExchange) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{
 func (k *kucoinExchange) ping() error {
 	op := errors.Op(fmt.Sprintf("%s.ping", k.Id()))
 
-	resp, err := k.api.Accounts("", "")
+	resp, err := k.readApi.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
 		return errors.Wrap(op, errors.NewMesssage(err.Error()))
 	}

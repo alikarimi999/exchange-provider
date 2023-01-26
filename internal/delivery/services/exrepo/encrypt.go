@@ -31,7 +31,7 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	switch e.Name {
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 		conf := ex.Configs().(*evm.Config)
-		jb["hex_key"] = conf.HexKey
+		jb["hexKey"] = conf.HexKey
 		jb["network"] = conf.Network
 
 	case "multichain":
@@ -40,9 +40,13 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 
 	case "kucoin":
 		conf := ex.Configs().(*kucoin.Configs)
-		jb["api_key"] = conf.ApiKey
-		jb["api_secret"] = conf.ApiSecret
-		jb["api_passphrase"] = conf.ApiPassphrase
+		jb["read.apiKey"] = conf.ReadApi.ApiKey
+		jb["read.apiSecret"] = conf.ReadApi.ApiSecret
+		jb["read.apiPassphrase"] = conf.ReadApi.ApiPassphrase
+
+		jb["write.apiKey"] = conf.WriteApi.ApiKey
+		jb["write.apiSecret"] = conf.WriteApi.ApiSecret
+		jb["write.apiPassphrase"] = conf.WriteApi.ApiPassphrase
 
 	default:
 		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange Id", e.Id))

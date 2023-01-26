@@ -81,7 +81,7 @@ func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*d
 	}
 	for {
 
-		res, err := a.k.api.Deposits(ps, paginate)
+		res, err := a.k.readApi.Deposits(ps, paginate)
 		if err = handleSDKErr(err, res); err != nil {
 			return nil, errors.Wrap(err, op)
 		}

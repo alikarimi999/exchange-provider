@@ -82,7 +82,7 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 	}
 	for {
 
-		res, err := wa.k.api.Withdrawals(wa.params, paginate)
+		res, err := wa.k.readApi.Withdrawals(wa.params, paginate)
 		if err = handleSDKErr(err, res); err != nil {
 			return nil, errors.Wrap(err, op)
 		}

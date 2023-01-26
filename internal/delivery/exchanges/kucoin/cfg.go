@@ -17,15 +17,27 @@ func validateConfigs(cfgi interface{}) (*Configs, error) {
 	if !ok {
 		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid configs"))
 	}
-	if cfg.ApiKey == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("api key is required"))
+
+	if cfg.ReadApi.ApiKey == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiKey is required"))
 	}
-	if cfg.ApiSecret == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("api secret is required"))
+	if cfg.ReadApi.ApiSecret == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiSecret is required"))
 	}
-	if cfg.ApiPassphrase == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("api passphrase is required"))
+	if cfg.ReadApi.ApiPassphrase == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiPassphrase is required"))
 	}
+
+	if cfg.WriteApi.ApiKey == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiKey is required"))
+	}
+	if cfg.WriteApi.ApiSecret == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiSecret is required"))
+	}
+	if cfg.WriteApi.ApiPassphrase == "" {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiPassphrase is required"))
+	}
+
 	if cfg.ApiVersion == "" {
 		cfg.ApiVersion = "2"
 	}

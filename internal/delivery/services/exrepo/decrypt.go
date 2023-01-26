@@ -26,30 +26,32 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 	switch ex.Name {
 	case "kucoin":
-		key, ok := jb["api_key"].(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid API key: %v", jb["api_key"])
-		}
-		secret, ok := jb["api_secret"].(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid API secret: %v", jb["api_secret"])
-		}
-		passphrase, ok := jb["api_passphrase"].(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid API passphrase: %v", jb["api_passphrase"])
-		}
+		rKey := jb["read.apiKey"].(string)
+		rSecret := jb["read.apiSecret"].(string)
+		rPassphrase := jb["read.apiPassphrase"].(string)
+
+		wKey := jb["write.apiKey"].(string)
+		wSecret := jb["write.apiSecret"].(string)
+		wPassphrase := jb["write.apiPassphrase"].(string)
 
 		cfg := &kucoin.Configs{
-			ApiKey:        key,
-			ApiSecret:     secret,
-			ApiPassphrase: passphrase,
+			ReadApi: &kucoin.API{
+				ApiKey:        rKey,
+				ApiSecret:     rSecret,
+				ApiPassphrase: rPassphrase,
+			},
+			WriteApi: &kucoin.API{
+				ApiKey:        wKey,
+				ApiSecret:     wSecret,
+				ApiPassphrase: wPassphrase,
+			},
 		}
 
 		return kucoin.NewKucoinExchange(cfg, r.pairs, r.v, r.l, true)
 
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 
-		hk, ok := jb["hex_key"].(string)
+		hk, ok := jb["hexKey"].(string)
 		if !ok {
 			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
 		}

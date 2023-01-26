@@ -10,7 +10,7 @@ import (
 )
 
 func (k *kucoinExchange) getPrice(p *pair) (string, string, error) {
-	res, err := k.api.TickerLevel1(p.BC.TokenId + "-" + p.QC.TokenId)
+	res, err := k.readApi.TickerLevel1(p.BC.TokenId + "-" + p.QC.TokenId)
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error(fmt.Sprintf("%s.setPrice", k.Id()), err.Error())
 		return "", "", err
@@ -32,7 +32,7 @@ func (k *kucoinExchange) getPrice(p *pair) (string, string, error) {
 }
 
 func (k *kucoinExchange) orderFeeRate(p *pair) string {
-	res, err := k.api.ActualFee(p.BC.TokenId + "-" + p.QC.TokenId)
+	res, err := k.readApi.ActualFee(p.BC.TokenId + "-" + p.QC.TokenId)
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
 		return ""
@@ -50,7 +50,7 @@ func (k *kucoinExchange) orderFeeRate(p *pair) string {
 }
 
 func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
-	res, err := k.api.CurrencyV2(p.BC.TokenId, "")
+	res, err := k.readApi.CurrencyV2(p.BC.TokenId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (k *kucoinExchange) setBCWithdrawalLimit(p *pair) error {
 }
 
 func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
-	res, err := k.api.CurrencyV2(p.QC.TokenId, "")
+	res, err := k.readApi.CurrencyV2(p.QC.TokenId, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (k *kucoinExchange) setAddress(pc *kuToken) error {
 		chain = ""
 	}
 
-	res, err := k.api.DepositAddresses(coin, chain)
+	res, err := k.readApi.DepositAddresses(coin, chain)
 	if pc.needChain && res != nil && res.Code == "900014" && res.Message == "Invalid chainId" {
 		pc.needChain = false
 		return k.setAddress(pc)

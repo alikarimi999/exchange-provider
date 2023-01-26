@@ -78,7 +78,7 @@ func ErrorMsg(err error) string {
 	} else if ok && e.err != nil {
 		return ErrorMsg(e.err)
 	}
-	return "An internal error has occurred."
+	return string(ErrorCode(err))
 }
 
 func (e *Error) Error() string {

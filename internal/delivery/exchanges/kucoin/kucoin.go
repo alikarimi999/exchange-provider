@@ -14,20 +14,27 @@ import (
 	"github.com/spf13/viper"
 )
 
+type API struct {
+	ApiKey        string `json:"apiKey"`
+	ApiSecret     string `json:"apiSecret"`
+	ApiPassphrase string `json:"apiPassphrase"`
+}
+
 type Configs struct {
-	ApiKey        string `json:"api_key"`
-	ApiSecret     string `json:"api_secret"`
-	ApiPassphrase string `json:"api_passphrase"`
-	ApiVersion    string
-	ApiUrl        string
-	Message       string
+	ReadApi  *API `json:"readApi,omitempty"`
+	WriteApi *API `json:"writeApi,omitempty"`
+
+	ApiVersion string
+	ApiUrl     string
+	Message    string
 }
 
 type kucoinExchange struct {
 	cfg *Configs
 	mux *sync.Mutex
 
-	api *kucoin.ApiService
+	readApi  *kucoin.ApiService
+	writeApi *kucoin.ApiService
 
 	cache *cache
 	wt    *withdrawalTracker
@@ -60,13 +67,21 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 		cfg: cfg,
 		mux: &sync.Mutex{},
 
-		api: kucoin.NewApiService(
+		readApi: kucoin.NewApiService(
 			kucoin.ApiBaseURIOption(cfg.ApiUrl),
-			kucoin.ApiKeyOption(cfg.ApiKey),
-			kucoin.ApiSecretOption(cfg.ApiSecret),
-			kucoin.ApiPassPhraseOption(cfg.ApiPassphrase),
+			kucoin.ApiKeyOption(cfg.ReadApi.ApiKey),
+			kucoin.ApiSecretOption(cfg.ReadApi.ApiSecret),
+			kucoin.ApiPassPhraseOption(cfg.ReadApi.ApiPassphrase),
 			kucoin.ApiKeyVersionOption(cfg.ApiVersion),
 		),
+		writeApi: kucoin.NewApiService(
+			kucoin.ApiBaseURIOption(cfg.ApiUrl),
+			kucoin.ApiKeyOption(cfg.WriteApi.ApiKey),
+			kucoin.ApiSecretOption(cfg.WriteApi.ApiSecret),
+			kucoin.ApiPassPhraseOption(cfg.WriteApi.ApiPassphrase),
+			kucoin.ApiKeyVersionOption(cfg.ApiVersion),
+		),
+
 		exchangePairs:  newExPairs(),
 		supportedCoins: newSupportedCoins(),
 		pairs:          pairs,
@@ -86,7 +101,7 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 	k.da = newDepositAggregator(k, k.cache)
 	k.dt = newDepositTracker(k, k.cache)
 	k.wa = newWithdrawalAggregator(k, k.cache)
-	k.pls = newPairList(k, k.api, l)
+	k.pls = newPairList(k, k.readApi, l)
 
 	if readConfig {
 		k.l.Debug(string(op), fmt.Sprintf("retriving pairs from config file %s", k.v.ConfigFileUsed()))
