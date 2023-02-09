@@ -5,5 +5,6 @@ type PairRepo interface {
 	Get(ex string, t1, t2 *Token) (*Pair, error)
 	Exists(ex string, t1, t2 *Token) bool
 	Remove(ex string, t1, t2 *Token) error
+	RemoveExchange(ex string) error
 	GetPaginated(p *Paginated) error
 }

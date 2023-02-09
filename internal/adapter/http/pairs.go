@@ -6,7 +6,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/internal/entity"
-	"sync"
 )
 
 func (s *Server) AddPairs(ctx Context) {
@@ -97,7 +96,6 @@ func (s *Server) GetPairsToAdmin(ctx Context) {
 
 	exs := make(map[string]entity.Exchange)
 	ps := []*entity.Pair{}
-	wg := &sync.WaitGroup{}
 	for _, p := range pa.Pairs {
 		ex, ok := exs[p.Exchange]
 		if !ok {
@@ -108,23 +106,11 @@ func (s *Server) GetPairsToAdmin(ctx Context) {
 			}
 			exs[p.Exchange] = ex
 		}
-		wg.Add(1)
-		go func(p *entity.Pair, ex entity.Exchange) {
-			defer wg.Done()
-			if req.Price {
-				var err error
-				p, err = ex.Price(p.T1.Token, p.T2.Token)
-				if err != nil {
-					return
-				}
-			}
-
-			p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
-			p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
-			ps = append(ps, p)
-		}(p, ex)
+		p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
+		p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
+		ps = append(ps, p)
 	}
-	wg.Wait()
+
 	pa.Pairs = ps
 	ctx.JSON(dto.PairsResp(pa, true), nil)
 }

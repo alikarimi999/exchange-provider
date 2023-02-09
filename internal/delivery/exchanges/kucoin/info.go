@@ -1,34 +1,51 @@
 package kucoin
 
 import (
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) getPrice(p *pair) (string, string, error) {
-	res, err := k.readApi.TickerLevel1(p.BC.TokenId + "-" + p.QC.TokenId)
-	if err := handleSDKErr(err, res); err != nil {
-		k.l.Error(fmt.Sprintf("%s.setPrice", k.Id()), err.Error())
-		return "", "", err
-	}
+func (k *kucoinExchange) getAllPrices(ps []*entity.Pair) error {
+	agent := k.agent("getAllPrices")
 
-	t := &kucoin.TickerLevel1Model{}
-	err = res.ReadData(t)
+	k.l.Debug(agent, fmt.Sprintf("Updating Price for %d pairs", len(ps)))
+	t := time.Now()
+
+	res, err := k.readApi.Tickers()
 	if err != nil {
-		k.l.Error("Kucoin.setPrice", err.Error())
-		return "", "", err
+		k.l.Error(agent, err.Error())
+		return err
 	}
-
-	f, err := numbers.StringToBigFloat(t.BestBid)
+	tsm := &kucoin.TickersResponseModel{}
+	err = res.ReadData(tsm)
 	if err != nil {
-		return "", "", err
+		k.l.Error(agent, err.Error())
+		return err
 	}
 
-	return t.BestAsk, new(big.Float).Quo(big.NewFloat(1), f).String(), nil
+	count := 0
+	for _, p := range ps {
+		for _, t := range tsm.Tickers {
+			if fmt.Sprintf("%s-%s", p.T1.TokenId, p.T2.TokenId) == t.Symbol {
+				p.Price1 = t.Buy
+				f, err := numbers.StringToBigFloat(t.Sell)
+				if err != nil {
+					k.l.Error(agent, err.Error())
+					continue
+				}
+				p.Price2 = new(big.Float).Quo(big.NewFloat(1), f).String()
+				count++
+			}
+		}
+	}
+	k.l.Debug(agent, fmt.Sprintf("The Price of %d pairs updated in %s", count, time.Since(t)))
+	return nil
 }
 
 func (k *kucoinExchange) orderFeeRate(p *pair) string {

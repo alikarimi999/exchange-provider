@@ -3,7 +3,6 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
-	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -56,34 +55,34 @@ func (s *Server) AddExchange(ctx Context) {
 		ctx.JSON(cfg, nil)
 		return
 
-	case "multichain":
+	// case "multichain":
 
-		cfg := &multichain.Config{}
-		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// 	cfg := &multichain.Config{}
+	// 	if err := ctx.Bind(cfg); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		if err := cfg.Validate(); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// 	if err := cfg.Validate(); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// 	ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
+	// 	if err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		cfg.Name = "multichain"
-		if err := s.app.AddExchange(ex); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// 	cfg.Name = "multichain"
+	// 	if err := s.app.AddExchange(ex); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		cfg.Msg = "done"
-		ctx.JSON(cfg, nil)
-		return
+	// 	cfg.Msg = "done"
+	// 	ctx.JSON(cfg, nil)
+	// 	return
 	default:
 		err := errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", id)))

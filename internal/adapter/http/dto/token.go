@@ -14,7 +14,7 @@ func ParseToken(t string) (*entity.Token, error) {
 	}
 
 	return &entity.Token{
-		TokenId: strings.ToUpper(parts[0]),
-		ChainId: strings.ToUpper(parts[1]),
+		TokenId: parts[0],
+		ChainId: parts[1],
 	}, nil
 }

@@ -172,9 +172,15 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 			k.supportedCoins.add(newCs)
 			eps := []*entity.Pair{}
 			for _, p := range newPs {
-				eps = append(eps, p.toEntity())
+				ep := p.toEntity()
+				ep.FeeRate = k.orderFeeRate(p)
+				eps = append(eps, ep)
 			}
-			k.pairs.Add(k, eps...)
+			psPrice, err := k.Price(eps...)
+			if err != nil {
+				return nil, err
+			}
+			k.pairs.Add(k, psPrice...)
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
@@ -186,16 +192,14 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 }
 
 func (k *kucoinExchange) Run() {
-	// go k.da.run(k.stopCh)
-	// go k.wa.run(k.stopCh)
-	// go k.cache.run(k.stopCh)
 	k.l.Debug(fmt.Sprintf("%s.Run", k.Id()), "started")
 }
 
-func (k *kucoinExchange) Stop() {
+func (k *kucoinExchange) Remove() {
 	op := fmt.Sprintf("%s.Stop", k.Id())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
+	k.pairs.RemoveExchange(k.Id())
 	k.l.Debug(string(op), "stopped")
 }
 

@@ -3,7 +3,6 @@ package multichain
 import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
-	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"time"
@@ -24,7 +23,7 @@ type Multichain struct {
 	l logger.Logger
 }
 
-func NewMultichain(cfg *Config, ws app.WalletStore, v *viper.Viper, l logger.Logger, readConfigs bool) (entity.Cex, error) {
+func NewMultichain(cfg *Config, ws app.WalletStore, v *viper.Viper, l logger.Logger, readConfigs bool) (*Multichain, error) {
 
 	m := &Multichain{
 		cfg:    cfg,

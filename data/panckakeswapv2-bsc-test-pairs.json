@@ -1,0 +1,52 @@
+{
+  "pairs": {
+    "dai/wbnb": {
+      "t1": {
+        "name": "DAI Token",
+        "symbol": "DAI",
+        "address": "0x8a9424745056eb399fd19a0ec26a14316684e274",
+        "decimals": 18,
+        "chainId": 97
+      },
+      "t2": {
+        "name": "Wrapped BNB",
+        "symbol": "WBNB",
+        "address": "0xae13d989dac2f0debff460ac112a837c89baa7cd",
+        "decimals": 18,
+        "chainId": 97
+      }
+    },
+    "usdt/dai": {
+      "t1": {
+        "name": "Tether USDT",
+        "symbol": "USDT",
+        "address": "0x7ef95a0fee0dd31b22626fa2e10ee6a223f8a684",
+        "decimals": 18,
+        "chainId": 97
+      },
+      "t2": {
+        "name": "DAI Token",
+        "symbol": "DAI",
+        "address": "0x8a9424745056eb399fd19a0ec26a14316684e274",
+        "decimals": 18,
+        "chainId": 97
+      }
+    },
+    "usdt/wbnb": {
+      "t1": {
+        "name": "Tether USDT",
+        "symbol": "USDT",
+        "address": "0x7ef95a0fee0dd31b22626fa2e10ee6a223f8a684",
+        "decimals": 18,
+        "chainId": 97
+      },
+      "t2": {
+        "name": "Wrapped BNB",
+        "symbol": "WBNB",
+        "address": "0xae13d989dac2f0debff460ac112a837c89baa7cd",
+        "decimals": 18,
+        "chainId": 97
+      }
+    }
+  }
+}

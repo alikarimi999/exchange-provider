@@ -11,7 +11,6 @@ import (
 type Token struct {
 	TokenId             string  `json:"tokenId"`
 	ChainId             string  `json:"chainId"`
-	ContractAddress     string  `json:"contractAddress,omitempty"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
 	BlockTime           string  `json:"blockTime,omitempty"`
@@ -102,7 +101,6 @@ func entityToAdminPair(p *entity.Pair) *AdminPair {
 			TokenId: p.T1.TokenId,
 			ChainId: p.T1.ChainId,
 
-			ContractAddress:     p.T1.ContractAddress,
 			Address:             p.T1.Address,
 			Tag:                 p.T1.Tag,
 			MinDeposit:          p.T1.MinDeposit,
@@ -117,7 +115,6 @@ func entityToAdminPair(p *entity.Pair) *AdminPair {
 			TokenId: p.T2.TokenId,
 			ChainId: p.T2.ChainId,
 
-			ContractAddress:     p.T2.ContractAddress,
 			Address:             p.T2.Address,
 			Tag:                 p.T2.Tag,
 			MinDeposit:          p.T2.MinDeposit,

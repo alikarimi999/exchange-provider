@@ -21,7 +21,7 @@ func (m *mongoDb) DelPendingWithdrawal(orderId string) error {
 
 func (m *mongoDb) retrivePendingWithd() error {
 	cur, err := m.orders.Find(context.Background(),
-		bson.D{{"status", entity.OWaitForWithdrawalConfirm}}, nil)
+		bson.D{{"order.status", entity.OWaitForWithdrawalConfirm}}, nil)
 	if err != nil {
 		return err
 	}
@@ -29,6 +29,7 @@ func (m *mongoDb) retrivePendingWithd() error {
 	if err := cur.All(context.Background(), &osDTO); err != nil {
 		return err
 	}
+
 	ids := []string{}
 	for _, o := range osDTO {
 		ids = append(ids, o.Id.Hex())

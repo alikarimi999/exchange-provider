@@ -1,0 +1,187 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"getPrices((uint256,address,address,address,uint8)[])": "ea8650c5",
+			"poolsExists((uint256,address,address,address,uint8,uint256,uint256)[])": "3d157a46"
+		}
+	},
+	"abi": [
+		{
+			"inputs": [
+				{
+					"components": [
+						{
+							"internalType": "uint256",
+							"name": "index",
+							"type": "uint256"
+						},
+						{
+							"internalType": "address",
+							"name": "t0",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "t1",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "provider",
+							"type": "address"
+						},
+						{
+							"internalType": "uint8",
+							"name": "providerVersion",
+							"type": "uint8"
+						}
+					],
+					"internalType": "struct IPriceAggregator.priceIn[]",
+					"name": "inputs",
+					"type": "tuple[]"
+				}
+			],
+			"name": "getPrices",
+			"outputs": [
+				{
+					"components": [
+						{
+							"internalType": "uint256",
+							"name": "index",
+							"type": "uint256"
+						},
+						{
+							"internalType": "uint256",
+							"name": "price",
+							"type": "uint256"
+						},
+						{
+							"internalType": "uint24",
+							"name": "fee",
+							"type": "uint24"
+						}
+					],
+					"internalType": "struct IPriceAggregator.priceOut[]",
+					"name": "",
+					"type": "tuple[]"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"components": [
+						{
+							"internalType": "uint256",
+							"name": "index",
+							"type": "uint256"
+						},
+						{
+							"internalType": "address",
+							"name": "t0",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "t1",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "provider",
+							"type": "address"
+						},
+						{
+							"internalType": "uint8",
+							"name": "providerVersion",
+							"type": "uint8"
+						},
+						{
+							"internalType": "uint256",
+							"name": "min0",
+							"type": "uint256"
+						},
+						{
+							"internalType": "uint256",
+							"name": "min1",
+							"type": "uint256"
+						}
+					],
+					"internalType": "struct IPriceAggregator.existsIn[]",
+					"name": "inputs",
+					"type": "tuple[]"
+				}
+			],
+			"name": "poolsExists",
+			"outputs": [
+				{
+					"components": [
+						{
+							"internalType": "uint256",
+							"name": "index",
+							"type": "uint256"
+						},
+						{
+							"internalType": "bool",
+							"name": "exists",
+							"type": "bool"
+						}
+					],
+					"internalType": "struct IPriceAggregator.existsOut[]",
+					"name": "",
+					"type": "tuple[]"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		}
+	]
+}

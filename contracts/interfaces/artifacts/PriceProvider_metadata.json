@@ -1,0 +1,75 @@
+{
+	"compiler": {
+		"version": "0.7.6+commit.7338295f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "router",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "t1",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "t2",
+						"type": "address"
+					}
+				],
+				"name": "Price",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/PriceProvider.sol": "PriceProvider"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/PriceProvider.sol": {
+			"keccak256": "0xaf21917243ba522759f92374d2f23eab07aeed3df1e95d844b3a1eb0f2730be9",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://70e2a3fbca67ffd2d4f8011062172358215659174aef83c164a5006b8a839df7",
+				"dweb:/ipfs/QmRciSTANGRPP1FLuhGzJuuYVR2QuhGJ8J7sSvjUSpwHXD"
+			]
+		}
+	},
+	"version": 1
+}

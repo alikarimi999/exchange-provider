@@ -41,7 +41,7 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 	}
 	opts.NoSend = true
 
-	return c.Approve(opts, common.HexToAddress(d.Contract), em.MaxBig256)
+	return c.Approve(opts, d.contractAddress, em.MaxBig256)
 }
 
 func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
@@ -69,7 +69,7 @@ func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount f
 		return false, err
 	}
 
-	amount, err := c.Allowance(nil, owner, common.HexToAddress(d.Contract))
+	amount, err := c.Allowance(nil, owner, d.contractAddress)
 	if err != nil {
 		return false, err
 	}

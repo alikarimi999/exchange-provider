@@ -7,7 +7,6 @@ import (
 	uv3 "exchange-provider/internal/delivery/exchanges/dex/uniswap/v3"
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 
-	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"exchange-provider/pkg/wallet/eth"
@@ -46,7 +45,7 @@ type dex struct {
 }
 
 func NewDEX(cfg *Config, ws app.WalletStore, rc *redis.Client, v *viper.Viper,
-	l logger.Logger, readConfig bool) (entity.Cex, error) {
+	l logger.Logger, readConfig bool) (*dex, error) {
 
 	agent := "NewDEX"
 

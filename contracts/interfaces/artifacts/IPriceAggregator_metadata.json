@@ -1,0 +1,177 @@
+{
+	"compiler": {
+		"version": "0.7.6+commit.7338295f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "t0",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "t1",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "provider",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "providerVersion",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct IPriceAggregator.priceIn[]",
+						"name": "inputs",
+						"type": "tuple[]"
+					}
+				],
+				"name": "getPrices",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "price",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint24",
+								"name": "fee",
+								"type": "uint24"
+							}
+						],
+						"internalType": "struct IPriceAggregator.priceOut[]",
+						"name": "",
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "t0",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "t1",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "provider",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "providerVersion",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint256",
+								"name": "min0",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "min1",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct IPriceAggregator.existsIn[]",
+						"name": "inputs",
+						"type": "tuple[]"
+					}
+				],
+				"name": "poolsExists",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "exists",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct IPriceAggregator.existsOut[]",
+						"name": "",
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IPriceAggregator.sol": "IPriceAggregator"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IPriceAggregator.sol": {
+			"keccak256": "0xb9353b148b4ee37a73f58a59d00ca9ce508e5b09cbcb424009b6fce9c3e563a7",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ee277345a3caea52b2ba22c2c4b342c97c1b2a79093d34b55d7fa53368c04105",
+				"dweb:/ipfs/QmY1DY4nEsfpFLV4whnw2nnKET7wH5TkHX9X6guZHL2z2W"
+			]
+		}
+	},
+	"version": 1
+}

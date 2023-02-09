@@ -1,0 +1,146 @@
+{
+	"compiler": {
+		"version": "0.8.17+commit.8df45f5f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "input",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "totalAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "swapper",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes",
+								"name": "data",
+								"type": "bytes"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							}
+						],
+						"internalType": "struct IExchangeAggregator.swapData",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "swap",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "input",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "totalAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "swapper",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes",
+								"name": "data",
+								"type": "bytes"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							}
+						],
+						"internalType": "struct IExchangeAggregator.swapData",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "swapNativeIn",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IE.sol": "IExchangeAggregator"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IE.sol": {
+			"keccak256": "0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9",
+				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
+			]
+		}
+	},
+	"version": 1
+}

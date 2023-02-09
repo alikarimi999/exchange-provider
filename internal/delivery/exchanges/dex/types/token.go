@@ -26,9 +26,10 @@ func (t *Token) String() string {
 func (t *Token) ToEntity(standard string) *entity.PairToken {
 	return &entity.PairToken{
 		Token: &entity.Token{
-			TokenId: t.Symbol,
-			ChainId: standard,
+			TokenId:  t.Symbol,
+			ChainId:  standard,
+			Address:  t.Address.String(),
+			Decimals: uint64(t.Decimals),
 		},
-		ContractAddress: t.Address.String(),
 	}
 }

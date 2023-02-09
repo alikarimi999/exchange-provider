@@ -1,0 +1,126 @@
+{
+	"compiler": {
+		"version": "0.7.6+commit.7338295f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "liquidity",
+				"outputs": [
+					{
+						"internalType": "uint128",
+						"name": "",
+						"type": "uint128"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint32[]",
+						"name": "secondsAgos",
+						"type": "uint32[]"
+					}
+				],
+				"name": "observe",
+				"outputs": [
+					{
+						"internalType": "int56[]",
+						"name": "tickCumulatives",
+						"type": "int56[]"
+					},
+					{
+						"internalType": "uint160[]",
+						"name": "secondsPerLiquidityCumulativeX128s",
+						"type": "uint160[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "slot0",
+				"outputs": [
+					{
+						"internalType": "uint160",
+						"name": "sqrtPriceX96",
+						"type": "uint160"
+					},
+					{
+						"internalType": "int24",
+						"name": "tick",
+						"type": "int24"
+					},
+					{
+						"internalType": "uint16",
+						"name": "observationIndex",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint16",
+						"name": "observationCardinality",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint16",
+						"name": "observationCardinalityNext",
+						"type": "uint16"
+					},
+					{
+						"internalType": "uint8",
+						"name": "feeProtocol",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bool",
+						"name": "unlocked",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IUniswapV3Pool.sol": "IUniswapV3Pool"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IUniswapV3Pool.sol": {
+			"keccak256": "0x519f22db4bf598f80a3226bad81082fd5cf732148c50ab531f5ec8239245a2f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7a6327581d16d69335c6813f4e84a1334460621c3e49f1d4c4a394ce289fd628",
+				"dweb:/ipfs/QmQ8CihsGFAsWtpJmibNKkCRwbW3a8iZTec8v5mXuGhiRG"
+			]
+		}
+	},
+	"version": 1
+}

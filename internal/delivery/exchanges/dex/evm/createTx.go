@@ -2,7 +2,6 @@ package evm
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
 	"math/big"
 	"strings"
@@ -41,22 +40,19 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		err error
 	)
 
-	T1, ok := d.get(r.In.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
-	}
-	T2, ok := d.get(r.Out.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
+	p, err := d.pairsRepo.Get(d.Id(), r.In, r.Out)
+	if err != nil {
+		return nil, err
 	}
 
-	var in, out types.Token
-	if T1.Symbol == r.In.TokenId {
-		in = T1
-		out = T2
+	in := &entity.Token{}
+	out := &entity.Token{}
+	if p.T1.TokenId == r.In.TokenId {
+		in = p.T1.Token
+		out = p.T2.Token
 	} else {
-		in = T2
-		out = T1
+		out = p.T1.Token
+		in = p.T2.Token
 	}
 
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
@@ -69,13 +65,13 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	swapAmountF := big.NewFloat(0).Sub(totalAmountF, feeAmountF)
 	swapAmountI, _ := swapAmountF.Int(nil)
 
-	input, err := d.TxData(in, out, sender, receiver, swapAmountI)
+	input, err := d.TxData(in, out, sender, receiver, swapAmountI, p.FeeTier)
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err
 	}
 
-	c, err := contracts.NewContracts(common.HexToAddress(d.Contract), d.provider().Client)
+	c, err := contracts.NewContracts(d.contractAddress, d.provider().Client)
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err
@@ -88,8 +84,8 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	}
 	opts.NoSend = true
 
-	data := contracts.ExchangeAggregatorswapData{
-		Input:       in.Address,
+	data := contracts.IExchangeAggregatorswapData{
+		Input:       common.HexToAddress(in.Address),
 		TotalAmount: totalAmountI,
 		FeeAmount:   feeAmountI,
 		Swapper:     d.Router(),
@@ -106,7 +102,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	opts.From = sender
 	opts.Sign = false
 
-	if in.IsNative() {
+	if in.Native {
 		opts.Value = totalAmountI
 		tx, err = c.SwapNativeIn(opts, data, sig)
 	} else {
@@ -116,7 +112,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	if err != nil {
 		if err.Error() == c.ErrSTF().Error() {
 			return nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage("you don't have enough token or previous step was not successful"))
+				errors.NewMesssage("insufficient funds or the previous step was unsuccessful"))
 		}
 		if strings.Contains(err.Error(), "insufficient funds") {
 			return nil, errors.Wrap(errors.ErrBadRequest,
@@ -126,5 +122,10 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		return nil, err
 	}
 
+	// fmt.Println()
+	// fmt.Println("input: ", data)
+	// fmt.Println("data: 	", hexutil.Encode(data.Data))
+	// fmt.Println("sig: 	", hexutil.Encode(sig))
+	// fmt.Println()
 	return tx, nil
 }

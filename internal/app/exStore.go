@@ -94,9 +94,7 @@ func (a *exStore) remove(nid string) error {
 			return err
 		}
 
-		if ex.Type() == entity.CEX {
-			go ex.(entity.Cex).Stop()
-		}
+		ex.Remove()
 		delete(a.exchanges, nid)
 		return nil
 	}

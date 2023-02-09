@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/errors"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type Config struct {
@@ -13,10 +15,13 @@ type Config struct {
 	NativeToken        string
 	WrappedNativeToken string
 	TokensFile         string
+	PairsFile          string
 	ChainId            int64
 	TokenStandard      string
 	Contract           string
+	contractAddress    common.Address
 	Swapper            string
+	swapperAddress     common.Address
 	HexKey             string
 	privateKey         *ecdsa.PrivateKey
 	Providers          []string
@@ -36,8 +41,12 @@ func (c *Config) Validate(readConfig bool) error {
 	}
 
 	if !readConfig {
+
+		if c.PairsFile == "" {
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("pairsFile must not be empty"))
+		}
 		if c.TokensFile == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tokenFile must not be empty"))
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tokensFile must not be empty"))
 		}
 		if c.NativeToken == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("nativeToken must not be empty"))

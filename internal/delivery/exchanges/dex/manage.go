@@ -61,28 +61,29 @@ func (u *dex) GetAllPairs() []*entity.Pair {
 	return pairs
 }
 
-func (u *dex) Price(bc, qc *entity.Token) (*entity.Pair, error) {
-	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
-		return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
-	}
+func (u *dex) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
+	// if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
+	// 	return nil, fmt.Errorf("unexpected chain id %v and chain id %v", bc.ChainId, qc.ChainId)
+	// }
 
-	p, err := u.pairs.get(bc.TokenId, qc.TokenId)
-	if err != nil {
-		return nil, err
-	}
+	// p, err := u.pairs.get(bc.TokenId, qc.TokenId)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	p, err = u.PairWithPrice(p.T1, p.T2)
-	if err != nil {
-		return nil, err
-	}
-	return p.ToEntity(u.Id(), u.cfg.NativeToken, u.cfg.TokenStandard), nil
+	// p, err = u.PairWithPrice(p.T1, p.T2)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return p.ToEntity(u.Id(), u.cfg.NativeToken, u.cfg.TokenStandard), nil
+	return nil, nil
 }
 
-func (u *dex) Support(bc, qc *entity.Token) bool {
-	if bc.ChainId != u.cfg.TokenStandard || qc.ChainId != u.cfg.TokenStandard {
+func (u *dex) Support(t1, t2 *entity.Token) bool {
+	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
 		return false
 	}
-	_, err := u.pairs.get(bc.TokenId, qc.TokenId)
+	_, err := u.pairs.get(t1.TokenId, t2.TokenId)
 	return err == nil
 }
 

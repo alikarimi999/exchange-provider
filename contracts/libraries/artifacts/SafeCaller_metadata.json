@@ -1,0 +1,45 @@
+{
+	"compiler": {
+		"version": "0.7.6+commit.7338295f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/libraries/safeCaller.sol": "SafeCaller"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/libraries/safeCaller.sol": {
+			"keccak256": "0x34515481fb168f22bb2eb11198251ce23448dd3e04a9680829803e07a2f42a98",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8e18be1d579c0ba509f6791a20aa4051980b9858d18fdbd9b39d58344a75e333",
+				"dweb:/ipfs/QmWoK1L9w5fjAvVGeLSpwweDN5f1vJGScudAVDZC3pTzqX"
+			]
+		}
+	},
+	"version": 1
+}

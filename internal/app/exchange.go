@@ -29,7 +29,7 @@ func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Token) (entity.Excha
 	sCexs := []entity.Exchange{}
 	sDexs := []entity.Exchange{}
 	for _, ex := range exs {
-		if o.pairs.Exists(ex.Id(), in, out) {
+		if ex.Support(in, out) {
 			if ex.Type() == entity.EvmDEX {
 				sDexs = append(sDexs, ex)
 			} else {
@@ -40,12 +40,6 @@ func (o *OrderUseCase) SelectExchangeByPair(in, out *entity.Token) (entity.Excha
 
 	if len(sDexs) > 0 {
 		return sDexs[randInt(len(sDexs))], nil
-	}
-
-	for _, ex := range exs {
-		if o.pairs.Exists(ex.Id(), in, out) {
-			sCexs = append(sCexs, ex)
-		}
 	}
 
 	if len(sCexs) > 0 {

@@ -30,8 +30,6 @@ type PairToken struct {
 	*Token
 
 	BlockTime           time.Duration
-	ContractAddress     string
-	Address             string
 	Tag                 string
 	MinDeposit          float64
 	MinOrderSize        string
@@ -47,8 +45,6 @@ func (t *PairToken) Snapshot() *PairToken {
 	return &PairToken{
 		Token:             t.Token.Snapshot(),
 		BlockTime:         t.BlockTime,
-		ContractAddress:   t.ContractAddress,
-		Address:           t.Address,
 		Tag:               t.Tag,
 		MinDeposit:        t.MinDeposit,
 		MinOrderSize:      t.MinOrderSize,
@@ -84,6 +80,11 @@ func (p *PairToken) String() string {
 func (p *Pair) String() string {
 	return p.T1.String() + "/" + p.T2.String()
 }
+
+func (p *Pair) Equal(p1 *Pair) bool {
+	return (p.T1.String() == p1.T1.String() && p.T2.String() == p1.T2.String())
+}
+
 func (p *Pair) Snapshot() *Pair {
 	return &Pair{
 		T1:              p.T1.Snapshot(),

@@ -6,7 +6,6 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strings"
-	"sync"
 )
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
@@ -71,7 +70,6 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			},
 		})
 		cs[p.BC.TokenId+string(p.BC.ChainId)] = p.BC
-
 		cs[p.QC.TokenId+string(p.QC.ChainId)] = p.QC
 	}
 
@@ -79,60 +77,26 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 	k.supportedCoins.add(cs)
 	eps := []*entity.Pair{}
 	for _, p := range aps {
-		eps = append(eps, p.toEntity())
+		ep := p.toEntity()
+		ep.FeeRate = k.orderFeeRate(p)
+		eps = append(eps, ep)
 	}
-	k.pairs.Add(k, eps...)
+
+	pPrice, err := k.Price(eps...)
+	if err != nil {
+		return nil, err
+	}
+	k.pairs.Add(k, pPrice...)
 	return res, nil
 
 }
 
-func (k *kucoinExchange) GetAllPairs() []*entity.Pair {
-	agent := fmt.Sprintf("%s.GetAllPairs", k.Id())
-
-	ps := k.exchangePairs.snapshot()
-	pairs := make([]*entity.Pair, len(ps))
-	wg := &sync.WaitGroup{}
-	for i, p := range ps {
-		wg.Add(1)
-		go func(p *pair, i int) {
-			defer wg.Done()
-			pe := p.toEntity()
-
-			price1, price2, err := k.getPrice(p)
-			if err != nil {
-				k.l.Error(agent, err.Error())
-			}
-			pe.Price1 = price1
-			pe.Price2 = price2
-
-			f := k.orderFeeRate(p)
-			pe.FeeRate = f
-			pairs[i] = pe
-		}(p, i)
-	}
-	wg.Wait()
-	return pairs
-}
-
-func (k *kucoinExchange) Price(bc, qc *entity.Token) (*entity.Pair, error) {
-	agent := fmt.Sprintf("%s.GetPair", k.Id())
-	p, err := k.exchangePairs.get(bc, qc)
-	if err != nil {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
-	}
-	pe := p.toEntity()
-	price1, price2, err := k.getPrice(p)
-	if err != nil {
-		k.l.Error(agent, err.Error())
+func (k *kucoinExchange) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
+	if err := k.getAllPrices(ps); err != nil {
 		return nil, err
 	}
 
-	pe.Price1 = price1
-	pe.Price2 = price2
-
-	pe.FeeRate = k.orderFeeRate(p)
-
-	return pe, nil
+	return ps, nil
 }
 
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
@@ -151,9 +115,6 @@ func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
 	return nil
 }
 
-func (k *kucoinExchange) Support(c1, c2 *entity.Token) bool {
-	if _, err := k.exchangePairs.get(c1, c2); err != nil {
-		return false
-	}
-	return true
+func (k *kucoinExchange) Support(t1, t2 *entity.Token) bool {
+	return k.pairs.Exists(k.Id(), t1, t2)
 }

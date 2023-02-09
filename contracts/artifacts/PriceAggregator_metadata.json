@@ -1,0 +1,318 @@
+{
+	"compiler": {
+		"version": "0.7.6+commit.7338295f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "t0",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "t1",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "provider",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "providerVersion",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct IPriceAggregator.priceIn[]",
+						"name": "inputs",
+						"type": "tuple[]"
+					}
+				],
+				"name": "getPrices",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "price",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint24",
+								"name": "fee",
+								"type": "uint24"
+							}
+						],
+						"internalType": "struct IPriceAggregator.priceOut[]",
+						"name": "",
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "t0",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "t1",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "provider",
+								"type": "address"
+							},
+							{
+								"internalType": "uint8",
+								"name": "providerVersion",
+								"type": "uint8"
+							},
+							{
+								"internalType": "uint256",
+								"name": "min0",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "min1",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct IPriceAggregator.existsIn[]",
+						"name": "inputs",
+						"type": "tuple[]"
+					}
+				],
+				"name": "poolsExists",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "index",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "exists",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct IPriceAggregator.existsOut[]",
+						"name": "",
+						"type": "tuple[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/PriceAggregator.sol": "PriceAggregator"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol": {
+			"keccak256": "0xe5905c0989cf5a865ed9bb7b9252536ca011c5b744017a82a7d4443b9c00a891",
+			"urls": [
+				"bzz-raw://5d2a90a0a796491507462a3da18c3f8819721d571572d765a2207c35bf0a0389",
+				"dweb:/ipfs/Qmf9ACYiT3qzjgsYuhm866FBdiBpRMXAPpQhSFbgqcyhHt"
+			]
+		},
+		"@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol": {
+			"keccak256": "0x7c9bc70e5996c763e02ff38905282bc24fb242b0ef2519a003b36824fc524a4b",
+			"urls": [
+				"bzz-raw://85d5ad2dd23ee127f40907a12865a1e8cb5828814f6f2480285e1827dd72dedf",
+				"dweb:/ipfs/QmayKQWJgWmr46DqWseADyUanmqxh662hPNdAkdHRjiQQH"
+			]
+		},
+		"@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol": {
+			"keccak256": "0x8a3c5c449d4b7cd76513ed6995f4b86e4a86f222c770f8442f5fc128ce29b4d2",
+			"urls": [
+				"bzz-raw://1df63ca373dafae3bd0ee7fe70f890a1dc7c45ed869c01de68413e0e97ff9deb",
+				"dweb:/ipfs/QmefJgEYGUL8KX7kQKYTrDweF8GB7yjy3nw5Bmqzryg7PG"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol": {
+			"keccak256": "0xcc3d0c93fc9ac0febbe09f941b465b57f750bcf3b48432da0b97dc289cfdc489",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://b9379ad954680c44a0bc523b314ae4c4da735f9fe1d02aa56ea5bdba6f1136f2",
+				"dweb:/ipfs/QmZXdgQNXKAckrXWz9R3mc47F1fvDvr28a2ewJrwNAw71B"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol": {
+			"keccak256": "0xfe6113d518466cd6652c85b111e01f33eb62157f49ae5ed7d5a3947a2044adb1",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://1c42b9e6f5902ac38dd43e25750939baa7e0c1425dc75afd717c4412731065d5",
+				"dweb:/ipfs/QmWaoacnzsucTvBME2o7YgZBZMhaHv7fkj83htHMVWJKWh"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolActions.sol": {
+			"keccak256": "0x9453dd0e7442188667d01d9b65de3f1e14e9511ff3e303179a15f6fc267f7634",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://982f4328f956c3e60e67501e759eb292ac487f76460c774c50e9ae4fcc92aae5",
+				"dweb:/ipfs/QmRnzEDsaqtd9PJEVcgQi7p5aV5pMSvRUoGZJAdwFUJxgZ"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolDerivedState.sol": {
+			"keccak256": "0xe603ac5b17ecdee73ba2b27efdf386c257a19c14206e87eee77e2017b742d9e5",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://8febc9bdb399a4d94bb89f5377732652e2400e4a8dee808201ade6848f9004e7",
+				"dweb:/ipfs/QmaKDqYYFU4d2W2iN77aDHptfbFmYZRrMYXHeGpJmM8C1c"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolEvents.sol": {
+			"keccak256": "0x8071514d0fe5d17d6fbd31c191cdfb703031c24e0ece3621d88ab10e871375cd",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://d0b571930cc7488b1d546a7e9cea7c52d8b3c4e207da657ed0e0db7343b8cd03",
+				"dweb:/ipfs/QmaGK6vVwB95QSTR1XMYvrh7ivYAYZxi3fD7v6VMA4jZ39"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolImmutables.sol": {
+			"keccak256": "0xf6e5d2cd1139c4c276bdbc8e1d2b256e456c866a91f1b868da265c6d2685c3f7",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://b99c8c9ae8e27ee6559e5866bea82cbc9ffc8247f8d15b7422a4deb287d4d047",
+				"dweb:/ipfs/QmfL8gaqt3ffAnm6nVj5ksuNpLygXuL3xq5VBqrkwC2JJ3"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolOwnerActions.sol": {
+			"keccak256": "0x759b78a2918af9e99e246dc3af084f654e48ef32bb4e4cb8a966aa3dcaece235",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://64144fb96e1c7fdba87305acadb98a198d26a3d46c097cb3a666e567f6f29735",
+				"dweb:/ipfs/QmUnWVwN9FKB9uV5Pr8YfLpWZnYM2DENnRMaadZ492JS9u"
+			]
+		},
+		"@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolState.sol": {
+			"keccak256": "0x852dc1f5df7dcf7f11e7bb3eed79f0cea72ad4b25f6a9d2c35aafb48925fd49f",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://ed63907c38ff36b0e22bc9ffc53e791ea74f0d4f0e7c257fdfb5aaf8825b1f0f",
+				"dweb:/ipfs/QmSQrckghEjs6HVsA5GVgpNpZWvTXMY5eQLF7cN6deFeEg"
+			]
+		},
+		"@uniswap/v3-core/contracts/libraries/FullMath.sol": {
+			"keccak256": "0x50e87f7a3197525d1c6f7e04290060e848677c8a4e86c554bc6ace4a4d0d476d",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://3874093a6b37d8e68f9475a91f8eb0a1c808cb6153c84cfe6c37909505a4d24e",
+				"dweb:/ipfs/QmUqGpQqvSHX4SwUvcBCs9g4ZhR9JPhgD3615oUigAhtjj"
+			]
+		},
+		"@uniswap/v3-core/contracts/libraries/TickMath.sol": {
+			"keccak256": "0xda8c2c0b12d2976acfd364453ba5f5bf0117ba3c91175ee9e1067d3fb26944d9",
+			"license": "GPL-2.0-or-later",
+			"urls": [
+				"bzz-raw://3f3d2d7c2723c91830c74d96292f28fc1cfe28d388cdb9c1a5ebadb4c2b96f81",
+				"dweb:/ipfs/QmYU4wk8MEm33wVWR38LoncvR7b8PP1mLuGBKX3dUpYJVE"
+			]
+		},
+		"contracts/PriceAggregator.sol": {
+			"keccak256": "0x070358b57fdbdbf7c8ec2b2d659b8c400900e8f21991b0e2e4cf491f866b6805",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://76342a0c746c245b654d332bb3a07f82a4d11139900ab91db9fa9047891f6a3a",
+				"dweb:/ipfs/QmZCvfGiTSbc1o9S8X7sLbJfeyUR92exroNqKbwQpx6rFn"
+			]
+		},
+		"contracts/interfaces/IERC20.sol": {
+			"keccak256": "0x7df9d93243a890a6dc175905d65495ae5726330faa50409ab8460c4c00c672e1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://3ff91fe9d915b97343e152f1a15a46e5ff9477e90e90a4431dca38f79eb2cdba",
+				"dweb:/ipfs/QmcHUAJs2MfcdbAFTzdQE1eGevxCGHNDXECiuGLDaUs34S"
+			]
+		},
+		"contracts/interfaces/IPriceAggregator.sol": {
+			"keccak256": "0xb9353b148b4ee37a73f58a59d00ca9ce508e5b09cbcb424009b6fce9c3e563a7",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ee277345a3caea52b2ba22c2c4b342c97c1b2a79093d34b55d7fa53368c04105",
+				"dweb:/ipfs/QmY1DY4nEsfpFLV4whnw2nnKET7wH5TkHX9X6guZHL2z2W"
+			]
+		},
+		"contracts/libraries/OracleLibrary.sol": {
+			"keccak256": "0xfe374d779a9fdb16c102035c181002ffd393138a38acc916e9f4e98139f5b399",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://497ed18360c8fef9ca485f60669fa56247b2a46a464483b2d93fe24792d68d1f",
+				"dweb:/ipfs/QmY6gSGfuAi5BQnJxhQKLHwqmo7ZG3WVqXqAmPRZRyapGv"
+			]
+		},
+		"contracts/libraries/UniswapV2.sol": {
+			"keccak256": "0xc7823920d57b71f9b132388eb99c565f39c7b1f1e834ed8e43e5a205adccc766",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ed03b38d80fc6178cd7ed2cad700349fad66d0f94a7cbab20f09542b35b59e7b",
+				"dweb:/ipfs/QmVafrxFP91WRcvkGnhZmKfSR6JfjManbHZAx4tToCNZWM"
+			]
+		},
+		"contracts/libraries/UniswapV3.sol": {
+			"keccak256": "0x20647d241de17dbd7614eb15b6ce247b027eafe11839b867bd67a503f2bcecc1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://06863dc107313811647ce668ac7a0f97b8542fbfe38a7ba12fa3660dd4aabd59",
+				"dweb:/ipfs/QmenUBRAWHJWEix7DE1y2aoUGR4eBySCiawnpFC99iTLFG"
+			]
+		}
+	},
+	"version": 1
+}

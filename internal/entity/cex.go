@@ -28,8 +28,6 @@ type Cex interface {
 
 	Withdrawal(o *CexOrder) (string, error)
 	TrackWithdrawal(w *CexOrder, done chan<- struct{}, proccessedCh <-chan bool)
-
-	Stop()
 	Run()
 
 	GetAddress(c *Token) (*Address, error)

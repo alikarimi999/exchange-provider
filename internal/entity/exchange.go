@@ -22,10 +22,11 @@ type Exchange interface {
 	Id() string
 	Name() string
 	Type() ExType
-	Price(t1, t2 *Token) (*Pair, error)
+	Price(...*Pair) ([]*Pair, error)
 	Support(t1, t2 *Token) bool
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 *Token) error
 	Configs() interface{}
 	Command(Command) (CommandResult, error)
+	Remove()
 }

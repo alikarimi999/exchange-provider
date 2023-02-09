@@ -11,16 +11,16 @@ import (
 var Delimiter string = "/"
 
 type Pair struct {
-	Address common.Address
-	T1      Token `json:"t1"`
-	T2      Token `json:"t2"`
+	Address common.Address `json:"-"`
+	T1      Token          `json:"t1"`
+	T2      Token          `json:"t2"`
 
-	BaseIsZero bool
+	BaseIsZero bool `json:"-"`
 
-	Price1    string
-	Price2    string
-	Liquidity *big.Int
-	FeeTier   *big.Int
+	Price1    string   `json:"-"`
+	Price2    string   `json:"-"`
+	Liquidity *big.Int `json:"-"`
+	FeeTier   *big.Int `json:"-"`
 }
 
 func (p *Pair) String() string {

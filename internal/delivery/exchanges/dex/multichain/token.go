@@ -37,6 +37,7 @@ func (t *Token) toCoin() *entity.Token {
 	return &entity.Token{
 		TokenId: t.TokenId,
 		ChainId: t.ChainId,
+		Address: t.Address,
 	}
 }
 

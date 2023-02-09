@@ -17,13 +17,14 @@ type dex struct {
 	chainId     *big.Int
 	nativeToken string
 	router      common.Address
+	contract    common.Address
 	factory     common.Address
 	prvKey      *ecdsa.PrivateKey
 	ps          []*ts.EthProvider
 	l           logger.Logger
 }
 
-func NewUniswapV3Dex(id, network, nativeToken, router string, chainId int64,
+func NewUniswapV3Dex(id, network, nativeToken, router, contract string, chainId int64,
 	prvKey *ecdsa.PrivateKey, ps []*ts.EthProvider, l logger.Logger) (*dex, error) {
 
 	d := &dex{
@@ -32,6 +33,7 @@ func NewUniswapV3Dex(id, network, nativeToken, router string, chainId int64,
 		chainId:     big.NewInt(chainId),
 		nativeToken: nativeToken,
 		router:      common.HexToAddress(router),
+		contract:    common.HexToAddress(contract),
 		prvKey:      prvKey,
 		ps:          ps,
 		l:           l,

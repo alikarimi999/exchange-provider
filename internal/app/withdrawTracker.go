@@ -57,14 +57,13 @@ func (t *withdrawalTracker) run() {
 			go ex.(entity.Cex).TrackWithdrawal(o, done, pCh)
 
 			<-done
-			t.l.Debug(agent, fmt.Sprintf("orderId: '%s', staus: '%s'", oId, o.Withdrawal.Status))
-
 			switch o.Withdrawal.Status {
 			case entity.WithdrawalPending:
 				pCh <- true
 				return
 			case entity.WithdrawalSucceed:
 
+				t.l.Debug(agent, fmt.Sprintf("order: '%s', staus: '%s'", oId, o.Withdrawal.Status))
 				o.Status = entity.Oucceeded
 
 				if err := t.ouc.write(o); err != nil {
@@ -82,6 +81,7 @@ func (t *withdrawalTracker) run() {
 
 			case entity.WithdrawalFailed:
 
+				t.l.Debug(agent, fmt.Sprintf("order: '%s', staus: '%s'", oId, o.Withdrawal.Status))
 				o.Status = entity.OFailed
 				o.FailedCode = entity.FCWithdFailed
 

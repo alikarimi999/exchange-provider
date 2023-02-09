@@ -3,7 +3,6 @@ package exrepo
 import (
 	"encoding/json"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
-	"exchange-provider/internal/delivery/exchanges/dex/multichain"
 	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -67,14 +66,14 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		}
 		return evm.NewEvmDex(cfg, r.pairs, r.v, r.l, true)
 
-	case "multichain":
-		m, ok := jb["mnemonic"].(string)
-		if !ok {
-			return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
-		}
+		// case "multichain":
+		// 	m, ok := jb["mnemonic"].(string)
+		// 	if !ok {
+		// 		return nil, errors.Wrap(errors.New(fmt.Sprintf("`%+v` does not have mnemonic paramether", ex)))
+		// 	}
 
-		cfg := &multichain.Config{Name: ex.Id, Mnemonic: m}
-		return multichain.NewMultichain(cfg, r.WalletStore, r.v, r.l, true)
+		// 	cfg := &multichain.Config{Name: ex.Id, Mnemonic: m}
+		// 	return multichain.NewMultichain(cfg, r.WalletStore, r.v, r.l, true)
 
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Id)))

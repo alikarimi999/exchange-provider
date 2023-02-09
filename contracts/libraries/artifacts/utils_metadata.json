@@ -1,0 +1,134 @@
+{
+	"compiler": {
+		"version": "0.8.17+commit.8df45f5f"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "input",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "totalAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "address",
+								"name": "swapper",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes",
+								"name": "data",
+								"type": "bytes"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							}
+						],
+						"internalType": "struct IExchangeAggregator.swapData",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "signer",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/libraries/utils.sol": "utils"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/utils/Strings.sol": {
+			"keccak256": "0xa4d1d62251f8574deb032a35fc948386a9b4de74b812d4f545a1ac120486b48a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8c969013129ba9e651a20735ef659fef6d8a1139ea3607bd4b26ddea2d645634",
+				"dweb:/ipfs/QmVhVa6LGuzAcB8qgDtVHRkucn4ihj5UZr8xBLcJkP6ucb"
+			]
+		},
+		"@openzeppelin/contracts/utils/cryptography/ECDSA.sol": {
+			"keccak256": "0x06b89300806c928957832871b00126458e42874127857569a5fff7ff28093b10",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7125301cdee2b0f9ec0b6c1796e4d19a7f601a8bab62a087b4e6c0fc9699f140",
+				"dweb:/ipfs/QmZPh1JuMBL1eoJ9igYN1nDFZnnr1NAzSkq9FyvkSsKoKT"
+			]
+		},
+		"@openzeppelin/contracts/utils/math/Math.sol": {
+			"keccak256": "0xa1e8e83cd0087785df04ac79fb395d9f3684caeaf973d9e2c71caef723a3a5d6",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://33bbf48cc069be677705037ba7520c22b1b622c23b33e1a71495f2d36549d40b",
+				"dweb:/ipfs/Qmct36zWXv3j7LZB83uwbg7TXwnZSN1fqHNDZ93GG98bGz"
+			]
+		},
+		"contracts/interfaces/IExchangeAggregator.sol": {
+			"keccak256": "0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9",
+				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
+			]
+		},
+		"contracts/libraries/utils.sol": {
+			"keccak256": "0x4b2c957e6b6f776435b67e42e079eecd89e92366a92e80e4bb57cc5574d3d38c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://f1371c716580a6c4f35d6930974bc4d81c1c48cb626e6c521d37d0b9c5ea922f",
+				"dweb:/ipfs/QmUnTmwpVKrUL1ufznoTbZemagRh2D4XjoX4kQ8CpfudNR"
+			]
+		}
+	},
+	"version": 1
+}

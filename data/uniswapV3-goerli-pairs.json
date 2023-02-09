@@ -1,0 +1,52 @@
+{
+  "pairs": {
+    "uni/weth": {
+      "t1": {
+        "name": "UNI",
+        "symbol": "UNI",
+        "address": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "decimals": 18,
+        "chainId": 5
+      },
+      "t2": {
+        "name": "WETH",
+        "symbol": "WETH",
+        "address": "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6",
+        "decimals": 18,
+        "chainId": 5
+      }
+    },
+    "usdc/uni": {
+      "t1": {
+        "name": "USDC",
+        "symbol": "USDC",
+        "address": "0x07865c6e87b9f70255377e024ace6630c1eaa37f",
+        "decimals": 6,
+        "chainId": 5
+      },
+      "t2": {
+        "name": "UNI",
+        "symbol": "UNI",
+        "address": "0x1f9840a85d5af5bf1d1762f925bdaddc4201f984",
+        "decimals": 18,
+        "chainId": 5
+      }
+    },
+    "usdc/weth": {
+      "t1": {
+        "name": "USDC",
+        "symbol": "USDC",
+        "address": "0x07865c6e87b9f70255377e024ace6630c1eaa37f",
+        "decimals": 6,
+        "chainId": 5
+      },
+      "t2": {
+        "name": "WETH",
+        "symbol": "WETH",
+        "address": "0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6",
+        "decimals": 18,
+        "chainId": 5
+      }
+    }
+  }
+}

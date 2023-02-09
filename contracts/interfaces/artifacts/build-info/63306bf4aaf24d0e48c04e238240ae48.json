@@ -1,0 +1,602 @@
+{
+	"id": "63306bf4aaf24d0e48c04e238240ae48",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.17",
+	"solcLongVersion": "0.8.17+commit.8df45f5f",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IExchangeAggregator.sol": {
+				"content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.17;\n\ninterface IExchangeAggregator {\n    struct swapData{\n        address input;\n        uint totalAmount;\n        uint feeAmount;\n        address swapper;\n        bytes data;\n        address sender;\n    }\n\n    function swap(swapData calldata data,bytes calldata sig) external;\n    function swapNativeIn(swapData calldata data,bytes calldata sig) external payable;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": false,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			}
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IExchangeAggregator.sol": {
+				"IExchangeAggregator": {
+					"abi": [
+						{
+							"inputs": [
+								{
+									"components": [
+										{
+											"internalType": "address",
+											"name": "input",
+											"type": "address"
+										},
+										{
+											"internalType": "uint256",
+											"name": "totalAmount",
+											"type": "uint256"
+										},
+										{
+											"internalType": "uint256",
+											"name": "feeAmount",
+											"type": "uint256"
+										},
+										{
+											"internalType": "address",
+											"name": "swapper",
+											"type": "address"
+										},
+										{
+											"internalType": "bytes",
+											"name": "data",
+											"type": "bytes"
+										},
+										{
+											"internalType": "address",
+											"name": "sender",
+											"type": "address"
+										}
+									],
+									"internalType": "struct IExchangeAggregator.swapData",
+									"name": "data",
+									"type": "tuple"
+								},
+								{
+									"internalType": "bytes",
+									"name": "sig",
+									"type": "bytes"
+								}
+							],
+							"name": "swap",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"components": [
+										{
+											"internalType": "address",
+											"name": "input",
+											"type": "address"
+										},
+										{
+											"internalType": "uint256",
+											"name": "totalAmount",
+											"type": "uint256"
+										},
+										{
+											"internalType": "uint256",
+											"name": "feeAmount",
+											"type": "uint256"
+										},
+										{
+											"internalType": "address",
+											"name": "swapper",
+											"type": "address"
+										},
+										{
+											"internalType": "bytes",
+											"name": "data",
+											"type": "bytes"
+										},
+										{
+											"internalType": "address",
+											"name": "sender",
+											"type": "address"
+										}
+									],
+									"internalType": "struct IExchangeAggregator.swapData",
+									"name": "data",
+									"type": "tuple"
+								},
+								{
+									"internalType": "bytes",
+									"name": "sig",
+									"type": "bytes"
+								}
+							],
+							"name": "swapNativeIn",
+							"outputs": [],
+							"stateMutability": "payable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"kind": "dev",
+						"methods": {},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"swap((address,uint256,uint256,address,bytes,address),bytes)": "2906799b",
+							"swapNativeIn((address,uint256,uint256,address,bytes,address),bytes)": "5d86acf1"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"input\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"totalAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"swapper\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"internalType\":\"struct IExchangeAggregator.swapData\",\"name\":\"data\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"sig\",\"type\":\"bytes\"}],\"name\":\"swap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"input\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"totalAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"swapper\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"internalType\":\"struct IExchangeAggregator.swapData\",\"name\":\"data\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"sig\",\"type\":\"bytes\"}],\"name\":\"swapNativeIn\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IExchangeAggregator.sol\":\"IExchangeAggregator\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IExchangeAggregator.sol\":{\"keccak256\":\"0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9\",\"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IExchangeAggregator.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IExchangeAggregator.sol",
+					"exportedSymbols": {
+						"IExchangeAggregator": [
+							31
+						]
+					},
+					"id": 32,
+					"license": "MIT",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".17"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "32:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IExchangeAggregator",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 31,
+							"linearizedBaseContracts": [
+								31
+							],
+							"name": "IExchangeAggregator",
+							"nameLocation": "68:19:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"canonicalName": "IExchangeAggregator.swapData",
+									"id": 14,
+									"members": [
+										{
+											"constant": false,
+											"id": 3,
+											"mutability": "mutable",
+											"name": "input",
+											"nameLocation": "127:5:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "119:13:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 2,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "119:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 5,
+											"mutability": "mutable",
+											"name": "totalAmount",
+											"nameLocation": "147:11:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "142:16:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_uint256",
+												"typeString": "uint256"
+											},
+											"typeName": {
+												"id": 4,
+												"name": "uint",
+												"nodeType": "ElementaryTypeName",
+												"src": "142:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 7,
+											"mutability": "mutable",
+											"name": "feeAmount",
+											"nameLocation": "173:9:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "168:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_uint256",
+												"typeString": "uint256"
+											},
+											"typeName": {
+												"id": 6,
+												"name": "uint",
+												"nodeType": "ElementaryTypeName",
+												"src": "168:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 9,
+											"mutability": "mutable",
+											"name": "swapper",
+											"nameLocation": "200:7:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "192:15:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 8,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "192:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 11,
+											"mutability": "mutable",
+											"name": "data",
+											"nameLocation": "223:4:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "217:10:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_bytes_storage_ptr",
+												"typeString": "bytes"
+											},
+											"typeName": {
+												"id": 10,
+												"name": "bytes",
+												"nodeType": "ElementaryTypeName",
+												"src": "217:5:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_storage_ptr",
+													"typeString": "bytes"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 13,
+											"mutability": "mutable",
+											"name": "sender",
+											"nameLocation": "245:6:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 14,
+											"src": "237:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 12,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "237:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										}
+									],
+									"name": "swapData",
+									"nameLocation": "101:8:0",
+									"nodeType": "StructDefinition",
+									"scope": 31,
+									"src": "94:164:0",
+									"visibility": "public"
+								},
+								{
+									"functionSelector": "2906799b",
+									"id": 22,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "swap",
+									"nameLocation": "273:4:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 20,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 17,
+												"mutability": "mutable",
+												"name": "data",
+												"nameLocation": "296:4:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 22,
+												"src": "278:22:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_struct$_swapData_$14_calldata_ptr",
+													"typeString": "struct IExchangeAggregator.swapData"
+												},
+												"typeName": {
+													"id": 16,
+													"nodeType": "UserDefinedTypeName",
+													"pathNode": {
+														"id": 15,
+														"name": "swapData",
+														"nameLocations": [
+															"278:8:0"
+														],
+														"nodeType": "IdentifierPath",
+														"referencedDeclaration": 14,
+														"src": "278:8:0"
+													},
+													"referencedDeclaration": 14,
+													"src": "278:8:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_struct$_swapData_$14_storage_ptr",
+														"typeString": "struct IExchangeAggregator.swapData"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 19,
+												"mutability": "mutable",
+												"name": "sig",
+												"nameLocation": "316:3:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 22,
+												"src": "301:18:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_calldata_ptr",
+													"typeString": "bytes"
+												},
+												"typeName": {
+													"id": 18,
+													"name": "bytes",
+													"nodeType": "ElementaryTypeName",
+													"src": "301:5:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes_storage_ptr",
+														"typeString": "bytes"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "277:43:0"
+									},
+									"returnParameters": {
+										"id": 21,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "329:0:0"
+									},
+									"scope": 31,
+									"src": "264:66:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"functionSelector": "5d86acf1",
+									"id": 30,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "swapNativeIn",
+									"nameLocation": "344:12:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 28,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 25,
+												"mutability": "mutable",
+												"name": "data",
+												"nameLocation": "375:4:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 30,
+												"src": "357:22:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_struct$_swapData_$14_calldata_ptr",
+													"typeString": "struct IExchangeAggregator.swapData"
+												},
+												"typeName": {
+													"id": 24,
+													"nodeType": "UserDefinedTypeName",
+													"pathNode": {
+														"id": 23,
+														"name": "swapData",
+														"nameLocations": [
+															"357:8:0"
+														],
+														"nodeType": "IdentifierPath",
+														"referencedDeclaration": 14,
+														"src": "357:8:0"
+													},
+													"referencedDeclaration": 14,
+													"src": "357:8:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_struct$_swapData_$14_storage_ptr",
+														"typeString": "struct IExchangeAggregator.swapData"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 27,
+												"mutability": "mutable",
+												"name": "sig",
+												"nameLocation": "395:3:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 30,
+												"src": "380:18:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_calldata_ptr",
+													"typeString": "bytes"
+												},
+												"typeName": {
+													"id": 26,
+													"name": "bytes",
+													"nodeType": "ElementaryTypeName",
+													"src": "380:5:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes_storage_ptr",
+														"typeString": "bytes"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "356:43:0"
+									},
+									"returnParameters": {
+										"id": 29,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "416:0:0"
+									},
+									"scope": 31,
+									"src": "335:82:0",
+									"stateMutability": "payable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 32,
+							"src": "58:361:0",
+							"usedErrors": []
+						}
+					],
+					"src": "32:387:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

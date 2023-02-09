@@ -59,8 +59,8 @@ func (k *kuToken) toEntityCoin() *entity.PairToken {
 		Token: &entity.Token{
 			TokenId: k.TokenId,
 			ChainId: string(k.ChainId),
+			Address: k.address,
 		},
-		Address:             k.address,
 		Tag:                 k.tag,
 		BlockTime:           k.BlockTime,
 		MinOrderSize:        k.minOrderSize,
@@ -151,7 +151,7 @@ func (sp *exPairs) get(c1, c2 *entity.Token) (*pair, error) {
 		return p, nil
 	}
 
-	return nil, errors.New("pair not found")
+	return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }
 
 func (sp *exPairs) remove(id string) {

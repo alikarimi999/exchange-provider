@@ -6,9 +6,10 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
-	"sync"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/spf13/viper"
 )
 
 var errPairNotSupport = fmt.Errorf("pair not supported")
@@ -17,116 +18,115 @@ func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	req := data.(*dto.AddPairsRequest)
 
 	res := &entity.AddPairsResult{}
-	mux := &sync.Mutex{}
-	wg := &sync.WaitGroup{}
+
 	for _, p := range req.Pairs {
-		if d.pairs.Exists(d.Id(), p.T1, p.T2) {
-			mux.Lock()
+		if d.pairsRepo.Exists(d.Id(), p.T1, p.T2) {
 			res.Existed = append(res.Existed, p.String())
-			mux.Unlock()
 			continue
 		}
 
-		wg.Add(1)
-		go func(p *dto.Pair) {
-			defer wg.Done()
-			in := types.Token{
-				Symbol:   p.T1.TokenId,
-				Address:  common.HexToAddress(p.T1.Address),
-				Decimals: int(p.T1.Decimals),
-				ChainId:  d.ChainId,
-			}
-			out := types.Token{
-				Symbol:   p.T2.TokenId,
-				Address:  common.HexToAddress(p.T2.Address),
-				Decimals: int(p.T2.Decimals),
-				ChainId:  d.ChainId,
-			}
-			pair, err := d.Pair(in, out)
-			mux.Lock()
-			defer mux.Unlock()
-			if err != nil {
-				res.Failed = append(res.Failed, &entity.PairsErr{Pair: pair.String(), Err: err})
-				return
-			}
-			ep := pair.ToEntity(d.Id(), d.NativeToken, d.TokenStandard)
-			d.pairs.Add(d, ep)
-			res.Added = append(res.Added, *ep)
-		}(p)
+		ps := make([]*entity.Pair, len(req.Pairs))
+		for i, p := range req.Pairs {
+			ps[i] = &entity.Pair{T1: &entity.PairToken{Token: p.T1}, T2: &entity.PairToken{Token: p.T2}}
+		}
+
+		ps, err := d.price(ps...)
+		if err != nil {
+			return nil, err
+		}
+		d.pairsRepo.Add(d, ps...)
 	}
-	wg.Wait()
 	return res, nil
 }
-
-func (d *EvmDex) Price(t1, t2 *entity.Token) (*entity.Pair, error) {
-	if t1.ChainId != d.TokenStandard || t2.ChainId != d.TokenStandard {
-		return nil, errPairNotSupport
-	}
-
-	T1, ok := d.get(t1.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
-	}
-	T2, ok := d.get(t2.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
-	}
-
-	p, err := d.Pair(T1, T2)
-	if err != nil {
-		return nil, err
-	}
-
-	if T1.IsNative() {
-		p.T1.Symbol = d.NativeToken
-	}
-	if T2.IsNative() {
-		p.T2.Symbol = d.NativeToken
-	}
-	return p.ToEntity(d.Id(), d.NativeToken, d.TokenStandard), nil
-}
-
-// func (d *EvmDex) GetAllPairs() []*entity.Pair {
-// 	agent := d.agent("GetAllPairs")
-// 	pairs := d.pairs.getAll()
-// 	ps := []*entity.Pair{}
-// 	psMux := &sync.Mutex{}
-// 	guard := make(chan struct{}, 20)
-
-// 	wg := &sync.WaitGroup{}
-// 	for i, p := range pairs {
-// 		guard <- struct{}{}
-// 		wg.Add(1)
-// 		go func(pair types.Pair, i int) {
-// 			defer func() {
-// 				<-guard
-// 				wg.Done()
-// 			}()
-
-// 			p, err := d.Pair(pair.T1, pair.T2)
-// 			if err != nil {
-// 				d.l.Debug(agent, err.Error())
-// 				return
-// 			}
-// 			psMux.Lock()
-// 			ps = append(ps, p)
-// 			psMux.Unlock()
-// 		}(p, i)
-// 	}
-// 	wg.Wait()
-// 	return ps
-// }
 
 func (d *EvmDex) Support(t1, t2 *entity.Token) bool {
 	if t1.ChainId != d.TokenStandard || t2.ChainId != d.TokenStandard {
 		return false
 	}
-	return d.pairs.Exists(d.Id(), t1, t2)
+	T1 := t1.Snapshot()
+	T2 := t2.Snapshot()
+
+	if T1.TokenId == d.NativeToken {
+		T1.TokenId = d.WrappedNativeToken
+	} else if T2.TokenId == d.NativeToken {
+		T2.TokenId = d.WrappedNativeToken
+	}
+
+	return d.pairsRepo.Exists(d.Id(), T1, T2)
 }
 
 func (d *EvmDex) RemovePair(t1, t2 *entity.Token) error {
 	if t1.ChainId != d.TokenStandard || t2.ChainId != d.TokenStandard {
 		return errors.New("pair not found")
 	}
-	return d.pairs.Remove(d.Id(), t1, t2)
+	return d.pairsRepo.Remove(d.Id(), t1, t2)
+}
+
+func (d *EvmDex) retreivePairs() ([]*entity.Pair, error) {
+	v := viper.New()
+	v.SetConfigFile(d.PairsFile)
+	if err := v.ReadInConfig(); err != nil {
+		// create config file if not exists
+		if err := v.WriteConfigAs(d.PairsFile); err != nil {
+			return nil, err
+		}
+	}
+	pairs := v.GetStringMap("Pairs")
+	ps := []*entity.Pair{}
+	for _, pm := range pairs {
+		pi := pm.(map[string]interface{})
+
+		tA := interfaceToToken(pi["t1"])
+		tB := interfaceToToken(pi["t2"])
+
+		t1 := types.Token{}
+		t2 := types.Token{}
+		if tA.Address.Hash().Big().Cmp(tB.Address.Hash().Big()) == -1 {
+			t1 = tA
+			t2 = tB
+		} else {
+			t2 = tA
+			t1 = tB
+		}
+
+		p := &entity.Pair{
+			T1: t1.ToEntity(d.TokenStandard),
+			T2: t2.ToEntity(d.TokenStandard),
+		}
+
+		ps = append(ps, p)
+	}
+
+	return ps, nil
+}
+
+func (d *EvmDex) removePairs(ids ...string) error {
+	v := viper.New()
+	v.SetConfigFile(d.PairsFile)
+	if err := v.ReadInConfig(); err != nil {
+		// create config file if not exists
+		if err := v.WriteConfigAs(d.PairsFile); err != nil {
+			return err
+		}
+	}
+	for _, id := range ids {
+		delete(v.Get("Pairs").(map[string]interface{}),
+			strings.ToLower(id))
+	}
+	if err := v.WriteConfig(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func interfaceToToken(ti interface{}) types.Token {
+	tm := ti.(map[string]interface{})
+	return types.Token{
+		Name:     tm["name"].(string),
+		Symbol:   tm["symbol"].(string),
+		Address:  common.HexToAddress(tm["address"].(string)),
+		Decimals: int(tm["decimals"].(float64)),
+		ChainId:  int64(tm["chainid"].(float64)),
+	}
+
 }
