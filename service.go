@@ -22,8 +22,8 @@ import (
 )
 
 func main() {
-	test()
-	// production()
+	// test()
+	production()
 }
 
 func production() {
@@ -59,7 +59,7 @@ func production() {
 	}
 
 	uri := fmt.Sprintf("mongodb://%s/?maxPoolSize=20&w=majority", os.Getenv("MONGO_Address"))
-	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(5*time.Second).ApplyURI(uri))
+	client, err := mongo.Connect(context.TODO(), options.Client().SetTimeout(60*time.Second).ApplyURI(uri))
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"sync"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	em "github.com/ethereum/go-ethereum/common/math"
@@ -19,13 +18,13 @@ var windowsSize = 1000
 
 func (d *dex) Prices(ps []*entity.Pair) error {
 	agent := d.agent("Prices")
-	d.l.Debug(agent, fmt.Sprintf("Updating price for %d pairs", len(ps)))
+	// d.l.Debug(agent, fmt.Sprintf("Updating price for %d pairs", len(ps)))
 
 	wg := &sync.WaitGroup{}
 	guard := make(chan struct{}, 10)
 	count := atomic.NewUint64(0)
 	round := 0
-	t := time.Now()
+	// t := time.Now()
 	for {
 		round++
 		start := (round - 1) * windowsSize
@@ -79,7 +78,7 @@ func (d *dex) Prices(ps []*entity.Pair) error {
 		}
 	}
 	wg.Wait()
-	d.l.Debug(agent, fmt.Sprintf("The price of %d pairs in %v", count.Load(), time.Since(t)))
+	// d.l.Debug(agent, fmt.Sprintf("The price of %d pairs in %v", count.Load(), time.Since(t)))
 	return nil
 }
 
