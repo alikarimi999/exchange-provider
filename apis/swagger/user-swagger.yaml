@@ -1,0 +1,215 @@
+openapi: 3.0.0
+info:
+  title: Exchange Provider Main Api
+  version: 1.0.0
+servers:
+  - url: http://156.253.5.52:80
+paths:
+  /pairs:
+    post:
+      tags:
+        - MetaData
+      summary: pairs list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageSize:
+                  type: integer
+              example:
+                currentPage: 1
+                pageSize: 10
+              required:
+                - currentPage
+                - pageSize
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /orders/get:
+    post:
+      tags:
+        - MetaData
+      summary: orders history
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageSize:
+                  type: integer
+              example:
+                currentPage: 1
+                pageSize: 10
+              required:
+                - currentPage
+                - pageSize
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /orders/create:
+    post:
+      tags:
+        - 1- create order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: integer
+                input:
+                  type: string
+                output:
+                  type: string
+                sender:
+                  type: string
+                senderTag:
+                  type: string
+                receiver:
+                  type: string
+                receiverTag:
+                  type: string
+                amountIn:
+                  type: number
+              example:
+                userId: 1
+                input: ETH-ERC20
+                output: UNI-ERC20
+                sender: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
+                receiver: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
+                amountIn: 0.2
+              required:
+                - userId
+                - input
+                - output
+                - sender
+                - receiver
+                - amountIn
+
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /orders/{orderId}/1:
+    get:
+      tags:
+        - 2- get step (SingleStep)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 63cc108c92b19335c45bd061
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /orders/{orderId}/{step}:
+    get:
+      tags:
+        - 2- get steps (MultiStep)
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: 63cc108c92b19335c45bd061
+        - name: step
+          in: path
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /orders/set_tx_id:
+    post:
+      tags:
+        - 3- set txId (SingleStep)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orderId:
+                  type: string
+                txId:
+                  type: string
+              example:
+                orderId: 63cc108c92b19335c45bd061
+                txId: >-
+                  0xe18c3d74e043c8ebc653e22ccfd8d4612d6754d8dd6b5ea3430d7338a33c6c7e
+              required:
+                - orderId
+                - txId
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
