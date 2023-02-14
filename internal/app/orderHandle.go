@@ -35,7 +35,7 @@ func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, pc entity.PairCon
 }
 
 func (h *orderHandler) handle(o *entity.CexOrder) {
-	const op = errors.Op("User-Order-Handler.handle")
+	const op = errors.Op("orderHandler.handle")
 
 	ex, err := h.exStore.get(o.Routes[0].Exchange)
 	if err != nil {

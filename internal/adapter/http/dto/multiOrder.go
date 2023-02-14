@@ -34,7 +34,7 @@ func (a *adminMultiOrder) fromEntity(o *entity.EvmOrder) *order {
 	for i, s := range o.Steps {
 		a.Steps[i] = &evmStep{
 			route:     &route{Input: s.In.String(), Output: s.Out.String(), Exchange: s.Exchange},
-			IsApprove: s.IsApprove,
+			IsApprove: s.NeedApprove,
 			Approved:  s.Approved,
 		}
 	}

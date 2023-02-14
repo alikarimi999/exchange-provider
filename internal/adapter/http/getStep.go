@@ -30,22 +30,12 @@ func (s *Server) GetStep(ctx Context) {
 		return
 	default:
 		o := ord.(*entity.EvmOrder)
-		st, ok := o.Steps[uint(step)]
-		if !ok {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range")))
-			return
-		}
-		ex, err := s.app.GetExchange(st.Exchange)
+		tx, isApproveTx, err := s.app.GetMultiStep(o, uint(step))
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
-		tx, err := ex.(entity.EVMDex).GetStep(o, uint(step))
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-		ctx.JSON(dto.MultiStep(o.Id, o.Sender.Hex(), tx, step, len(o.Steps), st.IsApprove), nil)
+		ctx.JSON(dto.MultiStep(o.Id, o.Sender.Hex(), tx, step, len(o.Steps), isApproveTx), nil)
 		return
 	}
 }

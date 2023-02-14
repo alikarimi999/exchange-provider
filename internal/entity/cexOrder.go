@@ -9,6 +9,7 @@ type OrderStatus uint
 
 const (
 	ONew OrderStatus = iota
+	OPending
 	OConfimDeposit
 	ODepositeConfimred
 
@@ -18,7 +19,7 @@ const (
 	OWaitForWithdrawalConfirm
 	OWithdrawalConfirmed
 
-	Oucceeded
+	OSucceeded
 	OFailed
 )
 
@@ -26,6 +27,8 @@ func (s OrderStatus) String() string {
 	switch s {
 	case ONew:
 		return ""
+	case OPending:
+		return "pending"
 	case OConfimDeposit:
 		return "confirming transaction"
 	case ODepositeConfimred:
@@ -38,7 +41,7 @@ func (s OrderStatus) String() string {
 		return "confirming withdraw"
 	case OWithdrawalConfirmed:
 		return "withdrawal confirmed"
-	case Oucceeded:
+	case OSucceeded:
 		return "succeeded"
 	case OFailed:
 		return "failed"

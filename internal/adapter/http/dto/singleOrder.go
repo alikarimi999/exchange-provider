@@ -107,7 +107,7 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 	case entity.ODepositeConfimred:
 		s.Status = o.Status.String()
 
-	case entity.Oucceeded:
+	case entity.OSucceeded:
 		s.Status = o.Status.String()
 		in, _ := numbers.StringToBigFloat(o.Deposit.Volume)
 		out, _ := numbers.StringToBigFloat(o.Withdrawal.Volume)

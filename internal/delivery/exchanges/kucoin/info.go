@@ -6,7 +6,6 @@ import (
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
@@ -14,8 +13,8 @@ import (
 func (k *kucoinExchange) getAllPrices(ps []*entity.Pair) error {
 	agent := k.agent("getAllPrices")
 
-	k.l.Debug(agent, fmt.Sprintf("Updating Price for %d pairs", len(ps)))
-	t := time.Now()
+	// k.l.Debug(agent, fmt.Sprintf("Updating Price for %d pairs", len(ps)))
+	// t := time.Now()
 
 	res, err := k.readApi.Tickers()
 	if err != nil {
@@ -44,7 +43,7 @@ func (k *kucoinExchange) getAllPrices(ps []*entity.Pair) error {
 			}
 		}
 	}
-	k.l.Debug(agent, fmt.Sprintf("The Price of %d pairs updated in %s", count, time.Since(t)))
+	// k.l.Debug(agent, fmt.Sprintf("The Price of %d pairs updated in %s", count, time.Since(t)))
 	return nil
 }
 

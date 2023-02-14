@@ -73,6 +73,7 @@ func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount f
 	if err != nil {
 		return false, err
 	}
+
 	mAmount, _ := big.NewFloat(0).Mul(big.NewFloat(minAmount),
 		big.NewFloat(0).SetInt(em.BigPow(10, int64(in.Decimals)))).Int(nil)
 	return amount.Cmp(mAmount) == -1, nil

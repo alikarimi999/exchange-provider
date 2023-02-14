@@ -5,5 +5,5 @@ import "github.com/ethereum/go-ethereum/core/types"
 type EVMDex interface {
 	Exchange
 	SetStpes(*EvmOrder, *Route) error
-	GetStep(o *EvmOrder, step uint) (*types.Transaction, error)
+	GetStep(o *EvmOrder, step uint) (tx *types.Transaction, isApproveTx bool, err error)
 }

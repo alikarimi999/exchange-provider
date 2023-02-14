@@ -22,8 +22,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {

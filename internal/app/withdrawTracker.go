@@ -64,7 +64,7 @@ func (t *withdrawalTracker) run() {
 			case entity.WithdrawalSucceed:
 
 				t.l.Debug(agent, fmt.Sprintf("order: '%s', staus: '%s'", oId, o.Withdrawal.Status))
-				o.Status = entity.Oucceeded
+				o.Status = entity.OSucceeded
 
 				if err := t.ouc.write(o); err != nil {
 					t.l.Error(agent, errors.Wrap(err, op, o.ID()).Error())

@@ -118,9 +118,9 @@ func (ex *UniswapV3) TrackSwap(o *entity.CexOrder, p *ts.Pair, i int) {
 		o.Swaps[i].OutAmount = amount
 		o.Swaps[i].Status = entity.SwapSucceed
 		o.Swaps[i].Fee = fee
-		o.Swaps[i].FeeCurrency = ex.nativeToken + "-" + strconv.Itoa(int(ex.chainId))
+		o.Swaps[i].FeeCurrency = ex.nativToken + "-" + strconv.Itoa(int(ex.chainId))
 
-		ex.l.Debug(agent, fmt.Sprintf("order: `%s`, tx: `%s`, confirm: `%d/%d`",
+		ex.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
 			o.Id, tf.TxHash, tf.Confirmed, tf.Confirms))
 
 	case utils.TxFailed:
