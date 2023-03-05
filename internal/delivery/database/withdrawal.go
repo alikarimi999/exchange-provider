@@ -9,14 +9,23 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (m *mongoDb) AddPendingWithdrawal(orderId string) error {
-	return m.c.addPendingWithdrawal(orderId)
+func (m *mongoDb) AddPendingWithdrawal(oId *entity.ObjectId) error {
+	return m.c.addPendingWithdrawal(oId.Id)
 }
-func (m *mongoDb) GetPendingWithdrawals(end time.Time) ([]string, error) {
-	return m.c.getPendingWithdrawals(end)
+func (m *mongoDb) GetPendingWithdrawals(end time.Time) ([]*entity.ObjectId, error) {
+	ids, err := m.c.getPendingWithdrawals(end)
+	if err != nil {
+		return nil, err
+	}
+	oIds := []*entity.ObjectId{}
+	for _, id := range ids {
+		oIds = append(oIds, &entity.ObjectId{Prefix: entity.PrefOrder, Id: id})
+	}
+	return oIds, nil
 }
-func (m *mongoDb) DelPendingWithdrawal(orderId string) error {
-	return m.c.delPendingWithdrawal(orderId)
+
+func (m *mongoDb) DelPendingWithdrawal(oId *entity.ObjectId) error {
+	return m.c.delPendingWithdrawal(oId.Id)
 }
 
 func (m *mongoDb) retrivePendingWithd() error {

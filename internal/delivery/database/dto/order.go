@@ -34,7 +34,7 @@ func (o *Order) ToEntity() (entity.Order, error) {
 }
 
 func UoToDto(o entity.Order) (*Order, error) {
-	id, err := primitive.ObjectIDFromHex(o.ID())
+	id, err := primitive.ObjectIDFromHex(o.ID().Id)
 	if err != nil {
 		return nil, err
 	}

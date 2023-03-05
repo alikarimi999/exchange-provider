@@ -151,7 +151,7 @@ func (h *orderHandler) handle(o *entity.CexOrder) {
 				return
 			}
 
-			if err := h.repo.AddPendingWithdrawal(o.Id); err != nil {
+			if err := h.repo.AddPendingWithdrawal(o.ID()); err != nil {
 				h.l.Error(string(op), err.Error())
 			}
 			return

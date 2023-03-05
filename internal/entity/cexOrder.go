@@ -61,13 +61,13 @@ type Route struct {
 	In       *Token
 	Out      *Token
 	Exchange string
-	ExType   `bson:"exType"`
+	ExType
 }
 
 type CexOrder struct {
-	Id        string
-	UserId    uint64 `bson:"userId"`
-	CreatedAt int64  `bson:"createdAt"`
+	*ObjectId
+	UserId    string
+	CreatedAt int64
 	Status    OrderStatus
 
 	Deposit *Deposit
@@ -78,18 +78,18 @@ type CexOrder struct {
 	Withdrawal *Withdrawal
 
 	Fee         string
-	FeeCurrency string `bson:"feeCurrency"`
+	FeeCurrency string
 
-	SpreadVol      string `bson:"spreadVol"`
-	SpreadRate     string `bson:"spreadRate"`
-	SpreadCurrency string `bson:"spreadCurrency"`
+	SpreadVol      string
+	SpreadRate     string
+	SpreadCurrency string
 
-	FailedCode int64  `bson:"failedCode"`
-	FailedDesc string `bson:"failedDesc"`
-	MetaData   `bson:"metaData"`
+	FailedCode int64
+	FailedDesc string
+	MetaData
 }
 
-func NewOrder(userId uint64, wAddress, dAddress *Address, routes map[int]*Route) *CexOrder {
+func NewOrder(userId string, wAddress, dAddress *Address, routes map[int]*Route) *CexOrder {
 	o := &CexOrder{
 		UserId:    userId,
 		CreatedAt: time.Now().UTC().Unix(),
@@ -132,17 +132,12 @@ func (o *CexOrder) SortedRoutes() []*Route {
 	}
 	return routes
 }
-func (o *CexOrder) ID() string { return o.Id }
+func (o *CexOrder) ID() *ObjectId { return o.ObjectId }
 
 func (o *CexOrder) Type() OrderType {
 	return CEXOrder
 }
 
 func (o *CexOrder) SetId(id string) {
-	o.Id = id
-	o.Deposit.OrderId = id
-	for _, s := range o.Swaps {
-		s.OrderId = id
-	}
-	o.Withdrawal.OrderId = id
+	o.ObjectId = &ObjectId{Prefix: PrefOrder, Id: id}
 }

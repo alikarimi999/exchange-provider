@@ -8,7 +8,7 @@ const (
 )
 
 type Order interface {
-	ID() string
+	ID() *ObjectId
 	SetId(string)
 	Type() OrderType
 }

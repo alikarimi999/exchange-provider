@@ -9,7 +9,7 @@ import (
 )
 
 type withdrawalTracker struct {
-	wCh chan string
+	wCh chan *entity.ObjectId
 
 	ouc *OrderUseCase
 
@@ -23,7 +23,7 @@ type withdrawalTracker struct {
 
 func newWithdrawalTracker(ouc *OrderUseCase, repo entity.OrderRepo, exs *exStore, l logger.Logger) *withdrawalTracker {
 	w := &withdrawalTracker{
-		wCh: make(chan string, 1024),
+		wCh: make(chan *entity.ObjectId, 1024),
 		ouc: ouc,
 		r:   repo,
 		exs: exs,
@@ -37,9 +37,9 @@ func (t *withdrawalTracker) run() {
 	const agent = "WithdrawalTracker"
 
 	for wd := range t.wCh {
-		go func(oId string) {
+		go func(oId *entity.ObjectId) {
 			defer t.delete(oId)
-			o := &entity.CexOrder{Id: oId}
+			o := &entity.CexOrder{ObjectId: oId}
 			if err := t.ouc.read(o); err != nil {
 				t.l.Error(agent, fmt.Sprintf("order: '%s'", oId))
 				return
@@ -103,22 +103,22 @@ func (t *withdrawalTracker) run() {
 	}
 }
 
-func (t *withdrawalTracker) track(id string) {
+func (t *withdrawalTracker) track(id *entity.ObjectId) {
 	var exists bool
 	for _, v := range t.list {
-		if v == id {
+		if v == id.String() {
 			exists = true
 		}
 	}
 	if !exists {
-		t.list = append(t.list, id)
+		t.list = append(t.list, id.String())
 		t.wCh <- id
 	}
 }
 
-func (t *withdrawalTracker) delete(id string) {
+func (t *withdrawalTracker) delete(id *entity.ObjectId) {
 	for i, v := range t.list {
-		if v == id {
+		if v == id.String() {
 			t.list = append(t.list[:i], t.list[i+1:]...)
 		}
 	}

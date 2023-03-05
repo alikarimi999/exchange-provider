@@ -6,7 +6,7 @@ import (
 )
 
 func (s *Server) GetPairsToUser(ctx Context) {
-	userId, _ := ctx.GetKey("user_id")
+	// userId, _ := ctx.GetKey("user_id")
 	req := &dto.PaginatedPairsRequest{}
 	if err := ctx.Bind(req); err != nil {
 		ctx.JSON(nil, err)
@@ -25,7 +25,7 @@ func (s *Server) GetPairsToUser(ctx Context) {
 
 	ps := []*entity.Pair{}
 	for _, p := range pa.Pairs {
-		p.FeeRate = s.app.GetUserFee(uint64(userId.(int64)))
+		p.FeeRate = s.app.GetDefaultFee()
 		ps = append(ps, p)
 	}
 

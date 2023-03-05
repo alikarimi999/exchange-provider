@@ -99,7 +99,7 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 		return
 	}
 
-	if err := req.Validate(0); err != nil {
+	if err := req.Validate(""); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
@@ -121,7 +121,7 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 		return
 	}
 
-	if err := pa.Validate(0); err != nil {
+	if err := pa.Validate(""); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
@@ -148,7 +148,13 @@ func (s *Server) SetTxId(ctx Context) {
 		return
 	}
 
-	if err := s.app.SetTxId(r.Id, r.TxId); err != nil {
+	oId, err := dto.ParseId(r.Id, entity.PrefOrder)
+	if err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+
+	if err := s.app.SetTxId(oId, r.TxId); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}

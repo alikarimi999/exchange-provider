@@ -5,10 +5,9 @@ import (
 )
 
 type Swap struct {
-	Id      uint64 `json:"id"`
-	OrderId string `json:"order_id"`
-	Status  string `json:"status"`
-	TxId    string `json:"txId"`
+	Id     uint64 `json:"id"`
+	Status string `json:"status"`
+	TxId   string `json:"txId"`
 
 	Exchange string `json:"exchange"`
 	Input    string `json:"input"`
@@ -24,9 +23,8 @@ type Swap struct {
 
 func swapFromEntity(e *entity.Swap, r *entity.Route) *Swap {
 	return &Swap{
-		Id:      e.Id,
-		OrderId: e.OrderId,
-		TxId:    e.TxId,
+		Id:   e.Id,
+		TxId: e.TxId,
 
 		Exchange: r.Exchange,
 		Input:    r.In.String(),

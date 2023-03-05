@@ -8,7 +8,7 @@ import (
 type order struct {
 	Id        string      `json:"id"`
 	Type      string      `json:"type"`
-	UserId    uint64      `json:"userId"`
+	UserId    string      `json:"userId"`
 	CreatedAt int64       `json:"createdAt"`
 	Order     interface{} `json:"order"`
 }
@@ -40,7 +40,7 @@ func adminOrderFromEntity(o entity.Order) *order {
 }
 
 type CreateOrderRequest struct {
-	UserId   uint64  `json:"userId"`
+	UserId   string  `json:"userId"`
 	In       string  `json:"input"`
 	Out      string  `json:"output"`
 	Sender   string  `json:"sender"`
@@ -51,7 +51,7 @@ type CreateOrderRequest struct {
 }
 
 func (r *CreateOrderRequest) Validate() error {
-	if r.UserId == 0 {
+	if r.UserId == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("userId is required"))
 	}
 	if r.Sender == "" {
@@ -84,7 +84,7 @@ type createOrderResponse struct {
 }
 
 func CreateOrderResponse(o entity.Order) *createOrderResponse {
-	r := &createOrderResponse{OrderId: o.ID()}
+	r := &createOrderResponse{OrderId: o.ID().String()}
 	if o.Type() == entity.CEXOrder {
 		r.Type = singleStep
 		r.TotalSteps = 1

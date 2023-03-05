@@ -40,7 +40,7 @@ func (s *Server) GetDefaultFee(ctx Context) {
 
 func (s *Server) GetUsersFee(ctx Context) {
 	req := struct {
-		Users []uint64 `json:"users"`
+		Users []string `json:"users"`
 	}{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -53,10 +53,10 @@ func (s *Server) GetUsersFee(ctx Context) {
 		return
 	}
 
-	resp := make(map[uint64]string)
+	resp := make(map[string]string)
 
-	for _, userId := range req.Users {
-		resp[userId] = s.app.GetUserFee(userId)
+	for _, uId := range req.Users {
+		resp[uId] = s.app.GetUserFee(uId)
 	}
 
 	ctx.JSON(resp, nil)
@@ -64,9 +64,9 @@ func (s *Server) GetUsersFee(ctx Context) {
 
 func (s *Server) ChangeUserFee(ctx Context) {
 	type userFee struct {
-		Id uint64  `json:"user_id"`
-		F  float64 `json:"fee_rate"`
-		M  string  `json:"message"`
+		UserId string  `json:"userId"`
+		F      float64 `json:"feeRate"`
+		M      string  `json:"message"`
 	}
 	req := struct {
 		Users []*userFee `json:"users"`
@@ -82,13 +82,13 @@ func (s *Server) ChangeUserFee(ctx Context) {
 	}{}
 
 	for _, u := range req.Users {
-		if u.Id == 0 || u.F == 0 {
+		if u.UserId == "" || u.F == 0 {
 			u.M = "user id or fee rate is empty"
 			resp.Users = append(resp.Users, u)
 			continue
 		}
 
-		if err := s.app.ChangeUserFee(u.Id, u.F); err != nil {
+		if err := s.app.ChangeUserFee(u.UserId, u.F); err != nil {
 			u.M = err.Error()
 			resp.Users = append(resp.Users, u)
 			continue

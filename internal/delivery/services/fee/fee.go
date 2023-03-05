@@ -18,7 +18,7 @@ const (
 )
 
 type UserFee struct {
-	UserId uint64 `gorm:"primary_key"`
+	UserId string `gorm:"primary_key"`
 	Fee    float64
 }
 
@@ -27,7 +27,7 @@ type feeService struct {
 
 	mux        *sync.Mutex
 	defaultFee float64
-	fees       map[uint64]float64
+	fees       map[string]float64
 
 	v *viper.Viper
 }
@@ -38,7 +38,7 @@ func NewFeeService(db *mongo.Database, v *viper.Viper) (entity.FeeService, error
 		db:         db.Collection("fee-service"),
 		v:          v,
 		mux:        &sync.Mutex{},
-		fees:       make(map[uint64]float64),
+		fees:       make(map[string]float64),
 		defaultFee: 0.001,
 	}
 
@@ -75,7 +75,7 @@ func (f *feeService) ChangeDefaultFee(fee float64) error {
 	return nil
 }
 
-func (f *feeService) ApplyFee(userId uint64, total string) (remainder, fee string, err error) {
+func (f *feeService) ApplyFee(userId string, total string) (remainder, fee string, err error) {
 	const op = errors.Op("FeeService.ApplyFee")
 
 	rate := f.feeRate(userId)
@@ -89,7 +89,7 @@ func (f *feeService) ApplyFee(userId uint64, total string) (remainder, fee strin
 	return strconv.FormatFloat(re, 'f', -1, 64), strconv.FormatFloat(ff, 'f', 6, 64), nil
 }
 
-func (f *feeService) GetUserFee(userId uint64) string {
+func (f *feeService) GetUserFee(userId string) string {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	fee := f.fees[userId]
@@ -100,7 +100,7 @@ func (f *feeService) GetUserFee(userId uint64) string {
 	return strconv.FormatFloat(fee, 'f', 6, 64)
 }
 
-func (f *feeService) ChangeUserFee(userId uint64, fee float64) error {
+func (f *feeService) ChangeUserFee(userId string, fee float64) error {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
@@ -115,10 +115,10 @@ func (f *feeService) ChangeUserFee(userId uint64, fee float64) error {
 	return nil
 }
 
-func (f *feeService) GetAllUsersFees() map[uint64]string {
+func (f *feeService) GetAllUsersFees() map[string]string {
 	f.mux.Lock()
 	defer f.mux.Unlock()
-	res := make(map[uint64]string)
+	res := make(map[string]string)
 	for u, f := range f.fees {
 		res[u] = strconv.FormatFloat(f, 'f', 6, 64)
 	}
@@ -143,7 +143,7 @@ func (f *feeService) getFees() error {
 
 }
 
-func (f *feeService) feeRate(userId uint64) (rate float64) {
+func (f *feeService) feeRate(userId string) (rate float64) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 	fee := f.fees[userId]

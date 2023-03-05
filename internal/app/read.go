@@ -11,8 +11,8 @@ func (o *OrderUseCase) read(v interface{}) error {
 
 	switch d := v.(type) {
 	case *entity.CexOrder:
-		if d.Id != "" {
-			dd, err := o.repo.Get(d.Id)
+		if d.ID().Id != "" {
+			dd, err := o.repo.Get(d.ID())
 			if err != nil {
 				return err
 			}
@@ -25,7 +25,7 @@ func (o *OrderUseCase) read(v interface{}) error {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("orderId not found"))
 
 	case *entity.EvmOrder:
-		dd, err := o.repo.Get(d.Id)
+		dd, err := o.repo.Get(d.ID())
 		if err != nil {
 			return err
 		}

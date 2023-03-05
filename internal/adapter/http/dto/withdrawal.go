@@ -3,9 +3,7 @@ package dto
 import "exchange-provider/internal/entity"
 
 type Withdrawal struct {
-	Id      string `json:"id"`
-	OrderId string `json:"orderId,omitempty"`
-
+	Id     string `json:"id"`
 	Status string `json:"status"`
 
 	TxId string `json:"txId"`

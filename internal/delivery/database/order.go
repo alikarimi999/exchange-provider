@@ -46,9 +46,9 @@ func (m *mongoDb) Add(order entity.Order) error {
 	return nil
 }
 
-func (m *mongoDb) Get(id string) (entity.Order, error) {
+func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 	agent := m.agent("Get")
-	oId, err := primitive.ObjectIDFromHex(id)
+	oId, err := primitive.ObjectIDFromHex(id.Id)
 	if err != nil {
 		return nil, errors.Wrap(errors.ErrBadRequest)
 	}
@@ -63,7 +63,9 @@ func (m *mongoDb) Get(id string) (entity.Order, error) {
 	}
 
 	o := &dto.Order{}
-	r.Decode(o)
+	if err := r.Decode(o); err != nil {
+		return nil, err
+	}
 	eo, err := o.ToEntity()
 	if err != nil {
 		m.l.Error(agent, r.Err().Error())
@@ -72,11 +74,11 @@ func (m *mongoDb) Get(id string) (entity.Order, error) {
 	return eo, nil
 }
 
-func (m *mongoDb) GetAll(UserId uint64) ([]entity.Order, error) {
+func (m *mongoDb) GetAll(UserId string) ([]entity.Order, error) {
 	agent := m.agent("GetAll")
 
 	osDTO := []*dto.Order{}
-	cur, err := m.orders.Find(context.Background(), bson.D{{"userId", UserId}})
+	cur, err := m.orders.Find(context.Background(), bson.D{{"userid", UserId}})
 	if err != nil {
 		m.l.Error(agent, err.Error())
 		return nil, err
@@ -101,7 +103,7 @@ func (m *mongoDb) GetAll(UserId uint64) ([]entity.Order, error) {
 func (m *mongoDb) Update(order entity.Order) error {
 	agent := m.agent("Update")
 
-	id, _ := primitive.ObjectIDFromHex(order.ID())
+	id, _ := primitive.ObjectIDFromHex(order.ID().Id)
 	o, err := dto.UoToDto(order)
 	if err != nil {
 		m.l.Error(agent, err.Error())
@@ -123,7 +125,7 @@ func (m *mongoDb) Update(order entity.Order) error {
 func (m *mongoDb) TxIdExists(txId string) (bool, error) {
 	agent := m.agent("CheckTxId")
 
-	res := m.orders.FindOne(context.Background(), bson.D{{"order.deposit.txId", txId}})
+	res := m.orders.FindOne(context.Background(), bson.D{{"order.deposit.txid", txId}})
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
 			return false, nil

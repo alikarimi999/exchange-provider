@@ -19,7 +19,6 @@ type dtFeed struct {
 }
 
 func (d *dex) trackDeposit(f *dtFeed) {
-	agent := d.agent("trackDeposit")
 	txHash := common.HexToHash(f.d.TxId)
 
 	doneCh := make(chan struct{})
@@ -84,15 +83,11 @@ func (d *dex) trackDeposit(f *dtFeed) {
 			bn := new(big.Int).SetBytes(log.Data)
 			f.d.Volume = numbers.BigIntToFloatString(bn, int(f.token.Decimals))
 			f.d.Status = entity.DepositConfirmed
-			d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-				f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 			f.done <- struct{}{}
 			break
 		}
 		f.d.Volume = numbers.BigIntToFloatString(tf.Tx.Value(), f.token.Decimals)
 		f.d.Status = entity.DepositConfirmed
-		d.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 		f.done <- struct{}{}
 
 	}

@@ -6,18 +6,16 @@ const (
 )
 
 type Swap struct {
-	Id   uint64
-	TxId string `bson:"txId"`
+	Id     uint64
+	TxId   string
+	Status string // succed, failed
 
-	OrderId string `bson:"orderId"`
-	Status  string // succed, failed
-
-	InAmount    string `bson:"inAmount"`
-	OutAmount   string `bson:"outAmount"`
+	InAmount    string
+	OutAmount   string
 	Fee         string
-	FeeCurrency string `bson:"feeCurrency"`
-	FailedDesc  string `bson:"failedDesc"`
-	MetaData    `bson:"metaData"`
+	FeeCurrency string
+	FailedDesc  string
+	MetaData
 }
 
 type Cex interface {

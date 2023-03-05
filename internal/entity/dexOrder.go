@@ -7,18 +7,18 @@ import (
 )
 
 type EvmOrder struct {
-	Id        string
-	UserId    uint64 `bson:"userId"`
+	*ObjectId
+	UserId    string
 	Status    OrderStatus
 	Steps     map[uint]*EvmStep
 	Sender    common.Address
 	Receiver  common.Address
-	AmountIn  float64 `bson:"amountIn"`
-	FeeRate   float64 `bson:"feeRate"`
-	CreatedAt int64   `bson:"createdAt"`
+	AmountIn  float64
+	FeeRate   float64
+	CreatedAt int64
 }
 
-func NewEvmOrder(userId uint64, steps map[uint]*EvmStep, sender, receiver common.Address,
+func NewEvmOrder(userId string, steps map[uint]*EvmStep, sender, receiver common.Address,
 	amountIn, feeRate float64) *EvmOrder {
 
 	return &EvmOrder{
@@ -33,6 +33,6 @@ func NewEvmOrder(userId uint64, steps map[uint]*EvmStep, sender, receiver common
 	}
 }
 
-func (o *EvmOrder) ID() string      { return o.Id }
-func (o *EvmOrder) SetId(id string) { o.Id = id }
+func (o *EvmOrder) ID() *ObjectId   { return o.ObjectId }
+func (o *EvmOrder) SetId(id string) { o.ObjectId = &ObjectId{Prefix: PrefOrder, Id: id} }
 func (o *EvmOrder) Type() OrderType { return EVMOrder }

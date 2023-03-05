@@ -20,7 +20,6 @@ type dtFeed struct {
 }
 
 func (m *Multichain) trackDeposit(f *dtFeed) {
-	agent := "Multichain-trackDeposit"
 
 	txHash := common.HexToHash(f.d.TxId)
 
@@ -86,15 +85,11 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 			bn := new(big.Int).SetBytes(log.Data)
 			f.d.Volume = numbers.BigIntToFloatString(bn, int(f.t.Decimals))
 			f.d.Status = entity.DepositConfirmed
-			m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-				f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 			f.done <- struct{}{}
 			break
 		}
 		f.d.Volume = numbers.BigIntToFloatString(tf.Tx.Value(), f.t.Decimals)
 		f.d.Status = entity.DepositConfirmed
-		m.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			f.d.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
 		f.done <- struct{}{}
 
 	}

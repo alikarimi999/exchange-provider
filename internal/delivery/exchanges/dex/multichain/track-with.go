@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/utils"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,8 +11,6 @@ import (
 
 func (u *Multichain) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
 	proccessedCh <-chan bool) {
-
-	agent := "TrackWithdrawal"
 
 	w := o.Withdrawal
 	in := c2T(o.Routes[len(o.Routes)-1].In)
@@ -60,9 +57,6 @@ func (u *Multichain) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
 
 		w.Fee = new(big.Float).Add(fee, unwrapFee).Text('f', utils.EthDecimals)
 		w.Status = entity.WithdrawalSucceed
-		u.l.Debug(agent, fmt.Sprintf("order: `%d`, tx: `%s`, confirm: `%d/%d`",
-			w.OrderId, tf.TxHash, tf.Confirmed, tf.Confirms))
-
 	default:
 		w.Status = entity.WithdrawalFailed
 		w.FailedDesc = tf.Faildesc

@@ -37,13 +37,13 @@ func (wh *withdrawalHandler) handle() {
 	const op = errors.Op("chainTicker.tick")
 
 	for t := range wh.ticker.C {
-		ws, err := wh.r.GetPendingWithdrawals(t.Add(-wh.windowsSize))
+		oIds, err := wh.r.GetPendingWithdrawals(t.Add(-wh.windowsSize))
 		if err != nil {
 			wh.l.Error(string(op), errors.Wrap(err, op, "pending withdrawals").Error())
 			continue
 		}
-		for _, w := range ws {
-			wh.tracker.track(w)
+		for _, oId := range oIds {
+			wh.tracker.track(oId)
 		}
 
 	}

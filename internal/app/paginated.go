@@ -5,8 +5,8 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (u *OrderUseCase) GetOrder(id string) (entity.Order, error) {
-	return u.repo.Get(id)
+func (u *OrderUseCase) GetOrder(oId *entity.ObjectId) (entity.Order, error) {
+	return u.repo.Get(oId)
 }
 
 func (u *OrderUseCase) GetPaginated(pa *entity.Paginated) error {

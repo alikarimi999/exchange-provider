@@ -2,6 +2,7 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"fmt"
 	"time"
 )
@@ -11,7 +12,7 @@ type PaginatedOrdersRequest struct {
 	Fs []*Filter `json:"filters"`
 }
 
-func (r *PaginatedOrdersRequest) Validate(userId int64) error {
+func (r *PaginatedOrdersRequest) Validate(userId string) error {
 	if r.PaginatedRequest == nil {
 		r.PaginatedRequest = &PaginatedRequest{}
 	}
@@ -23,11 +24,16 @@ func (r *PaginatedOrdersRequest) Validate(userId int64) error {
 
 	}
 
-	if userId != 0 {
+	if userId != "" {
 		for _, f := range r.Fs {
 			if f.Param == "userId" {
-				if f.Operator != "eq" || f.Values[0].(int64) != userId {
-					return fmt.Errorf("userId must be equal to %d", userId)
+				uId, ok := f.Values[0].(string)
+				if !ok {
+					return errors.Wrap(errors.ErrBadRequest)
+				}
+
+				if f.Operator != "eq" || uId != userId {
+					return errors.Wrap(errors.ErrForbidden)
 				}
 				return nil
 			}

@@ -5,13 +5,13 @@ import "time"
 type OrderRepo interface {
 	Add(Order) error
 	Update(Order) error
-	Get(id string) (Order, error)
-	GetAll(userId uint64) ([]Order, error)
+	Get(*ObjectId) (Order, error)
+	GetAll(userId string) ([]Order, error)
 	GetPaginated(ps *Paginated) error
 	TxIdExists(txId string) (bool, error)
-	AddPendingWithdrawal(orderId string) error
-	GetPendingWithdrawals(end time.Time) ([]string, error)
-	DelPendingWithdrawal(orderId string) error
+	AddPendingWithdrawal(orderId *ObjectId) error
+	GetPendingWithdrawals(end time.Time) ([]*ObjectId, error)
+	DelPendingWithdrawal(orderId *ObjectId) error
 }
 
 type Paginated struct {

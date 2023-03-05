@@ -12,16 +12,14 @@ type Address struct {
 }
 
 type Deposit struct {
-	Id      string
-	OrderId string `bson:"orderId"`
-
+	Id     string
 	Status string
 	*Token
 
-	TxId   string `bson:"txId"`
+	TxId   string
 	Volume string
 
 	*Address
 
-	FailedDesc string `bson:"failedDesc"`
+	FailedDesc string
 }

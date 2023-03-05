@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *OrderUseCase) NewEvmOrder(userId uint64, sender, reveiver common.Address,
+func (u *OrderUseCase) NewEvmOrder(userId string, sender, reveiver common.Address,
 	amountIn float64, route *entity.Route) (*entity.EvmOrder, error) {
 	const op = errors.Op("OrderUsecase.NewEvmDexOrder")
 
@@ -31,7 +31,7 @@ func (u *OrderUseCase) NewEvmOrder(userId uint64, sender, reveiver common.Addres
 	return o, nil
 }
 
-func (u *OrderUseCase) NewCexOrder(userId uint64, wa *entity.Address,
+func (u *OrderUseCase) NewCexOrder(userId string, wa *entity.Address,
 	routes map[int]*entity.Route) (*entity.CexOrder, error) {
 
 	const op = errors.Op("OrderUsecase.NewCexOrder")

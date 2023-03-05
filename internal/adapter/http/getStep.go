@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) GetStep(ctx Context) {
-	oId := ctx.Param("orderId")
+	id := ctx.Param("orderId")
 	sParam := ctx.Param("step")
 
 	if sParam == "" {
@@ -17,6 +17,12 @@ func (s *Server) GetStep(ctx Context) {
 	step, err := strconv.Atoi(sParam)
 	if err != nil {
 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error())))
+	}
+
+	oId, err := dto.ParseId(id, entity.PrefOrder)
+	if err != nil {
+		ctx.JSON(nil, err)
+		return
 	}
 	ord, err := s.app.GetOrder(oId)
 	if err != nil {

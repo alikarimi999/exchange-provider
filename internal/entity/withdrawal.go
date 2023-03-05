@@ -7,11 +7,9 @@ const (
 )
 
 type Withdrawal struct {
-	Id      string
-	OrderId string `bson:"orderId"`
-
+	Id     string
 	Status string
-	TxId   string `bson:"txId"`
+	TxId   string
 	*Address
 
 	*Token
@@ -19,7 +17,7 @@ type Withdrawal struct {
 	Volume    string
 
 	Fee         string
-	FeeCurrency string `bson:"feeCurrency"`
+	FeeCurrency string
 
-	FailedDesc string `bson:"failedDesc"`
+	FailedDesc string
 }

@@ -5,12 +5,13 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (o *OrderUseCase) SetTxId(Id string, txId string) error {
+func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 	const op = errors.Op("OrderUseCase.SetTxId")
 
 	ord := &entity.CexOrder{
-		Id: Id,
+		ObjectId: oId,
 	}
+
 	if err := o.read(ord); err != nil {
 		return err
 	}
