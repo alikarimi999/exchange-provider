@@ -4,9 +4,10 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
-	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type adminSingleOrder struct {
@@ -61,10 +62,11 @@ type userSingleOrder struct {
 	Status     string `json:"status"`
 	FailReason string `json:"failReason,omitempty"`
 
-	Input     string `json:"input"`
-	Output    string `json:"output"`
-	InAmount  string `json:"inAmount"`
-	OutAmount string `json:"outAmount"`
+	Input     string  `json:"input"`
+	Output    string  `json:"output"`
+	InAmount  float64 `json:"inAmount"`
+	OutAmount float64 `json:"outAmount"`
+	Duration  string  `json:"duration"`
 
 	FilledPrice string `json:"filledPrice"`
 	Fee         string `json:"fee"`
@@ -73,38 +75,43 @@ type userSingleOrder struct {
 	TransferFee         string `json:"transferFee"`
 	TransferFeeCurrency string `json:"transferFee_currency"`
 
-	DepositAddress string `json:"depositAddress"`
-	DepositTag     string `json:"depositTag,omitempty"`
-
-	WithdrawalAddress string `json:"withdrawAddress"`
-	WithdrawalTag     string `json:"withdrawTag,omitempty"`
+	Deposit    entity.Address `json:"deposit"`
+	Refund     entity.Address `json:"refund"`
+	Withdrawal entity.Address `json:"withdrawal"`
 
 	WithdrawalTxId string `json:"withdrawTxId"`
-	CreatedAt      int64  `json:"createdAt"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+	ExpireAt       string `json:"expireAt"`
 }
 
 func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
+	out, _ := strconv.ParseFloat(o.Withdrawal.Volume, 64)
 	s = &userSingleOrder{
 		Input:     o.Deposit.Token.String(),
 		Output:    o.Withdrawal.Token.String(),
-		InAmount:  fmt.Sprintf("%v", o.Deposit.Volume),
-		OutAmount: o.Withdrawal.Volume,
+		InAmount:  o.Deposit.Volume,
+		OutAmount: out,
+		Duration:  o.Swaps[0].Duration,
 
 		Fee:                 o.Fee,
 		FeeCurrency:         o.FeeCurrency,
 		TransferFee:         o.Withdrawal.Fee,
 		TransferFeeCurrency: o.Withdrawal.FeeCurrency,
 
-		DepositAddress: o.Deposit.Address.Addr,
-		DepositTag:     o.Deposit.Address.Tag,
-
-		WithdrawalAddress: o.Withdrawal.Addr,
-		WithdrawalTag:     o.Withdrawal.Address.Tag,
+		Deposit:    o.Deposit.Address,
+		Refund:     o.Refund,
+		Withdrawal: o.Withdrawal.Address,
 
 		WithdrawalTxId: strings.Split(o.Withdrawal.TxId, "-")[0],
-		CreatedAt:      o.CreatedAt,
+		CreatedAt:      time.Unix(o.CreatedAt, 0).String(),
+		UpdatedAt:      time.Unix(o.UpdatedAt, 0).String(),
+		ExpireAt:       time.Unix(o.Deposit.ExpireAt, 0).String(),
 	}
+
 	switch o.Status {
+	case entity.OExpired:
+		s.Status = o.Status
 	case entity.ODepositeConfimred:
 		s.Status = o.Status
 
@@ -126,6 +133,9 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 		}
 	default:
 		s.Status = "pending"
+		if o.Deposit.ExpireAt > 0 && time.Now().Unix() >= o.Deposit.ExpireAt {
+			s.Status = "expired"
+		}
 	}
 	return &order{
 		Id:        o.Id,

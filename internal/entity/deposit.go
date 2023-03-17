@@ -8,7 +8,7 @@ const (
 
 type Address struct {
 	Addr string `json:"address"`
-	Tag  string
+	Tag  string `json:"tag,omitempty"`
 }
 
 type Deposit struct {

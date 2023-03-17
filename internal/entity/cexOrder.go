@@ -44,7 +44,7 @@ type CexOrder struct {
 	Status string
 
 	Deposit *Deposit
-	Refund  *Address
+	Refund  Address
 
 	Routes map[int]*Route
 	Swaps  map[int]*Swap
@@ -65,7 +65,7 @@ type CexOrder struct {
 	UpdatedAt int64
 }
 
-func NewCexOrder(userId string, refund, reciver *Address,
+func NewCexOrder(userId string, refund, reciver Address,
 	routes map[int]*Route, amount float64) *CexOrder {
 
 	t := time.Now().Unix()

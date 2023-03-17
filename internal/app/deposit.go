@@ -21,6 +21,16 @@ func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 		return errors.Wrap(errors.NewMesssage("order already has tx id"))
 	}
 
+	if ord.Status == entity.OExpired {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order expired"))
+	}
+
+	if ord.Deposit.ExpireAt > 0 && time.Now().Unix() >= ord.Deposit.ExpireAt {
+		ord.Status = entity.OExpired
+		o.write(ord)
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order expired"))
+	}
+
 	exist, err := o.repo.TxIdExists(txId)
 	if err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)

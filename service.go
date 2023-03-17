@@ -21,8 +21,8 @@ import (
 )
 
 func main() {
-	test()
-	// production()
+	// test()
+	production()
 }
 
 func production() {
@@ -152,6 +152,7 @@ func test() {
 	}
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
+		Repo:   repo,
 		V:      v,
 		L:      l,
 		PrvKey: prv,

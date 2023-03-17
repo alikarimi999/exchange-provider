@@ -13,7 +13,15 @@ import (
 )
 
 type exStatus struct {
+	From struct {
+		Amount float64 `json:"amount"`
+	} `json:"from"`
+	To struct {
+		Amount float64 `json:"amount"`
+	} `json:"to"`
 	Status string `json:"status"`
+	ID     string `json:"id"`
+	Error  bool   `json:"error"`
 }
 
 func (ex *exchange) TxIdSetted(o *entity.CexOrder) {
@@ -31,12 +39,16 @@ func (ex *exchange) trackExchange(o *entity.CexOrder) {
 	oid := o.MetaData["id_in_swapspace"].(string)
 
 	err := try.Do(15, func(attempt uint64) (retry bool, err error) {
-		s, err := ex.exchangeStatus(oid)
+		res, err := ex.exchangeStatus(oid)
 		if err != nil {
 			return true, err
 		}
 
-		switch s {
+		if res.Error {
+			return true, fmt.Errorf("")
+		}
+		o.Withdrawal.Volume = fmt.Sprintf("%v", res.To.Amount)
+		switch res.Status {
 		case "waiting", "confirming", "exchanging", "sending", "verifying":
 			time.Sleep(time.Duration(di) * time.Minute)
 			return true, fmt.Errorf("")
@@ -57,18 +69,18 @@ func (ex *exchange) trackExchange(o *entity.CexOrder) {
 	}
 }
 
-func (ex *exchange) exchangeStatus(id string) (string, error) {
+func (ex *exchange) exchangeStatus(id string) (*exStatus, error) {
 	agent := ex.agent("exchangeStatus")
 
 	urlStr, _ := url.JoinPath(baseUrl, "exchange", id)
 	b, err := ex.request(http.MethodGet, urlStr, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	res := &exStatus{}
 	if err := json.Unmarshal(b, res); err != nil {
 		ex.l.Error(agent, err.Error())
-		return "", err
+		return nil, err
 	}
-	return res.Status, nil
+	return res, nil
 }

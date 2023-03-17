@@ -10,7 +10,7 @@ type Withdrawal struct {
 	Id     string
 	Status string
 	TxId   string
-	*Address
+	Address
 
 	*Token
 	Unwrapped bool

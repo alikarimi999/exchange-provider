@@ -1,6 +1,8 @@
 package kucoin
 
-import "exchange-provider/internal/entity"
+import (
+	"exchange-provider/internal/entity"
+)
 
 func (k *kucoinExchange) applySpreadAndFee(ord *entity.CexOrder, route *entity.Route) {
 	aVol, sVol, rate, _ := k.pc.ApplySpread(route.In, route.Out, ord.Swaps[len(ord.Swaps)-1].OutAmount)

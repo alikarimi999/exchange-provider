@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *OrderUseCase) NewOrder(userId string, refund, reciever *entity.Address,
+func (u *OrderUseCase) NewOrder(userId string, refund, reciever entity.Address,
 	in, out *entity.Token, amount float64, lp uint) (entity.Order, error) {
 
 	routes := make(map[int]*entity.Route)
@@ -64,7 +64,7 @@ func (u *OrderUseCase) newEvmOrder(userId string, sender, reciever common.Addres
 	return o, nil
 }
 
-func (u *OrderUseCase) newCexOrder(userId string, refund, reciever *entity.Address,
+func (u *OrderUseCase) newCexOrder(userId string, refund, reciever entity.Address,
 	amount float64, routes map[int]*entity.Route) (*entity.CexOrder, error) {
 
 	const op = errors.Op("OrderUsecase.NewCexOrder")
