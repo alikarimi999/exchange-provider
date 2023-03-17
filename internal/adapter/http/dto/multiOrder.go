@@ -39,7 +39,7 @@ func (a *adminMultiOrder) fromEntity(o *entity.EvmOrder) *order {
 		}
 	}
 	return &order{
-		Id:        o.Id,
+		Id:        o.ObjectId.String(),
 		Type:      multiSteps,
 		UserId:    o.UserId,
 		CreatedAt: o.CreatedAt,
@@ -64,7 +64,7 @@ func (u *userMultiOrder) fromEntity(o *entity.EvmOrder) *order {
 		FeeRate:    o.FeeRate,
 	}
 	return &order{
-		Id:        o.Id,
+		Id:        o.ObjectId.String(),
 		Type:      multiSteps,
 		UserId:    o.UserId,
 		CreatedAt: o.CreatedAt,

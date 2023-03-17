@@ -50,7 +50,7 @@ func (a *adminSingleOrder) fromEntity(o *entity.CexOrder) *order {
 		a.Swaps[k] = swapFromEntity(v, o.Routes[k])
 	}
 	return &order{
-		Id:        o.Id,
+		Id:        o.ObjectId.String(),
 		Type:      singleStep,
 		UserId:    o.UserId,
 		CreatedAt: o.CreatedAt,
@@ -138,7 +138,7 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 		}
 	}
 	return &order{
-		Id:        o.Id,
+		Id:        o.ObjectId.String(),
 		Type:      singleStep,
 		UserId:    o.UserId,
 		CreatedAt: o.CreatedAt,

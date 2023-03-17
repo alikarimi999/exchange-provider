@@ -135,7 +135,7 @@ paths:
                   type: number
 
               example:
-                userId: 1
+                userId: usr-6414af95cc2c0f9e249be8d6
                 input: USDT-TRC20
                 output: UNI-ERC20
                 amountIn: 3.4
