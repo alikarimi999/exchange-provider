@@ -11,15 +11,20 @@ import (
 )
 
 func (s *Server) AddExchange(ctx Context) {
-	id := ctx.Param("id")
+	name := ctx.Param("name")
 
-	switch id {
+	switch name {
 	case "kucoin":
 		cfg := &kucoin.Configs{}
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
+		if s.app.ExchangeExists(cfg.Id) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			return
+		}
+
 		ex, err := kucoin.NewKucoinExchange(cfg, s.v, s.l,
 			false, s.repo, s.pc, s.fee)
 		if err != nil {
@@ -42,6 +47,11 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
+		if s.app.ExchangeExists(cfg.Id) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			return
+		}
+
 		ex, err := swapspace.SwapSpace(cfg, s.repo, s.l)
 		if err != nil {
 			ctx.JSON(nil, err)
@@ -60,6 +70,11 @@ func (s *Server) AddExchange(ctx Context) {
 		cfg := &evm.Config{}
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(nil, err)
+			return
+		}
+
+		if s.app.ExchangeExists(cfg.Id) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
 			return
 		}
 
@@ -108,7 +123,7 @@ func (s *Server) AddExchange(ctx Context) {
 	// 	return
 	default:
 		err := errors.Wrap(errors.ErrNotFound,
-			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", id)))
+			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", name)))
 		ctx.JSON(nil, err)
 		return
 	}

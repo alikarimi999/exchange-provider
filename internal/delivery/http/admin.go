@@ -100,7 +100,7 @@ func (r *Router) adminRoutes() {
 			es.DELETE("/:id", func(ctx *gin.Context) {
 				r.srv.RemoveExchange(newContext(ctx, true))
 			})
-			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
+			es.POST("/add/:name", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
 		}
 
 		t := a.Group("/tokens")

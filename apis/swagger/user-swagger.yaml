@@ -5,34 +5,58 @@ info:
 servers:
   - url: http://156.253.5.52:80
 paths:
-  /pairs:
-    post:
+  /tokens:
+    get:
       tags:
         - MetaData
-      summary: pairs list
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                currentPage:
-                  type: integer
-                pageSize:
-                  type: integer
-              example:
-                currentPage: 1
-                pageSize: 10
-              required:
-                - currentPage
-                - pageSize
+      summary: tokens list
       parameters:
         - name: x-api-key
           in: header
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json: {}
+
+  /estimate:
+    post:
+      tags:
+        - MetaData
+      summary: estimate amountOut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: string
+                output:
+                  type: string
+                amountIn:
+                  type: number
+                lp:
+                  type: number
+              example:
+                input: "USDT-TRC20"
+                output: "DAI-POLYGON"
+                amountIn: 3.4
+              required:
+                - input
+                - output
+                - amountIn
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
       responses:
         "200":
           description: Successful response
@@ -66,7 +90,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
       responses:
         "200":
           description: Successful response
@@ -84,33 +108,43 @@ paths:
               type: object
               properties:
                 userId:
-                  type: integer
+                  type: string
                 input:
                   type: string
                 output:
                   type: string
-                sender:
-                  type: string
-                senderTag:
-                  type: string
+                refund:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      example: "TCEEc8kbFwDjsA3hAjeF5tA4FUd2XfHmbg"
+                    tag:
+                      type: string
                 receiver:
-                  type: string
-                receiverTag:
-                  type: string
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                      example: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
+                    tag:
+                      type: string
                 amountIn:
                   type: number
+                lp:
+                  type: number
+
               example:
                 userId: 1
-                input: ETH-ERC20
+                input: USDT-TRC20
                 output: UNI-ERC20
-                sender: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
-                receiver: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
-                amountIn: 0.2
+                amountIn: 3.4
+                lp: 3
               required:
                 - userId
                 - input
                 - output
-                - sender
+                - refund
                 - receiver
                 - amountIn
 
@@ -120,7 +154,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
       responses:
         "200":
           description: Successful response
@@ -143,7 +177,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
 
       responses:
         "200":
@@ -173,7 +207,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
       responses:
         "200":
           description: Successful response
@@ -207,7 +241,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_XeCyFkHPSzHKFUxTgOaTUzcvBrDFnZNh
       responses:
         "200":
           description: Successful response

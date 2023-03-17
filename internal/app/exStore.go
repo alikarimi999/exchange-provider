@@ -31,7 +31,7 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 		if ex.Type() == entity.CEX {
 			go ex.(entity.Cex).Run()
 		}
-		l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
+		l.Debug("exStore.add", fmt.Sprintf("exchange '%d' added", ex.Id()))
 
 	}
 	return s
@@ -52,7 +52,7 @@ func (a *exStore) AddExchange(ex entity.Exchange) error {
 	if ex.Type() == entity.CEX {
 		go ex.(entity.Cex).Run()
 	}
-	a.l.Debug("exStore.add", fmt.Sprintf("exchange '%s' added", ex.Id()))
+	a.l.Debug("exStore.add", fmt.Sprintf("exchange '%d' added", ex.Id()))
 	return nil
 }
 

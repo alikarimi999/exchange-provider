@@ -13,7 +13,7 @@ import (
 )
 
 type Exchange struct {
-	Id      uint   `bson:"id"`
+	Id      uint   `bson:"_id"`
 	Name    string `bson:"name"`
 	Configs string `bson:"configs"`
 }

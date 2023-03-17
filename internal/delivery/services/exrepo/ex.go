@@ -81,7 +81,7 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
 	d, err := a.db.DeleteOne(context.Background(), bson.D{{"id", ex.Id()}})
 	if d.DeletedCount > 0 {
-		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %s deleted", ex.Id()))
+		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %d deleted", ex.Id()))
 	}
 	return err
 }

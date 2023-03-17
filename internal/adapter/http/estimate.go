@@ -11,13 +11,13 @@ func (s *Server) EstimateAmountOut(ctx Context) {
 		return
 	}
 
-	in, err := dto.ParseToken(req.In)
+	in, err := dto.ParseToken(req.Input)
 	if err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	out, err := dto.ParseToken(req.Out)
+	out, err := dto.ParseToken(req.Output)
 	if err != nil {
 		ctx.JSON(nil, err)
 		return
@@ -30,8 +30,8 @@ func (s *Server) EstimateAmountOut(ctx Context) {
 	}
 
 	res := &dto.EstimateAmountOutRes{
-		In:        req.In,
-		Out:       req.Out,
+		Input:     req.Input,
+		Output:    req.Output,
 		AmountIn:  req.AmountIn,
 		AmountOut: amountOut,
 		LP:        ex.Id(),

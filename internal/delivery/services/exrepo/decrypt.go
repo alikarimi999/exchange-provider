@@ -51,7 +51,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 
 	case "swapspace":
 		apiKey := jb["apiKey"].(string)
-		cfg := &swapspace.Config{ApiKey: apiKey}
+		cfg := &swapspace.Config{ApiKey: apiKey, Id: ex.Id}
 		return swapspace.SwapSpace(cfg, r.repo, r.l)
 
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":

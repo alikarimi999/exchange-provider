@@ -2,14 +2,15 @@ package app
 
 import (
 	"exchange-provider/internal/entity"
-	"fmt"
 )
 
 func (o *OrderUseCase) AddExchange(ex entity.Exchange) error {
-	if exists := o.exs.exists(ex.Id()); !exists {
-		return o.exs.AddExchange(ex)
-	}
-	return fmt.Errorf("exchange %d already exists", ex.Id())
+	return o.exs.AddExchange(ex)
+
+}
+
+func (o *OrderUseCase) ExchangeExists(id uint) bool {
+	return o.exs.exists(id)
 }
 
 func (o *OrderUseCase) GetExchange(id uint) (entity.Exchange, error) {
