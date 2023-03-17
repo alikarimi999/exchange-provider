@@ -30,13 +30,14 @@ func (r *Router) Run(addr ...string) error {
 	return r.gin.Run(addr...)
 }
 
-func NewRouter(app *app.OrderUseCase, pairs entity.PairRepo, v *viper.Viper, l logger.Logger, user, pass string) *Router {
+func NewRouter(app *app.OrderUseCase, repo entity.OrderRepo,
+	fee entity.FeeService, pc entity.PairConfigs, v *viper.Viper, l logger.Logger, user, pass string) *Router {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
 	router := &Router{
 		gin: engine,
-		srv: http.NewServer(pairs, app, v, l),
+		srv: http.NewServer(app, v, repo, fee, pc, l),
 		l:   l,
 		v:   v,
 

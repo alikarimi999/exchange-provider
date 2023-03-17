@@ -9,7 +9,7 @@ import (
 type EvmOrder struct {
 	*ObjectId
 	UserId    string
-	Status    OrderStatus
+	Status    string
 	Steps     map[uint]*EvmStep
 	Sender    common.Address
 	Receiver  common.Address

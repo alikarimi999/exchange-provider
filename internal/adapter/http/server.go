@@ -4,28 +4,32 @@ import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/viper"
 )
 
 type Server struct {
-	app   *app.OrderUseCase
-	pairs entity.PairRepo
-	l     logger.Logger
-	v     *viper.Viper
-	cf    *chainsFee
+	app  *app.OrderUseCase
+	repo entity.OrderRepo
+	fee  entity.FeeService
+	l    logger.Logger
+	pc   entity.PairConfigs
+	v    *viper.Viper
+	cf   *chainsFee
 }
 
-func NewServer(pairs entity.PairRepo, app *app.OrderUseCase, v *viper.Viper,
-	l logger.Logger) *Server {
+func NewServer(app *app.OrderUseCase, v *viper.Viper,
+	repo entity.OrderRepo, fee entity.FeeService, pc entity.PairConfigs, l logger.Logger) *Server {
 	s := &Server{
-		app:   app,
-		pairs: pairs,
-		l:     l,
-		v:     v,
+		app:  app,
+		repo: repo,
+		fee:  fee,
+		pc:   pc,
+		l:    l,
+		v:    v,
 		cf: &chainsFee{
 			mux:   &sync.Mutex{},
 			chain: make(map[string]float64),
@@ -44,6 +48,7 @@ func (s *Server) NewOrder(ctx Context) {
 
 	req := &dto.CreateOrderRequest{}
 	if err := ctx.Bind(req); err != nil {
+		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(err.Error()))
 		ctx.JSON(nil, err)
 		return
 	}
@@ -63,31 +68,26 @@ func (s *Server) NewOrder(ctx Context) {
 		return
 	}
 
-	routes, err := s.routing(in, out)
+	o, err := s.app.NewOrder(req.UserId, req.Refund, req.Receiver, in, out, req.AmountIn, req.LP)
 	if err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	ex, _ := s.app.GetExchange(routes[0].Exchange)
-	var o entity.Order
-	switch ex.Type() {
-	case entity.CEX:
-		o, err = s.app.NewCexOrder(req.UserId, &entity.Address{Addr: req.Receiver, Tag: req.Tag}, routes)
+	switch o.Type() {
+	case entity.CEXOrder:
+		ctx.JSON(dto.SingleStepResponse(o.(*entity.CexOrder)), nil)
+		return
+	default:
+		o := o.(*entity.EvmOrder)
+		tx, isApproveTx, err := s.app.GetMultiStep(o, 1)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
-	case entity.EvmDEX:
-		o, err = s.app.NewEvmOrder(req.UserId, common.HexToAddress(req.Sender),
-			common.HexToAddress(req.Receiver), req.AmountIn, routes[0])
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+		ctx.JSON(dto.MultiStep(o.ObjectId.String(), o.Sender.Hex(), tx, 1, len(o.Steps), isApproveTx), nil)
+		return
 	}
-
-	ctx.JSON(dto.CreateOrderResponse(o), nil)
 }
 
 func (s *Server) GetPaginatedForUser(ctx Context) {

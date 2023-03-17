@@ -1,42 +1,44 @@
 package evm
 
 import (
+	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
 )
 
-func (d *EvmDex) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
-	return d.price(ps...)
+func (d *EvmDex) EstimateAmountOut(in, out *entity.Token, amount float64) (float64, float64, error) {
+	t1, err := d.get(in.TokenId)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	t2, err := d.get(out.TokenId)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	amountOut, _, err := d.dex.EstimateAmountOut(t1, t2, amount)
+	return amountOut, 0, err
 }
 
-func (d *EvmDex) price(ps ...*entity.Pair) ([]*entity.Pair, error) {
-	input := []*entity.Pair{}
-	for _, p := range ps {
-		if p.T1.TokenId == d.NativeToken || p.T2.TokenId == d.NativeToken {
-			continue
-		}
-		input = append(input, p)
+func (d *EvmDex) price(in, out *types.Token) (*entity.Pair, error) {
+
+	t1 := &types.Token{}
+	t2 := &types.Token{}
+	if in.Address.Hash().Big().Cmp(out.Address.Hash().Big()) == -1 {
+		t1 = in
+		t2 = out
+	} else {
+		t2 = in
+		t1 = out
 	}
-	if err := d.Prices(input); err != nil {
+
+	ps := []*entity.Pair{&entity.Pair{
+		T1: t1.ToEntity(d.TokenStandard),
+		T2: t2.ToEntity(d.TokenStandard),
+	}}
+	if err := d.dex.Prices(ps); err != nil {
 		return nil, err
 	}
 
-	output := []*entity.Pair{}
-	for _, p := range input {
-		if p.Price1 == "" {
-			continue
-		}
-		output = append(output, p)
-		if p.T1.TokenId == d.WrappedNativeToken {
-			p1 := p.Snapshot()
-			p1.T1.TokenId = d.NativeToken
-			p1.T1.Native = true
-			output = append(output, p1)
-		} else if p.T2.TokenId == d.WrappedNativeToken {
-			p1 := p.Snapshot()
-			p1.T2.TokenId = d.NativeToken
-			p1.T2.Native = true
-			output = append(output, p1)
-		}
-	}
-	return output, nil
+	return ps[0], nil
 }

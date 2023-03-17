@@ -16,14 +16,13 @@ import (
 type EvmDex struct {
 	*Config
 
-	IDex
-	pairsRepo entity.PairRepo
-	ts        *tokens
-	v         *viper.Viper
-	l         logger.Logger
+	dex IDex
+	ts  *tokens
+	v   *viper.Viper
+	l   logger.Logger
 }
 
-func NewEvmDex(cfg *Config, pairs entity.PairRepo, v *viper.Viper,
+func NewEvmDex(cfg *Config, v *viper.Viper,
 	l logger.Logger, readConfig bool) (entity.EVMDex, error) {
 	agent := "NewEvmDex"
 
@@ -37,12 +36,10 @@ func NewEvmDex(cfg *Config, pairs entity.PairRepo, v *viper.Viper,
 	}
 
 	ex := &EvmDex{
-		Config:    cfg,
-		pairsRepo: pairs,
-		v:         v,
-		l:         l,
+		Config: cfg,
+		v:      v,
+		l:      l,
 	}
-	ex.Config.Id = ex.Config.Name + "-" + ex.Config.Network
 
 	k, err := crypto.HexToECDSA(cfg.HexKey)
 	if err != nil {
@@ -51,18 +48,18 @@ func NewEvmDex(cfg *Config, pairs entity.PairRepo, v *viper.Viper,
 	ex.Config.privateKey = k
 
 	if readConfig {
-		ex.l.Debug(agent, fmt.Sprintf("Retrieving `%s` data ...", ex.Id()))
+		ex.l.Debug(agent, fmt.Sprintf("Retrieving `%s` data ...", ex.Name()))
 
-		ex.NativeToken = ex.v.GetString(fmt.Sprintf("%s.native_token", ex.Id()))
-		ex.TokenStandard = ex.v.GetString(fmt.Sprintf("%s.token_standard", ex.Id()))
-		ex.PairsFile = ex.v.GetString(fmt.Sprintf("%s.pairs_file", ex.Id()))
-		ex.TokensFile = ex.v.GetString(fmt.Sprintf("%s.tokens_file", ex.Id()))
-		ex.Contract = ex.v.GetString(fmt.Sprintf("%s.contract", ex.Id()))
+		ex.NativeToken = ex.v.GetString(fmt.Sprintf("%s.native_token", ex.Name()))
+		ex.TokenStandard = ex.v.GetString(fmt.Sprintf("%s.token_standard", ex.Name()))
+		ex.PairsFile = ex.v.GetString(fmt.Sprintf("%s.pairs_file", ex.Name()))
+		ex.TokensFile = ex.v.GetString(fmt.Sprintf("%s.tokens_file", ex.Name()))
+		ex.Contract = ex.v.GetString(fmt.Sprintf("%s.contract", ex.Name()))
 		ex.contractAddress = common.HexToAddress(ex.Contract)
-		ex.Swapper = ex.v.GetString(fmt.Sprintf("%s.swapper", ex.Id()))
+		ex.Swapper = ex.v.GetString(fmt.Sprintf("%s.swapper", ex.Name()))
 		ex.swapperAddress = common.HexToAddress(ex.Swapper)
 
-		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.Id()))
+		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.Name()))
 		if i == nil {
 			return nil, errors.New("no provider available in config file")
 		}
@@ -80,19 +77,19 @@ func NewEvmDex(cfg *Config, pairs entity.PairRepo, v *viper.Viper,
 		ex.contractAddress = common.HexToAddress(ex.Contract)
 		ex.swapperAddress = common.HexToAddress(ex.Swapper)
 
-		ex.v.Set(fmt.Sprintf("%s.native_token", ex.Id()), ex.NativeToken)
-		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.Id()), ex.TokenStandard)
-		ex.v.Set(fmt.Sprintf("%s.pairs_file", ex.Id()), ex.PairsFile)
-		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.Id()), ex.TokensFile)
-		ex.v.Set(fmt.Sprintf("%s.contract", ex.Id()), ex.Contract)
-		ex.v.Set(fmt.Sprintf("%s.swapper", ex.Id()), ex.Swapper)
+		ex.v.Set(fmt.Sprintf("%s.native_token", ex.Name()), ex.NativeToken)
+		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.Name()), ex.TokenStandard)
+		ex.v.Set(fmt.Sprintf("%s.pairs_file", ex.Name()), ex.PairsFile)
+		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.Name()), ex.TokensFile)
+		ex.v.Set(fmt.Sprintf("%s.contract", ex.Name()), ex.Contract)
+		ex.v.Set(fmt.Sprintf("%s.swapper", ex.Name()), ex.Swapper)
 
 		if err := ex.checkProviders(); err != nil {
 			return nil, err
 		}
 
 		for i, p := range ex.providers {
-			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Id(), i), p.URL)
+			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Name(), i), p.URL)
 		}
 		if err := ex.v.WriteConfig(); err != nil {
 			return nil, err
@@ -119,7 +116,7 @@ func NewEvmDex(cfg *Config, pairs entity.PairRepo, v *viper.Viper,
 	if err != nil {
 		return nil, err
 	}
-	ex.IDex = d
+	ex.dex = d
 	ex.findAllPairs()
 	return ex, nil
 }
@@ -128,8 +125,8 @@ func (d *EvmDex) Name() string {
 	return d.Config.Name
 }
 
-func (d *EvmDex) Id() string {
-	return d.Config.Id
+func (d *EvmDex) Id() uint {
+	return 2
 }
 
 func (d *EvmDex) Type() entity.ExType {
@@ -140,6 +137,4 @@ func (d *EvmDex) Configs() interface{} {
 	return d.Config
 }
 
-func (d *EvmDex) Remove() {
-	d.pairsRepo.RemoveExchange(d.Id())
-}
+func (d *EvmDex) Remove() {}

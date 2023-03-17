@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/Kucoin/kucoin-go-sdk v1.2.12
-	github.com/orcaman/concurrent-map v1.0.0
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/atomic v1.9.0
 )

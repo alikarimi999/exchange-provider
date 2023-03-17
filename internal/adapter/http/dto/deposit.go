@@ -3,6 +3,7 @@ package dto
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 )
 
 type Deposit struct {
@@ -28,10 +29,10 @@ func DFromEntity(d *entity.Deposit) *Deposit {
 		Token:  d.Token.String(),
 
 		TxId:   d.TxId,
-		Volume: d.Volume,
+		Volume: fmt.Sprintf("%v", d.Volume),
 
-		Address: d.Addr,
-		Tag:     d.Tag,
+		Address: d.Address.Addr,
+		Tag:     d.Address.Tag,
 
 		FailedDesc: d.FailedDesc,
 	}

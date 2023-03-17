@@ -19,14 +19,18 @@ const (
 )
 
 type Exchange interface {
-	Id() string
+	Id() uint
 	Name() string
 	Type() ExType
-	Price(...*Pair) ([]*Pair, error)
-	Support(t1, t2 *Token) bool
+	EstimateAmountOut(t1, t2 *Token, amount float64) (amountOut, min float64, err error)
+	Tokens() []*Token
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 *Token) error
 	Configs() interface{}
 	Command(Command) (CommandResult, error)
 	Remove()
 }
+
+const (
+	SwapSpace string = "swapspace"
+)

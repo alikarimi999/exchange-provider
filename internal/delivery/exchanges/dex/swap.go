@@ -19,7 +19,7 @@ func (d *dex) Swap(o *entity.CexOrder, index int) (string, error) {
 		return "", err
 	}
 
-	sAddr := common.HexToAddress(o.Deposit.Addr)
+	sAddr := common.HexToAddress(o.Deposit.Address.Addr)
 
 	var tIn ts.Token
 	var tOut ts.Token

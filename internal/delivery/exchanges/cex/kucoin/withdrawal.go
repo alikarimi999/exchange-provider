@@ -14,7 +14,7 @@ func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 
 	c := o.Withdrawal.Token
 
-	opts, err := k.withdrawalOpts(c, o.Withdrawal.Tag)
+	opts, err := k.withdrawalOpts(c, o.Withdrawal.Address.Tag)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}

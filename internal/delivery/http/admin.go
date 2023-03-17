@@ -27,13 +27,13 @@ func (r *Router) adminRoutes() {
 
 		ps := a.Group("/pairs")
 		{
-			ps.POST("/add/:id", func(ctx *gin.Context) {
-				r.srv.AddPairs(newContext(ctx, true))
-			})
+			// ps.POST("/add/:id", func(ctx *gin.Context) {
+			// 	r.srv.AddPairs(newContext(ctx, true))
+			// })
 
-			ps.POST("", func(ctx *gin.Context) {
-				r.srv.GetPairsToAdmin(newContext(ctx, true))
-			})
+			// ps.POST("", func(ctx *gin.Context) {
+			// 	r.srv.GetPairsToAdmin(newContext(ctx, true))
+			// })
 
 			ps.POST("/get_min_deposit", func(ctx *gin.Context) {
 				r.srv.GetMinPairDeposit(newContext(ctx, true))
@@ -47,9 +47,9 @@ func (r *Router) adminRoutes() {
 				r.srv.GetAllMinDeposit(newContext(ctx, true))
 			})
 
-			ps.DELETE("", func(ctx *gin.Context) {
-				r.srv.RemovePair(newContext(ctx, true))
-			})
+			// ps.DELETE("", func(ctx *gin.Context) {
+			// 	r.srv.RemovePair(newContext(ctx, true))
+			// })
 		}
 
 		fee := a.Group("/fee")
@@ -94,19 +94,20 @@ func (r *Router) adminRoutes() {
 
 		es := a.Group("/exchanges")
 		{
-			es.POST("/list", func(ctx *gin.Context) {
+			es.GET("/list", func(ctx *gin.Context) {
 				r.srv.GetExchangeList(newContext(ctx, true))
 			})
 			es.DELETE("/:id", func(ctx *gin.Context) {
 				r.srv.RemoveExchange(newContext(ctx, true))
 			})
 			es.POST("/add/:id", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
+		}
 
-			m := es.Group("/multichain")
-			{
-				m.POST("update_chains", func(ctx *gin.Context) { r.srv.UpdateChains(ctx) })
-			}
-
+		t := a.Group("/tokens")
+		{
+			t.GET("", func(ctx *gin.Context) {
+				r.srv.Tokens(newContext(ctx, true))
+			})
 		}
 
 		limiter := a.Group("/limiter")

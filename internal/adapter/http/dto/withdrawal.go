@@ -24,7 +24,7 @@ func WFromEntity(w *entity.Withdrawal) *Withdrawal {
 		Status: string(w.Status),
 
 		Address: w.Addr,
-		Tag:     w.Tag,
+		Tag:     w.Address.Tag,
 
 		Token:       w.Token.String(),
 		Volume:      w.Volume,

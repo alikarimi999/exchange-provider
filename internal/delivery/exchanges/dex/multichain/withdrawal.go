@@ -44,7 +44,7 @@ func (m *Multichain) Withdrawal(o *entity.CexOrder) (string, error) {
 		return "", err
 	}
 
-	sender := common.HexToAddress(o.Deposit.Addr)
+	sender := common.HexToAddress(o.Deposit.Address.Addr)
 	reciever := common.HexToAddress(o.Withdrawal.Addr)
 
 	// unwrap

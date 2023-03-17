@@ -28,10 +28,10 @@ type SingleStep struct {
 
 func SingleStepResponse(o *entity.CexOrder) *SingleStep {
 	return &SingleStep{
-		OrderStep: &OrderStep{OrderId: o.Id, CurrentStep: 1, TotalSteps: 1},
+		OrderStep: &OrderStep{OrderId: o.ObjectId.String(), CurrentStep: 1, TotalSteps: 1},
 		Token:     o.Routes[0].In.String(),
-		Address:   o.Deposit.Addr,
-		Tag:       o.Deposit.Tag,
+		Address:   o.Deposit.Address.Addr,
+		Tag:       o.Deposit.Address.Tag,
 	}
 }
 

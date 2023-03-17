@@ -37,16 +37,16 @@ func (d *EvmDex) findAllPairs() {
 			}
 		}
 
-		d.SaveAvailablePairs(tps, d.PairsFile)
+		d.dex.SaveAvailablePairs(tps, d.PairsFile)
 		ps, err = d.retreivePairs()
 		if err != nil {
 			return
 		}
 	}
 
-	ps, err = d.price(ps...)
+	ps, err = d.prices(ps...)
 	if err != nil {
 		return
 	}
-	d.pairsRepo.Add(d, ps...)
+	// d.pairsRepo.Add(d, ps...)
 }

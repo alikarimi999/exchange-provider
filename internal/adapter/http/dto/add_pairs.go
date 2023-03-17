@@ -1,7 +1,7 @@
 package dto
 
 import (
-	kdto "exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"math/big"
 
@@ -13,8 +13,9 @@ type Token struct {
 	ChainId             string  `json:"chainId"`
 	Address             string  `json:"address,omitempty"`
 	Tag                 string  `json:"tag,omitempty"`
+	LP                  uint    `json:"lp"`
 	BlockTime           string  `json:"blockTime,omitempty"`
-	MinDeposit          float64 `json:"minDeposit"`
+	MinDeposit          float64 `json:"minDeposit,omitempty"`
 	MinOrderSize        string  `json:"minOrderSize,omitempty"`
 	MaxOrderSize        string  `json:"maxOrderSize,omitempty"`
 	MinWithdrawSize     string  `json:"minWithdrawSize,omitempty"`

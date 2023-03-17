@@ -3,11 +3,21 @@ package evm
 import (
 	"encoding/json"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"os"
 )
 
 type tokens struct {
 	Tokens []types.Token `json:"tokens"`
+}
+
+func (d *EvmDex) Tokens() []*entity.Token {
+	ts := []*entity.Token{}
+	for _, t := range d.ts.Tokens {
+		ts = append(ts, t.ToToken())
+	}
+	return ts
 }
 
 func (d *EvmDex) retreiveTokens() error {
@@ -25,7 +35,7 @@ func (d *EvmDex) retreiveTokens() error {
 	return nil
 }
 
-func (d *EvmDex) get(t string) (types.Token, bool) {
+func (d *EvmDex) get(t string) (*types.Token, error) {
 	native := t == d.NativeToken
 	if native {
 		t = d.WrappedNativeToken
@@ -36,8 +46,8 @@ func (d *EvmDex) get(t string) (types.Token, bool) {
 				t0.Symbol = d.NativeToken
 				t0.Native = true
 			}
-			return t0, true
+			return t0.SnapShot(), nil
 		}
 	}
-	return types.Token{}, false
+	return nil, errors.Wrap(errors.ErrNotFound)
 }

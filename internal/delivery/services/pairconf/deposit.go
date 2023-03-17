@@ -3,6 +3,8 @@ package pairconf
 import (
 	"context"
 	"exchange-provider/internal/entity"
+	"fmt"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -117,4 +119,11 @@ func (c *PairConfigs) add(c1, c2 *entity.CoinMinDeposit) error {
 	}
 	c.minDpositCache[pId] = p
 	return nil
+}
+
+func pairId(t1, t2 string) string {
+	if strings.Compare(t1, t2) == -1 {
+		return fmt.Sprintf("%s%s%s", t1, "/", t2)
+	}
+	return fmt.Sprintf("%s%s%s", t2, "/", t1)
 }

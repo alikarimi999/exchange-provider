@@ -2,14 +2,14 @@ package uniswapV3
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV3/contracts"
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
+func (p *dex) TxData(in, out *types.Token, sender, receiver common.Address,
 	amount *big.Int, fee int64) ([]byte, error) {
 
 	data := [][]byte{}
@@ -25,8 +25,8 @@ func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
 		rec = receiver
 	}
 	params := contracts.IV3SwapRouterExactInputSingleParams{
-		TokenIn:           common.HexToAddress(in.Address),
-		TokenOut:          common.HexToAddress(out.Address),
+		TokenIn:           in.Address,
+		TokenOut:          out.Address,
 		Fee:               big.NewInt(fee),
 		Recipient:         rec,
 		AmountIn:          amount,

@@ -14,21 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-type API struct {
-	ApiKey        string `json:"apiKey"`
-	ApiSecret     string `json:"apiSecret"`
-	ApiPassphrase string `json:"apiPassphrase"`
-}
-
-type Configs struct {
-	ReadApi  *API `json:"readApi,omitempty"`
-	WriteApi *API `json:"writeApi,omitempty"`
-
-	ApiVersion string
-	ApiUrl     string
-	Message    string
-}
-
 type kucoinExchange struct {
 	cfg *Configs
 	mux *sync.Mutex
@@ -37,7 +22,6 @@ type kucoinExchange struct {
 	writeApi *kucoin.ApiService
 
 	cache *cache
-	wt    *withdrawalTracker
 	da    *depositAggregator
 	dt    *depositTracker
 	wa    *withdrawalAggregator
@@ -47,15 +31,19 @@ type kucoinExchange struct {
 	l logger.Logger
 
 	exchangePairs  *exPairs
-	pairs          entity.PairRepo
 	supportedCoins *supportedCoins
+
+	repo entity.OrderRepo
+	pc   entity.PairConfigs
+	fee  entity.FeeService
 
 	stopCh   chan struct{}
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
-	l logger.Logger, readConfig bool) (entity.Cex, error) {
+func NewKucoinExchange(cfgi interface{}, v *viper.Viper,
+	l logger.Logger, readConfig bool,
+	repo entity.OrderRepo, pc entity.PairConfigs, fee entity.FeeService) (entity.Cex, error) {
 	const op = errors.Op("Kucoin-Exchange.NewKucoinExchange")
 
 	cfg, err := validateConfigs(cfgi)
@@ -84,7 +72,9 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 
 		exchangePairs:  newExPairs(),
 		supportedCoins: newSupportedCoins(),
-		pairs:          pairs,
+		repo:           repo,
+		pc:             pc,
+		fee:            fee,
 		v:              v,
 		l:              l,
 
@@ -97,7 +87,6 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 	k.l.Debug(string(op), "ping was successful")
 	k.cache = newCache(k, k.l)
 
-	k.wt = newWithdrawalTracker(k, k.cache)
 	k.da = newDepositAggregator(k, k.cache)
 	k.dt = newDepositTracker(k, k.cache)
 	k.wa = newWithdrawalAggregator(k, k.cache)
@@ -106,7 +95,7 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 	if readConfig {
 		k.l.Debug(string(op), fmt.Sprintf("retriving pairs from config file %s", k.v.ConfigFileUsed()))
 
-		i := k.v.Get(fmt.Sprintf("%s.pairs", k.Id()))
+		i := k.v.Get(fmt.Sprintf("%s.pairs", k.Name()))
 		if i != nil {
 			if err := k.pls.download(); err != nil {
 				return nil, err
@@ -149,7 +138,7 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 				ok, _ := k.pls.support(p)
 				if !ok {
 					k.l.Debug(string(op), fmt.Sprintf("pair %s is not supported by kucoin anymore", p.String()))
-					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Id())).(map[string]interface{}), strings.ToLower(p.Id()))
+					delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Name())).(map[string]interface{}), strings.ToLower(p.Id()))
 					if err := k.v.WriteConfig(); err != nil {
 						k.l.Error(string(op), err.Error())
 					}
@@ -170,21 +159,14 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 
 			k.exchangePairs.add(newPs...)
 			k.supportedCoins.add(newCs)
-			eps := []*entity.Pair{}
 			for _, p := range newPs {
 				ep := p.toEntity()
 				ep.FeeRate = k.orderFeeRate(p)
-				eps = append(eps, ep)
 			}
-			psPrice, err := k.Price(eps...)
-			if err != nil {
-				return nil, err
-			}
-			k.pairs.Add(k, psPrice...)
 
 			k.l.Info(string(op), fmt.Sprintf("%d pairs loaded", len(newPs)))
 			k.l.Info(string(op), fmt.Sprintf("%d pairs couldn't be loaded", len(ps)-len(newPs)))
-			k.l.Info(string(op), fmt.Sprintf("exchange %s started successfully", k.Id()))
+			k.l.Info(string(op), fmt.Sprintf("exchange %s started successfully", k.Name()))
 
 		}
 	}
@@ -192,17 +174,20 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairRepo, v *viper.Viper,
 }
 
 func (k *kucoinExchange) Run() {
-	k.l.Debug(fmt.Sprintf("%s.Run", k.Id()), "started")
+	k.l.Debug(fmt.Sprintf("%s.Run", k.Name()), "started")
 }
 
 func (k *kucoinExchange) Remove() {
-	op := fmt.Sprintf("%s.Stop", k.Id())
+	op := fmt.Sprintf("%s.Stop", k.Name())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
-	k.pairs.RemoveExchange(k.Id())
 	k.l.Debug(string(op), "stopped")
 }
 
 func (k *kucoinExchange) Type() entity.ExType {
 	return entity.CEX
+}
+
+func (k *kucoinExchange) Tokens() []*entity.Token {
+	return []*entity.Token{}
 }

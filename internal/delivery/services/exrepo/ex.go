@@ -15,19 +15,24 @@ import (
 )
 
 type ExchangeRepo struct {
-	db    *mongo.Collection
-	pairs entity.PairRepo
-	v     *viper.Viper
-	l     logger.Logger
+	db   *mongo.Collection
+	repo entity.OrderRepo
+	fee  entity.FeeService
+	pc   entity.PairConfigs
+	v    *viper.Viper
+	l    logger.Logger
 	app.WalletStore
 	prv *rsa.PrivateKey
 }
 
-func NewExchangeRepo(db *mongo.Database, pairs entity.PairRepo, ws app.WalletStore, v *viper.Viper,
-	l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
+func NewExchangeRepo(db *mongo.Database, ws app.WalletStore,
+	repo entity.OrderRepo, fee entity.FeeService, pc entity.PairConfigs,
+	v *viper.Viper, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
 		db:          db.Collection("exchange-repository"),
-		pairs:       pairs,
+		repo:        repo,
+		fee:         fee,
+		pc:          pc,
 		v:           v,
 		l:           l,
 		WalletStore: ws,

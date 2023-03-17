@@ -5,6 +5,6 @@ type Account struct {
 }
 
 type GetAllExchangesResponse struct {
-	Exchanges map[string]*Account `json:"exchanges,omitempty"`
-	Msgs      []string            `json:"messages"`
+	Exchanges map[uint]*Account `json:"exchanges,omitempty"`
+	Msgs      []string          `json:"messages"`
 }

@@ -1,7 +1,7 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -86,6 +86,10 @@ func (p *pair) Id() string {
 
 func (p *pair) String() string {
 	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
+}
+
+func (p *pair) Symbol() string {
+	return fmt.Sprintf("%s-%s", p.BC.TokenId, p.QC.TokenId)
 }
 
 func (p *pair) snapshot() *pair {

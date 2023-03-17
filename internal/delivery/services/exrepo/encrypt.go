@@ -2,9 +2,10 @@ package exrepo
 
 import (
 	"encoding/json"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
+	"exchange-provider/internal/delivery/exchanges/cex/swapspace"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
-	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
@@ -12,7 +13,7 @@ import (
 )
 
 type Exchange struct {
-	Id      string `bson:"id"`
+	Id      uint   `bson:"id"`
 	Name    string `bson:"name"`
 	Configs string `bson:"configs"`
 }
@@ -47,6 +48,10 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 		jb["write.apiKey"] = conf.WriteApi.ApiKey
 		jb["write.apiSecret"] = conf.WriteApi.ApiSecret
 		jb["write.apiPassphrase"] = conf.WriteApi.ApiPassphrase
+
+	case "swapspace":
+		conf := ex.Configs().(*swapspace.Config)
+		jb["apiKey"] = conf.ApiKey
 
 	default:
 		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange Id", e.Id))

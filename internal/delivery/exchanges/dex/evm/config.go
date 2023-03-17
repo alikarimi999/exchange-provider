@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	Id                 string
+	Id                 uint
 	Name               string
 	Network            string
 	NativeToken        string
@@ -30,6 +30,9 @@ type Config struct {
 }
 
 func (c *Config) Validate(readConfig bool) error {
+	if c.Id == 0 {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("id must not be empty"))
+	}
 	if c.Name == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("name must not be empty"))
 	}

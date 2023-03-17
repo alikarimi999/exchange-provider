@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
 	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -14,20 +13,20 @@ import (
 )
 
 func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
-	T1, ok := d.get(r.In.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
+	t1, err := d.get(r.In.TokenId)
+	if err != nil {
+		return nil, err
 	}
-	T2, ok := d.get(r.Out.TokenId)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound)
+	t2, err := d.get(r.Out.TokenId)
+	if err != nil {
+		return nil, err
 	}
 
-	var in types.Token
-	if T1.Symbol == r.In.TokenId {
-		in = T1
+	var in *types.Token
+	if t1.Symbol == r.In.TokenId {
+		in = t1
 	} else {
-		in = T2
+		in = t2
 	}
 
 	c, err := contracts.NewIERC20(in.Address, d.provider())
@@ -45,20 +44,21 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 }
 
 func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
-	T1, ok := d.get(r.In.TokenId)
-	if !ok {
-		return false, errors.Wrap(errors.ErrNotFound)
-	}
-	T2, ok := d.get(r.Out.TokenId)
-	if !ok {
-		return false, errors.Wrap(errors.ErrNotFound)
+	t1, err := d.get(r.In.TokenId)
+	if err != nil {
+		return false, err
 	}
 
-	var in types.Token
-	if T1.Symbol == r.In.TokenId {
-		in = T1
+	t2, err := d.get(r.Out.TokenId)
+	if err != nil {
+		return false, err
+	}
+
+	var in *types.Token
+	if t1.Symbol == r.In.TokenId {
+		in = t1
 	} else {
-		in = T2
+		in = t2
 	}
 	if in.IsNative() {
 		return false, nil

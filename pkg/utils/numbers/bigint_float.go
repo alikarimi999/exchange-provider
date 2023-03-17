@@ -7,8 +7,11 @@ import (
 )
 
 func BigIntToFloatString(bn *big.Int, decimal int) string {
-	bf := new(big.Float).Quo(new(big.Float).SetInt(bn), big.NewFloat(math.Pow10(decimal)))
-	return bf.Text('f', decimal)
+	return BigIntToFloat(bn, decimal).Text('f', decimal)
+}
+
+func BigIntToFloat(bn *big.Int, decimal int) *big.Float {
+	return new(big.Float).Quo(new(big.Float).SetInt(bn), big.NewFloat(math.Pow10(decimal)))
 }
 
 func FloatStringToBigInt(s string, decimals int) (*big.Int, error) {

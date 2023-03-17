@@ -15,17 +15,14 @@ import (
 
 type mongoDb struct {
 	orders *mongo.Collection
-	c      *cache
 	l      logger.Logger
 }
 
 func NewOrderRepo(db *mongo.Database, l logger.Logger) (entity.OrderRepo, error) {
-	m := &mongoDb{
+	return &mongoDb{
 		orders: db.Collection("orders"),
-		c:      newCache(db),
 		l:      l,
-	}
-	return m, m.retrivePendingWithd()
+	}, nil
 }
 
 func (m *mongoDb) Add(order entity.Order) error {
@@ -119,6 +116,30 @@ func (m *mongoDb) Update(order entity.Order) error {
 	}
 
 	return nil
+}
+
+func (m *mongoDb) GetWithFilter(key string, value string) (entity.Order, error) {
+	agent := m.agent("Get")
+
+	r := m.orders.FindOne(context.Background(), bson.D{{key, value}})
+	if r.Err() != nil {
+		if r.Err() == mongo.ErrNoDocuments {
+			return nil, errors.Wrap(errors.ErrNotFound)
+		}
+		m.l.Error(agent, r.Err().Error())
+		return nil, r.Err()
+	}
+
+	o := &dto.Order{}
+	if err := r.Decode(o); err != nil {
+		return nil, err
+	}
+	eo, err := o.ToEntity()
+	if err != nil {
+		m.l.Error(agent, r.Err().Error())
+		return nil, err
+	}
+	return eo, nil
 }
 
 // check if any deposit has this tx_id

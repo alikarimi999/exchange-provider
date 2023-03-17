@@ -10,7 +10,6 @@ import (
 	"exchange-provider/internal/delivery/database"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services"
-	"exchange-provider/internal/delivery/services/pairconf"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
@@ -78,10 +77,9 @@ func production() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairconf.NewPairRepo(l, time.NewTicker(1*time.Minute))
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
-		Pairs:  pairs,
+		Repo:   repo,
 		V:      v,
 		L:      l,
 		PrvKey: prv,
@@ -91,11 +89,12 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(pairs, repo, ss.ExchangeRepo, ss.WalletStore,
+	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, pairs, v, l, user, pass).Run(":8000"); err != nil {
+	if err := http.NewRouter(ou, repo, ss.FeeService, ss.PairConfigs,
+		v, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }
@@ -151,10 +150,8 @@ func test() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairconf.NewPairRepo(l, time.NewTicker(60*time.Second))
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
-		Pairs:  pairs,
 		V:      v,
 		L:      l,
 		PrvKey: prv,
@@ -164,11 +161,12 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(pairs, repo, ss.ExchangeRepo, ss.WalletStore,
+	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore,
 		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, pairs, v, l, user, pass).Run(":8081"); err != nil {
+	if err := http.NewRouter(ou, repo, ss.FeeService, ss.PairConfigs,
+		v, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }

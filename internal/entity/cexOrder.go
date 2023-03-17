@@ -5,50 +5,24 @@ import (
 	"time"
 )
 
-type OrderStatus uint
-
 const (
-	ONew OrderStatus = iota
-	OPending
-	OConfimDeposit
-	ODepositeConfimred
+	ONew               = "new"
+	OPending           = "pending"
+	OConfimDeposit     = "confirming deposit"
+	ODepositeConfimred = "deposit confirmed"
 
-	OWaitForSwapConfirm
-	OSwapConfirmed
+	OWaitForSwapConfirm = "confirming swap"
+	OSwapConfirmed      = "swap confirmed"
 
-	OWaitForWithdrawalConfirm
-	OWithdrawalConfirmed
+	OWaitForWithdrawalConfirm = "confirming withdraw"
+	OWithdrawalConfirmed      = "withdraw confirmed"
 
-	OSucceeded
-	OFailed
+	OSucceeded = "succeeded"
+	ORefunding = "refunding"
+	ORefunded  = "refunded"
+	OExpired   = "expired"
+	OFailed    = "failed"
 )
-
-func (s OrderStatus) String() string {
-	switch s {
-	case ONew:
-		return ""
-	case OPending:
-		return "pending"
-	case OConfimDeposit:
-		return "confirming transaction"
-	case ODepositeConfimred:
-		return "deposit confimred"
-	case OWaitForSwapConfirm:
-		return "cinfirmin swap"
-	case OSwapConfirmed:
-		return "swap confirmed"
-	case OWaitForWithdrawalConfirm:
-		return "confirming withdraw"
-	case OWithdrawalConfirmed:
-		return "withdrawal confirmed"
-	case OSucceeded:
-		return "succeeded"
-	case OFailed:
-		return "failed"
-	default:
-		return ""
-	}
-}
 
 const (
 	FCInternalError int64 = iota + 1
@@ -60,17 +34,17 @@ const (
 type Route struct {
 	In       *Token
 	Out      *Token
-	Exchange string
+	Exchange uint
 	ExType
 }
 
 type CexOrder struct {
 	*ObjectId
-	UserId    string
-	CreatedAt int64
-	Status    OrderStatus
+	UserId string
+	Status string
 
 	Deposit *Deposit
+	Refund  *Address
 
 	Routes map[int]*Route
 	Swaps  map[int]*Swap
@@ -87,29 +61,35 @@ type CexOrder struct {
 	FailedCode int64
 	FailedDesc string
 	MetaData
+	CreatedAt int64
+	UpdatedAt int64
 }
 
-func NewOrder(userId string, wAddress, dAddress *Address, routes map[int]*Route) *CexOrder {
+func NewCexOrder(userId string, refund, reciver *Address,
+	routes map[int]*Route, amount float64) *CexOrder {
+
+	t := time.Now().Unix()
 	o := &CexOrder{
-		UserId:    userId,
-		CreatedAt: time.Now().UTC().Unix(),
-		Status:    ONew,
-		Routes:    routes,
+		UserId: userId,
+		Status: ONew,
+		Routes: routes,
 
 		Deposit: &Deposit{
-			Status:  "",
-			Address: dAddress,
-			Token:   routes[0].In,
+			Status: "",
+			Token:  routes[0].In,
+			Volume: amount,
 		},
-
-		Swaps: make(map[int]*Swap),
+		Refund: refund,
+		Swaps:  make(map[int]*Swap),
 
 		Withdrawal: &Withdrawal{
-			Address: wAddress,
+			Address: reciver,
 			Status:  "",
 			Token:   routes[len(routes)-1].Out,
 		},
-		MetaData: make(MetaData),
+		MetaData:  make(MetaData),
+		CreatedAt: t,
+		UpdatedAt: t,
 	}
 
 	for i := range routes {

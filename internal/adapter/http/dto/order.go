@@ -40,24 +40,25 @@ func adminOrderFromEntity(o entity.Order) *order {
 }
 
 type CreateOrderRequest struct {
-	UserId   string  `json:"userId"`
-	In       string  `json:"input"`
-	Out      string  `json:"output"`
-	Sender   string  `json:"sender"`
-	Receiver string  `json:"receiver"`
-	Tag      string  `json:"tag"`
-	AmountIn float64 `json:"amountIn"`
-	Msg      string  `json:"message"`
+	UserId   string          `json:"userId"`
+	In       string          `json:"input"`
+	Out      string          `json:"output"`
+	Refund   *entity.Address `json:"refund"`
+	Receiver *entity.Address `json:"receiver"`
+	AmountIn float64         `json:"amountIn"`
+	LP       uint            `json:"lp"`
+	Msg      string          `json:"message"`
 }
 
 func (r *CreateOrderRequest) Validate() error {
 	if r.UserId == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("userId is required"))
 	}
-	if r.Sender == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("sender is required"))
+
+	if r.Refund == nil || r.Refund.Addr == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("refund is required"))
 	}
-	if r.Receiver == "" {
+	if r.Receiver == nil || r.Receiver.Addr == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("receiver is required"))
 	}
 	if r.In == "" {
@@ -76,21 +77,3 @@ const (
 	singleStep string = "SingleStep"
 	multiSteps string = "MultiStep"
 )
-
-type createOrderResponse struct {
-	OrderId    string `json:"orderId"`
-	Type       string `json:"type"`
-	TotalSteps int    `json:"totalSteps"`
-}
-
-func CreateOrderResponse(o entity.Order) *createOrderResponse {
-	r := &createOrderResponse{OrderId: o.ID().String()}
-	if o.Type() == entity.CEXOrder {
-		r.Type = singleStep
-		r.TotalSteps = 1
-	} else {
-		r.Type = multiSteps
-		r.TotalSteps = len(o.(*entity.EvmOrder).Steps)
-	}
-	return r
-}

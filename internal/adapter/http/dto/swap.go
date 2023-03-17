@@ -9,7 +9,7 @@ type Swap struct {
 	Status string `json:"status"`
 	TxId   string `json:"txId"`
 
-	Exchange string `json:"exchange"`
+	Exchange uint   `json:"exchange"`
 	Input    string `json:"input"`
 	Output   string `json:"output"`
 

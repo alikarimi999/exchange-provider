@@ -3,6 +3,7 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"time"
 )
 
 func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
@@ -27,14 +28,19 @@ func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 	if exist {
 		return errors.Wrap(errors.NewMesssage("tx id used before"), op, errors.ErrBadRequest)
 	}
-
+	ex, err := o.GetExchange(ord.Routes[0].Exchange)
+	if err != nil {
+		return err
+	}
 	ord.Deposit.TxId = txId
 	ord.Deposit.Status = entity.DepositTxIdSet
 	ord.Status = entity.OConfimDeposit
+	ord.UpdatedAt = time.Now().Unix()
 	if err := o.write(ord); err != nil {
 		return err
 	}
 
-	go o.oh.handle(ord)
+	cex := ex.(entity.Cex)
+	go cex.TxIdSetted(ord)
 	return nil
 }

@@ -1,25 +1,19 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
 	"exchange-provider/pkg/logger"
 	"sync"
 	"time"
 )
 
 type cache struct {
-	k    *kucoinExchange
-	wMux *sync.RWMutex
-	ws   map[string]dto.Withdrawal
-	prW  map[string]struct{ t time.Time }
+	k *kucoinExchange
 
 	dMux *sync.RWMutex
 	ds   map[string]depositeRecord
 	prD  map[string]struct{ t time.Time }
 
-	t  *time.Ticker
-	pt *time.Ticker
-
+	t *time.Ticker
 	l logger.Logger
 }
 
@@ -27,17 +21,12 @@ func newCache(k *kucoinExchange, l logger.Logger) *cache {
 	c := &cache{
 		k: k,
 
-		wMux: &sync.RWMutex{},
-		ws:   make(map[string]dto.Withdrawal),
-		prW:  make(map[string]struct{ t time.Time }),
-
 		dMux: &sync.RWMutex{},
 		ds:   make(map[string]depositeRecord),
 		prD:  make(map[string]struct{ t time.Time }),
 
-		t:  time.NewTicker(12 * time.Hour),
-		pt: time.NewTicker(2 * time.Hour),
-		l:  l,
+		t: time.NewTicker(2 * time.Hour),
+		l: l,
 	}
 	go c.run(k.stopCh)
 	return c
@@ -48,13 +37,6 @@ func (c *cache) run(stopCh chan struct{}) {
 	for {
 		select {
 		case <-c.t.C:
-			c.wMux.Lock()
-			for id, w := range c.ws {
-				if time.Now().After(w.DownloadedAt.Add(12 * time.Hour)) {
-					delete(c.ws, id)
-				}
-			}
-			c.wMux.Unlock()
 			c.dMux.Lock()
 			for id, d := range c.ds {
 				if time.Now().After(d.DownloadedAt.Add(12 * time.Hour)) {
@@ -62,14 +44,6 @@ func (c *cache) run(stopCh chan struct{}) {
 				}
 			}
 			c.dMux.Unlock()
-		case <-c.pt.C:
-			c.wMux.Lock()
-			for id, w := range c.prW {
-				if time.Now().After(w.t.Add(2 * time.Hour)) {
-					delete(c.prW, id)
-				}
-			}
-			c.wMux.Unlock()
 			c.dMux.Lock()
 			for id, d := range c.prD {
 				if time.Now().After(d.t.Add(2 * time.Hour)) {
@@ -83,47 +57,6 @@ func (c *cache) run(stopCh chan struct{}) {
 			return
 		}
 	}
-}
-
-func (c *cache) recordWithdrawal(w *dto.Withdrawal) {
-	w.DownloadedAt = time.Now()
-	c.wMux.Lock()
-	defer c.wMux.Unlock()
-	c.ws[w.Id] = *w
-}
-
-func (c *cache) getWithdrawal(id string) (*dto.Withdrawal, bool) {
-	c.wMux.RLock()
-	defer c.wMux.RUnlock()
-	w, ok := c.ws[id]
-	if !ok {
-		return nil, false
-	}
-	return w.SnapShot(), true
-}
-
-func (c *cache) delWithdrawal(id string) {
-	c.wMux.Lock()
-	defer c.wMux.Unlock()
-	delete(c.ws, id)
-}
-
-func (c *cache) proccessedW(id string) {
-	c.wMux.Lock()
-	defer c.wMux.Unlock()
-	c.prW[id] = struct{ t time.Time }{t: time.Now()}
-}
-
-// check if withdrawal is processed
-func (c *cache) existsOrProccessedW(id string) bool {
-	c.wMux.RLock()
-	defer c.wMux.RUnlock()
-	_, ok := c.ws[id]
-	if ok {
-		return ok
-	}
-	_, ok = c.prW[id]
-	return ok
 }
 
 func (c *cache) saveD(de *depositeRecord) {

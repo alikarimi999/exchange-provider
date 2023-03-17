@@ -12,7 +12,7 @@ import (
 )
 
 type dex struct {
-	id          string
+	id          uint
 	network     string
 	chainId     *big.Int
 	nativeToken string
@@ -27,7 +27,7 @@ type dex struct {
 	l logger.Logger
 }
 
-func NewUniswapV2Dex(id string, network, nativeToken, router, contract string, chainId int64,
+func NewUniswapV2Dex(id uint, network, nativeToken, router, contract string, chainId int64,
 	prvKey *ecdsa.PrivateKey, ps []*ts.EthProvider, l logger.Logger) (*dex, error) {
 
 	d := &dex{

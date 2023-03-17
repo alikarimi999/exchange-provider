@@ -9,14 +9,14 @@ import (
 
 type exStore struct {
 	repo      ExchangeRepo
-	exchanges map[string]entity.Exchange
+	exchanges map[uint]entity.Exchange
 	l         logger.Logger
 }
 
 func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	s := &exStore{
 		repo:      exRepo,
-		exchanges: make(map[string]entity.Exchange),
+		exchanges: make(map[uint]entity.Exchange),
 		l:         l,
 	}
 
@@ -37,14 +37,14 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	return s
 }
 
-func (a *exStore) get(nid string) (entity.Exchange, error) {
-	if _, ok := a.exchanges[nid]; ok {
-		return a.exchanges[nid], nil
+func (a *exStore) get(id uint) (entity.Exchange, error) {
+	if _, ok := a.exchanges[id]; ok {
+		return a.exchanges[id], nil
 	}
 	return nil, errors.Wrap(errors.ErrNotFound)
 }
 
-func (a *exStore) AddExchange0(ex entity.Exchange) error {
+func (a *exStore) AddExchange(ex entity.Exchange) error {
 	if err := a.repo.Add(ex); err != nil {
 		return err
 	}
@@ -56,8 +56,8 @@ func (a *exStore) AddExchange0(ex entity.Exchange) error {
 	return nil
 }
 
-func (a *exStore) exists(nid string) bool {
-	if _, ok := a.exchanges[nid]; ok {
+func (a *exStore) exists(id uint) bool {
+	if _, ok := a.exchanges[id]; ok {
 		return true
 	}
 	return false
@@ -80,7 +80,7 @@ func (a *exStore) getByNames(names ...string) []entity.Exchange {
 	exs := []entity.Exchange{}
 	for _, ex := range a.exchanges {
 		for _, name := range names {
-			if ex.Id() == name {
+			if ex.Name() == name {
 				exs = append(exs, ex)
 			}
 		}
@@ -88,16 +88,16 @@ func (a *exStore) getByNames(names ...string) []entity.Exchange {
 	return exs
 }
 
-func (a *exStore) remove(nid string) error {
-	if ex, ok := a.exchanges[nid]; ok {
+func (a *exStore) remove(id uint) error {
+	if ex, ok := a.exchanges[id]; ok {
 		if err := a.repo.Remove(ex); err != nil {
 			return err
 		}
 
 		ex.Remove()
-		delete(a.exchanges, nid)
+		delete(a.exchanges, id)
 		return nil
 	}
 
-	return fmt.Errorf("exchange %s not found", nid)
+	return fmt.Errorf("exchange %d not found", id)
 }

@@ -1,172 +1,165 @@
 package app
 
-import (
-	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/logger"
+// type orderHandler struct {
+// 	repo entity.OrderRepo
 
-	"exchange-provider/pkg/errors"
-)
+// 	ouc *OrderUseCase
+// 	pc  entity.PairConfigs
+// 	*exStore
 
-type orderHandler struct {
-	repo entity.OrderRepo
+// 	fee entity.FeeService
 
-	ouc *OrderUseCase
-	pc  entity.PairConfigs
-	*exStore
+// 	l logger.Logger
+// }
 
-	fee entity.FeeService
+// func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, pc entity.PairConfigs, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
+// 	oh := &orderHandler{
+// 		repo: repo,
 
-	l logger.Logger
-}
+// 		ouc:     ouc,
+// 		pc:      pc,
+// 		exStore: exs,
 
-func newOrderHandler(ouc *OrderUseCase, repo entity.OrderRepo, pc entity.PairConfigs, fee entity.FeeService, exs *exStore, l logger.Logger) *orderHandler {
-	oh := &orderHandler{
-		repo: repo,
+// 		fee: fee,
 
-		ouc:     ouc,
-		pc:      pc,
-		exStore: exs,
+// 		l: l,
+// 	}
+// 	return oh
+// }
 
-		fee: fee,
+// func (h *orderHandler) handle(o *entity.CexOrder) {
+// 	const op = errors.Op("orderHandler.handle")
 
-		l: l,
-	}
-	return oh
-}
+// 	ex, err := h.exStore.get(o.Routes[0].Exchange)
+// 	if err != nil {
+// 		o.Deposit.FailedDesc = err.Error()
+// 		h.ouc.write(o.Deposit)
+// 		return
+// 	}
+// 	cex := ex.(entity.Cex)
+// 	done := make(chan struct{})
+// 	pCh := make(chan bool)
+// 	go cex.TrackDeposit(o, done, pCh)
 
-func (h *orderHandler) handle(o *entity.CexOrder) {
-	const op = errors.Op("orderHandler.handle")
+// 	<-done
+// 	if o.Deposit.Status == entity.DepositFailed {
+// 		o.FailedCode = entity.FCDepositFailed
+// 		o.Status = entity.OFailed
+// 	}
+// 	if err := h.ouc.write(o); err != nil {
+// 		h.l.Error(string(op), err.Error())
+// 		pCh <- false
+// 		return
+// 	}
+// 	pCh <- true
+// 	if o.Deposit.Status != entity.DepositConfirmed {
+// 		return
+// 	}
 
-	ex, err := h.exStore.get(o.Routes[0].Exchange)
-	if err != nil {
-		o.Deposit.FailedDesc = err.Error()
-		h.ouc.write(o.Deposit)
-		return
-	}
-	cex := ex.(entity.Cex)
-	done := make(chan struct{})
-	pCh := make(chan bool)
-	go cex.TrackDeposit(o, done, pCh)
+// 	for i, route := range o.SortedRoutes() {
+// 		ex, err := h.exStore.get(route.Exchange)
+// 		if err != nil {
+// 			h.l.Error(string(op), err.Error())
+// 			return
+// 		}
+// 		cex = ex.(entity.Cex)
+// 		if i == 0 {
+// 			o.Swaps[i].InAmount = fmt.Sprintf("%v", o.Deposit.Volume)
+// 		} else {
+// 			o.Swaps[i].InAmount = o.Swaps[i-1].OutAmount
+// 		}
 
-	<-done
-	if o.Deposit.Status == entity.DepositFailed {
-		o.FailedCode = entity.FCDepositFailed
-		o.Status = entity.OFailed
-	}
-	if err := h.ouc.write(o); err != nil {
-		h.l.Error(string(op), err.Error())
-		pCh <- false
-		return
-	}
-	pCh <- true
-	if o.Deposit.Status != entity.DepositConfirmed {
-		return
-	}
+// 		id, err := cex.Swap(o, i)
+// 		if err != nil {
+// 			o.Status = entity.OFailed
+// 			o.FailedCode = entity.FCExOrdFailed
+// 			o.FailedDesc = err.Error()
+// 			h.l.Error(string(op), err.Error())
+// 			if err := h.ouc.write(o); err != nil {
+// 				h.l.Error(string(op), err.Error())
 
-	for i, route := range o.SortedRoutes() {
-		ex, err := h.exStore.get(route.Exchange)
-		if err != nil {
-			h.l.Error(string(op), err.Error())
-			return
-		}
-		cex = ex.(entity.Cex)
-		if i == 0 {
-			o.Swaps[i].InAmount = o.Deposit.Volume
-		} else {
-			o.Swaps[i].InAmount = o.Swaps[i-1].OutAmount
-		}
+// 			}
+// 			return
+// 		}
 
-		id, err := cex.Swap(o, i)
-		if err != nil {
-			o.Status = entity.OFailed
-			o.FailedCode = entity.FCExOrdFailed
-			o.FailedDesc = err.Error()
-			h.l.Error(string(op), err.Error())
-			if err := h.ouc.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
+// 		o.Swaps[i].TxId = id
+// 		o.Status = entity.OWaitForSwapConfirm
+// 		if err = h.ouc.write(o); err != nil {
+// 			h.l.Error(string(op), err.Error())
+// 			return
+// 		}
 
-			}
-			return
-		}
+// 		done := make(chan struct{})
+// 		pCh := make(chan bool)
 
-		o.Swaps[i].TxId = id
-		o.Status = entity.OWaitForSwapConfirm
-		if err = h.ouc.write(o); err != nil {
-			h.l.Error(string(op), err.Error())
-			return
-		}
+// 		go cex.TrackSwap(o, i, done, pCh)
+// 		<-done
 
-		done := make(chan struct{})
-		pCh := make(chan bool)
+// 		switch o.Swaps[i].Status {
+// 		case entity.SwapSucceed:
+// 			if i == (len(o.Routes) - 1) {
+// 				o.Status = entity.OSwapConfirmed
+// 			}
 
-		go cex.TrackSwap(o, i, done, pCh)
-		<-done
+// 			if err = h.ouc.write(o); err != nil {
+// 				h.l.Error(string(op), err.Error())
+// 				pCh <- false
+// 				return
+// 			}
+// 			pCh <- true
 
-		switch o.Swaps[i].Status {
-		case entity.SwapSucceed:
-			if i == (len(o.Routes) - 1) {
-				o.Status = entity.OSwapConfirmed
-			}
+// 			if i < (len(o.Routes) - 1) {
+// 				continue
+// 			}
 
-			if err = h.ouc.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
-				pCh <- false
-				return
-			}
-			pCh <- true
+// 			if err := h.applySpreadAndFee(o, route); err != nil {
+// 				h.l.Error(string(op), err.Error())
+// 				if err := h.ouc.write(o); err != nil {
+// 					h.l.Error(string(op), err.Error())
+// 				}
+// 				return
+// 			}
 
-			if i < (len(o.Routes) - 1) {
-				continue
-			}
+// 			id, err = cex.Withdrawal(o)
+// 			if err != nil {
+// 				o.Status = entity.OFailed
+// 				o.FailedCode = entity.FCInternalError
+// 				o.FailedDesc = err.Error()
 
-			if err := h.applySpreadAndFee(o, route); err != nil {
-				h.l.Error(string(op), err.Error())
-				if err := h.ouc.write(o); err != nil {
-					h.l.Error(string(op), err.Error())
-				}
-				return
-			}
+// 				h.l.Error(string(op), err.Error())
 
-			id, err = cex.Withdrawal(o)
-			if err != nil {
-				o.Status = entity.OFailed
-				o.FailedCode = entity.FCInternalError
-				o.FailedDesc = err.Error()
+// 				if err := h.ouc.write(o); err != nil {
+// 					h.l.Error(string(op), err.Error())
+// 				}
+// 				return
 
-				h.l.Error(string(op), err.Error())
+// 			}
 
-				if err := h.ouc.write(o); err != nil {
-					h.l.Error(string(op), err.Error())
-				}
-				return
+// 			o.Withdrawal.TxId = id
+// 			o.Withdrawal.Status = entity.WithdrawalPending
+// 			o.Status = entity.OWaitForWithdrawalConfirm
 
-			}
+// 			if err = h.ouc.write(o); err != nil {
+// 				h.l.Error(string(op), err.Error())
+// 				return
+// 			}
 
-			o.Withdrawal.TxId = id
-			o.Withdrawal.Status = entity.WithdrawalPending
-			o.Status = entity.OWaitForWithdrawalConfirm
+// 			if err := h.repo.AddPendingWithdrawal(o.ID()); err != nil {
+// 				h.l.Error(string(op), err.Error())
+// 			}
+// 			return
 
-			if err = h.ouc.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
-				return
-			}
+// 		case entity.SwapFailed:
+// 			o.Status = entity.OFailed
+// 			o.FailedCode = entity.FCExOrdFailed
+// 			if err := h.ouc.write(o); err != nil {
+// 				h.l.Error(string(op), err.Error())
+// 				pCh <- false
+// 				return
+// 			}
+// 			pCh <- true
+// 			return
+// 		}
 
-			if err := h.repo.AddPendingWithdrawal(o.ID()); err != nil {
-				h.l.Error(string(op), err.Error())
-			}
-			return
-
-		case entity.SwapFailed:
-			o.Status = entity.OFailed
-			o.FailedCode = entity.FCExOrdFailed
-			if err := h.ouc.write(o); err != nil {
-				h.l.Error(string(op), err.Error())
-				pCh <- false
-				return
-			}
-			pCh <- true
-			return
-		}
-
-	}
-}
+// 	}
+// }

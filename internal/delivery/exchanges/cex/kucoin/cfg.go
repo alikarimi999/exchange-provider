@@ -4,6 +4,22 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
+type API struct {
+	ApiKey        string `json:"apiKey"`
+	ApiSecret     string `json:"apiSecret"`
+	ApiPassphrase string `json:"apiPassphrase"`
+}
+
+type Configs struct {
+	Id       uint
+	ReadApi  *API `json:"readApi,omitempty"`
+	WriteApi *API `json:"writeApi,omitempty"`
+
+	ApiVersion string
+	ApiUrl     string
+	Message    string
+}
+
 func (k *kucoinExchange) Configs() interface{} {
 	return k.cfg
 }
@@ -18,6 +34,9 @@ func validateConfigs(cfgi interface{}) (*Configs, error) {
 		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid configs"))
 	}
 
+	if cfg.Id == 0 {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("id is required"))
+	}
 	if cfg.ReadApi.ApiKey == "" {
 		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiKey is required"))
 	}

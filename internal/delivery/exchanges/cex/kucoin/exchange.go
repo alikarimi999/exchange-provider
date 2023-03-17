@@ -4,13 +4,14 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) Id() string {
-	return "kucoin"
+func (k *kucoinExchange) Id() uint {
+	return k.cfg.Id
 }
 
 func (k *kucoinExchange) Name() string {
@@ -18,7 +19,7 @@ func (k *kucoinExchange) Name() string {
 }
 
 func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
-	op := errors.Op(fmt.Sprintf("%s.Swap", k.Id()))
+	op := errors.Op(fmt.Sprintf("%s.Swap", k.Name()))
 
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
@@ -68,7 +69,7 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 }
 
 func (k *kucoinExchange) TrackSwap(o *entity.CexOrder, index int, done chan<- struct{}, p <-chan bool) {
-	op := errors.Op(fmt.Sprintf("%s.TrackSap", k.Id()))
+	op := errors.Op(fmt.Sprintf("%s.TrackSap", k.Name()))
 
 	s := o.Swaps[index]
 	resp, err := k.readApi.Order(s.TxId)
@@ -108,20 +109,8 @@ func (k *kucoinExchange) TrackSwap(o *entity.CexOrder, index int, done chan<- st
 
 }
 
-func (k *kucoinExchange) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
-	proccessedCh <-chan bool) {
-
-	feed := &wtFeed{
-		w:            o.Withdrawal,
-		done:         done,
-		proccessedCh: proccessedCh,
-	}
-
-	k.wt.track(feed)
-}
-
 func (k *kucoinExchange) ping() error {
-	op := errors.Op(fmt.Sprintf("%s.ping", k.Id()))
+	op := errors.Op(fmt.Sprintf("%s.ping", k.Name()))
 
 	resp, err := k.readApi.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
@@ -131,7 +120,7 @@ func (k *kucoinExchange) ping() error {
 	return nil
 }
 
-func (k *kucoinExchange) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
+func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 	d := o.Deposit
 	c, err := k.supportedCoins.get(d.TokenId, d.ChainId)
@@ -151,16 +140,16 @@ func (k *kucoinExchange) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
 	}
 
 	k.dt.track(f)
+	o.UpdatedAt = time.Now().Unix()
 }
 
-func (k *kucoinExchange) GetAddress(c *entity.Token) (*entity.Address, error) {
-	kc, err := k.supportedCoins.get(c.TokenId, c.ChainId)
+func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
+	kc, err := k.supportedCoins.get(o.Deposit.TokenId, o.Deposit.ChainId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &entity.Address{
-		Addr: kc.address,
-		Tag:  kc.tag,
-	}, nil
+	o.Deposit.Address.Addr = kc.address
+	o.Deposit.Address.Tag = kc.tag
+	return nil
 }

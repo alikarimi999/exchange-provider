@@ -5,6 +5,7 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
+	"strconv"
 	"time"
 
 	"exchange-provider/pkg/try"
@@ -43,7 +44,8 @@ func (t *depositTracker) track(f *dtFeed) {
 				return false, nil
 			}
 			f.d.Status = entity.DepositConfirmed
-			f.d.Volume = d.Volume
+			vol, _ := strconv.ParseFloat(d.Volume, 64)
+			f.d.Volume = vol
 			f.done <- struct{}{}
 			return false, nil
 

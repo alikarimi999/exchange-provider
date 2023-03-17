@@ -14,21 +14,16 @@ type Swap struct {
 	OutAmount   string
 	Fee         string
 	FeeCurrency string
+	Duration    string
 	FailedDesc  string
 	MetaData
 }
 
 type Cex interface {
 	Exchange
-	Swap(o *CexOrder, index int) (string, error)
-	TrackSwap(o *CexOrder, index int, done chan<- struct{}, proccessed <-chan bool)
-	TrackDeposit(o *CexOrder, done chan<- struct{}, proccessed <-chan bool)
-
-	Withdrawal(o *CexOrder) (string, error)
-	TrackWithdrawal(w *CexOrder, done chan<- struct{}, proccessedCh <-chan bool)
+	TxIdSetted(*CexOrder)
 	Run()
-
-	GetAddress(c *Token) (*Address, error)
+	SetDepositddress(o *CexOrder) error
 }
 
 type AddPairsResult struct {

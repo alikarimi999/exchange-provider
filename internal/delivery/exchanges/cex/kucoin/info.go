@@ -128,7 +128,7 @@ func (k *kucoinExchange) setQCWithdrawalLimit(p *pair) error {
 }
 
 func (k *kucoinExchange) setAddress(pc *kuToken) error {
-	op := errors.Op(fmt.Sprintf("%s.setChain", k.Id()))
+	op := errors.Op(fmt.Sprintf("%s.setChain", k.Name()))
 	var coin string
 	var chain string
 	if pc.needChain {

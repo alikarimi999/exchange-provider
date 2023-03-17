@@ -2,14 +2,14 @@ package uniswapV2
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV2/contracts"
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
+func (p *dex) TxData(in, out *types.Token, sender, receiver common.Address,
 	amount *big.Int, fee int64) ([]byte, error) {
 
 	abi, err := contracts.ContractMetaData.GetAbi()
@@ -21,15 +21,12 @@ func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
 
 	if in.Native {
 		return abi.Pack("swapExactETHForTokens", common.Big0,
-			[]common.Address{common.HexToAddress(in.Address),
-				common.HexToAddress(out.Address)}, receiver, big.NewInt(d))
+			[]common.Address{in.Address, out.Address}, receiver, big.NewInt(d))
 	} else if out.Native {
 		return abi.Pack("swapExactTokensForETH", amount, common.Big0,
-			[]common.Address{common.HexToAddress(in.Address),
-				common.HexToAddress(out.Address)}, receiver, big.NewInt(d))
+			[]common.Address{in.Address, out.Address}, receiver, big.NewInt(d))
 	} else {
 		return abi.Pack("swapExactTokensForTokens", amount, common.Big0,
-			[]common.Address{common.HexToAddress(in.Address),
-				common.HexToAddress(out.Address)}, receiver, big.NewInt(d))
+			[]common.Address{in.Address, out.Address}, receiver, big.NewInt(d))
 	}
 }

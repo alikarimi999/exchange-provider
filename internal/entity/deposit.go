@@ -7,7 +7,7 @@ const (
 )
 
 type Address struct {
-	Addr string
+	Addr string `json:"address"`
 	Tag  string
 }
 
@@ -17,9 +17,10 @@ type Deposit struct {
 	*Token
 
 	TxId   string
-	Volume string
+	Volume float64
 
-	*Address
+	Address Address
 
 	FailedDesc string
+	ExpireAt   int64
 }

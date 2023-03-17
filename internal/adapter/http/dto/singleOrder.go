@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/utils/numbers"
+	"fmt"
 	"math/big"
 	"strings"
 )
@@ -28,7 +29,7 @@ type adminSingleOrder struct {
 
 func (a *adminSingleOrder) fromEntity(o *entity.CexOrder) *order {
 	a = &adminSingleOrder{
-		Status:     o.Status.String(),
+		Status:     o.Status,
 		Deposit:    DFromEntity(o.Deposit),
 		Swaps:      make(map[int]*Swap),
 		Withdrawal: WFromEntity(o.Withdrawal),
@@ -86,7 +87,7 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 	s = &userSingleOrder{
 		Input:     o.Deposit.Token.String(),
 		Output:    o.Withdrawal.Token.String(),
-		InAmount:  o.Deposit.Volume,
+		InAmount:  fmt.Sprintf("%v", o.Deposit.Volume),
 		OutAmount: o.Withdrawal.Volume,
 
 		Fee:                 o.Fee,
@@ -94,28 +95,28 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 		TransferFee:         o.Withdrawal.Fee,
 		TransferFeeCurrency: o.Withdrawal.FeeCurrency,
 
-		DepositAddress: o.Deposit.Addr,
-		DepositTag:     o.Deposit.Tag,
+		DepositAddress: o.Deposit.Address.Addr,
+		DepositTag:     o.Deposit.Address.Tag,
 
 		WithdrawalAddress: o.Withdrawal.Addr,
-		WithdrawalTag:     o.Withdrawal.Tag,
+		WithdrawalTag:     o.Withdrawal.Address.Tag,
 
 		WithdrawalTxId: strings.Split(o.Withdrawal.TxId, "-")[0],
 		CreatedAt:      o.CreatedAt,
 	}
 	switch o.Status {
 	case entity.ODepositeConfimred:
-		s.Status = o.Status.String()
+		s.Status = o.Status
 
 	case entity.OSucceeded:
-		s.Status = o.Status.String()
-		in, _ := numbers.StringToBigFloat(o.Deposit.Volume)
+		s.Status = o.Status
+		in := big.NewFloat(o.Deposit.Volume)
 		out, _ := numbers.StringToBigFloat(o.Withdrawal.Volume)
 		fee, _ := numbers.StringToBigFloat(o.Fee)
 		s.FilledPrice = new(big.Float).Quo(new(big.Float).Add(out, fee), in).Text('f', 10)
 
 	case entity.OFailed:
-		s.Status = o.Status.String()
+		s.Status = o.Status
 
 		switch o.FailedCode {
 		case entity.FCDepositFailed:

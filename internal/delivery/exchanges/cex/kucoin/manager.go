@@ -1,15 +1,20 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/delivery/exchanges/kucoin/dto"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"exchange-provider/pkg/utils/numbers"
 	"fmt"
+	"math/big"
+	"strconv"
 	"strings"
+
+	"github.com/Kucoin/kucoin-go-sdk"
 )
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
-	agent := fmt.Sprintf("%s.AddPairs", k.Id())
+	agent := fmt.Sprintf("%s.AddPairs", k.Name())
 	req, ok := data.(*dto.AddPairsRequest)
 	if !ok {
 		return nil, errors.Wrap(agent, errors.ErrBadRequest)
@@ -51,7 +56,7 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			continue
 		}
 
-		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.Id(), p.Id()), p)
+		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.Name(), p.Id()), p)
 		if err := k.v.WriteConfig(); err != nil {
 			k.l.Error(agent, err.Error())
 			res.Failed = append(res.Failed, &entity.PairsErr{
@@ -75,23 +80,16 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 	k.exchangePairs.add(aps...)
 	k.supportedCoins.add(cs)
-	eps := []*entity.Pair{}
 	for _, p := range aps {
 		ep := p.toEntity()
 		ep.FeeRate = k.orderFeeRate(p)
-		eps = append(eps, ep)
 	}
 
-	pPrice, err := k.Price(eps...)
-	if err != nil {
-		return nil, err
-	}
-	k.pairs.Add(k, pPrice...)
 	return res, nil
 
 }
 
-func (k *kucoinExchange) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
+func (k *kucoinExchange) Prices(ps ...*entity.Pair) ([]*entity.Pair, error) {
 	if err := k.getAllPrices(ps); err != nil {
 		return nil, err
 	}
@@ -99,22 +97,61 @@ func (k *kucoinExchange) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
 	return ps, nil
 }
 
+func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64) (float64, float64, error) {
+	p, err := k.exchangePairs.get(t1, t2)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if p.BC.TokenId == t1.TokenId {
+		min, _ := strconv.ParseFloat(p.BC.minOrderSize, 64)
+		max, _ := strconv.ParseFloat(p.BC.maxOrderSize, 64)
+		if amount < min || amount > max {
+			return 0, min, errors.Wrap(errors.ErrBadRequest)
+		}
+	} else {
+		min, _ := strconv.ParseFloat(p.QC.minOrderSize, 64)
+		max, _ := strconv.ParseFloat(p.QC.maxOrderSize, 64)
+		if amount < min || amount > max {
+			return 0, min, errors.Wrap(errors.ErrBadRequest)
+		}
+	}
+
+	res, err := k.readApi.TickerLevel1(p.Symbol())
+	if err != nil {
+		return 0, 0, err
+	}
+	tl := kucoin.TickerLevel1Model{}
+	if err := res.ReadData(tl); err != nil {
+		return 0, 0, err
+	}
+	f, err := numbers.StringToBigFloat(tl.Price)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if p.BC.TokenId == t1.TokenId {
+		af, _ := big.NewFloat(0).Mul(f, big.NewFloat(amount)).Float64()
+		return af, 0, nil
+	} else {
+		price := big.NewFloat(0).Quo(big.NewFloat(1), f)
+		af, _ := big.NewFloat(0).Mul(price, big.NewFloat(amount)).Float64()
+		return af, 0, nil
+	}
+
+}
+
 func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
 	p, err := k.exchangePairs.get(bc, qc)
 	if err != nil {
 		return err
 	}
-	delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Id())).(map[string]interface{}),
+	delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Name())).(map[string]interface{}),
 		strings.ToLower(p.Id()))
 	if err := k.v.WriteConfig(); err != nil {
 		return err
 	}
 
 	k.exchangePairs.remove(p.Id())
-	k.pairs.Remove(k.Id(), bc, qc)
 	return nil
-}
-
-func (k *kucoinExchange) Support(t1, t2 *entity.Token) bool {
-	return k.pairs.Exists(k.Id(), t1, t2)
 }

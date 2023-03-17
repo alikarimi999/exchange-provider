@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (o *OrderUseCase) RemoveExchange(nid string, force bool) error {
+func (o *OrderUseCase) RemoveExchange(nid uint, force bool) error {
 	op := "OrderUseCase.RemoveExchange"
 
 	// if !force {
@@ -27,6 +27,6 @@ func (o *OrderUseCase) RemoveExchange(nid string, force bool) error {
 		return errors.Wrap(op, err)
 	}
 
-	o.l.Info(string(op), fmt.Sprintf("exchange %s removed", nid))
+	o.l.Info(string(op), fmt.Sprintf("exchange %d removed", nid))
 	return nil
 }

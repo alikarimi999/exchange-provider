@@ -16,6 +16,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+func errSTF() error {
+	return errors.New("execution reverted: ExchangeAggregator::TransferHelper:safeTransferFrom")
+}
+
 var (
 	arguments, _ = abi.NewType("tuple", "struct data", []abi.ArgumentMarshaling{
 		{Name: "input", Type: "address"},
@@ -40,19 +44,19 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		err error
 	)
 
-	p, err := d.pairsRepo.Get(d.Id(), r.In, r.Out)
+	in, err := d.get(r.In.TokenId)
 	if err != nil {
 		return nil, err
 	}
 
-	in := &entity.Token{}
-	out := &entity.Token{}
-	if p.T1.TokenId == r.In.TokenId {
-		in = p.T1.Token
-		out = p.T2.Token
-	} else {
-		out = p.T1.Token
-		in = p.T2.Token
+	out, err := d.get(r.Out.TokenId)
+	if err != nil {
+		return nil, err
+	}
+
+	_, fee, err := d.dex.EstimateAmountOut(in, out, amount)
+	if err != nil {
+		return nil, err
 	}
 
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
@@ -65,7 +69,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	swapAmountF := big.NewFloat(0).Sub(totalAmountF, feeAmountF)
 	swapAmountI, _ := swapAmountF.Int(nil)
 
-	input, err := d.TxData(in, out, sender, receiver, swapAmountI, p.FeeTier)
+	input, err := d.dex.TxData(in, out, sender, receiver, swapAmountI, int64(fee))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err
@@ -85,10 +89,10 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	opts.NoSend = true
 
 	data := contracts.IExchangeAggregatorswapData{
-		Input:       common.HexToAddress(in.Address),
+		Input:       in.Address,
 		TotalAmount: totalAmountI,
 		FeeAmount:   feeAmountI,
-		Swapper:     d.Router(),
+		Swapper:     d.dex.Router(),
 		Data:        input,
 		Sender:      sender,
 	}
@@ -110,7 +114,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	}
 
 	if err != nil {
-		if err.Error() == c.ErrSTF().Error() {
+		if err.Error() == errSTF().Error() {
 			return nil, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage("insufficient funds or the previous step was unsuccessful"))
 		}

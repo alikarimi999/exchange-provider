@@ -2,8 +2,9 @@ package exrepo
 
 import (
 	"encoding/json"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
+	"exchange-provider/internal/delivery/exchanges/cex/swapspace"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
-	"exchange-provider/internal/delivery/exchanges/kucoin"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
@@ -46,7 +47,12 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			},
 		}
 
-		return kucoin.NewKucoinExchange(cfg, r.pairs, r.v, r.l, true)
+		return kucoin.NewKucoinExchange(cfg, r.v, r.l, true, r.repo, r.pc, r.fee)
+
+	case "swapspace":
+		apiKey := jb["apiKey"].(string)
+		cfg := &swapspace.Config{ApiKey: apiKey}
+		return swapspace.SwapSpace(cfg, r.repo, r.l)
 
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 
@@ -64,7 +70,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			Name:    ex.Name,
 			Network: n,
 		}
-		return evm.NewEvmDex(cfg, r.pairs, r.v, r.l, true)
+		return evm.NewEvmDex(cfg, r.v, r.l, true)
 
 		// case "multichain":
 		// 	m, ok := jb["mnemonic"].(string)

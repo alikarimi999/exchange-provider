@@ -27,7 +27,7 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 
 	destAddress := common.HexToAddress("0")
 	if f.t.Native {
-		destAddress = common.HexToAddress(f.d.Addr)
+		destAddress = common.HexToAddress(f.d.Address.Addr)
 	} else {
 		destAddress = common.HexToAddress(f.t.Address)
 	}
@@ -75,7 +75,7 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 				break
 			}
 			dAddress := utils.HashToAddress(log.Topics[2])
-			if dAddress != common.HexToAddress(f.d.Addr) {
+			if dAddress != common.HexToAddress(f.d.Address.Addr) {
 				f.d.Status = entity.DepositFailed
 				f.d.FailedDesc = fmt.Sprintf("invalid destination address `%s`", dAddress)
 				f.done <- struct{}{}
@@ -83,12 +83,15 @@ func (m *Multichain) trackDeposit(f *dtFeed) {
 			}
 
 			bn := new(big.Int).SetBytes(log.Data)
-			f.d.Volume = numbers.BigIntToFloatString(bn, int(f.t.Decimals))
+			bf := numbers.BigIntToFloat(bn, int(f.t.Decimals))
+			f.d.Volume, _ = bf.Float64()
 			f.d.Status = entity.DepositConfirmed
 			f.done <- struct{}{}
 			break
 		}
-		f.d.Volume = numbers.BigIntToFloatString(tf.Tx.Value(), f.t.Decimals)
+
+		bf := numbers.BigIntToFloat(tf.Tx.Value(), f.t.Decimals)
+		f.d.Volume, _ = bf.Float64()
 		f.d.Status = entity.DepositConfirmed
 		f.done <- struct{}{}
 

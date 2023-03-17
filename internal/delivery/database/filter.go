@@ -8,9 +8,8 @@ import (
 )
 
 func wrapFilter(filters []*entity.Filter) bson.D {
-
 	if len(filters) == 0 {
-		return bson.D{{}}
+		return bson.D{}
 	}
 
 	ds := make([]bson.D, 0)

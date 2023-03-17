@@ -6,11 +6,13 @@ import (
 )
 
 type Token struct {
-	TokenId  string
-	ChainId  string
-	Address  string
-	Decimals uint64
-	Native   bool
+	TokenId    string
+	ChainId    string
+	Address    string
+	Tag        string
+	Decimals   uint64
+	HasExtraId bool
+	Native     bool
 }
 
 func (c *Token) String() string {
