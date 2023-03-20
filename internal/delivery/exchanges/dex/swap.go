@@ -14,7 +14,7 @@ func (d *dex) Swap(o *entity.CexOrder, index int) (string, error) {
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
 
-	pair, err := d.pairs.get(in.TokenId, out.TokenId)
+	pair, err := d.pairs.get(in.Symbol, out.Symbol)
 	if err != nil {
 		return "", err
 	}
@@ -24,7 +24,7 @@ func (d *dex) Swap(o *entity.CexOrder, index int) (string, error) {
 	var tIn ts.Token
 	var tOut ts.Token
 
-	if in.TokenId == pair.T1.Symbol {
+	if in.Symbol == pair.T1.Symbol {
 		tIn = pair.T1
 		tOut = pair.T2
 	} else {
@@ -51,7 +51,7 @@ func (d *dex) Swap(o *entity.CexOrder, index int) (string, error) {
 func (d *dex) TrackSwap(o *entity.CexOrder, index int,
 	done chan<- struct{}, proccessed <-chan bool) {
 
-	pair, err := d.pairs.get(o.Routes[index].In.TokenId, o.Routes[index].Out.TokenId)
+	pair, err := d.pairs.get(o.Routes[index].In.Symbol, o.Routes[index].Out.Symbol)
 	if err != nil {
 		o.Swaps[index].Status = entity.SwapFailed
 		o.Swaps[index].FailedDesc = err.Error()

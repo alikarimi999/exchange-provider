@@ -21,17 +21,27 @@ type OrderStep struct {
 
 type SingleStep struct {
 	*OrderStep
-	Token   string `json:"token"`
-	Address string `json:"address"`
-	Tag     string `json:"tag"`
+	Duration string `json:"duration"`
+	Token    Token  `json:"token"`
+	Address  string `json:"address"`
+	Tag      string `json:"tag"`
+
+	CreatedAt int64 `json:"createdAt"`
+	UpdatedAt int64 `json:"updatedAt"`
+	ExpireAt  int64 `json:"expireAt"`
 }
 
 func SingleStepResponse(o *entity.CexOrder) *SingleStep {
 	return &SingleStep{
 		OrderStep: &OrderStep{OrderId: o.ObjectId.String(), CurrentStep: 1, TotalSteps: 1},
-		Token:     o.Routes[0].In.String(),
+		Duration:  o.Swaps[0].Duration,
+		Token:     tokenFromEntity(o.Routes[0].In, false),
 		Address:   o.Deposit.Address.Addr,
 		Tag:       o.Deposit.Address.Tag,
+
+		CreatedAt: o.CreatedAt,
+		UpdatedAt: o.UpdatedAt,
+		ExpireAt:  o.Deposit.ExpireAt,
 	}
 }
 

@@ -9,13 +9,13 @@ func (d *dex) TrackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 
 	de := o.Deposit
-	if de.ChainId != d.cfg.TokenStandard {
+	if de.Standard != d.cfg.TokenStandard {
 		de.Status = entity.DepositFailed
-		de.FailedDesc = fmt.Sprintf("chain %s not supported", de.ChainId)
+		de.FailedDesc = fmt.Sprintf("chain %s not supported", de.Standard)
 		return
 	}
 
-	t, err := d.tokens.get(de.TokenId)
+	t, err := d.tokens.get(de.Symbol)
 	if err != nil {
 		de.Status = entity.DepositFailed
 		de.FailedDesc = err.Error()

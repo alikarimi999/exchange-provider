@@ -37,19 +37,17 @@ func (t *Token) String() string {
 
 func (t *Token) ToToken() *entity.Token {
 	return &entity.Token{
-		TokenId:  t.Symbol,
-		ChainId:  t.Network,
+		Symbol:   t.Symbol,
+		Standard: t.Network,
 		Address:  t.Address.String(),
 		Decimals: uint64(t.Decimals),
 	}
 }
-func (t *Token) ToEntity(standard string) *entity.PairToken {
-	return &entity.PairToken{
-		Token: &entity.Token{
-			TokenId:  t.Symbol,
-			ChainId:  standard,
-			Address:  t.Address.String(),
-			Decimals: uint64(t.Decimals),
-		},
+func (t *Token) ToEntity(standard string) *entity.Token {
+	return &entity.Token{
+		Symbol:   t.Symbol,
+		Standard: standard,
+		Address:  t.Address.String(),
+		Decimals: uint64(t.Decimals),
 	}
 }

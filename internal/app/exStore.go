@@ -5,10 +5,12 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
+	"sync"
 )
 
 type exStore struct {
 	repo      ExchangeRepo
+	mux       *sync.RWMutex
 	exchanges map[uint]entity.Exchange
 	l         logger.Logger
 }
@@ -16,6 +18,7 @@ type exStore struct {
 func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	s := &exStore{
 		repo:      exRepo,
+		mux:       &sync.RWMutex{},
 		exchanges: make(map[uint]entity.Exchange),
 		l:         l,
 	}
@@ -38,6 +41,8 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 }
 
 func (a *exStore) get(id uint) (entity.Exchange, error) {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
 	if _, ok := a.exchanges[id]; ok {
 		return a.exchanges[id], nil
 	}
@@ -45,9 +50,13 @@ func (a *exStore) get(id uint) (entity.Exchange, error) {
 }
 
 func (a *exStore) AddExchange(ex entity.Exchange) error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
 	if err := a.repo.Add(ex); err != nil {
 		return err
 	}
+
 	a.exchanges[ex.Id()] = ex
 	if ex.Type() == entity.CEX {
 		go ex.(entity.Cex).Run()
@@ -57,6 +66,8 @@ func (a *exStore) AddExchange(ex entity.Exchange) error {
 }
 
 func (a *exStore) exists(id uint) bool {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
 	if _, ok := a.exchanges[id]; ok {
 		return true
 	}
@@ -64,6 +75,9 @@ func (a *exStore) exists(id uint) bool {
 }
 
 func (a *exStore) getAll() []entity.Exchange {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+
 	var exs []entity.Exchange
 	for _, ex := range a.exchanges {
 		exs = append(exs, ex)
@@ -89,6 +103,9 @@ func (a *exStore) getByNames(names ...string) []entity.Exchange {
 }
 
 func (a *exStore) remove(id uint) error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
 	if ex, ok := a.exchanges[id]; ok {
 		if err := a.repo.Remove(ex); err != nil {
 			return err

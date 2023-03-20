@@ -5,7 +5,7 @@ import (
 )
 
 func (m *Multichain) GetAddress(c *entity.Token) (*entity.Address, error) {
-	a, err := m.cs[ChainId(c.ChainId)].w.RandAddress(m.cfg.AccountCount)
+	a, err := m.cs[ChainId(c.Standard)].w.RandAddress(m.cfg.AccountCount)
 	if err != nil {
 		return nil, err
 	}

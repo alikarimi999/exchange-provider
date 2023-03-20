@@ -4,6 +4,7 @@ import (
 	"context"
 	"exchange-provider/internal/delivery/database/dto"
 	"exchange-provider/internal/entity"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -11,7 +12,10 @@ import (
 func (m *mongoDb) GetPaginated(p *entity.Paginated) error {
 	agent := m.agent("GetPaginated")
 
-	filter := wrapFilter(p.Filters)
+	filter, err := wrapFilter(p.Filters)
+	if err != nil {
+		return err
+	}
 	count, err := m.orders.CountDocuments(context.Background(), filter)
 	if err != nil {
 		m.l.Error(agent, err.Error())
@@ -34,6 +38,7 @@ func (m *mongoDb) GetPaginated(p *entity.Paginated) error {
 	for _, o := range osDTO {
 		eo, err := o.ToEntity()
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		p.Orders = append(p.Orders, eo)

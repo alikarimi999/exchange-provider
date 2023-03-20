@@ -53,14 +53,12 @@ func (k *kuToken) snapshot() *kuToken {
 	}
 }
 
-func (k *kuToken) toEntityCoin() *entity.PairToken {
-	return &entity.PairToken{
+func (k *kuToken) toEntityCoin() *entity.Token {
+	return &entity.Token{
+		Symbol:   k.TokenId,
+		Standard: string(k.ChainId),
+		Address:  k.address,
 
-		Token: &entity.Token{
-			TokenId: k.TokenId,
-			ChainId: string(k.ChainId),
-			Address: k.address,
-		},
 		Tag:                 k.tag,
 		BlockTime:           k.BlockTime,
 		MinOrderSize:        k.minOrderSize,
@@ -175,5 +173,5 @@ func (sp *exPairs) snapshot() []*pair {
 	return pairs
 }
 func pId(bc, qc *entity.Token) string {
-	return bc.TokenId + bc.ChainId + qc.TokenId + qc.ChainId
+	return bc.Symbol + bc.Standard + qc.Symbol + qc.Standard
 }

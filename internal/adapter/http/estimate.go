@@ -11,17 +11,8 @@ func (s *Server) EstimateAmountOut(ctx Context) {
 		return
 	}
 
-	in, err := dto.ParseToken(req.Input)
-	if err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
-
-	out, err := dto.ParseToken(req.Output)
-	if err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
+	in := req.Input.ToEntity()
+	out := req.Output.ToEntity()
 
 	ex, amountOut, err := s.app.EstimateAmountOut(in, out, req.AmountIn, req.LP)
 	if err != nil {

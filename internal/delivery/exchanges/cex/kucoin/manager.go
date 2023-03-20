@@ -29,8 +29,8 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 	aps := []*pair{}
 	for _, p := range ps {
-		if _, err := k.exchangePairs.get(p.BC.toEntityCoin().Token,
-			p.QC.toEntityCoin().Token); err == nil {
+		if _, err := k.exchangePairs.get(p.BC.toEntityCoin(),
+			p.QC.toEntityCoin()); err == nil {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
@@ -67,11 +67,13 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 		}
 		aps = append(aps, p)
 		res.Added = append(res.Added, entity.Pair{
-			T1: &entity.PairToken{
-				Token: &entity.Token{TokenId: p.BC.TokenId, ChainId: string(p.BC.ChainId)},
+			T1: &entity.Token{
+				Symbol:   p.BC.TokenId,
+				Standard: string(p.BC.ChainId),
 			},
-			T2: &entity.PairToken{
-				Token: &entity.Token{TokenId: p.QC.TokenId, ChainId: string(p.QC.ChainId)},
+			T2: &entity.Token{
+				Symbol:   p.QC.TokenId,
+				Standard: string(p.QC.ChainId),
 			},
 		})
 		cs[p.BC.TokenId+string(p.BC.ChainId)] = p.BC
@@ -103,7 +105,7 @@ func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64)
 		return 0, 0, err
 	}
 
-	if p.BC.TokenId == t1.TokenId {
+	if p.BC.TokenId == t1.Symbol {
 		min, _ := strconv.ParseFloat(p.BC.minOrderSize, 64)
 		max, _ := strconv.ParseFloat(p.BC.maxOrderSize, 64)
 		if amount < min || amount > max {
@@ -130,7 +132,7 @@ func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64)
 		return 0, 0, err
 	}
 
-	if p.BC.TokenId == t1.TokenId {
+	if p.BC.TokenId == t1.Symbol {
 		af, _ := big.NewFloat(0).Mul(f, big.NewFloat(amount)).Float64()
 		return af, 0, nil
 	} else {

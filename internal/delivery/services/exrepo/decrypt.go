@@ -52,7 +52,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 	case "swapspace":
 		apiKey := jb["apiKey"].(string)
 		cfg := &swapspace.Config{ApiKey: apiKey, Id: ex.Id}
-		return swapspace.SwapSpace(cfg, r.repo, r.l)
+		return swapspace.SwapSpace(cfg, r.repo, r.pairs, r.l)
 
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 
@@ -82,5 +82,5 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		// 	return multichain.NewMultichain(cfg, r.WalletStore, r.v, r.l, true)
 
 	}
-	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%s`", ex.Id)))
+	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%d`", ex.Id)))
 }

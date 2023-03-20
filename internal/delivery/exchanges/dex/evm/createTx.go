@@ -44,12 +44,12 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		err error
 	)
 
-	in, err := d.get(r.In.TokenId)
+	in, err := d.get(r.In.Symbol)
 	if err != nil {
 		return nil, err
 	}
 
-	out, err := d.get(r.Out.TokenId)
+	out, err := d.get(r.Out.Symbol)
 	if err != nil {
 		return nil, err
 	}

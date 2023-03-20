@@ -35,15 +35,15 @@ func (t *Token) String() string {
 
 func (t *Token) toCoin() *entity.Token {
 	return &entity.Token{
-		TokenId: t.TokenId,
-		ChainId: t.ChainId,
-		Address: t.Address,
+		Symbol:   t.TokenId,
+		Standard: t.ChainId,
+		Address:  t.Address,
 	}
 }
 
 func c2T(c *entity.Token) *Token {
 	return &Token{
-		TokenId: c.TokenId,
-		ChainId: c.ChainId,
+		TokenId: c.Symbol,
+		ChainId: c.Standard,
 	}
 }

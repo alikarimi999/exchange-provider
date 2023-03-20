@@ -29,17 +29,14 @@ func (o *Router) userRoutes() {
 
 	}
 
-	t := o.gin.Group("/tokens")
-	{
-		t.GET("", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
-			func(ctx *gin.Context) {
-				o.srv.Tokens(newContext(ctx, false))
-			})
-	}
-
 	o.gin.POST("/estimate", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
 		func(ctx *gin.Context) {
 			o.srv.EstimateAmountOut(newContext(ctx, false))
+		})
+
+	o.gin.POST("/pairs", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+		func(ctx *gin.Context) {
+			o.srv.GePairsToUser(newContext(ctx, false))
 		})
 
 }

@@ -50,7 +50,7 @@ func (ex *exchange) trackExchange(o *entity.CexOrder) {
 		o.Withdrawal.Volume = fmt.Sprintf("%v", res.To.Amount)
 		switch res.Status {
 		case "waiting", "confirming", "exchanging", "sending", "verifying":
-			time.Sleep(time.Duration(di) * time.Minute)
+			time.Sleep(time.Second)
 			return true, fmt.Errorf("")
 		case "finished":
 			o.Status = entity.OSucceeded
@@ -64,6 +64,7 @@ func (ex *exchange) trackExchange(o *entity.CexOrder) {
 		return false, nil
 	})
 	if err != nil {
+		o.Status = entity.OFailed
 		o.FailedCode = entity.FCExOrdFailed
 		o.FailedDesc = err.Error()
 	}

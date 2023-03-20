@@ -62,8 +62,8 @@ type userSingleOrder struct {
 	Status     string `json:"status"`
 	FailReason string `json:"failReason,omitempty"`
 
-	Input     string  `json:"input"`
-	Output    string  `json:"output"`
+	Input     Token   `json:"input"`
+	Output    Token   `json:"output"`
 	InAmount  float64 `json:"inAmount"`
 	OutAmount float64 `json:"outAmount"`
 	Duration  string  `json:"duration"`
@@ -80,16 +80,17 @@ type userSingleOrder struct {
 	Withdrawal entity.Address `json:"withdrawal"`
 
 	WithdrawalTxId string `json:"withdrawTxId"`
-	CreatedAt      string `json:"createdAt"`
-	UpdatedAt      string `json:"updatedAt"`
-	ExpireAt       string `json:"expireAt"`
+	CreatedAt      int64  `json:"createdAt"`
+	UpdatedAt      int64  `json:"updatedAt"`
+	ExpireAt       int64  `json:"expireAt"`
 }
 
 func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
+
 	out, _ := strconv.ParseFloat(o.Withdrawal.Volume, 64)
 	s = &userSingleOrder{
-		Input:     o.Deposit.Token.String(),
-		Output:    o.Withdrawal.Token.String(),
+		Input:     tokenFromEntity(o.Routes[0].In, false),
+		Output:    tokenFromEntity(o.Routes[0].Out, false),
 		InAmount:  o.Deposit.Volume,
 		OutAmount: out,
 		Duration:  o.Swaps[0].Duration,
@@ -104,9 +105,9 @@ func (s *userSingleOrder) fromEntity(o *entity.CexOrder) *order {
 		Withdrawal: o.Withdrawal.Address,
 
 		WithdrawalTxId: strings.Split(o.Withdrawal.TxId, "-")[0],
-		CreatedAt:      time.Unix(o.CreatedAt, 0).String(),
-		UpdatedAt:      time.Unix(o.UpdatedAt, 0).String(),
-		ExpireAt:       time.Unix(o.Deposit.ExpireAt, 0).String(),
+		CreatedAt:      o.CreatedAt,
+		UpdatedAt:      o.UpdatedAt,
+		ExpireAt:       o.Deposit.ExpireAt,
 	}
 
 	switch o.Status {

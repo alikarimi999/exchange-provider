@@ -9,7 +9,7 @@ func (d *EvmDex) Prices(ps ...*entity.Pair) ([]*entity.Pair, error) {
 func (d *EvmDex) prices(ps ...*entity.Pair) ([]*entity.Pair, error) {
 	input := []*entity.Pair{}
 	for _, p := range ps {
-		if p.T1.TokenId == d.NativeToken || p.T2.TokenId == d.NativeToken {
+		if p.T1.Symbol == d.NativeToken || p.T2.Symbol == d.NativeToken {
 			continue
 		}
 		input = append(input, p)
@@ -24,14 +24,14 @@ func (d *EvmDex) prices(ps ...*entity.Pair) ([]*entity.Pair, error) {
 			continue
 		}
 		output = append(output, p)
-		if p.T1.TokenId == d.WrappedNativeToken {
+		if p.T1.Symbol == d.WrappedNativeToken {
 			p1 := p.Snapshot()
-			p1.T1.TokenId = d.NativeToken
+			p1.T1.Symbol = d.NativeToken
 			p1.T1.Native = true
 			output = append(output, p1)
-		} else if p.T2.TokenId == d.WrappedNativeToken {
+		} else if p.T2.Symbol == d.WrappedNativeToken {
 			p1 := p.Snapshot()
-			p1.T2.TokenId = d.NativeToken
+			p1.T2.Symbol = d.NativeToken
 			p1.T2.Native = true
 			output = append(output, p1)
 		}

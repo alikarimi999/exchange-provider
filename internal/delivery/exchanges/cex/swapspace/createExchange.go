@@ -3,6 +3,7 @@ package swapspace
 import (
 	"encoding/json"
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -49,20 +50,43 @@ func (ex *exchange) SetDepositddress(o *entity.CexOrder) error {
 }
 
 func (ex *exchange) createExchange(o *entity.CexOrder) error {
-	from := fromEntity(o.Routes[0].In)
-	to := fromEntity(o.Routes[0].Out)
+	from := o.Routes[0].In
+	to := o.Routes[0].Out
 
-	ea, _, err := ex.price(&pair{t1: from, t2: to}, o.Deposit.Volume)
+	p, in, out, err := ex.retrieveInOut(from, to)
 	if err != nil {
+		return err
+	}
+
+	eAmounts, err := ex.estimateAmounts(in, out, o.Deposit.Volume)
+	if err != nil {
+		return err
+	}
+
+	ea, max, min, err := ex.price(eAmounts, o.Deposit.Volume)
+	if err != nil {
+		if from.Equal(p.T1) {
+			if min != p.T1.Min || max != p.T1.Max {
+				p.T1.Min = min
+				p.T1.Max = max
+				ex.pairs.Update(ex.Id(), p)
+				return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("min amount is %f", min)))
+			}
+		} else if min != p.T2.Min || max != p.T2.Max {
+			p.T2.Min = min
+			p.T2.Max = max
+			ex.pairs.Update(ex.Id(), p)
+			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("min amount is %f", min)))
+		}
 		return err
 	}
 
 	cer := &createExchangeReq{
 		Partner:       ea.Partner,
-		FromCurrency:  from.Code,
-		FromNetwork:   from.Network,
-		ToCurrency:    to.Code,
-		ToNetwork:     to.Network,
+		FromCurrency:  in.Code,
+		FromNetwork:   in.Network,
+		ToCurrency:    out.Code,
+		ToNetwork:     out.Network,
 		Address:       o.Withdrawal.Addr,
 		ExtraID:       o.Withdrawal.Address.Tag,
 		Amount:        o.Deposit.Volume,

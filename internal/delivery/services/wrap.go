@@ -17,6 +17,7 @@ import (
 type Config struct {
 	DB     *mongo.Database
 	Repo   entity.OrderRepo
+	Pairs  entity.PairsRepo
 	V      *viper.Viper
 	L      logger.Logger
 	PrvKey *rsa.PrivateKey
@@ -44,10 +45,11 @@ func WrapServices(cfg *Config) (*Services, error) {
 	ws := walletstore.NewWalletStore()
 
 	ss := &Services{
-		PairConfigs:  s,
-		FeeService:   f,
-		ExchangeRepo: exrepo.NewExchangeRepo(cfg.DB, ws, cfg.Repo, f, s, cfg.V, cfg.L, cfg.PrvKey),
-		WalletStore:  ws,
+		PairConfigs: s,
+		FeeService:  f,
+		ExchangeRepo: exrepo.NewExchangeRepo(cfg.DB, ws, cfg.Pairs, cfg.Repo,
+			f, s, cfg.V, cfg.L, cfg.PrvKey),
+		WalletStore: ws,
 	}
 	return ss, nil
 }

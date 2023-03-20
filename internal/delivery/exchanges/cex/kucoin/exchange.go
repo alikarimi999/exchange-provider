@@ -30,7 +30,7 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 	}
 
 	var side, size, funds, amount string
-	if p.BC.TokenId == in.TokenId && string(p.QC.ChainId) == in.ChainId {
+	if p.BC.TokenId == in.Symbol && string(p.QC.ChainId) == in.Standard {
 		size = o.Swaps[index].InAmount
 		amount = size
 		side = "sell"
@@ -45,13 +45,13 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), in.TokenId, "main", "trade", amount)
+	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), in.Symbol, "main", "trade", amount)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
 	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from main account to trade account",
-		amount, in.TokenId))
+		amount, in.Symbol))
 
 	// create order, after transfer is done
 	res, err = k.writeApi.CreateOrder(req)
@@ -123,7 +123,7 @@ func (k *kucoinExchange) ping() error {
 func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, done chan<- struct{},
 	proccessed <-chan bool) {
 	d := o.Deposit
-	c, err := k.supportedCoins.get(d.TokenId, d.ChainId)
+	c, err := k.supportedCoins.get(d.Symbol, d.Standard)
 	if err != nil {
 		d.Status = entity.DepositFailed
 		d.FailedDesc = err.Error()
@@ -144,7 +144,7 @@ func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, done chan<- struct{},
 }
 
 func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
-	kc, err := k.supportedCoins.get(o.Deposit.TokenId, o.Deposit.ChainId)
+	kc, err := k.supportedCoins.get(o.Deposit.Symbol, o.Deposit.Standard)
 	if err != nil {
 		return err
 	}

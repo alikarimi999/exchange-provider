@@ -12,10 +12,10 @@ func (s *Server) GetAllPairsSpread(ctx Context) {
 func (s *Server) ChangePairSpread(ctx Context) {
 
 	type pair struct {
-		T1     string  `json:"t1"`
-		T2     string  `json:"t2"`
-		Spread float64 `json:"spread"`
-		Msg    string  `json:"message"`
+		T1     dto.Token `json:"t1"`
+		T2     dto.Token `json:"t2"`
+		Spread float64   `json:"spread"`
+		Msg    string    `json:"message"`
 	}
 
 	req := struct {
@@ -30,19 +30,8 @@ func (s *Server) ChangePairSpread(ctx Context) {
 	resp := []*pair{}
 	for _, p := range req.Pairs {
 
-		bc, err := dto.ParseToken(p.T1)
-		if err != nil {
-			p.Msg = err.Error()
-			resp = append(resp, p)
-			continue
-		}
-
-		qc, err := dto.ParseToken(p.T2)
-		if err != nil {
-			p.Msg = err.Error()
-			resp = append(resp, p)
-			continue
-		}
+		t1 := p.T1.ToEntity()
+		t2 := p.T2.ToEntity()
 
 		if p.Spread <= 0 || p.Spread >= 1 {
 			p.Msg = "spread rate must be > 0 and < 1"
@@ -50,7 +39,7 @@ func (s *Server) ChangePairSpread(ctx Context) {
 			continue
 		}
 
-		if err := s.app.ChangePairSpread(bc, qc, p.Spread); err != nil {
+		if err := s.app.ChangePairSpread(t1, t2, p.Spread); err != nil {
 			p.Msg = err.Error()
 			resp = append(resp, p)
 			continue

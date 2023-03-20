@@ -1,84 +1,130 @@
 package http
 
-// import (
-// 	"exchange-provider/internal/adapter/http/dto"
-// 	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
-// 	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
-// 	"exchange-provider/internal/delivery/exchanges/dex/multichain"
-// 	"exchange-provider/internal/entity"
-// )
+import (
+	"exchange-provider/internal/adapter/http/dto"
+	sdto "exchange-provider/internal/delivery/exchanges/cex/swapspace/dto"
 
-// func (s *Server) AddPairs(ctx Context) {
-// 	nid := ctx.Param("id")
-// 	ex, err := s.app.GetExchange(nid)
-// 	if err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
+	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
+	"exchange-provider/internal/delivery/exchanges/dex/multichain"
+	"exchange-provider/internal/entity"
+)
 
-// 	res := &entity.AddPairsResult{}
+func (s *Server) AddPairs(ctx Context) {
+	name := ctx.Param("name")
+	ex, err := s.app.GetExchangeByName(name)
+	if err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
 
-// 	switch ex.Name() {
-// 	case "kucoin":
-// 		req := &dto.KucoinAddPairsRequest{}
-// 		if err := ctx.Bind(req); err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	res := &entity.AddPairsResult{}
 
-// 		if err := req.Validate(); err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	switch ex.Name() {
+	case "swapspace":
+		req := &sdto.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
-// 		kps := &kdto.AddPairsRequest{}
-// 		for _, p := range req.Pairs {
-// 			kps.Pairs = append(kps.Pairs, p.Map())
-// 		}
+		res, err = ex.AddPairs(req)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
-// 		res, err = s.app.AddPairs(ex, kps)
-// 		if err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	// case "kucoin":
+	// 	req := &dto.KucoinAddPairsRequest{}
+	// 	if err := ctx.Bind(req); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-// 	case "uniswapv3", "panckakeswapv2":
-// 		req := &udto.AddPairsRequest{}
-// 		if err := ctx.Bind(req); err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	// 	if err := req.Validate(); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-// 		if err := req.Validate(); err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	// 	kps := &kdto.AddPairsRequest{}
+	// 	for _, p := range req.Pairs {
+	// 		kps.Pairs = append(kps.Pairs, p.Map())
+	// 	}
 
-// 		res, err = s.app.AddPairs(ex, req)
-// 		if err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	// 	res, err = s.app.AddPairs(ex, kps)
+	// 	if err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-// 	case "multichain":
-// 		req := &multichain.AddPairsRequest{}
-// 		if err := ctx.Bind(req); err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
-// 		res, err = s.app.AddPairs(ex, req)
-// 		if err != nil {
-// 			ctx.JSON(nil, err)
-// 			return
-// 		}
+	case "uniswapv3", "panckakeswapv2":
+		req := &udto.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
-// 	}
+		if err := req.Validate(); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
-// 	ctx.JSON(dto.FromEntity(res), nil)
-// }
+		res, err = s.app.AddPairs(ex, req)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+	case "multichain":
+		req := &multichain.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+		res, err = s.app.AddPairs(ex, req)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+	}
+
+	ctx.JSON(dto.FromEntity(res), nil)
+}
+
+func (s *Server) GePairsToUser(ctx Context) {
+	req := &dto.PaginatedPairsRequest{}
+	if err := ctx.Bind(req); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+
+	pa := req.ToEntity()
+	if err := s.pairs.GetPaginated(pa); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+
+	totalPage := pa.Total / pa.PerPage
+	if pa.Total%pa.PerPage > 0 {
+		totalPage++
+	}
+	res := &dto.PaginatedPairsResp{
+		PaginatedResponse: dto.PaginatedResponse{
+			CurrentPage: pa.Page,
+			PageSize:    int64(len(pa.Pairs)),
+			TotalNum:    pa.Total,
+			TotalPage:   totalPage,
+		},
+	}
+
+	for _, p := range pa.Pairs {
+		res.Pairs = append(res.Pairs, dto.PairFromEntity(p))
+	}
+	ctx.JSON(res, nil)
+}
 
 // func (s *Server) GetPairsToAdmin(ctx Context) {
-// 	req := &dto.PaginatedPairsRequest{}
+// req := &dto.PaginatedPairsRequest{}
 // 	if err := ctx.Bind(req); err != nil {
 // 		ctx.JSON(nil, err)
 // 		return

@@ -26,7 +26,7 @@ func (o *OrderUseCase) GetAllPairsSpread() map[string]float64 {
 }
 
 func (o *OrderUseCase) ApplySpread(p *entity.Pair) *entity.Pair {
-	rate := o.pc.GetPairSpread(p.T1.Token, p.T2.Token)
+	rate := o.pc.GetPairSpread(p.T1, p.T2)
 
 	r, _ := strconv.ParseFloat(rate, 64)
 	p1, _ := strconv.ParseFloat(p.Price1, 64)

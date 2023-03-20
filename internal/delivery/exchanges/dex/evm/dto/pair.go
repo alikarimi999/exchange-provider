@@ -12,7 +12,7 @@ type AddPairsRequest struct {
 
 func (req AddPairsRequest) Validate() error {
 	for _, p := range req.Pairs {
-		if p.T1.TokenId == "" || p.T1.Decimals == 0 || p.T2.TokenId == "" || p.T2.Decimals == 0 {
+		if p.T1.Symbol == "" || p.T1.Decimals == 0 || p.T2.Symbol == "" || p.T2.Decimals == 0 {
 			return errors.New("Invalid pair token")
 		}
 	}

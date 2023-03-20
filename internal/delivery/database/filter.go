@@ -2,20 +2,41 @@ package database
 
 import (
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
+	"fmt"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func wrapFilter(filters []*entity.Filter) bson.D {
+func wrapFilter(filters []*entity.Filter) (bson.D, error) {
 	if len(filters) == 0 {
-		return bson.D{}
+		return bson.D{}, nil
 	}
 
 	ds := make([]bson.D, 0)
-
 	for _, f := range filters {
 		param := strings.ToLower(f.Param)
+
+		switch param {
+		case "id":
+			for i, v := range f.Values {
+				id, ok := v.(string)
+				if !ok {
+					return nil, errors.Wrap(errors.ErrBadRequest,
+						errors.NewMesssage(fmt.Sprintf("%v is not a string", v)))
+				}
+				ss := strings.Split(id, "-")
+				if len(ss) != 2 || ss[0] != string(entity.PrefOrder) {
+					errors.Wrap(errors.ErrBadRequest,
+						errors.NewMesssage(fmt.Sprintf("%s is invalid", id)))
+				}
+				f.Values[i] = ss[1]
+			}
+			param = "objectid." + param
+		}
+
+		param = "order." + param
 		switch f.Operator {
 		case entity.FilterOperatorEqual:
 			ds = append(ds, bson.D{{param, bson.D{{"$eq", f.Values[0]}}}})
@@ -44,5 +65,5 @@ func wrapFilter(filters []*entity.Filter) bson.D {
 
 	}
 
-	return bson.D{{"$and", ds}}
+	return bson.D{{"$and", ds}}, nil
 }

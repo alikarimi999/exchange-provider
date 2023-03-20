@@ -26,7 +26,7 @@ func (m *Multichain) Support(in, out *entity.Token) bool {
 		return false
 	}
 
-	if p.T1.ChainId == in.ChainId {
+	if p.T1.ChainId == in.Standard {
 		return p.T1.Data.RouterABI != ""
 	} else {
 		return p.T2.Data.RouterABI != ""
@@ -58,12 +58,8 @@ func (m *Multichain) RemovePair(c1, c2 *entity.Token) error {
 
 func (p *Pair) toEntity() *entity.Pair {
 	return &entity.Pair{
-		T1: &entity.PairToken{
-			Token: p.T1.toCoin(),
-		},
-		T2: &entity.PairToken{
-			Token: p.T2.toCoin(),
-		},
+		T1: p.T1.toCoin(),
+		T2: p.T2.toCoin(),
 	}
 }
 

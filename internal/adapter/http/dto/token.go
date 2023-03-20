@@ -2,19 +2,47 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
-	"strings"
 )
 
-func ParseToken(t string) (*entity.Token, error) {
-	parts := strings.Split(t, "-")
-	if len(parts) != 2 {
-		return nil, errors.Wrap(errors.ErrBadRequest,
-			errors.NewMesssage("token must be in format: <tokenId>-<chainId>"))
-	}
+type Token struct {
+	Symbol   string `json:"symbol"`
+	Standard string `json:"standard"`
+	Network  string `json:"network"`
 
+	Address  string  `json:"address,omitempty"`
+	Decimals uint64  `json:"decimals,omitempty"`
+	Native   bool    `json:"native,omitempty"`
+	Min      float64 `json:"min,omitempty"`
+	Max      float64 `json:"max,omitempty"`
+}
+
+func tokenFromEntity(et *entity.Token, info bool) Token {
+	t := Token{
+		Symbol:   et.Symbol,
+		Standard: et.Standard,
+		Network:  et.Network,
+	}
+	if info {
+		t.Address = et.Address
+		t.Decimals = et.Decimals
+		t.Native = et.Native
+		t.Min = et.Min
+		t.Max = et.Max
+
+	}
+	return t
+}
+
+func (t *Token) ToEntity() *entity.Token {
 	return &entity.Token{
-		TokenId: parts[0],
-		ChainId: parts[1],
-	}, nil
+		Symbol:   t.Symbol,
+		Standard: t.Standard,
+		Network:  t.Network,
+
+		Address:  t.Address,
+		Decimals: t.Decimals,
+		Native:   t.Native,
+		Min:      t.Min,
+		Max:      t.Max,
+	}
 }

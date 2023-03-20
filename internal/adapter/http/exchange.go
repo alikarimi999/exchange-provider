@@ -52,7 +52,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := swapspace.SwapSpace(cfg, s.repo, s.l)
+		ex, err := swapspace.SwapSpace(cfg, s.repo, s.pairs, s.l)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

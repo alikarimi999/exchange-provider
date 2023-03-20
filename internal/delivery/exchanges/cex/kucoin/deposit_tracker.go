@@ -39,7 +39,7 @@ func (t *depositTracker) track(f *dtFeed) {
 			if !d.MatchCurrency(f.d) {
 				f.d.Status = entity.DepositFailed
 				f.d.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ",
-					f.d.TokenId, d.Currency)
+					f.d.Symbol, d.Currency)
 				f.done <- struct{}{}
 				return false, nil
 			}

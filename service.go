@@ -10,6 +10,7 @@ import (
 	"exchange-provider/internal/delivery/database"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services"
+	"exchange-provider/internal/delivery/services/pairsRepo"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
@@ -77,9 +78,11 @@ func production() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
+	pairs := pairsRepo.PairsRepo()
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Repo:   repo,
+		Pairs:  pairs,
 		V:      v,
 		L:      l,
 		PrvKey: prv,
@@ -93,7 +96,7 @@ func production() {
 		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, ss.FeeService, ss.PairConfigs,
+	if err := http.NewRouter(ou, repo, pairs, ss.FeeService, ss.PairConfigs,
 		v, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -150,9 +153,11 @@ func test() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
+	pairs := pairsRepo.PairsRepo()
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Repo:   repo,
+		Pairs:  pairs,
 		V:      v,
 		L:      l,
 		PrvKey: prv,
@@ -166,7 +171,7 @@ func test() {
 		ss.PairConfigs, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, ss.FeeService, ss.PairConfigs,
+	if err := http.NewRouter(ou, repo, pairs, ss.FeeService, ss.PairConfigs,
 		v, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}

@@ -43,11 +43,13 @@ func (d *dex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				return
 			}
 			res.Added = append(res.Added, entity.Pair{
-				T1: &entity.PairToken{
-					Token: &entity.Token{TokenId: p.T1, ChainId: d.cfg.TokenStandard},
+				T1: &entity.Token{
+					Symbol:   p.T1,
+					Standard: d.cfg.TokenStandard,
 				},
-				T2: &entity.PairToken{
-					Token: &entity.Token{TokenId: p.T2, ChainId: d.cfg.TokenStandard},
+				T2: &entity.Token{
+					Symbol:   p.T2,
+					Standard: d.cfg.TokenStandard,
 				},
 			})
 			pMux.Lock()

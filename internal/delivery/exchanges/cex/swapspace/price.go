@@ -26,21 +26,37 @@ type estimateAmount struct {
 	ID           string  `json:"id"`
 }
 
-func (ex *exchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64) (float64, float64, error) {
-	ea, min, err := ex.price(&pair{t1: fromEntity(t1),
-		t2: fromEntity(t2)}, amount)
+func (ex *exchange) EstimateAmountOut(from, to *entity.Token, amount float64) (float64, float64, error) {
+	p, in, out, err := ex.retrieveInOut(from, to)
 	if err != nil {
+		return 0, 0, err
+	}
+
+	eAmounts, err := ex.estimateAmounts(in, out, amount)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	ea, max, min, err := ex.price(eAmounts, amount)
+	if err != nil {
+		if from.Equal(p.T1) {
+			if min != p.T1.Min || max != p.T1.Max {
+				p.T1.Min = min
+				p.T1.Max = max
+				ex.pairs.Update(ex.Id(), p)
+			} else if min != p.T2.Min || max != p.T2.Max {
+				p.T2.Min = min
+				p.T2.Max = max
+				ex.pairs.Update(ex.Id(), p)
+			}
+		}
 		return 0, min, err
 	}
+
 	return ea.ToAmount, 0, nil
 }
 
-func (ex *exchange) price(p *pair, amount float64) (*estimateAmount, float64, error) {
-	eAmounts, err := ex.estimateAmounts(p, amount)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func (ex *exchange) price(eAmounts []*estimateAmount, amount float64) (esa *estimateAmount, max, min float64, err error) {
 	eas := []*estimateAmount{}
 	for _, eAmount := range eAmounts {
 		if eAmount.Exists && eAmount.ToAmount > 0 && eAmount.SupportRate >= 2 {
@@ -49,16 +65,16 @@ func (ex *exchange) price(p *pair, amount float64) (*estimateAmount, float64, er
 	}
 
 	var amountF float64 = 0
-	eAmount := &estimateAmount{}
+	eaMin := &estimateAmount{}
 	if len(eas) > 0 {
 		for _, ea := range eas {
 			if (ea.Min == 0 || amount >= ea.Min) &&
 				(ea.Max == 0 || amount <= ea.Max) && ea.ToAmount > amountF {
 				amountF = ea.ToAmount
-				eAmount = ea
+				eaMin = ea
 			}
 		}
-		return eAmount, 0, nil
+		return eaMin, 0, 0, nil
 	}
 
 	eas = []*estimateAmount{}
@@ -68,17 +84,28 @@ func (ex *exchange) price(p *pair, amount float64) (*estimateAmount, float64, er
 		}
 	}
 
-	eAmount = eas[0]
+	eaMin = eas[0]
+	eaMax := eas[0]
 	for _, ea := range eas {
-		if ea.Min < eAmount.Min {
-			eAmount = ea
+		if ea.Min < eaMin.Min {
+			eaMin = ea
 		}
 	}
 
-	return nil, eAmount.Min, errors.Wrap(errors.ErrNotFound)
+	for _, ea := range eas {
+		if ea.Max == 0 {
+			eaMax = ea
+			break
+		}
+		if ea.Max > eaMax.Max {
+			eaMax = ea
+		}
+	}
+
+	return nil, eaMax.Max, eaMin.Min, errors.Wrap(errors.ErrNotFound)
 }
 
-func (ex *exchange) estimateAmounts(p *pair, amountIn float64) ([]*estimateAmount, error) {
+func (ex *exchange) estimateAmounts(in, out *Token, amountIn float64) ([]*estimateAmount, error) {
 	urlStr, _ := url.JoinPath(baseUrl, "/amounts")
 
 	u, err := url.Parse(urlStr)
@@ -87,10 +114,10 @@ func (ex *exchange) estimateAmounts(p *pair, amountIn float64) ([]*estimateAmoun
 	}
 
 	v := url.Values{}
-	v.Add("fromCurrency", p.t1.Code)
-	v.Add("fromNetwork", p.t1.Network)
-	v.Add("toCurrency", p.t2.Code)
-	v.Add("toNetwork", p.t2.Network)
+	v.Add("fromCurrency", in.Code)
+	v.Add("fromNetwork", in.Network)
+	v.Add("toCurrency", out.Code)
+	v.Add("toNetwork", out.Network)
 	v.Add("amount", fmt.Sprintf("%v", amountIn))
 	v.Add("fixed", "true")
 	v.Add("float", "true")

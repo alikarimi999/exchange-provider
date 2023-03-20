@@ -16,7 +16,7 @@ func (u *dex) Withdrawal(o *entity.CexOrder) (string, error) {
 	agent := u.agent("Withdrawal")
 
 	var err error
-	t, err := u.tokens.get(o.Withdrawal.TokenId)
+	t, err := u.tokens.get(o.Withdrawal.Symbol)
 	if err != nil {
 		return "", err
 	}

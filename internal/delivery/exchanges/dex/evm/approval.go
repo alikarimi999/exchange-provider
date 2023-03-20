@@ -13,17 +13,17 @@ import (
 )
 
 func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
-	t1, err := d.get(r.In.TokenId)
+	t1, err := d.get(r.In.Symbol)
 	if err != nil {
 		return nil, err
 	}
-	t2, err := d.get(r.Out.TokenId)
+	t2, err := d.get(r.Out.Symbol)
 	if err != nil {
 		return nil, err
 	}
 
 	var in *types.Token
-	if t1.Symbol == r.In.TokenId {
+	if t1.Symbol == r.In.Symbol {
 		in = t1
 	} else {
 		in = t2
@@ -44,18 +44,18 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 }
 
 func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
-	t1, err := d.get(r.In.TokenId)
+	t1, err := d.get(r.In.Symbol)
 	if err != nil {
 		return false, err
 	}
 
-	t2, err := d.get(r.Out.TokenId)
+	t2, err := d.get(r.Out.Symbol)
 	if err != nil {
 		return false, err
 	}
 
 	var in *types.Token
-	if t1.Symbol == r.In.TokenId {
+	if t1.Symbol == r.In.Symbol {
 		in = t1
 	} else {
 		in = t2

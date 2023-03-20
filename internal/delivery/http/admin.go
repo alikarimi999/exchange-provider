@@ -27,9 +27,9 @@ func (r *Router) adminRoutes() {
 
 		ps := a.Group("/pairs")
 		{
-			// ps.POST("/add/:id", func(ctx *gin.Context) {
-			// 	r.srv.AddPairs(newContext(ctx, true))
-			// })
+			ps.POST("/add/:name", func(ctx *gin.Context) {
+				r.srv.AddPairs(newContext(ctx, true))
+			})
 
 			// ps.POST("", func(ctx *gin.Context) {
 			// 	r.srv.GetPairsToAdmin(newContext(ctx, true))
@@ -101,13 +101,6 @@ func (r *Router) adminRoutes() {
 				r.srv.RemoveExchange(newContext(ctx, true))
 			})
 			es.POST("/add/:name", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
-		}
-
-		t := a.Group("/tokens")
-		{
-			t.GET("", func(ctx *gin.Context) {
-				r.srv.Tokens(newContext(ctx, true))
-			})
 		}
 
 		limiter := a.Group("/limiter")

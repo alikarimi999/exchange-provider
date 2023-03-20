@@ -2,41 +2,35 @@ package swapspace
 
 import (
 	"exchange-provider/internal/entity"
-	"strings"
+	"exchange-provider/pkg/errors"
 )
 
-func (ex *exchange) Tokens() []*entity.Token {
-	ts := []*entity.Token{}
-	ex.tokens.RLock()
-	for _, t := range ex.tokens.list {
-		ts = append(ts, t.toEntity())
-	}
-	ex.tokens.RUnlock()
-	return ts
-}
-
-type token struct {
+type Token struct {
 	Code       string
 	Network    string
-	HasExtraId bool `json:"hasExtraId"`
+	HasExtraId bool
 }
 
-func (t *token) toEntity() *entity.Token {
-	token := &entity.Token{
-		TokenId:    strings.ToUpper(t.Code),
-		ChainId:    strings.ToUpper(t.Network),
+func (t *Token) Snapshot() entity.ExchangeToken {
+	return &Token{
+		Code:       t.Code,
+		Network:    t.Network,
 		HasExtraId: t.HasExtraId,
 	}
-
-	return token
 }
 
-func fromEntity(t *entity.Token) *token {
-	token := &token{
-		Code:       strings.ToLower(t.TokenId),
-		Network:    strings.ToLower(t.ChainId),
-		HasExtraId: t.HasExtraId,
+func (ex *exchange) retrieveInOut(from, to *entity.Token) (p *entity.Pair, in, out *Token, err error) {
+	p, ok := ex.pairs.Get(ex.Id(), from.String(), to.String())
+	if !ok {
+		return nil, nil, nil, errors.Wrap(errors.ErrNotFound)
 	}
 
-	return token
+	if p.T1.Equal(from) {
+		from = p.T1
+		to = p.T2
+	} else {
+		from = p.T2
+		to = p.T1
+	}
+	return p, from.ET.(*Token), to.ET.(*Token), nil
 }

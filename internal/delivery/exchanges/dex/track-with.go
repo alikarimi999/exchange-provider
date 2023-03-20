@@ -13,7 +13,7 @@ func (u *dex) TrackWithdrawal(o *entity.CexOrder, done chan<- struct{},
 	proccessedCh <-chan bool) {
 
 	w := o.Withdrawal
-	t, err := u.tokens.get(w.TokenId)
+	t, err := u.tokens.get(w.Symbol)
 	if err != nil {
 		w.Status = entity.WithdrawalFailed
 		w.FailedDesc = err.Error()

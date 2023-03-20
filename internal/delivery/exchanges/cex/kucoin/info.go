@@ -31,7 +31,7 @@ func (k *kucoinExchange) getAllPrices(ps []*entity.Pair) error {
 	count := 0
 	for _, p := range ps {
 		for _, t := range tsm.Tickers {
-			if fmt.Sprintf("%s-%s", p.T1.TokenId, p.T2.TokenId) == t.Symbol {
+			if fmt.Sprintf("%s-%s", p.T1.Symbol, p.T2.Symbol) == t.Symbol {
 				p.Price1 = t.Buy
 				f, err := numbers.StringToBigFloat(t.Sell)
 				if err != nil {

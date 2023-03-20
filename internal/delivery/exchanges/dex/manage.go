@@ -80,19 +80,19 @@ func (u *dex) Price(ps ...*entity.Pair) ([]*entity.Pair, error) {
 }
 
 func (u *dex) Support(t1, t2 *entity.Token) bool {
-	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
+	if t1.Standard != u.cfg.TokenStandard || t2.Standard != u.cfg.TokenStandard {
 		return false
 	}
-	_, err := u.pairs.get(t1.TokenId, t2.TokenId)
+	_, err := u.pairs.get(t1.Symbol, t2.Symbol)
 	return err == nil
 }
 
 func (u *dex) RemovePair(t1, t2 *entity.Token) error {
-	if t1.ChainId != u.cfg.TokenStandard || t2.ChainId != u.cfg.TokenStandard {
+	if t1.Standard != u.cfg.TokenStandard || t2.Standard != u.cfg.TokenStandard {
 		return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 	}
 
-	if p, err := u.pairs.get(t1.TokenId, t2.TokenId); err == nil {
+	if p, err := u.pairs.get(t1.Symbol, t2.Symbol); err == nil {
 		id := pairId(p.T1.Symbol, p.T2.Symbol)
 		ps := u.v.GetStringSlice(fmt.Sprintf("%s.pairs", u.Id()))
 		for i, p := range ps {
@@ -104,7 +104,7 @@ func (u *dex) RemovePair(t1, t2 *entity.Token) error {
 		if err := u.v.WriteConfig(); err != nil {
 			return err
 		}
-		return u.pairs.remove(t1.TokenId, t2.TokenId)
+		return u.pairs.remove(t1.Symbol, t2.Symbol)
 	}
 	return errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair not found"))
 }

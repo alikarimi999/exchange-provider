@@ -54,7 +54,7 @@ func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 		jb["apiKey"] = conf.ApiKey
 
 	default:
-		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%s' unknown exchange Id", e.Id))
+		return nil, errors.Wrap(op, errors.ErrBadRequest, fmt.Errorf("'%d' unknown exchange Id", e.Id))
 	}
 
 	b, err := json.Marshal(jb)

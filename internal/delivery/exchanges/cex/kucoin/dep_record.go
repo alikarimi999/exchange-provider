@@ -15,7 +15,7 @@ type depositeRecord struct {
 }
 
 func (d *depositeRecord) MatchCurrency(de *entity.Deposit) bool {
-	return d.Currency == string(de.TokenId)
+	return d.Currency == string(de.Symbol)
 }
 
 func (d *depositeRecord) snapShot() *depositeRecord {

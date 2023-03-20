@@ -12,24 +12,26 @@ import (
 )
 
 type Server struct {
-	app  *app.OrderUseCase
-	repo entity.OrderRepo
-	fee  entity.FeeService
-	l    logger.Logger
-	pc   entity.PairConfigs
-	v    *viper.Viper
-	cf   *chainsFee
+	app   *app.OrderUseCase
+	repo  entity.OrderRepo
+	pairs entity.PairsRepo
+	fee   entity.FeeService
+	l     logger.Logger
+	pc    entity.PairConfigs
+	v     *viper.Viper
+	cf    *chainsFee
 }
 
-func NewServer(app *app.OrderUseCase, v *viper.Viper,
+func NewServer(app *app.OrderUseCase, v *viper.Viper, pairs entity.PairsRepo,
 	repo entity.OrderRepo, fee entity.FeeService, pc entity.PairConfigs, l logger.Logger) *Server {
 	s := &Server{
-		app:  app,
-		repo: repo,
-		fee:  fee,
-		pc:   pc,
-		l:    l,
-		v:    v,
+		app:   app,
+		repo:  repo,
+		pairs: pairs,
+		fee:   fee,
+		pc:    pc,
+		l:     l,
+		v:     v,
 		cf: &chainsFee{
 			mux:   &sync.Mutex{},
 			chain: make(map[string]float64),
@@ -57,16 +59,8 @@ func (s *Server) NewOrder(ctx Context) {
 		return
 	}
 
-	in, err := dto.ParseToken(req.In)
-	if err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
-	out, err := dto.ParseToken(req.Out)
-	if err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
+	in := req.Input.ToEntity()
+	out := req.Output.ToEntity()
 
 	o, err := s.app.NewOrder(req.UserId, *req.Refund, *req.Receiver, in, out, req.AmountIn, req.LP)
 	if err != nil {
@@ -99,17 +93,11 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 		return
 	}
 
-	if err := req.Validate(""); err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
-
 	pa := req.Map()
 	if err := s.app.GetPaginated(pa); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
-
 	ctx.JSON(dto.OrderResponse(pa, false), nil)
 }
 
@@ -117,11 +105,6 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
 	pa := &dto.PaginatedOrdersRequest{}
 	if err := ctx.Bind(pa); err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
-
-	if err := pa.Validate(""); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}

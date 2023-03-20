@@ -19,7 +19,7 @@ func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
 
-	wc, err := k.supportedCoins.get(c.TokenId, c.ChainId)
+	wc, err := k.supportedCoins.get(c.Symbol, c.Standard)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
@@ -27,20 +27,20 @@ func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
 	vol := trim(o.Withdrawal.Volume, wc.WithdrawalPrecision)
 	o.Withdrawal.Volume = vol
 	// first transfer from trade account to main account
-	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), c.TokenId, "trade", "main", vol)
+	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), c.Symbol, "trade", "main", vol)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
 
-	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from trade account to main account", vol, c.TokenId))
+	k.l.Debug(string(op), fmt.Sprintf("%s %s transferred from trade account to main account", vol, c.Symbol))
 
 	// then withdraw from main account
-	res, err = k.writeApi.ApplyWithdrawal(c.TokenId, o.Withdrawal.Addr, vol, opts)
+	res, err = k.writeApi.ApplyWithdrawal(c.Symbol, o.Withdrawal.Addr, vol, opts)
 	if err = handleSDKErr(err, res); err != nil {
 		return "", errors.Wrap(err, op)
 	}
 
-	k.l.Debug(string(op), fmt.Sprintf("%s %s withdrawn from main account", vol, c.TokenId))
+	k.l.Debug(string(op), fmt.Sprintf("%s %s withdrawn from main account", vol, c.Symbol))
 
 	w := &kucoin.ApplyWithdrawalResultModel{}
 	if err = res.ReadData(w); err != nil {

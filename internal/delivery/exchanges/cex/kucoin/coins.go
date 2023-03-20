@@ -54,13 +54,13 @@ func (k *kucoinExchange) withdrawalOpts(c *entity.Token, tag string) (map[string
 
 	opts := map[string]string{}
 
-	need, err := k.supportedCoins.needChain(c.TokenId, c.ChainId)
+	need, err := k.supportedCoins.needChain(c.Symbol, c.Standard)
 	if err != nil {
 		return nil, err
 	}
 
 	if need {
-		opts["chain"] = c.ChainId
+		opts["chain"] = c.Standard
 	}
 	opts["memo"] = tag
 	return opts, nil

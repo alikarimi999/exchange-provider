@@ -51,9 +51,9 @@ func (p *exchange) request(method, url string, data interface{}) ([]byte, error)
 	case http.StatusOK, http.StatusCreated, http.StatusAccepted:
 		return b, nil
 	case http.StatusBadRequest:
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.New(string(b)))
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(string(b)))
 	default:
-		return nil, errors.Wrap(rsp.Status)
+		return nil, errors.Wrap(errors.ErrUnknown, errors.NewMesssage(string(b)))
 	}
 
 }

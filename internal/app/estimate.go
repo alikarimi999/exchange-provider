@@ -18,15 +18,18 @@ func (o *OrderUseCase) EstimateAmountOut(in, out *entity.Token,
 }
 
 func (o *OrderUseCase) estimateAmountOut(in, out *entity.Token,
-	amount float64, lp uint) (entity.Exchange, float64, error) {
+	amount float64, lp uint) (ex entity.Exchange, amountOut float64, err error) {
 
 	if lp > 0 {
 		ex, err := o.exs.get(lp)
 		if err != nil {
 			return nil, 0, err
 		}
-		amOut, _, err := ex.EstimateAmountOut(in, out, amount)
+		amOut, min, err := ex.EstimateAmountOut(in, out, amount)
 		if err != nil {
+			if min > 0 {
+				return nil, 0, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("min amount is %f", min)))
+			}
 			return nil, 0, err
 		}
 		return ex, amOut, nil

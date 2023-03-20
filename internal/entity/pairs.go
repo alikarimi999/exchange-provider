@@ -2,66 +2,17 @@ package entity
 
 import (
 	"math/big"
-	"time"
 )
 
-type Token struct {
-	TokenId    string
-	ChainId    string
-	Address    string
-	Tag        string
-	Decimals   uint64
-	HasExtraId bool
-	Native     bool
-}
-
-func (c *Token) String() string {
-	return c.TokenId + "-" + c.ChainId
-}
-
-func (t *Token) Equal(t2 *Token) bool {
-	return t.TokenId == t2.TokenId && t.ChainId == t2.ChainId
-}
-
-func (t *Token) Snapshot() *Token {
-	return &Token{TokenId: t.TokenId, ChainId: t.ChainId, Address: t.Address,
-		Decimals: t.Decimals, Native: t.Native}
-}
-
-type PairToken struct {
-	*Token
-
-	BlockTime           time.Duration
-	Tag                 string
-	MinDeposit          float64
-	MinOrderSize        string
-	MaxOrderSize        string
-	MinWithdrawalSize   string
-	WithdrawalMinFee    string
-	OrderPrecision      int
-	WithdrawalPrecision int
-	SetChain            bool
-}
-
-func (t *PairToken) Snapshot() *PairToken {
-	return &PairToken{
-		Token:             t.Token.Snapshot(),
-		BlockTime:         t.BlockTime,
-		Tag:               t.Tag,
-		MinDeposit:        t.MinDeposit,
-		MinOrderSize:      t.MinOrderSize,
-		MaxOrderSize:      t.MaxOrderSize,
-		MinWithdrawalSize: t.MinWithdrawalSize,
-		WithdrawalMinFee:  t.WithdrawalMinFee,
-		OrderPrecision:    t.OrderPrecision,
-		SetChain:          t.SetChain,
-	}
+type ExchangePair interface {
+	Snapshot() ExchangePair
 }
 
 type Pair struct {
-	T1 *PairToken
-	T2 *PairToken
+	T1 *Token
+	T2 *Token
 
+	LP              uint
 	Exchange        string
 	ContractAddress string
 	FeeTier         int64
@@ -73,10 +24,8 @@ type Pair struct {
 	OrderFeeRate    string
 	SpreadRate      string
 	FeeRate         string
-}
 
-func (p *PairToken) String() string {
-	return p.Token.String()
+	EP ExchangePair
 }
 
 func (p *Pair) String() string {
@@ -84,13 +33,21 @@ func (p *Pair) String() string {
 }
 
 func (p *Pair) Equal(p1 *Pair) bool {
-	return (p.T1.String() == p1.T1.String() && p.T2.String() == p1.T2.String())
+	return (p.T1.Equal(p1.T1) && p.T2.Equal(p1.T2))
 }
 
 func (p *Pair) Snapshot() *Pair {
+	var ep ExchangePair
+	if p.EP != nil {
+		ep = p.EP.Snapshot()
+	} else {
+		ep = nil
+	}
 	return &Pair{
-		T1:              p.T1.Snapshot(),
-		T2:              p.T2.Snapshot(),
+		T1: p.T1.Snapshot(),
+		T2: p.T2.Snapshot(),
+		LP: p.LP,
+
 		Exchange:        p.Exchange,
 		ContractAddress: p.ContractAddress,
 		FeeTier:         p.FeeTier,
@@ -102,5 +59,6 @@ func (p *Pair) Snapshot() *Pair {
 		OrderFeeRate:    p.OrderFeeRate,
 		SpreadRate:      p.SpreadRate,
 		FeeRate:         p.FeeRate,
+		EP:              ep,
 	}
 }

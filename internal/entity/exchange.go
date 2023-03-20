@@ -23,14 +23,9 @@ type Exchange interface {
 	Name() string
 	Type() ExType
 	EstimateAmountOut(t1, t2 *Token, amount float64) (amountOut, min float64, err error)
-	Tokens() []*Token
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 *Token) error
 	Configs() interface{}
 	Command(Command) (CommandResult, error)
 	Remove()
 }
-
-const (
-	SwapSpace string = "swapspace"
-)

@@ -18,7 +18,7 @@ import (
 func (m *Multichain) Swap(o *entity.CexOrder, i int) (string, error) {
 	agent := "multichain.Swap"
 
-	ch := m.cs[ChainId(o.Routes[i].In.ChainId)]
+	ch := m.cs[ChainId(o.Routes[i].In.Standard)]
 	src := common.HexToAddress(o.Deposit.Address.Addr)
 	tx, nonce, err := m.swap(o, src, ch, i)
 	if err != nil {

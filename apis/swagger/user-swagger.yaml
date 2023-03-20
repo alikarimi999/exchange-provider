@@ -3,20 +3,36 @@ info:
   title: Exchange Provider Main Api
   version: 1.0.0
 servers:
-  - url: http://156.253.5.52:80
+  - url: http://31.220.92.97:80
 paths:
-  /tokens:
-    get:
+  /pairs:
+    post:
       tags:
         - MetaData
-      summary: tokens list
+      summary: pairs list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPage:
+                  type: integer
+                pageSize:
+                  type: integer
+              example:
+                currentPage: 1
+                pageSize: 10
+              required:
+                - currentPage
+                - pageSize
       parameters:
         - name: x-api-key
           in: header
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response
@@ -35,17 +51,36 @@ paths:
               type: object
               properties:
                 input:
-                  type: string
+                  type: object
+                  properties:
+                    symbol:
+                      type: string
+                      example: "USDT"
+                    standard:
+                      type: string
+                      example: "ERC20"
+                    network:
+                      type: string
+                      example: "POLYGON"
                 output:
-                  type: string
+                  type: object
+                  properties:
+                    symbol:
+                      type: string
+                      example: "BTC"
+                    standard:
+                      type: string
+                      example: "BTC"
+                    network:
+                      type: string
+                      example: "BITCOIN"
+
                 amountIn:
                   type: number
                 lp:
                   type: number
               example:
-                input: "USDT-TRC20"
-                output: "DAI-POLYGON"
-                amountIn: 3.4
+                amountIn: 10
               required:
                 - input
                 - output
@@ -56,7 +91,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response
@@ -90,7 +125,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response
@@ -110,9 +145,30 @@ paths:
                 userId:
                   type: string
                 input:
-                  type: string
+                  type: object
+                  properties:
+                    symbol:
+                      type: string
+                      example: "USDT"
+                    standard:
+                      type: string
+                      example: "ERC20"
+                    network:
+                      type: string
+                      example: "POLYGON"
                 output:
-                  type: string
+                  type: object
+                  properties:
+                    symbol:
+                      type: string
+                      example: "BTC"
+                    standard:
+                      type: string
+                      example: "BTC"
+                    network:
+                      type: string
+                      example: "BITCOIN"
+
                 refund:
                   type: object
                   properties:
@@ -136,8 +192,6 @@ paths:
 
               example:
                 userId: usr-6414af95cc2c0f9e249be8d6
-                input: USDT-TRC20
-                output: UNI-ERC20
                 amountIn: 3.4
                 lp: 3
               required:
@@ -154,31 +208,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json: {}
-
-  /orders/{orderId}/1:
-    get:
-      tags:
-        - 2- get step (SingleStep)
-      parameters:
-        - name: orderId
-          in: path
-          required: true
-          schema:
-            type: string
-            example: 63cc108c92b19335c45bd061
-        - name: x-api-key
-          in: header
-          required: true
-          schema:
-            type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
-
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response
@@ -195,19 +225,19 @@ paths:
           required: true
           schema:
             type: string
-            example: 63cc108c92b19335c45bd061
+            example: ord-6414c15d0a0fa5707e24bf45
         - name: step
           in: path
           required: true
           schema:
             type: integer
-            example: 1
+            example: 2
         - name: x-api-key
           in: header
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response
@@ -229,7 +259,7 @@ paths:
                 txId:
                   type: string
               example:
-                orderId: 63cc108c92b19335c45bd061
+                orderId: ord-6414c15d0a0fa5707e24bf45
                 txId: >-
                   0xe18c3d74e043c8ebc653e22ccfd8d4612d6754d8dd6b5ea3430d7338a33c6c7e
               required:
@@ -241,7 +271,7 @@ paths:
           required: true
           schema:
             type: string
-          example: api_key_jeDrOHkEChxKbjfgNzHGGQbHQTdiGAej
+          example: api_key_ZEsZWKlSuYrjodxqGFVNERxaqIcNwmYW
       responses:
         "200":
           description: Successful response

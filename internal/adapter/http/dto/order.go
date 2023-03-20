@@ -41,8 +41,8 @@ func adminOrderFromEntity(o entity.Order) *order {
 
 type CreateOrderRequest struct {
 	UserId   string          `json:"userId"`
-	In       string          `json:"input"`
-	Out      string          `json:"output"`
+	Input    Token           `json:"input"`
+	Output   Token           `json:"output"`
 	Refund   *entity.Address `json:"refund"`
 	Receiver *entity.Address `json:"receiver"`
 	AmountIn float64         `json:"amountIn"`
@@ -61,11 +61,11 @@ func (r *CreateOrderRequest) Validate() error {
 	if r.Receiver == nil || r.Receiver.Addr == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("receiver is required"))
 	}
-	if r.In == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("input is required"))
+	if r.Input.Symbol == "" || r.Input.Standard == "" || r.Input.Network == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("input is invalid"))
 	}
-	if r.Out == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("output is required"))
+	if r.Output.Symbol == "" || r.Output.Standard == "" || r.Output.Network == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("output is invalid"))
 	}
 	if r.AmountIn == 0 {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("amountIn is required"))

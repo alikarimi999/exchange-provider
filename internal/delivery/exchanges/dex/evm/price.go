@@ -6,12 +6,12 @@ import (
 )
 
 func (d *EvmDex) EstimateAmountOut(in, out *entity.Token, amount float64) (float64, float64, error) {
-	t1, err := d.get(in.TokenId)
+	t1, err := d.get(in.Symbol)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	t2, err := d.get(out.TokenId)
+	t2, err := d.get(out.Symbol)
 	if err != nil {
 		return 0, 0, err
 	}
