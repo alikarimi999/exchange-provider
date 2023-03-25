@@ -53,7 +53,9 @@ func (ex *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 		}(p)
 	}
 	wg.Wait()
-	ex.pairs.Add(ex.Id(), add...)
+	if err := ex.pairs.Add(ex, add...); err != nil {
+		return nil, err
+	}
 	return res, nil
 }
 

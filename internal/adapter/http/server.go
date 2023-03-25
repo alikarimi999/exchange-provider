@@ -62,7 +62,7 @@ func (s *Server) NewOrder(ctx Context) {
 	in := req.Input.ToEntity()
 	out := req.Output.ToEntity()
 
-	o, err := s.app.NewOrder(req.UserId, *req.Refund, *req.Receiver, in, out, req.AmountIn, req.LP)
+	o, err := s.app.NewOrder(req.UserId, req.Sender, req.Refund, req.Receiver, in, out, req.AmountIn, req.LP)
 	if err != nil {
 		ctx.JSON(nil, err)
 		return

@@ -11,8 +11,7 @@ const (
 
 type exchange struct {
 	*Config
-	repo entity.OrderRepo
-
+	repo  entity.OrderRepo
 	pairs entity.PairsRepo
 	l     logger.Logger
 }

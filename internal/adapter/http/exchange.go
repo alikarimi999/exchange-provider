@@ -25,8 +25,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := kucoin.NewKucoinExchange(cfg, s.v, s.l,
-			false, s.repo, s.pc, s.fee)
+		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.pc, s.fee)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
@@ -78,7 +77,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := evm.NewEvmDex(cfg, s.v, s.l, false)
+		ex, err := evm.NewEvmDex(cfg, s.pairs, s.v, s.l, false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

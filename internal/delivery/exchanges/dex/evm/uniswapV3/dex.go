@@ -5,7 +5,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV3/contracts"
 	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/logger"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -51,7 +50,3 @@ func NewUniswapV3Dex(id uint, network, nativeToken, router, contract string, cha
 }
 
 func (d *dex) Router() common.Address { return d.router }
-
-func (d *dex) agent(fn string) string {
-	return fmt.Sprintf("%s.%s", d.id, fn)
-}

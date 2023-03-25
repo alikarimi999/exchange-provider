@@ -1,0 +1,53 @@
+package dto
+
+import (
+	"exchange-provider/internal/entity"
+	"time"
+)
+
+type AddPairsRequest struct {
+	Pairs []*Pair `json:"pairs"`
+}
+type Token struct {
+	TokenId string `json:"tokenId"`
+	ChainId string `json:"chainId"`
+
+	BlockTime           time.Duration `json:"blockTime"`
+	WithdrawalPrecision int           `json:"withdrawalPrecision"`
+}
+
+type Pair struct {
+	BC *EToken `json:"bc"`
+	QC *EToken `json:"qc"`
+}
+
+type EToken struct {
+	Symbol   string `json:"symbol"`
+	Standard string `json:"standard"`
+	Network  string `json:"network"`
+
+	Address  string `json:"address"`
+	Decimals uint64 `json:"decimals"`
+	Native   bool   `json:"native"`
+	ET       Token  `json:"exchangeToken"`
+}
+
+func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
+	return &entity.Token{
+		Symbol:   t.Symbol,
+		Standard: t.Standard,
+		Network:  t.Network,
+
+		Address:  t.Address,
+		Decimals: t.Decimals,
+		Native:   t.Native,
+		ET:       fn(t.ET),
+	}
+}
+
+func (p *Pair) ToEntity(fn func(Token) entity.ExchangeToken) *entity.Pair {
+	return &entity.Pair{
+		T1: p.BC.toEntity(fn),
+		T2: p.QC.toEntity(fn),
+	}
+}

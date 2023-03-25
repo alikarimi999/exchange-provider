@@ -2,7 +2,6 @@ package app
 
 import (
 	"exchange-provider/internal/entity"
-	"strconv"
 )
 
 func (o *OrderUseCase) GetDefaultSpread() string {
@@ -26,14 +25,5 @@ func (o *OrderUseCase) GetAllPairsSpread() map[string]float64 {
 }
 
 func (o *OrderUseCase) ApplySpread(p *entity.Pair) *entity.Pair {
-	rate := o.pc.GetPairSpread(p.T1, p.T2)
-
-	r, _ := strconv.ParseFloat(rate, 64)
-	p1, _ := strconv.ParseFloat(p.Price1, 64)
-	p2, _ := strconv.ParseFloat(p.Price2, 64)
-
-	p.Price1 = strconv.FormatFloat(p1*(1-r), 'f', 6, 64)
-	p.Price2 = strconv.FormatFloat(p2*(1-r), 'f', 6, 64)
-
 	return p
 }

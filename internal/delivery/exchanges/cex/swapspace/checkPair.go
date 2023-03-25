@@ -22,7 +22,7 @@ func (ex *exchange) checkPair(p *entity.Pair) error {
 }
 
 func (ex *exchange) minANDmax(in, out *Token) (float64, float64, error) {
-	eAmounts, err := ex.estimateAmounts(in, out, 0)
+	eAmounts, err := ex.estimateAmounts(in, out, 0.1)
 	if err != nil {
 		return 0, 0, err
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (u *OrderUseCase) NewOrder(userId string, refund, reciever entity.Address,
+func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.Address,
 	in, out *entity.Token, amount float64, lp uint) (entity.Order, error) {
 
 	routes := make(map[int]*entity.Route)
@@ -22,7 +22,7 @@ func (u *OrderUseCase) NewOrder(userId string, refund, reciever entity.Address,
 		routes[0] = &entity.Route{
 			In:       in,
 			Out:      out,
-			Exchange: lp,
+			Exchange: ex.Name(),
 			ExType:   ex.Type(),
 		}
 	} else {
@@ -31,12 +31,15 @@ func (u *OrderUseCase) NewOrder(userId string, refund, reciever entity.Address,
 			return nil, err
 		}
 	}
-	ex, _ := u.GetExchange(routes[0].Exchange)
+	ex, _ := u.exs.getByName(routes[0].Exchange)
 	switch ex.Type() {
 	case entity.EvmDEX:
 		return u.newEvmOrder(userId, common.HexToAddress(refund.Addr),
 			common.HexToAddress(reciever.Addr), amount, routes[0])
 	default:
+		if refund.Addr == "" {
+			refund = sender
+		}
 		return u.newCexOrder(userId, refund, reciever, amount, routes)
 	}
 }
@@ -45,7 +48,7 @@ func (u *OrderUseCase) newEvmOrder(userId string, sender, reciever common.Addres
 	amountIn float64, route *entity.Route) (*entity.EvmOrder, error) {
 	const op = errors.Op("OrderUsecase.NewEvmDexOrder")
 
-	ex, err := u.exs.get(route.Exchange)
+	ex, err := u.exs.getByName(route.Exchange)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +72,7 @@ func (u *OrderUseCase) newCexOrder(userId string, refund, reciever entity.Addres
 
 	const op = errors.Op("OrderUsecase.NewCexOrder")
 
-	ex, err := u.exs.get(routes[0].Exchange)
+	ex, err := u.exs.getByName(routes[0].Exchange)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +81,6 @@ func (u *OrderUseCase) newCexOrder(userId string, refund, reciever entity.Addres
 	if err := ex.(entity.Cex).SetDepositddress(o); err != nil {
 		return nil, err
 	}
-
 	if err := u.write(o); err != nil {
 		u.l.Error(string(op), err.Error())
 		return nil, errors.Wrap(err, op, errors.NewMesssage("create order failed, internal error"))

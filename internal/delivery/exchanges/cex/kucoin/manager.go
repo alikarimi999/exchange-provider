@@ -7,8 +7,6 @@ import (
 	"exchange-provider/pkg/utils/numbers"
 	"fmt"
 	"math/big"
-	"strconv"
-	"strings"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
@@ -21,29 +19,29 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 	}
 
 	res := &entity.AddPairsResult{}
-	cs := map[string]*kuToken{}
-	ps := []*pair{}
+	cs := []*Token{}
+	ps := []*entity.Pair{}
 	for _, p := range req.Pairs {
-		ps = append(ps, fromDto(p))
+		ps = append(ps, p.ToEntity(func(t dto.Token) entity.ExchangeToken {
+			return &Token{
+				TokenId:             t.TokenId,
+				ChainId:             t.ChainId,
+				BlockTime:           t.BlockTime,
+				WithdrawalPrecision: t.WithdrawalPrecision,
+			}
+		}))
 	}
 
-	aps := []*pair{}
 	for _, p := range ps {
-		if _, err := k.exchangePairs.get(p.BC.toEntityCoin(),
-			p.QC.toEntityCoin()); err == nil {
+		if k.pairs.Exists(k.Id(), p.T1.String(), p.T2.String()) {
 			res.Existed = append(res.Existed, p.String())
 			continue
 		}
 
-		ok, err := k.pls.support(p)
-		if err != nil {
-			return nil, err
-		}
-
-		if !ok {
+		if err := k.pls.support(p, false); err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p.String(),
-				Err:  errors.Wrap(errors.ErrBadRequest, errors.New("pair not supported")),
+				Err:  err,
 			})
 			continue
 		}
@@ -55,71 +53,43 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			})
 			continue
 		}
+		res.Added = append(res.Added, *p)
+		bc := p.T1.ET.(*Token)
+		qc := p.T2.ET.(*Token)
+		cs = append(cs, bc)
+		cs = append(cs, qc)
 
-		k.v.Set(fmt.Sprintf("%s.pairs.%s", k.Name(), p.Id()), p)
-		if err := k.v.WriteConfig(); err != nil {
-			k.l.Error(agent, err.Error())
-			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p.String(),
-				Err:  err,
-			})
-			continue
-		}
-		aps = append(aps, p)
-		res.Added = append(res.Added, entity.Pair{
-			T1: &entity.Token{
-				Symbol:   p.BC.TokenId,
-				Standard: string(p.BC.ChainId),
-			},
-			T2: &entity.Token{
-				Symbol:   p.QC.TokenId,
-				Standard: string(p.QC.ChainId),
-			},
-		})
-		cs[p.BC.TokenId+string(p.BC.ChainId)] = p.BC
-		cs[p.QC.TokenId+string(p.QC.ChainId)] = p.QC
 	}
 
-	k.exchangePairs.add(aps...)
 	k.supportedCoins.add(cs)
-	for _, p := range aps {
-		ep := p.toEntity()
-		ep.FeeRate = k.orderFeeRate(p)
-	}
-
 	return res, nil
 
 }
 
-func (k *kucoinExchange) Prices(ps ...*entity.Pair) ([]*entity.Pair, error) {
-	if err := k.getAllPrices(ps); err != nil {
-		return nil, err
+func (k *kucoinExchange) EstimateAmountOut(in, out *entity.Token,
+	amount float64) (float64, float64, error) {
+	p, ok := k.pairs.Get(k.Id(), in.String(), out.String())
+	if !ok {
+		return 0, 0, errors.Wrap(errors.ErrNotFound)
 	}
 
-	return ps, nil
-}
-
-func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64) (float64, float64, error) {
-	p, err := k.exchangePairs.get(t1, t2)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	if p.BC.TokenId == t1.Symbol {
-		min, _ := strconv.ParseFloat(p.BC.minOrderSize, 64)
-		max, _ := strconv.ParseFloat(p.BC.maxOrderSize, 64)
+	bc := p.T1.ET.(*Token)
+	qc := p.T2.ET.(*Token)
+	if p.T1.Equal(in) {
+		min := bc.MinOrderSize
+		max := bc.MaxOrderSize
 		if amount < min || amount > max {
 			return 0, min, errors.Wrap(errors.ErrBadRequest)
 		}
 	} else {
-		min, _ := strconv.ParseFloat(p.QC.minOrderSize, 64)
-		max, _ := strconv.ParseFloat(p.QC.maxOrderSize, 64)
+		min := qc.MinOrderSize
+		max := qc.MaxOrderSize
 		if amount < min || amount > max {
 			return 0, min, errors.Wrap(errors.ErrBadRequest)
 		}
 	}
 
-	res, err := k.readApi.TickerLevel1(p.Symbol())
+	res, err := k.readApi.TickerLevel1(symbol(bc, qc))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -132,7 +102,7 @@ func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64)
 		return 0, 0, err
 	}
 
-	if p.BC.TokenId == t1.Symbol {
+	if p.T1.Equal(in) {
 		af, _ := big.NewFloat(0).Mul(f, big.NewFloat(amount)).Float64()
 		return af, 0, nil
 	} else {
@@ -143,17 +113,11 @@ func (k *kucoinExchange) EstimateAmountOut(t1, t2 *entity.Token, amount float64)
 
 }
 
-func (k *kucoinExchange) RemovePair(bc, qc *entity.Token) error {
-	p, err := k.exchangePairs.get(bc, qc)
-	if err != nil {
-		return err
-	}
-	delete(k.v.Get(fmt.Sprintf("%s.pairs", k.Name())).(map[string]interface{}),
-		strings.ToLower(p.Id()))
-	if err := k.v.WriteConfig(); err != nil {
-		return err
-	}
-
-	k.exchangePairs.remove(p.Id())
+func (k *kucoinExchange) RemovePair(t1, t2 *entity.Token) error {
+	k.pairs.Remove(k.Id(), t1.String(), t2.String())
 	return nil
+}
+
+func symbol(bc, qc *Token) string {
+	return bc.TokenId + "-" + qc.TokenId
 }

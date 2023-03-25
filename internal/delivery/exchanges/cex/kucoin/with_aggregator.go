@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -113,7 +112,6 @@ func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 }
 
 func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) ([]*dto.Withdrawal, error) {
-	op := errors.Op(fmt.Sprintf("%s.withdrawalAggregator.aggregate", wa.k.Id()))
 	wa.params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
 	wa.params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
 	wa.params["status"] = status
@@ -126,7 +124,7 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 
 		res, err := wa.k.readApi.Withdrawals(wa.params, paginate)
 		if err = handleSDKErr(err, res); err != nil {
-			return nil, errors.Wrap(err, op)
+			return nil, err
 		}
 
 		withdrawals := []*dto.Withdrawal{}

@@ -65,7 +65,7 @@ func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 	}
 	eo, err := o.ToEntity()
 	if err != nil {
-		m.l.Error(agent, r.Err().Error())
+		m.l.Error(agent, err.Error())
 		return nil, err
 	}
 	return eo, nil

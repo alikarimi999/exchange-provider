@@ -3,23 +3,28 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	sdto "exchange-provider/internal/delivery/exchanges/cex/swapspace/dto"
+	"strconv"
+	"strings"
 
-	udto "exchange-provider/internal/delivery/exchanges/dex/dto"
-	"exchange-provider/internal/delivery/exchanges/dex/multichain"
+	edto "exchange-provider/internal/delivery/exchanges/dex/evm/dto"
 	"exchange-provider/internal/entity"
 )
 
 func (s *Server) AddPairs(ctx Context) {
-	name := ctx.Param("name")
-	ex, err := s.app.GetExchangeByName(name)
+	ids := ctx.Param("id")
+	id, err := strconv.Atoi(ids)
+	if err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+	ex, err := s.app.GetExchange(uint(id))
 	if err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
 	res := &entity.AddPairsResult{}
-
-	switch ex.Name() {
+	switch strings.Split(ex.Name(), "-")[0] {
 	case "swapspace":
 		req := &sdto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
@@ -27,7 +32,7 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
-		res, err = ex.AddPairs(req)
+		res, err = s.app.AddPairs(ex, req)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
@@ -57,13 +62,8 @@ func (s *Server) AddPairs(ctx Context) {
 	// 	}
 
 	case "uniswapv3", "panckakeswapv2":
-		req := &udto.AddPairsRequest{}
+		req := &edto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
-		if err := req.Validate(); err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
@@ -73,19 +73,6 @@ func (s *Server) AddPairs(ctx Context) {
 			ctx.JSON(nil, err)
 			return
 		}
-
-	case "multichain":
-		req := &multichain.AddPairsRequest{}
-		if err := ctx.Bind(req); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-		res, err = s.app.AddPairs(ex, req)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
 	}
 
 	ctx.JSON(dto.FromEntity(res), nil)

@@ -34,7 +34,7 @@ const (
 type Route struct {
 	In       *Token
 	Out      *Token
-	Exchange uint
+	Exchange string
 	ExType
 }
 

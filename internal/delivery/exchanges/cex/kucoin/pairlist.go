@@ -1,9 +1,11 @@
 package kucoin
 
 import (
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -50,49 +52,55 @@ func (p *pairList) download() error {
 	return nil
 }
 
-func (pl *pairList) support(p *pair) (bool, error) {
+func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 	agent := fmt.Sprintf("%s.pairList.support", pl.k.Name())
 	if len(pl.pairs) == 0 {
-		pl.l.Debug(agent, "pairs not downloaded yet")
 		if err := pl.download(); err != nil {
-			return false, err
+			return err
 		}
+		pl.l.Debug(agent, "pairs list downloaded")
 	}
+
+	bc := p.T1.ET.(*Token)
+	qc := p.T2.ET.(*Token)
 
 	pl.mux.Lock()
 	defer pl.mux.Unlock()
 
 	for _, pair := range pl.pairs {
-		if pair.BaseCurrency == p.BC.TokenId && pair.QuoteCurrency == p.QC.TokenId {
-			p.BC.minOrderSize = pair.BaseMinSize
-			p.BC.maxOrderSize = pair.BaseMaxSize
-			p.BC.orderPrecision = calcPrecision(pair.BaseIncrement)
-			p.QC.minOrderSize = pair.QuoteMinSize
-			p.QC.maxOrderSize = pair.QuoteMaxSize
-			p.QC.orderPrecision = calcPrecision(pair.QuoteIncrement)
+		if pair.BaseCurrency == bc.TokenId && pair.QuoteCurrency == qc.TokenId {
+			if fromDB {
+				return nil
+			}
+			bc.MinOrderSize, _ = strconv.ParseFloat(pair.BaseMinSize, 64)
+			bc.MaxOrderSize, _ = strconv.ParseFloat(pair.BaseMaxSize, 64)
+			bc.OrderPrecision = calcPrecision(pair.BaseIncrement)
+			qc.MinOrderSize, _ = strconv.ParseFloat(pair.QuoteMinSize, 64)
+			qc.MaxOrderSize, _ = strconv.ParseFloat(pair.QuoteMaxSize, 64)
+			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
 
-			p.feeCurrency = pair.FeeCurrency
+			return nil
+		} else if pair.BaseCurrency == qc.TokenId && pair.QuoteCurrency == bc.TokenId {
+			tx := p.T1
+			t1 := p.T2
+			t2 := tx
 
-			return true, nil
-		} else if pair.BaseCurrency == p.QC.TokenId && pair.QuoteCurrency == p.BC.TokenId {
-			x := p.QC
-			p.QC = p.BC
-			p.BC = x
+			bc := t1.ET.(*Token)
+			qc := t2.ET.(*Token)
 
-			p.BC.minOrderSize = pair.BaseMinSize
-			p.BC.maxOrderSize = pair.BaseMaxSize
-			p.BC.orderPrecision = calcPrecision(pair.BaseIncrement)
-			p.QC.minOrderSize = pair.QuoteMinSize
-			p.QC.maxOrderSize = pair.QuoteMaxSize
-			p.QC.orderPrecision = calcPrecision(pair.QuoteIncrement)
+			bc.MinOrderSize, _ = strconv.ParseFloat(pair.BaseMinSize, 64)
+			bc.MaxOrderSize, _ = strconv.ParseFloat(pair.BaseMaxSize, 64)
+			bc.OrderPrecision = calcPrecision(pair.BaseIncrement)
+			qc.MinOrderSize, _ = strconv.ParseFloat(pair.QuoteMinSize, 64)
+			qc.MaxOrderSize, _ = strconv.ParseFloat(pair.QuoteMaxSize, 64)
+			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
 
-			p.feeCurrency = pair.FeeCurrency
-
-			return true, nil
+			p.T1 = t1
+			p.T2 = t2
+			return nil
 		}
 	}
-
-	return false, nil
+	return errors.New(fmt.Sprintf("pair '%s' not supported", p.String()))
 }
 
 func calcPrecision(s string) int {

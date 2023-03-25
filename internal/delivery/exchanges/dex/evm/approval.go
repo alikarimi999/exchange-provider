@@ -2,7 +2,6 @@ package evm
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/internal/entity"
 	"math/big"
 
@@ -13,23 +12,23 @@ import (
 )
 
 func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
-	t1, err := d.get(r.In.Symbol)
+	t1, err := d.ts.get(r.In.String())
 	if err != nil {
 		return nil, err
 	}
-	t2, err := d.get(r.Out.Symbol)
+	t2, err := d.ts.get(r.Out.String())
 	if err != nil {
 		return nil, err
 	}
 
-	var in *types.Token
-	if t1.Symbol == r.In.Symbol {
+	var in *entity.Token
+	if t1.Equal(r.In) {
 		in = t1
 	} else {
 		in = t2
 	}
 
-	c, err := contracts.NewIERC20(in.Address, d.provider())
+	c, err := contracts.NewIERC20(common.HexToAddress(in.Address), d.provider())
 	if err != nil {
 		return nil, err
 	}
@@ -44,27 +43,16 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 }
 
 func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
-	t1, err := d.get(r.In.Symbol)
+	in, err := d.ts.get(r.In.String())
 	if err != nil {
 		return false, err
 	}
 
-	t2, err := d.get(r.Out.Symbol)
-	if err != nil {
-		return false, err
-	}
-
-	var in *types.Token
-	if t1.Symbol == r.In.Symbol {
-		in = t1
-	} else {
-		in = t2
-	}
-	if in.IsNative() {
+	if in.Native {
 		return false, nil
 	}
 
-	c, err := contracts.NewIERC20(in.Address, d.provider())
+	c, err := contracts.NewIERC20(common.HexToAddress(in.Address), d.provider())
 	if err != nil {
 		return false, err
 	}

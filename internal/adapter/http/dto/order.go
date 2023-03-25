@@ -40,14 +40,15 @@ func adminOrderFromEntity(o entity.Order) *order {
 }
 
 type CreateOrderRequest struct {
-	UserId   string          `json:"userId"`
-	Input    Token           `json:"input"`
-	Output   Token           `json:"output"`
-	Refund   *entity.Address `json:"refund"`
-	Receiver *entity.Address `json:"receiver"`
-	AmountIn float64         `json:"amountIn"`
-	LP       uint            `json:"lp"`
-	Msg      string          `json:"message"`
+	UserId   string         `json:"userId"`
+	Input    Token          `json:"input"`
+	Output   Token          `json:"output"`
+	Sender   entity.Address `json:"sender"`
+	Refund   entity.Address `json:"refund"`
+	Receiver entity.Address `json:"receiver"`
+	AmountIn float64        `json:"amountIn"`
+	LP       uint           `json:"lp"`
+	Msg      string         `json:"message"`
 }
 
 func (r *CreateOrderRequest) Validate() error {
@@ -55,10 +56,11 @@ func (r *CreateOrderRequest) Validate() error {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("userId is required"))
 	}
 
-	if r.Refund == nil || r.Refund.Addr == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("refund is required"))
+	if r.Sender.Addr == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("sender is required"))
 	}
-	if r.Receiver == nil || r.Receiver.Addr == "" {
+
+	if r.Receiver.Addr == "" {
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("receiver is required"))
 	}
 	if r.Input.Symbol == "" || r.Input.Standard == "" || r.Input.Network == "" {

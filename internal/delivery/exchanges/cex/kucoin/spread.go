@@ -17,5 +17,4 @@ func (k *kucoinExchange) applySpreadAndFee(ord *entity.CexOrder, route *entity.R
 	ord.Withdrawal.Volume = r
 	ord.Fee = f
 	ord.FeeCurrency = route.Out.String()
-	return
 }

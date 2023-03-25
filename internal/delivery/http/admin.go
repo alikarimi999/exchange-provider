@@ -27,7 +27,7 @@ func (r *Router) adminRoutes() {
 
 		ps := a.Group("/pairs")
 		{
-			ps.POST("/add/:name", func(ctx *gin.Context) {
+			ps.POST("/add/:id", func(ctx *gin.Context) {
 				r.srv.AddPairs(newContext(ctx, true))
 			})
 

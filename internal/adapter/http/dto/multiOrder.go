@@ -12,7 +12,7 @@ type evmStep struct {
 type route struct {
 	Input    string
 	Output   string
-	Exchange uint
+	Exchange string
 }
 
 type adminMultiOrder struct {

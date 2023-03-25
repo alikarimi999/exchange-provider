@@ -1,7 +1,5 @@
 package entity
 
-import "time"
-
 type ExchangeToken interface {
 	Snapshot() ExchangeToken
 }
@@ -11,25 +9,14 @@ type Token struct {
 	Standard string
 	Network  string
 
-	Address    string  `bson:"-"`
-	Decimals   uint64  `bson:"-"`
-	HasExtraId bool    `bson:"-"`
-	Native     bool    `bson:"-"`
-	Min        float64 `bson:"-"`
-	Max        float64 `bson:"-"`
+	Address    string  `bson:"address,omitempty"`
+	Decimals   uint64  `bson:"decimals,omitempty"`
+	HasExtraId bool    `bson:"hasExtraId,omitempty"`
+	Native     bool    `bson:"native,omitempty"`
+	Min        float64 `bson:"min,omitempty"`
+	Max        float64 `bson:"max,omitempty"`
 
-	BlockTime           time.Duration `bson:"-"`
-	Tag                 string        `bson:"-"`
-	MinDeposit          float64       `bson:"-"`
-	MinOrderSize        string        `bson:"-"`
-	MaxOrderSize        string        `bson:"-"`
-	MinWithdrawalSize   string        `bson:"-"`
-	WithdrawalMinFee    string        `bson:"-"`
-	OrderPrecision      int           `bson:"-"`
-	WithdrawalPrecision int           `bson:"-"`
-	SetChain            bool          `bson:"-"`
-
-	ET ExchangeToken `bson:"-"`
+	ET ExchangeToken `bson:"et,omitempty"`
 }
 
 func (t *Token) String() string {
@@ -60,15 +47,6 @@ func (t *Token) Snapshot() *Token {
 		Min:        t.Min,
 		Max:        t.Max,
 
-		BlockTime:         t.BlockTime,
-		Tag:               t.Tag,
-		MinDeposit:        t.MinDeposit,
-		MinOrderSize:      t.MinOrderSize,
-		MaxOrderSize:      t.MaxOrderSize,
-		MinWithdrawalSize: t.MinWithdrawalSize,
-		WithdrawalMinFee:  t.WithdrawalMinFee,
-		OrderPrecision:    t.OrderPrecision,
-		SetChain:          t.SetChain,
-		ET:                et,
+		ET: et,
 	}
 }

@@ -12,7 +12,7 @@ func (u OrderUseCase) GetMultiStep(o *entity.EvmOrder, step uint) (*types.Transa
 	if !ok {
 		return nil, false, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range"))
 	}
-	ex, err := u.GetExchange(st.Exchange)
+	ex, err := u.exs.getByName(st.Exchange)
 	if err != nil {
 		return nil, false, err
 	}

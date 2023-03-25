@@ -11,7 +11,7 @@ import (
 type exStore struct {
 	repo      ExchangeRepo
 	mux       *sync.RWMutex
-	exchanges map[uint]entity.Exchange
+	exchanges map[string]entity.Exchange
 	l         logger.Logger
 }
 
@@ -19,7 +19,7 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	s := &exStore{
 		repo:      exRepo,
 		mux:       &sync.RWMutex{},
-		exchanges: make(map[uint]entity.Exchange),
+		exchanges: make(map[string]entity.Exchange),
 		l:         l,
 	}
 
@@ -30,7 +30,7 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	}
 
 	for _, ex := range exs {
-		s.exchanges[ex.Id()] = ex
+		s.exchanges[ex.Name()] = ex
 		if ex.Type() == entity.CEX {
 			go ex.(entity.Cex).Run()
 		}
@@ -43,13 +43,25 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 func (a *exStore) get(id uint) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
-	if _, ok := a.exchanges[id]; ok {
-		return a.exchanges[id], nil
+	for _, ex := range a.exchanges {
+		if ex.Id() == id {
+			return ex, nil
+		}
 	}
 	return nil, errors.Wrap(errors.ErrNotFound)
 }
 
-func (a *exStore) AddExchange(ex entity.Exchange) error {
+func (a *exStore) getByName(name string) (entity.Exchange, error) {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+	ex, ok := a.exchanges[name]
+	if !ok {
+		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("exchange %s not found")))
+	}
+	return ex, nil
+}
+
+func (a *exStore) addExchange(ex entity.Exchange) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
@@ -57,7 +69,7 @@ func (a *exStore) AddExchange(ex entity.Exchange) error {
 		return err
 	}
 
-	a.exchanges[ex.Id()] = ex
+	a.exchanges[ex.Name()] = ex
 	if ex.Type() == entity.CEX {
 		go ex.(entity.Cex).Run()
 	}
@@ -68,8 +80,10 @@ func (a *exStore) AddExchange(ex entity.Exchange) error {
 func (a *exStore) exists(id uint) bool {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
-	if _, ok := a.exchanges[id]; ok {
-		return true
+	for _, ex := range a.exchanges {
+		if ex.Id() == id {
+			return true
+		}
 	}
 	return false
 }
@@ -86,34 +100,17 @@ func (a *exStore) getAll() []entity.Exchange {
 	return exs
 }
 
-func (a *exStore) getByNames(names ...string) []entity.Exchange {
-	if len(names) == 0 {
-		return a.getAll()
-	}
-
-	exs := []entity.Exchange{}
-	for _, ex := range a.exchanges {
-		for _, name := range names {
-			if ex.Name() == name {
-				exs = append(exs, ex)
-			}
-		}
-	}
-	return exs
-}
-
 func (a *exStore) remove(id uint) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
-
-	if ex, ok := a.exchanges[id]; ok {
-		if err := a.repo.Remove(ex); err != nil {
-			return err
+	for _, ex := range a.exchanges {
+		if ex.Id() == id {
+			if err := a.repo.Remove(ex); err != nil {
+				return err
+			}
+			ex.Remove()
+			delete(a.exchanges, ex.Name())
 		}
-
-		ex.Remove()
-		delete(a.exchanges, id)
-		return nil
 	}
 
 	return fmt.Errorf("exchange %d not found", id)

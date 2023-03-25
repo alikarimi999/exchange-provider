@@ -78,7 +78,7 @@ func production() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairsRepo.PairsRepo()
+	pairs := pairsRepo.PairsRepo(db, l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Repo:   repo,
@@ -153,7 +153,7 @@ func test() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairsRepo.PairsRepo()
+	pairs := pairsRepo.PairsRepo(db, l)
 	ss, err := services.WrapServices(&services.Config{
 		DB:     db,
 		Repo:   repo,

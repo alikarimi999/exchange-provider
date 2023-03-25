@@ -16,16 +16,16 @@ import (
 type EvmDex struct {
 	*Config
 
-	dex IDex
-	ts  *tokens
-	v   *viper.Viper
-	l   logger.Logger
+	dex     IDex
+	pairs   entity.PairsRepo
+	version int8
+	ts      *tokens
+	v       *viper.Viper
+	l       logger.Logger
 }
 
-func NewEvmDex(cfg *Config, v *viper.Viper,
+func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 	l logger.Logger, readConfig bool) (entity.EVMDex, error) {
-	agent := "NewEvmDex"
-
 	var (
 		d   IDex
 		err error
@@ -37,6 +37,8 @@ func NewEvmDex(cfg *Config, v *viper.Viper,
 
 	ex := &EvmDex{
 		Config: cfg,
+		ts:     newTokens(),
+		pairs:  pairs,
 		v:      v,
 		l:      l,
 	}
@@ -46,66 +48,33 @@ func NewEvmDex(cfg *Config, v *viper.Viper,
 		return nil, err
 	}
 	ex.Config.privateKey = k
+	ex.contractAddress = common.HexToAddress(ex.Contract)
+	ex.swapperAddress = common.HexToAddress(ex.Swapper)
+	ex.WrappedNativeToken = fmt.Sprintf("W%s", ex.NativeToken)
 
 	if readConfig {
-		ex.l.Debug(agent, fmt.Sprintf("Retrieving `%s` data ...", ex.Name()))
-
-		ex.NativeToken = ex.v.GetString(fmt.Sprintf("%s.native_token", ex.Name()))
-		ex.TokenStandard = ex.v.GetString(fmt.Sprintf("%s.token_standard", ex.Name()))
-		ex.PairsFile = ex.v.GetString(fmt.Sprintf("%s.pairs_file", ex.Name()))
-		ex.TokensFile = ex.v.GetString(fmt.Sprintf("%s.tokens_file", ex.Name()))
-		ex.Contract = ex.v.GetString(fmt.Sprintf("%s.contract", ex.Name()))
-		ex.contractAddress = common.HexToAddress(ex.Contract)
-		ex.Swapper = ex.v.GetString(fmt.Sprintf("%s.swapper", ex.Name()))
-		ex.swapperAddress = common.HexToAddress(ex.Swapper)
-
-		i := ex.v.Get(fmt.Sprintf("%s.providers", ex.Name()))
-		if i == nil {
-			return nil, errors.New("no provider available in config file")
-		}
-
-		psi := i.(map[string]interface{})
-		for _, v := range psi {
-			ex.Providers = append(ex.Providers, v.(string))
-		}
-
-		if err := ex.checkProviders(); err != nil {
-			return nil, err
-		}
-
-	} else {
-		ex.contractAddress = common.HexToAddress(ex.Contract)
-		ex.swapperAddress = common.HexToAddress(ex.Swapper)
-
-		ex.v.Set(fmt.Sprintf("%s.native_token", ex.Name()), ex.NativeToken)
-		ex.v.Set(fmt.Sprintf("%s.token_standard", ex.Name()), ex.TokenStandard)
-		ex.v.Set(fmt.Sprintf("%s.pairs_file", ex.Name()), ex.PairsFile)
-		ex.v.Set(fmt.Sprintf("%s.tokens_file", ex.Name()), ex.TokensFile)
-		ex.v.Set(fmt.Sprintf("%s.contract", ex.Name()), ex.Contract)
-		ex.v.Set(fmt.Sprintf("%s.swapper", ex.Name()), ex.Swapper)
-
-		if err := ex.checkProviders(); err != nil {
-			return nil, err
-		}
-
-		for i, p := range ex.providers {
-			ex.v.Set(fmt.Sprintf("%s.providers.%d", ex.Name(), i), p.URL)
-		}
-		if err := ex.v.WriteConfig(); err != nil {
-			return nil, err
+		ps := ex.pairs.GetAll(ex.Id())
+		for _, p := range ps {
+			if !ex.ts.exists(p.T1.String()) {
+				ex.ts.add(p.T1)
+			}
+			if !ex.ts.exists(p.T2.String()) {
+				ex.ts.add(p.T2)
+			}
 		}
 	}
-	ex.WrappedNativeToken = fmt.Sprintf("W%s", ex.NativeToken)
-	if err := ex.retreiveTokens(); err != nil {
+	if err := ex.checkProviders(); err != nil {
 		return nil, err
 	}
 
-	switch ex.Name() {
+	switch cfg.Name {
 	case "uniswapv3":
+		ex.version = 3
 		d, err = uniswapV3.NewUniswapV3Dex(ex.Id(), ex.Network, ex.NativeToken, ex.Swapper,
 			ex.Contract, ex.ChainId, ex.privateKey, ex.providers, l)
 
 	case "uniswapv2", "panckakeswapv2":
+		ex.version = 2
 		d, err = uniswapV2.NewUniswapV2Dex(ex.Id(), ex.Network, ex.NativeToken, ex.Swapper, ex.Contract,
 			ex.ChainId, ex.privateKey, ex.providers, l)
 	default:
@@ -117,16 +86,15 @@ func NewEvmDex(cfg *Config, v *viper.Viper,
 		return nil, err
 	}
 	ex.dex = d
-	ex.findAllPairs()
 	return ex, nil
 }
 
 func (d *EvmDex) Name() string {
-	return d.Config.Name
+	return d.Config.Name + "-" + d.Config.Network
 }
 
 func (d *EvmDex) Id() uint {
-	return 2
+	return d.Config.Id
 }
 
 func (d *EvmDex) Type() entity.ExType {

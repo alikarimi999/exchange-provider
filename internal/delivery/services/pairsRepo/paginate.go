@@ -76,16 +76,17 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 	}
 
 	if len(exIds) == 0 {
-		for id := range pr.eps {
-			exIds = append(exIds, id)
+		for _, ep := range pr.eps {
+			exIds = append(exIds, ep.exId)
 		}
 	}
 
 	ps := []*entity.Pair{}
 	for _, id := range exIds {
-		ep, ok := pr.eps[id]
-		if ok {
-			ps = append(ps, ep.getAll()...)
+		for _, ep := range pr.eps {
+			if ep.exId == id {
+				ps = append(ps, ep.getAll()...)
+			}
 		}
 	}
 

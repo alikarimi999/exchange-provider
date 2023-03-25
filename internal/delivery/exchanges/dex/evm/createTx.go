@@ -44,19 +44,22 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		err error
 	)
 
-	in, err := d.get(r.In.Symbol)
+	in, err := d.ts.get(r.In.String())
 	if err != nil {
 		return nil, err
 	}
 
-	out, err := d.get(r.Out.Symbol)
+	out, err := d.ts.get(r.Out.String())
 	if err != nil {
 		return nil, err
 	}
 
-	_, fee, err := d.dex.EstimateAmountOut(in, out, amount)
-	if err != nil {
-		return nil, err
+	var fee uint64
+	if d.version == 3 {
+		_, fee, err = d.dex.EstimateAmountOut(in, out, amount)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
@@ -89,7 +92,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	opts.NoSend = true
 
 	data := contracts.IExchangeAggregatorswapData{
-		Input:       in.Address,
+		Input:       common.HexToAddress(in.Address),
 		TotalAmount: totalAmountI,
 		FeeAmount:   feeAmountI,
 		Swapper:     d.dex.Router(),
@@ -109,6 +112,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	if in.Native {
 		opts.Value = totalAmountI
 		tx, err = c.SwapNativeIn(opts, data, sig)
+
 	} else {
 		tx, err = c.Swap(opts, data, sig)
 	}
@@ -126,10 +130,5 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		return nil, err
 	}
 
-	// fmt.Println()
-	// fmt.Println("input: ", data)
-	// fmt.Println("data: 	", hexutil.Encode(data.Data))
-	// fmt.Println("sig: 	", hexutil.Encode(sig))
-	// fmt.Println()
 	return tx, nil
 }

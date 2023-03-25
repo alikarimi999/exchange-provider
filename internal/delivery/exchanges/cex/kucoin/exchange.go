@@ -24,13 +24,16 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 	in := o.Routes[index].In
 	out := o.Routes[index].Out
 
-	p, err := k.exchangePairs.get(in, out)
-	if err != nil {
-		return "", err
+	p, ok := k.pairs.Get(k.Id(), in.String(), out.String())
+	if !ok {
+		return "", errors.Wrap(errors.ErrNotFound)
 	}
 
+	bc := p.T1.ET.(*Token)
+	qc := p.T2.ET.(*Token)
+
 	var side, size, funds, amount string
-	if p.BC.TokenId == in.Symbol && string(p.QC.ChainId) == in.Standard {
+	if p.T1.Equal(in) {
 		size = o.Swaps[index].InAmount
 		amount = size
 		side = "sell"
@@ -40,7 +43,7 @@ func (k *kucoinExchange) Swap(o *entity.CexOrder, index int) (string, error) {
 		side = "buy"
 	}
 
-	req, err := k.createOrderRequest(p, side, size, funds)
+	req, err := k.createOrderRequest(bc, qc, side, size, funds)
 	if err != nil {
 		return "", errors.Wrap(err, op, errors.ErrBadRequest)
 	}
@@ -149,7 +152,7 @@ func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
 		return err
 	}
 
-	o.Deposit.Address.Addr = kc.address
-	o.Deposit.Address.Tag = kc.tag
+	o.Deposit.Address.Addr = kc.Address
+	o.Deposit.Address.Tag = kc.Tag
 	return nil
 }

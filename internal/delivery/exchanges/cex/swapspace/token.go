@@ -26,11 +26,12 @@ func (ex *exchange) retrieveInOut(from, to *entity.Token) (p *entity.Pair, in, o
 	}
 
 	if p.T1.Equal(from) {
-		from = p.T1
-		to = p.T2
+		in = p.T1.ET.(*Token)
+		out = p.T2.ET.(*Token)
 	} else {
-		from = p.T2
-		to = p.T1
+		in = p.T2.ET.(*Token)
+		out = p.T1.ET.(*Token)
 	}
-	return p, from.ET.(*Token), to.ET.(*Token), nil
+
+	return p, in, out, nil
 }

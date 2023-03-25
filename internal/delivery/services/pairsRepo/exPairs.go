@@ -7,14 +7,18 @@ import (
 )
 
 type exPairs struct {
-	mux   *sync.RWMutex
-	pairs map[string]*entity.Pair
+	mux    *sync.RWMutex
+	exId   uint
+	exName string
+	pairs  map[string]*entity.Pair
 }
 
-func newExPairs() *exPairs {
+func newExPairs(ex entity.Exchange) *exPairs {
 	return &exPairs{
-		mux:   &sync.RWMutex{},
-		pairs: make(map[string]*entity.Pair),
+		mux:    &sync.RWMutex{},
+		exId:   ex.Id(),
+		exName: ex.Name(),
+		pairs:  make(map[string]*entity.Pair),
 	}
 }
 

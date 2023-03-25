@@ -9,24 +9,22 @@ import (
 )
 
 type Config struct {
-	Id                 uint
-	Name               string
-	Network            string
-	NativeToken        string
-	WrappedNativeToken string
-	TokensFile         string
-	PairsFile          string
-	ChainId            int64
-	TokenStandard      string
-	Contract           string
+	Id                 uint   `json:"id"`
+	Name               string `json:"name"`
+	NativeToken        string `json:"nativeToken"`
+	WrappedNativeToken string `json:"wrappedNativeToken"`
+	ChainId            int64  `json:"chainId"`
+	TokenStandard      string `json:"tokenStandard"`
+	Network            string `json:"network"`
+	Contract           string `json:"contract"`
 	contractAddress    common.Address
-	Swapper            string
+	Swapper            string `json:"swapper"`
 	swapperAddress     common.Address
-	HexKey             string
+	HexKey             string `json:"hexKey"`
 	privateKey         *ecdsa.PrivateKey
-	Providers          []string
+	Providers          []string `json:"providers"`
 	providers          []*types.EthProvider
-	Message            string
+	Message            string `json:"message"`
 }
 
 func (c *Config) Validate(readConfig bool) error {
@@ -45,12 +43,6 @@ func (c *Config) Validate(readConfig bool) error {
 
 	if !readConfig {
 
-		if c.PairsFile == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("pairsFile must not be empty"))
-		}
-		if c.TokensFile == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tokensFile must not be empty"))
-		}
 		if c.NativeToken == "" {
 			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("nativeToken must not be empty"))
 		}

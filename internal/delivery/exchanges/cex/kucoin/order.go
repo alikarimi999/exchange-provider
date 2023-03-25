@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) createOrderRequest(p *pair, side, size, funds string) (*kucoin.CreateOrderModel, error) {
+func (k *kucoinExchange) createOrderRequest(bc, qc *Token, side, size, funds string) (*kucoin.CreateOrderModel, error) {
 	return &kucoin.CreateOrderModel{
 		ClientOid: uuid.New().String(),
-		Symbol:    p.BC.TokenId + "-" + p.QC.TokenId,
+		Symbol:    bc.TokenId + "-" + qc.TokenId,
 		Side:      side,
 		Type:      "market",
-		Size:      trim(size, p.BC.orderPrecision),
-		Funds:     trim(funds, p.QC.orderPrecision),
+		Size:      trim(size, bc.OrderPrecision),
+		Funds:     trim(funds, qc.OrderPrecision),
 	}, nil
 
 }
