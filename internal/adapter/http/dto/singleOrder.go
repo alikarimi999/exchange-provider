@@ -66,14 +66,14 @@ type userSingleOrder struct {
 	Output    Token   `json:"output"`
 	InAmount  float64 `json:"inAmount"`
 	OutAmount float64 `json:"outAmount"`
-	Duration  string  `json:"duration"`
+	Duration  string  `json:"duration,omitempty"`
 
-	FilledPrice string `json:"filledPrice"`
-	Fee         string `json:"fee"`
-	FeeCurrency string `json:"feeCurrency"`
+	FilledPrice string `json:"filledPrice,omitempty"`
+	Fee         string `json:"fee,omitempty"`
+	FeeCurrency string `json:"feeCurrency,omitempty"`
 
-	TransferFee         string `json:"transferFee"`
-	TransferFeeCurrency string `json:"transferFee_currency"`
+	TransferFee         string `json:"transferFee,omitempty"`
+	TransferFeeCurrency string `json:"transferFeeCurrency,omitempty"`
 
 	Deposit    entity.Address `json:"deposit"`
 	Refund     entity.Address `json:"refund"`

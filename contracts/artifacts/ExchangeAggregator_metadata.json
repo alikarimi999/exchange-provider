@@ -14,7 +14,7 @@
 					},
 					{
 						"internalType": "address",
-						"name": "_priceAggregator",
+						"name": "_PriceProvider",
 						"type": "address"
 					}
 				],
@@ -39,6 +39,19 @@
 				],
 				"name": "OwnershipTransferred",
 				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "PriceProvider",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			},
 			{
 				"inputs": [],
@@ -89,11 +102,11 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "_priceAggregator",
+						"name": "_PriceProvider",
 						"type": "address"
 					}
 				],
-				"name": "changePriceAggregator",
+				"name": "changePriceProvider",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -101,61 +114,42 @@
 			{
 				"inputs": [
 					{
-						"components": [
-							{
-								"internalType": "uint256",
-								"name": "index",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "t0",
-								"type": "address"
-							},
-							{
-								"internalType": "address",
-								"name": "t1",
-								"type": "address"
-							},
-							{
-								"internalType": "address",
-								"name": "provider",
-								"type": "address"
-							},
-							{
-								"internalType": "uint8",
-								"name": "providerVersion",
-								"type": "uint8"
-							}
-						],
-						"internalType": "struct IPriceAggregator.priceIn[]",
-						"name": "inputs",
-						"type": "tuple[]"
+						"internalType": "address",
+						"name": "provider",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tA",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tB",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "version",
+						"type": "uint8"
 					}
 				],
-				"name": "getPrices",
+				"name": "estimateAmountOut",
 				"outputs": [
 					{
-						"components": [
-							{
-								"internalType": "uint256",
-								"name": "index",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "price",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint24",
-								"name": "fee",
-								"type": "uint24"
-							}
-						],
-						"internalType": "struct IPriceAggregator.priceOut[]",
-						"name": "",
-						"type": "tuple[]"
+						"internalType": "uint256",
+						"name": "amountOut",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint24",
+						"name": "fee",
+						"type": "uint24"
 					}
 				],
 				"stateMutability": "view",
@@ -164,87 +158,6 @@
 			{
 				"inputs": [],
 				"name": "owner",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"components": [
-							{
-								"internalType": "uint256",
-								"name": "index",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "t0",
-								"type": "address"
-							},
-							{
-								"internalType": "address",
-								"name": "t1",
-								"type": "address"
-							},
-							{
-								"internalType": "address",
-								"name": "provider",
-								"type": "address"
-							},
-							{
-								"internalType": "uint8",
-								"name": "providerVersion",
-								"type": "uint8"
-							},
-							{
-								"internalType": "uint256",
-								"name": "min0",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "min1",
-								"type": "uint256"
-							}
-						],
-						"internalType": "struct IPriceAggregator.existsIn[]",
-						"name": "inputs",
-						"type": "tuple[]"
-					}
-				],
-				"name": "poolsExists",
-				"outputs": [
-					{
-						"components": [
-							{
-								"internalType": "uint256",
-								"name": "index",
-								"type": "uint256"
-							},
-							{
-								"internalType": "bool",
-								"name": "exists",
-								"type": "bool"
-							}
-						],
-						"internalType": "struct IPriceAggregator.existsOut[]",
-						"name": "",
-						"type": "tuple[]"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "priceAggregator",
 				"outputs": [
 					{
 						"internalType": "address",
@@ -495,11 +408,11 @@
 			]
 		},
 		"contracts/ExchangeAggregator.sol": {
-			"keccak256": "0xf5793dfd04dbcc2a1534c0bff1f765981973035c664b2d1fc1dae310a31c048f",
+			"keccak256": "0xd141713bc777c8cdd030da74b451cebd5434f6d6cb9c87835e5b7a8bd9914215",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://0b8eeb2e47f641e1fc057619423ab93fb6772adfd6478237857f7ade11d53e29",
-				"dweb:/ipfs/QmbrzhZyDuNFhS8mjW7Y1dM6xXcA9nkomfQB1Pvb5BdrQ8"
+				"bzz-raw://7fd08dadc2d746156571ba1a46d5cdbd69cea91e627c7833795863fc383b63c1",
+				"dweb:/ipfs/QmcuMpodJcZQAnPUwWhVMkP2qqDtRHBiTe9VHFZvhBd6pK"
 			]
 		},
 		"contracts/interfaces/IERC20.sol": {
@@ -518,12 +431,12 @@
 				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
 			]
 		},
-		"contracts/interfaces/IPriceAggregator.sol": {
-			"keccak256": "0xb9353b148b4ee37a73f58a59d00ca9ce508e5b09cbcb424009b6fce9c3e563a7",
+		"contracts/interfaces/IPriceProvider.sol": {
+			"keccak256": "0x10aafa5da81292a00f6ab5771e0ec63a5cd25cad193af3e2094efb369a21f3a6",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://ee277345a3caea52b2ba22c2c4b342c97c1b2a79093d34b55d7fa53368c04105",
-				"dweb:/ipfs/QmY1DY4nEsfpFLV4whnw2nnKET7wH5TkHX9X6guZHL2z2W"
+				"bzz-raw://802646b8916e5eadc44dd30f1966802b4c0dd755df7436455a43e65abde2a7b4",
+				"dweb:/ipfs/QmWpALwUNhctou2bAScQpncfF3rCc3GzLQhxAKrDk3gbkf"
 			]
 		},
 		"contracts/interfaces/IWETH.sol": {

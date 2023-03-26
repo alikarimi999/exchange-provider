@@ -63,7 +63,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contracts/interfaces/IPriceAggregator.sol": "IPriceAggregator"
+			"contracts/interfaces/IPriceAggregator.sol": "Exchange"
 		},
 		"evmVersion": "london",
 		"libraries": {},
@@ -78,11 +78,11 @@
 	},
 	"sources": {
 		"contracts/interfaces/IPriceAggregator.sol": {
-			"keccak256": "0xbc76c7f6c811e7da2811885db1187c7c5a73a81f6441dba93d0578914e28c4bf",
+			"keccak256": "0x11f182ef18929a75ee137c42374448626899c9539c8b7f9f07c3c99c7c71863c",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://581ee07cde960fbd11ec7a26a83edd4dfc0df276fff51ad964eb6e700bc37d92",
-				"dweb:/ipfs/QmRmqz49PMYmY5sn1GqATSTqe5FNiW8Pu8y1GVjMLwbZVv"
+				"bzz-raw://78a34f035287b169f79951c38d136c70c850472aabfd0bef02d7d2627a38d58c",
+				"dweb:/ipfs/QmVC4zfqPoo2gZZZMtcGoYzy85tmqnX3Z1ige1M5sUnjCa"
 			]
 		}
 	},

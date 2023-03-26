@@ -9,6 +9,40 @@
 				"inputs": [
 					{
 						"internalType": "address",
+						"name": "router",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tA",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tB",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					}
+				],
+				"name": "EstimateAmountOut",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
 						"name": "factory",
 						"type": "address"
 					},
@@ -131,11 +165,11 @@
 			]
 		},
 		"contracts/libraries/UniswapV2.sol": {
-			"keccak256": "0xc7823920d57b71f9b132388eb99c565f39c7b1f1e834ed8e43e5a205adccc766",
+			"keccak256": "0x20c122c32f799086c7bd4f2612823c16311c775e5f80dc530ca818558c81ffbd",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://ed03b38d80fc6178cd7ed2cad700349fad66d0f94a7cbab20f09542b35b59e7b",
-				"dweb:/ipfs/QmVafrxFP91WRcvkGnhZmKfSR6JfjManbHZAx4tToCNZWM"
+				"bzz-raw://bdc8bafae4fafd8edba5aa7be0832fd834a1d20179769b2856dfca4cfd54f22b",
+				"dweb:/ipfs/QmXsFn9cDuH8JzUeGx9VEASiS5BLuzmk6t95icuo21t2Nq"
 			]
 		}
 	},

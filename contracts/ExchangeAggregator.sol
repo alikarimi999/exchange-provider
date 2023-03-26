@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import './interfaces/IWETH.sol';
-import './interfaces/IPriceAggregator.sol';
+import './interfaces/IPriceProvider.sol';
 import './interfaces/IERC20.sol';
 import './libraries/transferHelper.sol';
 import './libraries/safeCaller.sol';
@@ -11,15 +11,19 @@ import './libraries/utils.sol';
 import './interfaces/IExchangeAggregator.sol';
 
 
-contract ExchangeAggregator is IExchangeAggregator,Ownable,IPriceAggregator {
+contract ExchangeAggregator is IExchangeAggregator,Ownable,IPriceProvider {
     address public WETH;
-    address public priceAggregator;
+    address public PriceProvider;
     
-    constructor(address _WETH,address _priceAggregator){
+    constructor(address _WETH,address _PriceProvider){
         WETH = _WETH;
-        priceAggregator = _priceAggregator;
+        PriceProvider = _PriceProvider;
     }
 
+
+    function estimateAmountOut(address provider,address tA,address tB,uint256 amountIn,uint8 version) external view returns (uint256 amountOut,uint24 fee){
+        return IPriceProvider(PriceProvider).estimateAmountOut(provider,tA,tB,amountIn,version);
+    }
 
     function swap(swapData calldata data,bytes calldata sig) public {
         require(data.sender == msg.sender,"invaled sender");
@@ -35,15 +39,6 @@ contract ExchangeAggregator is IExchangeAggregator,Ownable,IPriceAggregator {
         require(msg.value >= data.totalAmount,"insufficient input amount");
         uint amount = msg.value - data.feeAmount;  
         SafeCaller.safeCall(data.swapper,amount,data.data);
-    }
-
-
-    function getPrices(priceIn[] memory inputs) external override view returns (priceOut[] memory){
-        return IPriceAggregator(priceAggregator).getPrices(inputs);
-    }
-
-    function poolsExists(existsIn[] memory inputs) external override view returns (existsOut[] memory){
-        return IPriceAggregator(priceAggregator).poolsExists(inputs);
     }
 
     function balanceToken(address token) public view returns(uint){
@@ -62,8 +57,8 @@ contract ExchangeAggregator is IExchangeAggregator,Ownable,IPriceAggregator {
         TransferHelper.safeTransfer(token,to,amount);
     }
 
-    function changePriceAggregator(address _priceAggregator) public onlyOwner {
-        priceAggregator = _priceAggregator;
+    function changePriceProvider(address _PriceProvider) public onlyOwner {
+        PriceProvider = _PriceProvider;
     }
 
 }

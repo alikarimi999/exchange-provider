@@ -45,6 +45,8 @@ func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				return
 			}
 			mux.Lock()
+			p.LP = d.Id()
+			p.Exchange = d.Name()
 			add = append(add, p)
 			res.Added = append(res.Added, *p)
 			mux.Unlock()
@@ -53,17 +55,20 @@ func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	wg.Wait()
 
-	for _, p := range add {
-		if !d.ts.exists(p.T1.String()) {
-			d.ts.add(p.T1)
+	if len(add) > 0 {
+		if err := d.pairs.Add(d, add...); err != nil {
+			return nil, err
 		}
-		if !d.ts.exists(p.T2.String()) {
-			d.ts.add(p.T2)
+
+		for _, p := range add {
+			if !d.ts.exists(p.T1.String()) {
+				d.ts.add(p.T1)
+			}
+			if !d.ts.exists(p.T2.String()) {
+				d.ts.add(p.T2)
+			}
+			p.LP = d.Id()
 		}
-		p.LP = d.Id()
-	}
-	if err := d.pairs.Add(d, add...); err != nil {
-		return nil, err
 	}
 	return res, nil
 }
