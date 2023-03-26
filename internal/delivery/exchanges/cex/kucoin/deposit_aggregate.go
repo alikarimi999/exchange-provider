@@ -33,6 +33,7 @@ func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
 
 func (a *depositAggregator) run(stopCh chan struct{}) {
 	agent := fmt.Sprintf("%s.depositAggregator.run", a.k.Name())
+
 	for {
 		select {
 		case <-a.t.C:
@@ -50,10 +51,8 @@ func (a *depositAggregator) run(stopCh chan struct{}) {
 
 			}
 			ds = append(ds, dsf...)
-
 			for _, d := range ds {
-				exist := a.c.existsOrProccessedD(d.TxId)
-				if !exist {
+				if !a.c.existsOrProccessedD(d.TxId) {
 					a.c.saveD(d)
 					continue
 				}
@@ -67,7 +66,7 @@ func (a *depositAggregator) run(stopCh chan struct{}) {
 
 }
 
-func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*depositeRecord, error) {
+func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*depositRecord, error) {
 	op := errors.Op(fmt.Sprintf("%s.depositAggregator.aggregate", a.k.Name()))
 
 	ps := make(map[string]string)
@@ -92,7 +91,7 @@ func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*d
 			return nil, err
 		}
 
-		rds := []*depositeRecord{}
+		rds := []*depositRecord{}
 		for _, d := range ds {
 			if !d.IsInner && d.WalletTxId != "" {
 				rds = append(rds, mapDeposit(d))
@@ -109,11 +108,12 @@ func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*d
 
 }
 
-func mapDeposit(d *kucoin.DepositModel) *depositeRecord {
-	return &depositeRecord{
-		TxId:     strings.Split(d.WalletTxId, "@")[0],
-		Currency: d.Currency,
-		Volume:   d.Amount,
-		Status:   d.Status,
+func mapDeposit(d *kucoin.DepositModel) *depositRecord {
+	return &depositRecord{
+		TxId:         strings.Split(d.WalletTxId, "@")[0],
+		Currency:     d.Currency,
+		Volume:       d.Amount,
+		Status:       d.Status,
+		DownloadedAt: time.Now(),
 	}
 }

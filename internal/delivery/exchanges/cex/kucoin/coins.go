@@ -25,7 +25,7 @@ func (s *supportedCoins) add(ts []*Token) {
 	defer s.mux.Unlock()
 
 	for _, t := range ts {
-		s.coins[s.tId(t.TokenId, t.ChainId)] = t
+		s.coins[s.tId(t.TokenId, t.Network)] = t
 	}
 }
 

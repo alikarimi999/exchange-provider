@@ -56,7 +56,8 @@ func (a *exStore) getByName(name string) (entity.Exchange, error) {
 	defer a.mux.RUnlock()
 	ex, ok := a.exchanges[name]
 	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("exchange %s not found")))
+		return nil, errors.Wrap(errors.ErrNotFound,
+			errors.NewMesssage(fmt.Sprintf("exchange %s not found", ex.Name())))
 	}
 	return ex, nil
 }

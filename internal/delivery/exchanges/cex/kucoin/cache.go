@@ -10,7 +10,7 @@ type cache struct {
 	k *kucoinExchange
 
 	dMux *sync.RWMutex
-	ds   map[string]depositeRecord
+	ds   map[string]depositRecord
 	prD  map[string]struct{ t time.Time }
 
 	t *time.Ticker
@@ -22,7 +22,7 @@ func newCache(k *kucoinExchange, l logger.Logger) *cache {
 		k: k,
 
 		dMux: &sync.RWMutex{},
-		ds:   make(map[string]depositeRecord),
+		ds:   make(map[string]depositRecord),
 		prD:  make(map[string]struct{ t time.Time }),
 
 		t: time.NewTicker(2 * time.Hour),
@@ -59,13 +59,13 @@ func (c *cache) run(stopCh chan struct{}) {
 	}
 }
 
-func (c *cache) saveD(de *depositeRecord) {
+func (c *cache) saveD(de *depositRecord) {
 	c.dMux.Lock()
 	defer c.dMux.Unlock()
 	c.ds[de.TxId] = *de
 }
 
-func (c *cache) getD(txid string) (*depositeRecord, bool) {
+func (c *cache) getD(txid string) (*depositRecord, bool) {
 	c.dMux.Lock()
 	defer c.dMux.Unlock()
 	d, ok := c.ds[txid]

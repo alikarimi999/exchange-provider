@@ -11,6 +11,9 @@ import (
 func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.Address,
 	in, out *entity.Token, amount float64, lp uint) (entity.Order, error) {
 
+	if refund.Addr == "" {
+		refund = sender
+	}
 	routes := make(map[int]*entity.Route)
 	var err error
 	if lp > 0 {
@@ -71,7 +74,6 @@ func (u *OrderUseCase) newCexOrder(userId string, refund, reciever entity.Addres
 	amount float64, routes map[int]*entity.Route) (*entity.CexOrder, error) {
 
 	const op = errors.Op("OrderUsecase.NewCexOrder")
-
 	ex, err := u.exs.getByName(routes[0].Exchange)
 	if err != nil {
 		return nil, err

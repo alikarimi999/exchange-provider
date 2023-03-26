@@ -3,30 +3,40 @@ package kucoin
 import (
 	"exchange-provider/internal/entity"
 	"fmt"
+	"time"
 )
 
 func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 	agent := k.agent("TxIdSetted")
-	done := make(chan struct{})
-	pCh := make(chan bool)
-	go k.trackDeposit(o, done, pCh)
 
-	<-done
+	t, err := k.supportedCoins.get(o.Deposit.Symbol, o.Deposit.Standard)
+	if err != nil {
+		o.Deposit.Status = entity.DepositFailed
+		o.Deposit.FailedDesc = err.Error()
+		return
+	}
+	if t.BlockTime < time.Minute {
+		time.Sleep(time.Minute)
+	}
+	k.trackDeposit(o, t)
+	o.UpdatedAt = time.Now().Unix()
 	if o.Deposit.Status == entity.DepositFailed {
 		o.FailedCode = entity.FCDepositFailed
 		o.Status = entity.OFailed
 	}
 
 	if err := k.repo.Update(o); err != nil {
-		k.l.Error(agent, err.Error())
-		pCh <- false
+		k.l.Error(agent, fmt.Sprintf("( %s ) ( %s )", o, err.Error()))
+	}
+	k.cache.removeD(o.Deposit.TxId)
+	k.cache.proccessedD(o.Deposit.TxId)
+
+	if o.Deposit.Status != entity.DepositConfirmed {
 		return
 	}
-	pCh <- true
 
 	o.Swaps[0].InAmount = fmt.Sprintf("%v", o.Deposit.Volume)
-
-	id, err := k.Swap(o, 0)
+	id, err := k.swap(o, 0)
 	if err != nil {
 		o.Status = entity.OFailed
 		o.FailedCode = entity.FCExOrdFailed
@@ -43,43 +53,28 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 	o.Status = entity.OWaitForSwapConfirm
 	if err = k.repo.Update(o); err != nil {
 		k.l.Error(agent, err.Error())
-		return
 	}
-	go k.TrackSwap(o, 0, done, pCh)
-	<-done
 
+	k.trackSwap(o, 0)
 	switch o.Swaps[0].Status {
 	case entity.SwapSucceed:
 		if err = k.repo.Update(o); err != nil {
 			k.l.Error(agent, err.Error())
-			pCh <- false
-			return
 		}
-		pCh <- true
+		if err := k.withdrawal(o); err != nil {
+			k.l.Error(agent, err.Error())
 
-		k.applySpreadAndFee(o, o.Routes[0])
-		id, err = k.Withdrawal(o)
-		if err != nil {
 			o.Status = entity.OFailed
 			o.FailedCode = entity.FCInternalError
 			o.FailedDesc = err.Error()
-
-			k.l.Error(agent, err.Error())
-
 			if err := k.repo.Update(o); err != nil {
 				k.l.Error(agent, err.Error())
 			}
 			return
-
 		}
-
-		o.Withdrawal.TxId = id
-		o.Withdrawal.Status = entity.WithdrawalPending
-		o.Status = entity.OWaitForWithdrawalConfirm
 
 		if err := k.repo.Update(o); err != nil {
 			k.l.Error(agent, err.Error())
-			return
 		}
 		return
 
@@ -88,10 +83,7 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		o.FailedCode = entity.FCExOrdFailed
 		if err := k.repo.Update(o); err != nil {
 			k.l.Error(agent, err.Error())
-			pCh <- false
-			return
 		}
-		pCh <- true
 		return
 	}
 }

@@ -2,6 +2,7 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
+	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	sdto "exchange-provider/internal/delivery/exchanges/cex/swapspace/dto"
 	"strconv"
 	"strings"
@@ -38,28 +39,18 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
-	// case "kucoin":
-	// 	req := &dto.KucoinAddPairsRequest{}
-	// 	if err := ctx.Bind(req); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
+	case "kucoin":
+		req := &kdto.AddPairsRequest{}
+		if err := ctx.Bind(req); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
-	// 	if err := req.Validate(); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	kps := &kdto.AddPairsRequest{}
-	// 	for _, p := range req.Pairs {
-	// 		kps.Pairs = append(kps.Pairs, p.Map())
-	// 	}
-
-	// 	res, err = s.app.AddPairs(ex, kps)
-	// 	if err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
+		res, err = s.app.AddPairs(ex, req)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
 	case "uniswapv3", "panckakeswapv2":
 		req := &edto.AddPairsRequest{}

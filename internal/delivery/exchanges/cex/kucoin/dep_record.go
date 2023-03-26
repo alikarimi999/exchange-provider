@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type depositeRecord struct {
+type depositRecord struct {
 	// txId is the transaction id of the deposit and is used as the key in the cache.
 	TxId         string
 	Currency     string
@@ -14,12 +14,12 @@ type depositeRecord struct {
 	DownloadedAt time.Time
 }
 
-func (d *depositeRecord) MatchCurrency(de *entity.Deposit) bool {
+func (d *depositRecord) MatchCurrency(de *entity.Deposit) bool {
 	return d.Currency == string(de.Symbol)
 }
 
-func (d *depositeRecord) snapShot() *depositeRecord {
-	return &depositeRecord{
+func (d *depositRecord) snapShot() *depositRecord {
+	return &depositRecord{
 		TxId:         d.TxId,
 		Currency:     d.Currency,
 		Volume:       d.Volume,

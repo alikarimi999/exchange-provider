@@ -8,7 +8,7 @@ import (
 
 type Token struct {
 	TokenId string
-	ChainId string
+	Network string
 
 	Address string
 	Tag     string
@@ -29,13 +29,13 @@ type Token struct {
 }
 
 func (k *Token) String() string {
-	return fmt.Sprintf("%s-%s", k.TokenId, k.ChainId)
+	return fmt.Sprintf("%s-%s", k.TokenId, k.Network)
 }
 
 func (k *Token) Snapshot() entity.ExchangeToken {
 	return &Token{
 		TokenId:             k.TokenId,
-		ChainId:             k.ChainId,
+		Network:             k.Network,
 		Address:             k.Address,
 		Tag:                 k.Tag,
 		BlockTime:           k.BlockTime,

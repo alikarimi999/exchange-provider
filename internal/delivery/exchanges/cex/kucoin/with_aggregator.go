@@ -21,9 +21,9 @@ type withdrawalAggregator struct {
 	params     map[string]string
 	windowSize time.Duration
 
-	pMux    *sync.RWMutex
-	pTicker *time.Ticker
-	list    map[string]struct{ time.Time }
+	pMux           *sync.RWMutex
+	pTicker        *time.Ticker
+	proccessedList map[string]struct{ time.Time }
 }
 
 func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator {
@@ -35,9 +35,9 @@ func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator 
 		ticker:     time.NewTicker(time.Minute * 2),
 		windowSize: time.Hour * 1,
 
-		pMux:    &sync.RWMutex{},
-		pTicker: time.NewTicker(2 * time.Hour),
-		list:    make(map[string]struct{ time.Time }),
+		pMux:           &sync.RWMutex{},
+		pTicker:        time.NewTicker(2 * time.Hour),
+		proccessedList: make(map[string]struct{ time.Time }),
 	}
 	go wa.run(k.stopCh)
 	return wa
@@ -67,7 +67,7 @@ func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 					o, err := wa.k.repo.GetWithFilter("orders.withdrawal.id", wd.Id)
 					if err != nil {
 						if errors.ErrorCode(err) == errors.ErrNotFound {
-							wa.addToList(wd.Id)
+							wa.addToProccessedList(wd.Id)
 						}
 						continue
 					}
@@ -91,15 +91,15 @@ func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 						wa.l.Error(agent, err.Error())
 						continue
 					}
-					wa.addToList(wd.Id)
+					wa.addToProccessedList(wd.Id)
 				}
 			}
 
 		case <-wa.pTicker.C:
 			wa.pMux.Lock()
-			for id, s := range wa.list {
-				if time.Since(s.Time) >= time.Duration(2*time.Hour) {
-					delete(wa.list, id)
+			for id, s := range wa.proccessedList {
+				if time.Now().After(s.Time.Add(2 * time.Hour)) {
+					delete(wa.proccessedList, id)
 				}
 			}
 			wa.pMux.Unlock()
@@ -155,12 +155,12 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 func (w *withdrawalAggregator) isProccessed(wId string) bool {
 	w.pMux.RLock()
 	defer w.pMux.RUnlock()
-	_, ok := w.list[wId]
+	_, ok := w.proccessedList[wId]
 	return ok
 }
 
-func (w *withdrawalAggregator) addToList(wId string) {
+func (w *withdrawalAggregator) addToProccessedList(wId string) {
 	w.pMux.Lock()
 	defer w.pMux.Unlock()
-	w.list[wId] = struct{ time.Time }{Time: time.Now()}
+	w.proccessedList[wId] = struct{ time.Time }{Time: time.Now()}
 }

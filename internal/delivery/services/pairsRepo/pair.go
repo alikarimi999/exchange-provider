@@ -2,6 +2,7 @@ package pairsRepo
 
 import (
 	"context"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/delivery/exchanges/cex/swapspace"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/entity"
@@ -49,6 +50,8 @@ func (p *pair) toEntity(exName string, exId uint) *entity.Pair {
 		t = &swapspace.Token{}
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 		t = &evm.Token{}
+	case "kucoin":
+		t = &kucoin.Token{}
 	}
 	ep.T1 = p.T1.toEntity(fn)
 	ep.T2 = p.T2.toEntity(fn)

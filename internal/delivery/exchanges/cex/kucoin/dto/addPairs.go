@@ -2,7 +2,7 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
-	"time"
+	"fmt"
 )
 
 type AddPairsRequest struct {
@@ -10,15 +10,20 @@ type AddPairsRequest struct {
 }
 type Token struct {
 	TokenId string `json:"tokenId"`
-	ChainId string `json:"chainId"`
+	Network string `json:"network"`
 
-	BlockTime           time.Duration `json:"blockTime"`
-	WithdrawalPrecision int           `json:"withdrawalPrecision"`
+	BlockTime           string `json:"blockTime"`
+	WithdrawalPrecision int    `json:"withdrawalPrecision"`
 }
 
 type Pair struct {
 	BC *EToken `json:"bc"`
 	QC *EToken `json:"qc"`
+}
+
+func (p Pair) String() string {
+	return fmt.Sprintf("%s-%s-%s/%s-%s-%s", p.BC.Symbol, p.BC.Standard, p.BC.Network,
+		p.QC.Symbol, p.QC.Standard, p.QC.Network)
 }
 
 type EToken struct {
@@ -32,7 +37,12 @@ type EToken struct {
 	ET       Token  `json:"exchangeToken"`
 }
 
-func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
+func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.Token, error) {
+	et, err := fn(t.ET)
+	if err != nil {
+		return nil, err
+	}
+
 	return &entity.Token{
 		Symbol:   t.Symbol,
 		Standard: t.Standard,
@@ -41,13 +51,21 @@ func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
 		Address:  t.Address,
 		Decimals: t.Decimals,
 		Native:   t.Native,
-		ET:       fn(t.ET),
-	}
+		ET:       et,
+	}, nil
 }
 
-func (p *Pair) ToEntity(fn func(Token) entity.ExchangeToken) *entity.Pair {
-	return &entity.Pair{
-		T1: p.BC.toEntity(fn),
-		T2: p.QC.toEntity(fn),
+func (p *Pair) ToEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.Pair, error) {
+	t1, err := p.BC.toEntity(fn)
+	if err != nil {
+		return nil, err
 	}
+	t2, err := p.QC.toEntity(fn)
+	if err != nil {
+		return nil, err
+	}
+	return &entity.Pair{
+		T1: t1,
+		T2: t2,
+	}, nil
 }

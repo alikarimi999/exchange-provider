@@ -169,7 +169,7 @@ paths:
                       type: string
                       example: "BITCOIN"
 
-                refund:
+                sender:
                   type: object
                   properties:
                     address:
@@ -198,7 +198,7 @@ paths:
                 - userId
                 - input
                 - output
-                - refund
+                - sender
                 - receiver
                 - amountIn
 

@@ -6,44 +6,48 @@ import (
 	"fmt"
 
 	"github.com/Kucoin/kucoin-go-sdk"
-	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) Withdrawal(o *entity.CexOrder) (string, error) {
-	agent := k.agent("Withdrawal")
+func (k *kucoinExchange) withdrawal(o *entity.CexOrder) error {
+	agent := k.agent("withdrawal")
 
+	k.applySpreadAndFee(o, o.Routes[0])
 	c := o.Withdrawal.Token
 	opts, err := k.withdrawalOpts(c, o.Withdrawal.Address.Tag)
 	if err != nil {
-		return "", errors.Wrap(err, errors.ErrBadRequest)
+		return errors.Wrap(err, errors.ErrBadRequest)
 	}
 
 	wc, err := k.supportedCoins.get(c.Symbol, c.Standard)
 	if err != nil {
-		return "", errors.Wrap(err, errors.ErrBadRequest)
+		return errors.Wrap(err, errors.ErrBadRequest)
 	}
 
 	vol := trim(o.Withdrawal.Volume, wc.WithdrawalPrecision)
 	o.Withdrawal.Volume = vol
 	// first transfer from trade account to main account
-	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), c.Symbol, "trade", "main", vol)
-	if err = handleSDKErr(err, res); err != nil {
-		return "", err
-	}
+	// res, err := k.writeApi.InnerTransferV2(uuid.New().String(), c.Symbol, "trade", "main", vol)
+	// if err = handleSDKErr(err, res); err != nil {
+	// 	return  err
+	// }
 
-	k.l.Debug(agent, fmt.Sprintf("%s %s transferred from trade account to main account", vol, c.Symbol))
+	// k.l.Debug(agent, fmt.Sprintf("%s %s transferred from trade account to main account", vol, c.Symbol))
 
 	// then withdraw from main account
-	res, err = k.writeApi.ApplyWithdrawal(c.Symbol, o.Withdrawal.Addr, vol, opts)
+	res, err := k.writeApi.ApplyWithdrawal(c.Symbol, o.Withdrawal.Addr, vol, opts)
 	if err = handleSDKErr(err, res); err != nil {
-		return "", err
+		return err
 	}
 
 	k.l.Debug(agent, fmt.Sprintf("%s %s withdrawn from main account", vol, c.Symbol))
 
 	w := &kucoin.ApplyWithdrawalResultModel{}
 	if err = res.ReadData(w); err != nil {
-		return "", errors.Wrap(err, errors.ErrInternal)
+		return errors.Wrap(err, errors.ErrInternal)
 	}
-	return w.WithdrawalId, nil
+
+	o.Withdrawal.TxId = w.WithdrawalId
+	o.Withdrawal.Status = entity.WithdrawalPending
+	o.Status = entity.OWaitForWithdrawalConfirm
+	return nil
 }

@@ -40,7 +40,7 @@ func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == string(t.ChainId) {
+		if c.ChainName == string(t.Network) {
 			t.ConfirmBlocks = c.Confirms
 			t.MinWithdrawalSize, _ = strconv.ParseFloat(c.WithdrawalMinSize, 64)
 			t.MinWithdrawalFee, _ = strconv.ParseFloat(c.WithdrawalMinFee, 64)
@@ -55,7 +55,7 @@ func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			t.TokenId, t.ChainId, t.TokenId, ch)))
+			t.TokenId, t.Network, t.TokenId, ch)))
 }
 
 func (k *kucoinExchange) setAddress(t *Token) error {
@@ -64,7 +64,7 @@ func (k *kucoinExchange) setAddress(t *Token) error {
 	var chain string
 	if t.NeedChain {
 		coin = t.TokenId
-		chain = string(t.ChainId)
+		chain = string(t.Network)
 	} else {
 		coin = t.TokenId
 		chain = ""
@@ -85,6 +85,25 @@ func (k *kucoinExchange) setAddress(t *Token) error {
 	if err = handleSDKErr(err, res); err != nil {
 		return errors.Wrap(err, op)
 	}
+
+	return nil
+}
+
+func (k *kucoinExchange) setMinAndMax(p *entity.Pair) error {
+	bc := p.T1.ET.(*Token)
+	qc := p.T2.ET.(*Token)
+	price, err := k.price(bc, qc)
+	if err != nil {
+		return err
+	}
+
+	minT1 := (qc.MinWithdrawalFee + qc.MinWithdrawalSize) * (1 / price)
+	p.T1.Max = bc.MaxOrderSize
+	minT2 := (bc.MinWithdrawalFee + bc.MinWithdrawalSize) * price
+	p.T2.Max = qc.MaxOrderSize
+
+	p.T1.Min = minT1 + (minT1 * 0.15)
+	p.T2.Min = minT2 + (minT2 * 0.15)
 
 	return nil
 }
@@ -115,5 +134,5 @@ func (k *kucoinExchange) setInfos(p *entity.Pair) error {
 		return err
 	}
 
-	return nil
+	return k.setMinAndMax(p)
 }

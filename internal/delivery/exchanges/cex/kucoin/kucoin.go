@@ -21,7 +21,6 @@ type kucoinExchange struct {
 
 	cache *cache
 	da    *depositAggregator
-	dt    *depositTracker
 	wa    *withdrawalAggregator
 	pls   *pairList
 
@@ -80,27 +79,21 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 	k.cache = newCache(k, k.l)
 
 	k.da = newDepositAggregator(k, k.cache)
-	k.dt = newDepositTracker(k, k.cache)
 	k.wa = newWithdrawalAggregator(k, k.cache)
 	k.pls = newPairList(k, k.readApi, l)
 
 	if readConfig {
 		ps := k.pairs.GetAll(k.Id())
-		ps2 := []*entity.Pair{}
 		cs := []*Token{}
 		for _, p := range ps {
 			if err := k.pls.support(p, true); err != nil {
 				k.l.Error(agent, err.Error())
 				continue
 			}
-			ps2 = append(ps2, p)
 			bc := p.T1.ET.(*Token)
 			qc := p.T2.ET.(*Token)
 			cs = append(cs, bc)
 			cs = append(cs, qc)
-		}
-		if err := k.pairs.Add(k, ps2...); err != nil {
-			return nil, err
 		}
 		k.supportedCoins.add(cs)
 	}
@@ -122,4 +115,21 @@ func (k *kucoinExchange) Remove() {
 
 func (k *kucoinExchange) Type() entity.ExType {
 	return entity.CEX
+}
+
+func (k *kucoinExchange) Id() uint {
+	return k.cfg.Id
+}
+
+func (k *kucoinExchange) Name() string {
+	return "kucoin"
+}
+
+func (k *kucoinExchange) ping() error {
+	resp, err := k.readApi.Accounts("", "")
+	if err = handleSDKErr(err, resp); err != nil {
+		return errors.Wrap(k.agent("ping"), errors.NewMesssage(err.Error()))
+	}
+
+	return nil
 }

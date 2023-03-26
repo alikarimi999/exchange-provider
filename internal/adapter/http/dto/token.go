@@ -12,8 +12,8 @@ type Token struct {
 	Address  string  `json:"address,omitempty"`
 	Decimals uint64  `json:"decimals,omitempty"`
 	Native   bool    `json:"native,omitempty"`
-	Min      float64 `json:"min"`
-	Max      float64 `json:"max"`
+	Min      float64 `json:"min,omitempty"`
+	Max      float64 `json:"max,omitempty"`
 }
 
 func tokenFromEntity(et *entity.Token, info bool) Token {
