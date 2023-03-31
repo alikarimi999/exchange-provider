@@ -9,16 +9,14 @@ import (
 func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 	agent := k.agent("TxIdSetted")
 
-	t, err := k.supportedCoins.get(o.Deposit.Symbol, o.Deposit.Standard)
+	dc, err := k.supportedCoins.get(o.Deposit.String())
 	if err != nil {
 		o.Deposit.Status = entity.DepositFailed
 		o.Deposit.FailedDesc = err.Error()
 		return
 	}
-	if t.BlockTime < time.Minute {
-		time.Sleep(time.Minute)
-	}
-	k.trackDeposit(o, t)
+
+	k.trackDeposit(o, dc)
 	o.UpdatedAt = time.Now().Unix()
 	if o.Deposit.Status == entity.DepositFailed {
 		o.FailedCode = entity.FCDepositFailed
@@ -55,6 +53,7 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		k.l.Error(agent, err.Error())
 	}
 
+	time.Sleep(3 * time.Second)
 	k.trackSwap(o, 0)
 	switch o.Swaps[0].Status {
 	case entity.SwapSucceed:

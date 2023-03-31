@@ -2,16 +2,16 @@ package kucoin
 
 import (
 	"exchange-provider/internal/entity"
-	"fmt"
 	"time"
 )
 
 type Token struct {
-	TokenId string
-	Network string
+	Currency  string
+	ChainName string
+	Chain     string
 
-	Address string
-	Tag     string
+	DepositAddress string
+	DepositTag     string
 
 	BlockTime     time.Duration
 	ConfirmBlocks int64
@@ -24,20 +24,17 @@ type Token struct {
 
 	WithdrawalPrecision int
 	OrderPrecision      int
-
-	NeedChain bool
-}
-
-func (k *Token) String() string {
-	return fmt.Sprintf("%s-%s", k.TokenId, k.Network)
 }
 
 func (k *Token) Snapshot() entity.ExchangeToken {
 	return &Token{
-		TokenId:             k.TokenId,
-		Network:             k.Network,
-		Address:             k.Address,
-		Tag:                 k.Tag,
+		Currency:  k.Currency,
+		ChainName: k.ChainName,
+		Chain:     k.Chain,
+
+		DepositAddress: k.DepositAddress,
+		DepositTag:     k.DepositTag,
+
 		BlockTime:           k.BlockTime,
 		ConfirmBlocks:       k.ConfirmBlocks,
 		MinOrderSize:        k.MinOrderSize,
@@ -46,6 +43,5 @@ func (k *Token) Snapshot() entity.ExchangeToken {
 		MinWithdrawalFee:    k.MinWithdrawalFee,
 		WithdrawalPrecision: k.WithdrawalPrecision,
 		OrderPrecision:      k.OrderPrecision,
-		NeedChain:           k.NeedChain,
 	}
 }

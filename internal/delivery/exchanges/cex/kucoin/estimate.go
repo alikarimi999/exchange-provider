@@ -62,5 +62,5 @@ func (k *kucoinExchange) RemovePair(t1, t2 *entity.Token) error {
 }
 
 func symbol(bc, qc *Token) string {
-	return bc.TokenId + "-" + qc.TokenId
+	return bc.Currency + "-" + qc.Currency
 }

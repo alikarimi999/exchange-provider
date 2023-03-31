@@ -92,7 +92,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	opts.NoSend = true
 
 	data := contracts.IExchangeAggregatorswapData{
-		Input:       common.HexToAddress(in.Address),
+		Input:       common.HexToAddress(in.ContractAddress),
 		TotalAmount: totalAmountI,
 		FeeAmount:   feeAmountI,
 		Swapper:     d.dex.Router(),

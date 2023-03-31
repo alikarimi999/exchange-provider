@@ -84,18 +84,19 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 
 	if readConfig {
 		ps := k.pairs.GetAll(k.Id())
-		cs := []*Token{}
+		cs := []*entity.Token{}
 		for _, p := range ps {
 			if err := k.pls.support(p, true); err != nil {
 				k.l.Error(agent, err.Error())
 				continue
 			}
-			bc := p.T1.ET.(*Token)
-			qc := p.T2.ET.(*Token)
+			bc := p.T1
+			qc := p.T2
 			cs = append(cs, bc)
 			cs = append(cs, qc)
 		}
 		k.supportedCoins.add(cs)
+
 	}
 
 	k.l.Debug(agent, fmt.Sprintf("exchange %s started successfully", k.Name()))

@@ -28,7 +28,7 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 		in = t2
 	}
 
-	c, err := contracts.NewIERC20(common.HexToAddress(in.Address), d.provider())
+	c, err := contracts.NewIERC20(common.HexToAddress(in.ContractAddress), d.provider())
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount f
 		return false, nil
 	}
 
-	c, err := contracts.NewIERC20(common.HexToAddress(in.Address), d.provider())
+	c, err := contracts.NewIERC20(common.HexToAddress(in.ContractAddress), d.provider())
 	if err != nil {
 		return false, err
 	}

@@ -25,8 +25,8 @@ func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
 		rec = receiver
 	}
 	params := contracts.IV3SwapRouterExactInputSingleParams{
-		TokenIn:           common.HexToAddress(in.Address),
-		TokenOut:          common.HexToAddress(out.Address),
+		TokenIn:           common.HexToAddress(in.ContractAddress),
+		TokenOut:          common.HexToAddress(out.ContractAddress),
 		Fee:               big.NewInt(fee),
 		Recipient:         rec,
 		AmountIn:          amount,

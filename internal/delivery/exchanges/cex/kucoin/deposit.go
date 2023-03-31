@@ -10,21 +10,25 @@ import (
 )
 
 func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
-	kc, err := k.supportedCoins.get(o.Deposit.Symbol, o.Deposit.Standard)
+	kc, err := k.supportedCoins.get(o.Deposit.String())
 	if err != nil {
 		return err
 	}
 
-	o.Deposit.Address.Addr = kc.Address
-	o.Deposit.Address.Tag = kc.Tag
+	o.Deposit.Address.Addr = kc.DepositAddress
+	o.Deposit.Address.Tag = kc.DepositTag
 	return nil
 }
 
-func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, t *Token) {
-	err := try.Do(15, func(attempt uint64) (bool, error) {
+func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, dc *Token) {
+	if (dc.BlockTime * time.Duration(dc.ConfirmBlocks) / 8) < time.Minute {
+		time.Sleep(time.Minute)
+	}
+	err := try.Do(50, func(attempt uint64) (bool, error) {
+		fmt.Println(attempt)
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {
-			if !d.MatchCurrency(o.Deposit) {
+			if !d.MatchCurrency(dc) {
 				o.Deposit.Status = entity.DepositFailed
 				o.Deposit.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ",
 					o.Deposit.Symbol, d.Currency)
@@ -37,8 +41,8 @@ func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, t *Token) {
 
 		}
 
-		t := (t.BlockTime + (5 * time.Second)) * time.Duration(t.ConfirmBlocks)
-		time.Sleep(t / 2)
+		t := dc.BlockTime * time.Duration(dc.ConfirmBlocks) / 8
+		time.Sleep(t)
 		return true, errors.Wrap(errors.ErrNotFound)
 	})
 

@@ -5,6 +5,7 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -16,17 +17,40 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 	}
 
 	res := &entity.AddPairsResult{}
-	cs := []*Token{}
+	cs := []*entity.Token{}
 	ps := []*entity.Pair{}
+	ts, err := k.retreiveTokens()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, p := range req.Pairs {
+		for _, t := range ts.Data {
+			if t.Currency == p.BC.ET.Currency && t.ChainName == p.BC.ET.ChainName {
+				p.BC.ET.Chain = t.Chain
+				p.BC.Decimals, _ = strconv.Atoi(t.WalletPrecision)
+			} else if t.Currency == p.QC.ET.Currency && t.ChainName == p.QC.ET.ChainName {
+				p.QC.ET.Chain = t.Chain
+				p.QC.Decimals, _ = strconv.Atoi(t.WalletPrecision)
+			}
+			if p.BC.ET.Chain != "" && p.QC.ET.Chain != "" {
+				break
+			}
+		}
 		ep, err := p.ToEntity(func(t dto.Token) (entity.ExchangeToken, error) {
 			bt, err := time.ParseDuration(t.BlockTime)
 			if err != nil {
 				return nil, err
 			}
+
 			return &Token{
-				TokenId:             t.TokenId,
-				Network:             t.Network,
+				Currency:  t.Currency,
+				ChainName: t.ChainName,
+				Chain:     t.Chain,
+
+				DepositAddress: t.DepositAddress,
+				DepositTag:     t.DepositTag,
+
 				BlockTime:           bt,
 				WithdrawalPrecision: t.WithdrawalPrecision,
 			}, nil
@@ -68,8 +92,8 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 		res.Added = append(res.Added, *p)
 		ps2 = append(ps2, p)
-		bc := p.T1.ET.(*Token)
-		qc := p.T2.ET.(*Token)
+		bc := p.T1
+		qc := p.T2
 		cs = append(cs, bc)
 		cs = append(cs, qc)
 	}

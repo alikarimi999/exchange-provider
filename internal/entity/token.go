@@ -9,14 +9,14 @@ type Token struct {
 	Standard string
 	Network  string
 
-	Address    string  `bson:"address,omitempty"`
-	Decimals   uint64  `bson:"decimals,omitempty"`
-	HasExtraId bool    `bson:"hasExtraId,omitempty"`
-	Native     bool    `bson:"native,omitempty"`
-	Min        float64 `bson:"min,omitempty"`
-	Max        float64 `bson:"max,omitempty"`
+	ContractAddress string  `bson:"-"`
+	Decimals        uint64  `bson:"-"`
+	HasExtraId      bool    `bson:"-"`
+	Native          bool    `bson:"-"`
+	Min             float64 `bson:"-"`
+	Max             float64 `bson:"-"`
 
-	ET ExchangeToken `bson:"et,omitempty"`
+	ET ExchangeToken `bson:"-"`
 }
 
 func (t *Token) String() string {
@@ -40,12 +40,12 @@ func (t *Token) Snapshot() *Token {
 		Standard: t.Standard,
 		Network:  t.Network,
 
-		Address:    t.Address,
-		Decimals:   t.Decimals,
-		HasExtraId: t.HasExtraId,
-		Native:     t.Native,
-		Min:        t.Min,
-		Max:        t.Max,
+		ContractAddress: t.ContractAddress,
+		Decimals:        t.Decimals,
+		HasExtraId:      t.HasExtraId,
+		Native:          t.Native,
+		Min:             t.Min,
+		Max:             t.Max,
 
 		ET: et,
 	}

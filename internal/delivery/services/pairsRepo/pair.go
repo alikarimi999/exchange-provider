@@ -35,7 +35,7 @@ func pFromEntity(p *entity.Pair) pair {
 
 func (p *pair) toEntity(exName string, exId uint) *entity.Pair {
 	ep := &entity.Pair{
-		Exchange: p.Id,
+		Exchange: exName,
 		LP:       exId,
 	}
 	var t entity.ExchangeToken

@@ -1,9 +1,12 @@
 package kucoin
 
 import (
+	"encoding/json"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/Kucoin/kucoin-go-sdk"
@@ -27,8 +30,47 @@ import (
 
 // }
 
-func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
-	res, err := k.readApi.CurrencyV2(t.TokenId, "")
+type token struct {
+	Currency        string `json:"currency"`
+	ChainName       string `json:"chainName"`
+	WalletPrecision string `json:"walletPrecision"`
+	Chain           string `json:"chain"`
+}
+
+type tokens struct {
+	Code string  `json:"code"`
+	Msg  string  `json:"msg"`
+	Data []token `json:"data"`
+}
+
+func (k *kucoinExchange) retreiveTokens() (*tokens, error) {
+	url := "https://www.kucoin.com/_api/currency/currency/chain-info?lang=en_US"
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	ts := &tokens{}
+	if err := json.Unmarshal(b, ts); err != nil {
+		return nil, err
+	}
+	if ts.Code != "200" {
+		return nil, fmt.Errorf(ts.Msg)
+	}
+	return ts, nil
+}
+
+func (k *kucoinExchange) setWithdrawalLimit(et *entity.Token) error {
+	t := et.ET.(*Token)
+	res, err := k.readApi.CurrencyV2(t.Currency, "")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -40,10 +82,11 @@ func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.IsDepositEnabled && c.IsWithdrawEnabled && c.ChainName == string(t.Network) {
+		if c.IsDepositEnabled && c.IsWithdrawEnabled && c.ChainName == string(t.ChainName) {
 			t.ConfirmBlocks = c.Confirms
 			t.MinWithdrawalSize, _ = strconv.ParseFloat(c.WithdrawalMinSize, 64)
 			t.MinWithdrawalFee, _ = strconv.ParseFloat(c.WithdrawalMinFee, 64)
+			et.ContractAddress = c.ContractAddress
 			return nil
 		}
 	}
@@ -55,38 +98,7 @@ func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
 
 	return errors.Wrap(errors.ErrBadRequest, errors.Op("Kucoin.setBCWithdrawalLimit"),
 		errors.NewMesssage(fmt.Sprintf("coin %s with chain %s not supported by kucoin,supported chains for %s is %+v",
-			t.TokenId, t.Network, t.TokenId, ch)))
-}
-
-func (k *kucoinExchange) setAddress(t *Token) error {
-	op := errors.Op(fmt.Sprintf("%s.setChain", k.Name()))
-	var coin string
-	var chain string
-	if t.NeedChain {
-		coin = t.TokenId
-		chain = string(t.Network)
-	} else {
-		coin = t.TokenId
-		chain = ""
-	}
-
-	res, err := k.readApi.DepositAddresses(coin, chain)
-	if t.NeedChain && res != nil && res.Code == "900014" && res.Message == "Invalid chainId" {
-		t.NeedChain = false
-		return k.setAddress(t)
-	}
-	a := &kucoin.DepositAddressModel{}
-	if err := res.ReadData(a); err != nil {
-		return err
-	}
-	t.Address = a.Address
-	t.Tag = a.Memo
-
-	if err = handleSDKErr(err, res); err != nil {
-		return errors.Wrap(err, op)
-	}
-
-	return nil
+			t.Currency, t.ChainName, t.Currency, ch)))
 }
 
 func (k *kucoinExchange) setMinAndMax(p *entity.Pair) error {
@@ -110,26 +122,12 @@ func (k *kucoinExchange) setMinAndMax(p *entity.Pair) error {
 
 func (k *kucoinExchange) setInfos(p *entity.Pair) error {
 
-	bc := p.T1.ET.(*Token)
-	qc := p.T2.ET.(*Token)
-
-	bc.NeedChain = true
-	qc.NeedChain = true
-
-	if err := k.setAddress(bc); err != nil {
-		return err
-	}
-
-	if err := k.setAddress(qc); err != nil {
-		return err
-	}
-
-	err := k.setWithdrawalLimit(bc)
+	err := k.setWithdrawalLimit(p.T1)
 	if err != nil {
 		return err
 	}
 
-	err = k.setWithdrawalLimit(qc)
+	err = k.setWithdrawalLimit(p.T2)
 	if err != nil {
 		return err
 	}

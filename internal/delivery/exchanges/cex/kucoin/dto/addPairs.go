@@ -9,8 +9,12 @@ type AddPairsRequest struct {
 	Pairs []*Pair `json:"pairs"`
 }
 type Token struct {
-	TokenId string `json:"tokenId"`
-	Network string `json:"network"`
+	Currency  string `json:"currency"`
+	ChainName string `json:"chainName"`
+	Chain     string
+
+	DepositAddress string `json:"depositAddress"`
+	DepositTag     string `json:"depositTag"`
 
 	BlockTime           string `json:"blockTime"`
 	WithdrawalPrecision int    `json:"withdrawalPrecision"`
@@ -31,10 +35,10 @@ type EToken struct {
 	Standard string `json:"standard"`
 	Network  string `json:"network"`
 
-	Address  string `json:"address"`
-	Decimals uint64 `json:"decimals"`
-	Native   bool   `json:"native"`
-	ET       Token  `json:"exchangeToken"`
+	ContractAddress string `json:"contractAddress"`
+	Decimals        int    `json:"decimals"`
+	Native          bool   `json:"native"`
+	ET              Token  `json:"exchangeToken"`
 }
 
 func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.Token, error) {
@@ -48,10 +52,10 @@ func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity
 		Standard: t.Standard,
 		Network:  t.Network,
 
-		Address:  t.Address,
-		Decimals: t.Decimals,
-		Native:   t.Native,
-		ET:       et,
+		ContractAddress: t.ContractAddress,
+		Decimals:        uint64(t.Decimals),
+		Native:          t.Native,
+		ET:              et,
 	}, nil
 }
 

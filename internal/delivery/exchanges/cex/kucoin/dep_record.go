@@ -1,7 +1,6 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/entity"
 	"time"
 )
 
@@ -14,8 +13,8 @@ type depositRecord struct {
 	DownloadedAt time.Time
 }
 
-func (d *depositRecord) MatchCurrency(de *entity.Deposit) bool {
-	return d.Currency == string(de.Symbol)
+func (d *depositRecord) MatchCurrency(t *Token) bool {
+	return d.Currency == string(t.Currency)
 }
 
 func (d *depositRecord) snapShot() *depositRecord {

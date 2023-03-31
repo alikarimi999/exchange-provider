@@ -18,8 +18,8 @@ func (p *dex) TxData(in, out *entity.Token, sender, receiver common.Address,
 	}
 
 	d := time.Now().Add(time.Minute * time.Duration(15)).Unix()
-	inAddress := common.HexToAddress(in.Address)
-	outAddress := common.HexToAddress(out.Address)
+	inAddress := common.HexToAddress(in.ContractAddress)
+	outAddress := common.HexToAddress(out.ContractAddress)
 	if in.Native {
 		return abi.Pack("swapExactETHForTokens", common.Big0,
 			[]common.Address{inAddress, outAddress}, receiver, big.NewInt(d))

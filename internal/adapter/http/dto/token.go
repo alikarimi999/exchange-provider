@@ -23,7 +23,7 @@ func tokenFromEntity(et *entity.Token, info bool) Token {
 		Network:  et.Network,
 	}
 	if info {
-		t.Address = et.Address
+		t.Address = et.ContractAddress
 		t.Decimals = et.Decimals
 		t.Native = et.Native
 		t.Min = et.Min
@@ -39,10 +39,10 @@ func (t *Token) ToEntity() *entity.Token {
 		Standard: t.Standard,
 		Network:  t.Network,
 
-		Address:  t.Address,
-		Decimals: t.Decimals,
-		Native:   t.Native,
-		Min:      t.Min,
-		Max:      t.Max,
+		ContractAddress: t.Address,
+		Decimals:        t.Decimals,
+		Native:          t.Native,
+		Min:             t.Min,
+		Max:             t.Max,
 	}
 }

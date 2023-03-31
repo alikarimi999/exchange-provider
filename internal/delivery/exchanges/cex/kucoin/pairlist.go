@@ -77,7 +77,7 @@ func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 		}
 		bSymbol := symbol[0]
 		qSymbol := symbol[1]
-		if bSymbol == bc.TokenId && qSymbol == qc.TokenId {
+		if bSymbol == bc.Currency && qSymbol == qc.Currency {
 			if fromDB {
 				return nil
 			}
@@ -89,7 +89,7 @@ func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
 
 			return nil
-		} else if bSymbol == qc.TokenId && qSymbol == bc.TokenId {
+		} else if bSymbol == qc.Currency && qSymbol == bc.Currency {
 			tx := p.T1
 			t1 := p.T2
 			t2 := tx

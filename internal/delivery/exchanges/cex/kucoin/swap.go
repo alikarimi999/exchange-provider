@@ -3,6 +3,7 @@ package kucoin
 import (
 	"exchange-provider/internal/entity"
 	"fmt"
+	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
@@ -60,8 +61,9 @@ func (k *kucoinExchange) swap(o *entity.CexOrder, index int) (string, error) {
 }
 
 func (k *kucoinExchange) trackSwap(o *entity.CexOrder, index int) {
-	agent := k.agent("TrackSap")
+	agent := k.agent("trackSap")
 
+	time.Sleep(3 * time.Second)
 	s := o.Swaps[index]
 	resp, err := k.readApi.Order(s.TxId)
 	if err = handleSDKErr(err, resp); err != nil {
@@ -79,12 +81,11 @@ func (k *kucoinExchange) trackSwap(o *entity.CexOrder, index int) {
 		return
 	}
 
-	s.InAmount = order.DealFunds
-	s.OutAmount = order.DealSize
-
 	if order.Side == "sell" {
+		s.InAmount = order.DealSize
 		s.OutAmount = order.DealFunds
 	} else {
+		s.InAmount = order.DealFunds
 		s.OutAmount = order.DealSize
 	}
 

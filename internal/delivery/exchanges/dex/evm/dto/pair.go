@@ -19,10 +19,10 @@ func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
 		Standard: t.Standard,
 		Network:  t.Network,
 
-		Address:  t.Address,
-		Decimals: t.Decimals,
-		Native:   t.Native,
-		ET:       fn(t.ET),
+		ContractAddress: t.Address,
+		Decimals:        t.Decimals,
+		Native:          t.Native,
+		ET:              fn(t.ET),
 	}
 }
 
