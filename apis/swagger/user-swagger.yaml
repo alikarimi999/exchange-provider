@@ -174,7 +174,7 @@ paths:
                   properties:
                     address:
                       type: string
-                      example: "TCEEc8kbFwDjsA3hAjeF5tA4FUd2XfHmbg"
+                      example: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
                     tag:
                       type: string
                 receiver:
@@ -182,7 +182,7 @@ paths:
                   properties:
                     address:
                       type: string
-                      example: "0xbBe66c60B52726392ADa50f8047E18872c31cd95"
+                      example: "bc1q74pglzk0u3qyvxjvmtx5pjzuh2wraskegw7emu"
                     tag:
                       type: string
                 amountIn:

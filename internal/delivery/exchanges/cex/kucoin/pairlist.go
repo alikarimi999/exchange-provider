@@ -68,7 +68,16 @@ func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 	defer pl.mux.Unlock()
 
 	for _, pair := range pl.pairs {
-		if pair.BaseCurrency == bc.TokenId && pair.QuoteCurrency == qc.TokenId {
+		if !pair.EnableTrading {
+			continue
+		}
+		symbol := strings.Split(pair.Symbol, "-")
+		if len(symbol) != 2 {
+			continue
+		}
+		bSymbol := symbol[0]
+		qSymbol := symbol[1]
+		if bSymbol == bc.TokenId && qSymbol == qc.TokenId {
 			if fromDB {
 				return nil
 			}
@@ -80,7 +89,7 @@ func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
 
 			return nil
-		} else if pair.BaseCurrency == qc.TokenId && pair.QuoteCurrency == bc.TokenId {
+		} else if bSymbol == qc.TokenId && qSymbol == bc.TokenId {
 			tx := p.T1
 			t1 := p.T2
 			t2 := tx

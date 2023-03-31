@@ -40,7 +40,7 @@ func (k *kucoinExchange) setWithdrawalLimit(t *Token) error {
 	}
 
 	for _, c := range m.Chains {
-		if c.ChainName == string(t.Network) {
+		if c.IsDepositEnabled && c.IsWithdrawEnabled && c.ChainName == string(t.Network) {
 			t.ConfirmBlocks = c.Confirms
 			t.MinWithdrawalSize, _ = strconv.ParseFloat(c.WithdrawalMinSize, 64)
 			t.MinWithdrawalFee, _ = strconv.ParseFloat(c.WithdrawalMinFee, 64)
