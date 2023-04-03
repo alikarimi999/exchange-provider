@@ -53,7 +53,6 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		k.l.Error(agent, err.Error())
 	}
 
-	time.Sleep(3 * time.Second)
 	k.trackSwap(o, 0)
 	switch o.Swaps[0].Status {
 	case entity.SwapSucceed:

@@ -3,12 +3,7 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_WETH",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_PriceProvider",
+				"name": "_priceProvider",
 				"type": "address"
 			}
 		],
@@ -35,68 +30,148 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "PriceProvider",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
+				"components": [
+					{
+						"internalType": "address",
+						"name": "bridge",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenIn",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "bridgeFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "afterSwap",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "feeNumerator",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "feeDenominator",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "bridgeData",
+						"type": "bytes"
+					}
+				],
+				"internalType": "struct IBridgeAggregator.bridgeInput",
+				"name": "data",
+				"type": "tuple"
+			},
+			{
+				"internalType": "bytes",
+				"name": "sig",
+				"type": "bytes"
 			}
 		],
-		"stateMutability": "view",
+		"name": "Bridge",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "WETH",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
+				"components": [
+					{
+						"internalType": "address",
+						"name": "tokenIn",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "feeAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "swapper",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes",
+						"name": "swapperData",
+						"type": "bytes"
+					},
+					{
+						"internalType": "address",
+						"name": "sender",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "native",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct IExchangeAggregator.swapInput",
+				"name": "data",
+				"type": "tuple"
+			},
+			{
+				"internalType": "bytes",
+				"name": "sig",
+				"type": "bytes"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "balanceETH",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
+		"name": "Swap",
+		"outputs": [],
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "token",
+				"name": "_feeReciever",
 				"type": "address"
 			}
 		],
-		"name": "balanceToken",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
+		"name": "changeFeeReciever",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_PriceProvider",
+				"name": "_priceProvider",
 				"type": "address"
 			}
 		],
@@ -151,7 +226,52 @@
 	},
 	{
 		"inputs": [],
+		"name": "feeReciever",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes[]",
+				"name": "data",
+				"type": "bytes[]"
+			}
+		],
+		"name": "multicall",
+		"outputs": [
+			{
+				"internalType": "bytes[]",
+				"name": "results",
+				"type": "bytes[]"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "priceProvider",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -172,153 +292,12 @@
 	{
 		"inputs": [
 			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "input",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "totalAmount",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "feeAmount",
-						"type": "uint256"
-					},
-					{
-						"internalType": "address",
-						"name": "swapper",
-						"type": "address"
-					},
-					{
-						"internalType": "bytes",
-						"name": "data",
-						"type": "bytes"
-					},
-					{
-						"internalType": "address",
-						"name": "sender",
-						"type": "address"
-					}
-				],
-				"internalType": "struct IExchangeAggregator.swapData",
-				"name": "data",
-				"type": "tuple"
-			},
-			{
-				"internalType": "bytes",
-				"name": "sig",
-				"type": "bytes"
-			}
-		],
-		"name": "swap",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"components": [
-					{
-						"internalType": "address",
-						"name": "input",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "totalAmount",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "feeAmount",
-						"type": "uint256"
-					},
-					{
-						"internalType": "address",
-						"name": "swapper",
-						"type": "address"
-					},
-					{
-						"internalType": "bytes",
-						"name": "data",
-						"type": "bytes"
-					},
-					{
-						"internalType": "address",
-						"name": "sender",
-						"type": "address"
-					}
-				],
-				"internalType": "struct IExchangeAggregator.swapData",
-				"name": "data",
-				"type": "tuple"
-			},
-			{
-				"internalType": "bytes",
-				"name": "sig",
-				"type": "bytes"
-			}
-		],
-		"name": "swapNativeIn",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "newOwner",
 				"type": "address"
 			}
 		],
 		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdrawETH",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			}
-		],
-		"name": "withdrawToken",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

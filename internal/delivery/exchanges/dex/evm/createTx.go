@@ -54,9 +54,9 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		return nil, err
 	}
 
-	var fee uint64
+	var feeTier uint64
 	if d.version == 3 {
-		_, fee, err = d.dex.EstimateAmountOut(in, out, amount)
+		_, feeTier, err = d.dex.EstimateAmountOut(in, out, amount)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	swapAmountF := big.NewFloat(0).Sub(totalAmountF, feeAmountF)
 	swapAmountI, _ := swapAmountF.Int(nil)
 
-	input, err := d.dex.TxData(in, out, sender, receiver, swapAmountI, int64(fee))
+	input, err := d.dex.TxData(in, out, sender, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err
@@ -90,14 +90,18 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		return nil, err
 	}
 	opts.NoSend = true
+	opts.From = sender
+	opts.Sign = false
 
-	data := contracts.IExchangeAggregatorswapData{
-		Input:       common.HexToAddress(in.ContractAddress),
+	data := contracts.IExchangeAggregatorswapInput{
+		TokenIn:     common.HexToAddress(in.ContractAddress),
 		TotalAmount: totalAmountI,
 		FeeAmount:   feeAmountI,
+		AmountIn:    swapAmountI,
 		Swapper:     d.dex.Router(),
-		Data:        input,
+		SwapperData: input,
 		Sender:      sender,
+		Native:      in.Native,
 	}
 
 	sig, err := d.sign(data)
@@ -106,16 +110,10 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 		return nil, err
 	}
 
-	opts.From = sender
-	opts.Sign = false
-
 	if in.Native {
 		opts.Value = totalAmountI
-		tx, err = c.SwapNativeIn(opts, data, sig)
-
-	} else {
-		tx, err = c.Swap(opts, data, sig)
 	}
+	tx, err = c.Swap(opts, data, sig)
 
 	if err != nil {
 		if err.Error() == errSTF().Error() {

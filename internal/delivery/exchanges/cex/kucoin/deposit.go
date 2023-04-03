@@ -21,11 +21,11 @@ func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
 }
 
 func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, dc *Token) {
-	if (dc.BlockTime * time.Duration(dc.ConfirmBlocks) / 8) < time.Minute {
+	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
+	if t < time.Minute {
 		time.Sleep(time.Minute)
 	}
 	err := try.Do(50, func(attempt uint64) (bool, error) {
-		fmt.Println(attempt)
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {
 			if !d.MatchCurrency(dc) {
@@ -41,8 +41,11 @@ func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, dc *Token) {
 
 		}
 
-		t := dc.BlockTime * time.Duration(dc.ConfirmBlocks) / 8
-		time.Sleep(t)
+		if t < time.Minute {
+			time.Sleep(time.Minute)
+		} else {
+			time.Sleep(t / 8)
+		}
 		return true, errors.Wrap(errors.ErrNotFound)
 	})
 

@@ -4,6 +4,7 @@ import "github.com/ethereum/go-ethereum/core/types"
 
 type EVMDex interface {
 	Exchange
+	Chain() string
 	SetStpes(*EvmOrder, *Route) error
 	GetStep(o *EvmOrder, step uint) (tx *types.Transaction, isApproveTx bool, err error)
 }

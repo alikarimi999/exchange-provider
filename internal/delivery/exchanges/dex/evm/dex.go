@@ -97,6 +97,10 @@ func (d *EvmDex) Id() uint {
 	return d.Config.Id
 }
 
+func (d *EvmDex) Chain() string {
+	return d.Config.Network
+}
+
 func (d *EvmDex) Type() entity.ExType {
 	return entity.EvmDEX
 }

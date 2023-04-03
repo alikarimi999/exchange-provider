@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -102,7 +103,7 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 	} else {
 		ps2 = ps
 	}
-
+	sortPairs(ps2)
 	start := (pa.Page - 1) * pa.PerPage
 	end := pa.Page * pa.PerPage
 
@@ -117,6 +118,13 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 	pa.Pairs = ps2[start:end]
 	pa.Total = int64(len(ps2))
 	return nil
+}
+
+func sortPairs(ps []*entity.Pair) {
+	sort.Slice(ps, func(i, j int) bool {
+		return pairId(ps[i].T1.String(), ps[i].T2.String()) <
+			pairId(ps[j].T1.String(), ps[j].T2.String())
+	})
 }
 
 func fixPairId(id string) (string, error) {
