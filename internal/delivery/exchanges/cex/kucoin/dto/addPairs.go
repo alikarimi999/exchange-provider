@@ -21,8 +21,9 @@ type Token struct {
 }
 
 type Pair struct {
-	BC *EToken `json:"bc"`
-	QC *EToken `json:"qc"`
+	BC      *EToken `json:"bc"`
+	QC      *EToken `json:"qc"`
+	FeeRate float64 `json:"feeRate"`
 }
 
 func (p Pair) String() string {
@@ -69,7 +70,8 @@ func (p *Pair) ToEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.P
 		return nil, err
 	}
 	return &entity.Pair{
-		T1: t1,
-		T2: t2,
+		T1:      t1,
+		T2:      t2,
+		FeeRate: p.FeeRate,
 	}, nil
 }

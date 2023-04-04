@@ -8,8 +8,10 @@ type Pair struct {
 	T1 *Token
 	T2 *Token
 
-	LP       uint
-	Exchange string
+	FeeRate    float64
+	SpreadRate float64
+	LP         uint
+	Exchange   string
 }
 
 func (p *Pair) String() string {
@@ -22,9 +24,11 @@ func (p *Pair) Equal(p1 *Pair) bool {
 
 func (p *Pair) Snapshot() *Pair {
 	return &Pair{
-		T1:       p.T1.Snapshot(),
-		T2:       p.T2.Snapshot(),
-		LP:       p.LP,
-		Exchange: p.Exchange,
+		T1:         p.T1.Snapshot(),
+		T2:         p.T2.Snapshot(),
+		FeeRate:    p.FeeRate,
+		SpreadRate: p.SpreadRate,
+		LP:         p.LP,
+		Exchange:   p.Exchange,
 	}
 }

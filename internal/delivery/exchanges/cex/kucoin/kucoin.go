@@ -28,7 +28,6 @@ type kucoinExchange struct {
 	supportedCoins *supportedCoins
 	pairs          entity.PairsRepo
 	repo           entity.OrderRepo
-	pc             entity.PairConfigs
 	fee            entity.FeeService
 
 	stopCh   chan struct{}
@@ -36,7 +35,7 @@ type kucoinExchange struct {
 }
 
 func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, readConfig bool,
-	repo entity.OrderRepo, pc entity.PairConfigs, fee entity.FeeService) (entity.Cex, error) {
+	repo entity.OrderRepo, fee entity.FeeService) (entity.Cex, error) {
 	cfg, err := validateConfigs(cfgi)
 	if err != nil {
 		return nil, errors.Wrap("NewKucoinExchange", err)
@@ -63,7 +62,6 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 
 		supportedCoins: newSupportedCoins(),
 		repo:           repo,
-		pc:             pc,
 		fee:            fee,
 		l:              l,
 
@@ -99,16 +97,16 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 
 	}
 
-	k.l.Debug(agent, fmt.Sprintf("exchange %s started successfully", k.Name()))
+	k.l.Debug(agent, fmt.Sprintf("exchange %s started successfully", k.NID()))
 	return k, nil
 }
 
 func (k *kucoinExchange) Run() {
-	k.l.Debug(fmt.Sprintf("%s.Run", k.Name()), "started")
+	k.l.Debug(fmt.Sprintf("%s.Run", k.NID()), "started")
 }
 
 func (k *kucoinExchange) Remove() {
-	op := fmt.Sprintf("%s.Stop", k.Name())
+	op := fmt.Sprintf("%s.Stop", k.NID())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
 	k.l.Debug(string(op), "stopped")
@@ -124,6 +122,10 @@ func (k *kucoinExchange) Id() uint {
 
 func (k *kucoinExchange) Name() string {
 	return "kucoin"
+}
+
+func (k *kucoinExchange) NID() string {
+	return fmt.Sprintf("%s-%d", k.Name(), k.Id())
 }
 
 func (k *kucoinExchange) ping() error {

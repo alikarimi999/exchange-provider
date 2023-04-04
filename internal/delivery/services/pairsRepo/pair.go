@@ -14,7 +14,7 @@ import (
 )
 
 type exchangePairs struct {
-	Id    string `bson:"_id"`
+	NID   string `bson:"_id"`
 	ExId  uint
 	Pairs []pair
 }
@@ -23,20 +23,27 @@ type pair struct {
 	Id string `bson:"_id"`
 	T1 *token `bson:"t1"`
 	T2 *token
+
+	FeeRate    float64
+	SpreadRate float64
 }
 
 func pFromEntity(p *entity.Pair) pair {
 	return pair{
-		Id: pairId(p.T1.String(), p.T2.String()),
-		T1: fromEntity(p.T1),
-		T2: fromEntity(p.T2),
+		Id:         pairId(p.T1.String(), p.T2.String()),
+		T1:         fromEntity(p.T1),
+		T2:         fromEntity(p.T2),
+		FeeRate:    p.FeeRate,
+		SpreadRate: p.SpreadRate,
 	}
 }
 
-func (p *pair) toEntity(exName string, exId uint) *entity.Pair {
+func (p *pair) toEntity(exNID string, exId uint) *entity.Pair {
 	ep := &entity.Pair{
-		Exchange: exName,
-		LP:       exId,
+		Exchange:   exNID,
+		LP:         exId,
+		FeeRate:    p.FeeRate,
+		SpreadRate: p.SpreadRate,
 	}
 	var t entity.ExchangeToken
 
@@ -45,7 +52,7 @@ func (p *pair) toEntity(exName string, exId uint) *entity.Pair {
 		return t.Snapshot()
 	}
 
-	switch strings.Split(exName, "-")[0] {
+	switch strings.Split(exNID, "-")[0] {
 	case "swapspace":
 		t = &swapspace.Token{}
 	case "uniswapv3", "uniswapv2", "panckakeswapv2":
@@ -69,17 +76,18 @@ func (pr *pairsRepo) retrievePairs() error {
 	if err := cur.All(context.Background(), &eps); err != nil {
 		return err
 	}
+
 	for _, ep := range eps {
-		pr.eps[ep.Id] = &exPairs{
-			mux:    &sync.RWMutex{},
-			exId:   ep.ExId,
-			exName: ep.Id,
-			pairs:  make(map[string]*entity.Pair),
+		pr.eps[ep.NID] = &exPairs{
+			mux:   &sync.RWMutex{},
+			exId:  ep.ExId,
+			exNID: ep.NID,
+			pairs: make(map[string]*entity.Pair),
 		}
 
 		for _, p := range ep.Pairs {
-			pr.eps[ep.Id].pairs[p.Id] = p.toEntity(ep.Id, ep.ExId)
-			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.Id))
+			pr.eps[ep.NID].pairs[p.Id] = p.toEntity(ep.NID, ep.ExId)
+			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.NID))
 		}
 	}
 	return nil

@@ -14,7 +14,6 @@ type Exchange struct {
 }
 
 func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
-	// op := errors.Op("ExchangeRepo.encryptConfigs")
 	pub := r.prv.PublicKey
 
 	e := &Exchange{

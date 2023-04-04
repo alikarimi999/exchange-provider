@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func (u *EvmDex) checkProviders() error {
+func (u *evmDex) checkProviders() error {
 	var chainId *big.Int
 	ps := []*types.EthProvider{}
 	for i, p := range u.Providers {
@@ -39,7 +39,7 @@ func (u *EvmDex) checkProviders() error {
 	return nil
 }
 
-func (d *EvmDex) provider() *types.EthProvider {
+func (d *evmDex) provider() *types.EthProvider {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	if len(d.providers) > 0 {
 		p := d.providers[r.Intn(len(d.providers))]

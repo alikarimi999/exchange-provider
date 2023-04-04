@@ -5,7 +5,6 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/services/exrepo"
 	"exchange-provider/internal/delivery/services/fee"
-	"exchange-provider/internal/delivery/services/pairconf"
 	walletstore "exchange-provider/internal/delivery/services/wallet-store"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
@@ -25,7 +24,6 @@ type Config struct {
 
 type Services struct {
 	entity.FeeService
-	entity.PairConfigs
 	app.ExchangeRepo
 	app.WalletStore
 }
@@ -37,18 +35,12 @@ func WrapServices(cfg *Config) (*Services, error) {
 		return nil, err
 	}
 
-	s, err := pairconf.NewPairConfigs(cfg.DB, cfg.V, cfg.L)
-	if err != nil {
-		return nil, err
-	}
-
 	ws := walletstore.NewWalletStore()
 
 	ss := &Services{
-		PairConfigs: s,
-		FeeService:  f,
+		FeeService: f,
 		ExchangeRepo: exrepo.NewExchangeRepo(cfg.DB, ws, cfg.Pairs, cfg.Repo,
-			f, s, cfg.V, cfg.L, cfg.PrvKey),
+			f, cfg.V, cfg.L, cfg.PrvKey),
 		WalletStore: ws,
 	}
 	return ss, nil

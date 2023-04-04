@@ -23,7 +23,7 @@ func (o *Order) ToEntity() (entity.Order, error) {
 		}
 		return cOrder, nil
 	case entity.EVMOrder:
-		eOrder := &entity.EvmOrder{}
+		eOrder := &entity.DexOrder{}
 		if err := bson.Unmarshal(o.Order, eOrder); err != nil {
 			return nil, err
 		}

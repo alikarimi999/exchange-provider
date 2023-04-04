@@ -10,7 +10,7 @@ import (
 )
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
-	agent := fmt.Sprintf("%s.AddPairs", k.Name())
+	agent := fmt.Sprintf("%s.AddPairs", k.NID())
 	req, ok := data.(*dto.AddPairsRequest)
 	if !ok {
 		return nil, errors.Wrap(agent, errors.ErrBadRequest)
@@ -88,8 +88,7 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			continue
 		}
 		p.LP = k.Id()
-		p.Exchange = k.Name()
-
+		p.Exchange = k.NID()
 		res.Added = append(res.Added, *p)
 		ps2 = append(ps2, p)
 		bc := p.T1

@@ -26,6 +26,7 @@ func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, dc *Token) {
 		time.Sleep(time.Minute)
 	}
 	err := try.Do(50, func(attempt uint64) (bool, error) {
+		fmt.Println(attempt)
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {
 			if !d.MatchCurrency(dc) {

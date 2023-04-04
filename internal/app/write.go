@@ -17,7 +17,7 @@ func (o *OrderUseCase) writeToPersistentStorage(data interface{}) error {
 			return o.repo.Add(d)
 		}
 		return o.repo.Update(d)
-	case *entity.EvmOrder:
+	case *entity.DexOrder:
 		if d.Status == entity.ONew {
 			d.Status = entity.OPending
 			return o.repo.Add(d)

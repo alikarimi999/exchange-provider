@@ -25,7 +25,7 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 		routes[0] = &entity.Route{
 			In:       in,
 			Out:      out,
-			Exchange: ex.Name(),
+			Exchange: ex.NID(),
 			ExType:   ex.Type(),
 		}
 	} else {
@@ -34,7 +34,7 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 			return nil, err
 		}
 	}
-	ex, _ := u.exs.getByName(routes[0].Exchange)
+	ex, _ := u.exs.getByNID(routes[0].Exchange)
 	switch ex.Type() {
 	case entity.EvmDEX:
 		return u.newEvmOrder(userId, common.HexToAddress(refund.Addr),
@@ -48,17 +48,17 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 }
 
 func (u *OrderUseCase) newEvmOrder(userId string, sender, reciever common.Address,
-	amountIn float64, route *entity.Route) (*entity.EvmOrder, error) {
+	amountIn float64, route *entity.Route) (*entity.DexOrder, error) {
 	const op = errors.Op("OrderUsecase.NewEvmDexOrder")
 
-	ex, err := u.exs.getByName(route.Exchange)
+	ex, err := u.exs.getByNID(route.Exchange)
 	if err != nil {
 		return nil, err
 	}
 
 	sf := u.fs.GetUserFee(userId)
 	f, _ := strconv.ParseFloat(sf, 64)
-	o := entity.NewEvmOrder(userId, make(map[uint]*entity.EvmStep), sender, reciever, amountIn, f)
+	o := entity.NewDexOrder(userId, make(map[uint]*entity.Step), sender, reciever, amountIn, f)
 	if err := ex.(entity.EVMDex).SetStpes(o, route); err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (u *OrderUseCase) newCexOrder(userId string, refund, reciever entity.Addres
 	amount float64, routes map[int]*entity.Route) (*entity.CexOrder, error) {
 
 	const op = errors.Op("OrderUsecase.NewCexOrder")
-	ex, err := u.exs.getByName(routes[0].Exchange)
+	ex, err := u.exs.getByNID(routes[0].Exchange)
 	if err != nil {
 		return nil, err
 	}

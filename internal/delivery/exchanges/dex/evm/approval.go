@@ -11,7 +11,7 @@ import (
 	ts "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
+func (d *evmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
 	t1, err := d.ts.get(r.In.String())
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (d *EvmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 	return c.Approve(opts, d.contractAddress, em.MaxBig256)
 }
 
-func (d *EvmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
+func (d *evmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
 	in, err := d.ts.get(r.In.String())
 	if err != nil {
 		return false, err

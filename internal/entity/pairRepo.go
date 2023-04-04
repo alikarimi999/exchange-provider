@@ -7,5 +7,6 @@ type PairsRepo interface {
 	Update(exId uint, p *Pair)
 	Exists(exId uint, t1, t2 string) bool
 	Remove(exId uint, t1, t2 string) error
+	RemoveAll(exId uint) error
 	GetPaginated(*Paginated) error
 }

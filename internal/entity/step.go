@@ -1,6 +1,6 @@
 package entity
 
-type EvmStep struct {
+type Step struct {
 	*Route
 	NeedApprove bool
 	Approved    bool

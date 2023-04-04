@@ -12,23 +12,23 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-// func (k *kucoinExchange) orderFeeRate(p *pair) string {
-// 	res, err := k.readApi.ActualFee(p.BC.TokenId + "-" + p.QC.TokenId)
-// 	if err := handleSDKErr(err, res); err != nil {
-// 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
-// 		return ""
-// 	}
+func (k *kucoinExchange) orderFeeRate(bc, qc *token) float64 {
+	res, err := k.readApi.ActualFee(bc.Currency + "-" + qc.Currency)
+	if err := handleSDKErr(err, res); err != nil {
+		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
+		return 0
+	}
 
-// 	m := kucoin.TradeFeesResultModel{}
-// 	err = res.ReadData(&m)
-// 	if err != nil {
-// 		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
-// 		return ""
-// 	}
+	m := kucoin.TradeFeesResultModel{}
+	err = res.ReadData(&m)
+	if err != nil {
+		k.l.Error("Kucoin.setOrderFeeRate", err.Error())
+		return 0
+	}
 
-// 	return m[0].TakerFeeRate
-
-// }
+	f, _ := strconv.ParseFloat(m[0].TakerFeeRate, 64)
+	return f
+}
 
 type token struct {
 	Currency        string `json:"currency"`

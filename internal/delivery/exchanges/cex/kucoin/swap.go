@@ -2,28 +2,21 @@ package kucoin
 
 import (
 	"exchange-provider/internal/entity"
-	"fmt"
 	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) swap(o *entity.CexOrder, index int) (string, error) {
+func (k *kucoinExchange) swap(o *entity.CexOrder, p *entity.Pair) (string, error) {
 	agent := k.agent("swap")
 
-	in := o.Routes[index].In
-	out := o.Routes[index].Out
-
-	p, ok := k.pairs.Get(k.Id(), in.String(), out.String())
-	if !ok {
-		return "", fmt.Errorf("swap: pair not found")
-	}
+	index := 0
 
 	bc := p.T1.ET.(*Token)
 	qc := p.T2.ET.(*Token)
 
 	var side, size, funds string
-	if p.T1.Equal(in) {
+	if p.T1.Equal(o.Routes[index].In) {
 		size = o.Swaps[index].InAmount
 		side = "sell"
 	} else {

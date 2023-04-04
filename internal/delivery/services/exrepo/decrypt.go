@@ -8,7 +8,6 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
 	"fmt"
-	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -19,13 +18,13 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		return nil, err
 	}
 
-	switch strings.Split(ex.Name, "-")[0] {
+	switch ex.Name {
 	case "kucoin":
 		cfg := &kucoin.Configs{}
 		if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
 			return nil, err
 		}
-		return kucoin.NewKucoinExchange(cfg, r.pairs, r.l, true, r.repo, r.pc, r.fee)
+		return kucoin.NewKucoinExchange(cfg, r.pairs, r.l, true, r.repo, r.fee)
 
 	case "swapspace":
 		cfg := &swapspace.Config{}

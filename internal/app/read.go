@@ -24,13 +24,13 @@ func (o *OrderUseCase) read(v interface{}) error {
 		}
 		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("orderId not found"))
 
-	case *entity.EvmOrder:
+	case *entity.DexOrder:
 		dd, err := o.repo.Get(d.ID())
 		if err != nil {
 			return err
 		}
 
-		*d = *dd.(*entity.EvmOrder)
+		*d = *dd.(*entity.DexOrder)
 		return nil
 
 	case *entity.Paginated:

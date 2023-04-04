@@ -25,7 +25,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.pc, s.fee)
+		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.fee)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) withdrawal(o *entity.CexOrder) error {
-	k.applySpreadAndFee(o, o.Routes[0])
+func (k *kucoinExchange) withdrawal(o *entity.CexOrder, p *entity.Pair) error {
+	k.applySpreadAndFee(o, o.Routes[0], p)
 	c := o.Withdrawal.Token
 	wc, err := k.supportedCoins.get(c.String())
 	if err != nil {

@@ -35,7 +35,7 @@ var (
 	}
 )
 
-func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
+func (d *evmDex) createTx(r *entity.Route, tokenOwner, sender, receiver common.Address,
 	amount, feeRate float64) (*ts.Transaction, error) {
 	agent := d.agent("createTx")
 
@@ -72,7 +72,7 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	swapAmountF := big.NewFloat(0).Sub(totalAmountF, feeAmountF)
 	swapAmountI, _ := swapAmountF.Int(nil)
 
-	input, err := d.dex.TxData(in, out, sender, receiver, swapAmountI, int64(feeTier))
+	input, err := d.dex.TxData(in, out, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err
@@ -94,14 +94,15 @@ func (d *EvmDex) createTx(r *entity.Route, sender, receiver common.Address,
 	opts.Sign = false
 
 	data := contracts.IExchangeAggregatorswapInput{
-		TokenIn:     common.HexToAddress(in.ContractAddress),
-		TotalAmount: totalAmountI,
-		FeeAmount:   feeAmountI,
-		AmountIn:    swapAmountI,
-		Swapper:     d.dex.Router(),
-		SwapperData: input,
-		Sender:      sender,
-		Native:      in.Native,
+		TokenIn:      common.HexToAddress(in.ContractAddress),
+		TotalAmount:  totalAmountI,
+		FeeAmount:    feeAmountI,
+		AmountIn:     swapAmountI,
+		FromContract: tokenOwner.Hash().Big().Cmp(d.contractAddress.Hash().Big()) == 1,
+		Swapper:      d.dex.Router(),
+		SwapperData:  input,
+		Sender:       sender,
+		Native:       in.Native,
 	}
 
 	sig, err := d.sign(data)

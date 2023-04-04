@@ -35,13 +35,14 @@ func (s *Server) GetStep(ctx Context) {
 		ctx.JSON(dto.SingleStepResponse(ord.(*entity.CexOrder)), nil)
 		return
 	default:
-		o := ord.(*entity.EvmOrder)
-		tx, isApproveTx, err := s.app.GetMultiStep(o, uint(step))
+		o := ord.(*entity.DexOrder)
+		tx, err := s.app.GetMultiStep(o, uint(step))
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
-		ctx.JSON(dto.MultiStep(o.ObjectId.String(), o.Sender.Hex(), tx, step, len(o.Steps), isApproveTx), nil)
+
+		ctx.JSON(dto.MultiStep(o.ObjectId.String(), o.Sender.Hex(), tx, step, len(o.Steps)), nil)
 		return
 	}
 }

@@ -7,30 +7,22 @@ import (
 
 type OrderUseCase struct {
 	repo entity.OrderRepo
-	pc   entity.PairConfigs
-	// oh    *orderHandler
-	// wh    *withdrawalHandler
-	fs entity.FeeService
-
+	fs   entity.FeeService
 	WalletStore
 	exs *exStore
 	l   logger.Logger
 }
 
 func NewOrderUseCase(repo entity.OrderRepo, exRepo ExchangeRepo, ws WalletStore,
-	pc entity.PairConfigs, fee entity.FeeService, l logger.Logger) *OrderUseCase {
+	fee entity.FeeService, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
 		repo:        repo,
-		pc:          pc,
 		WalletStore: ws,
 		exs:         newExStore(l, exRepo),
 		fs:          fee,
 		l:           l,
 	}
-
-	// o.oh = newOrderHandler(o, repo, pc, fee, o.exs, l)
-	// o.wh = newWithdrawalHandler(o, repo, o.exs, l)
 	return o
 }
 

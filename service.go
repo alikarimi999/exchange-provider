@@ -92,11 +92,10 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore,
-		ss.PairConfigs, ss.FeeService, l)
+	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, ss.FeeService, ss.PairConfigs,
+	if err := http.NewRouter(ou, repo, pairs, ss.FeeService,
 		v, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -167,11 +166,10 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore,
-		ss.PairConfigs, ss.FeeService, l)
+	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore, ss.FeeService, l)
 
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, ss.FeeService, ss.PairConfigs,
+	if err := http.NewRouter(ou, repo, pairs, ss.FeeService,
 		v, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}

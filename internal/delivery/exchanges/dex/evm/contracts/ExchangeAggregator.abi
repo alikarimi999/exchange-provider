@@ -119,6 +119,11 @@
 						"type": "uint256"
 					},
 					{
+						"internalType": "bool",
+						"name": "fromContract",
+						"type": "bool"
+					},
+					{
 						"internalType": "address",
 						"name": "swapper",
 						"type": "address"

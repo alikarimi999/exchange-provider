@@ -3,28 +3,26 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
-
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func (u OrderUseCase) GetMultiStep(o *entity.EvmOrder, step uint) (*types.Transaction, bool, error) {
+func (u OrderUseCase) GetMultiStep(o *entity.DexOrder, step uint) (entity.Tx, error) {
 	st, ok := o.Steps[uint(step)]
 	if !ok {
-		return nil, false, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range"))
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range"))
 	}
-	ex, err := u.exs.getByName(st.Exchange)
+	ex, err := u.exs.getByNID(st.Exchange)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	approvedBefore := st.Approved
-	tx, isApproveTx, err := ex.(entity.EVMDex).GetStep(o, uint(step))
+	tx, err := ex.(entity.EVMDex).GetStep(o, uint(step))
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if !approvedBefore && st.Approved {
 		go u.write(o)
 	}
-	return tx, isApproveTx, nil
+	return tx, nil
 }

@@ -10,6 +10,6 @@ func (o *OrderUseCase) routing(in, out *entity.Token, amount float64) (map[int]*
 		return nil, err
 	}
 	routes := make(map[int]*entity.Route)
-	routes[0] = &entity.Route{In: in, Out: out, Exchange: ex.Name(), ExType: ex.Type()}
+	routes[0] = &entity.Route{In: in, Out: out, Exchange: ex.NID(), ExType: ex.Type()}
 	return routes, nil
 }

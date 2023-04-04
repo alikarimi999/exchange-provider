@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-type EvmDex struct {
+type evmDex struct {
 	*Config
 
 	dex     IDex
@@ -35,7 +35,7 @@ func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 		return nil, err
 	}
 
-	ex := &EvmDex{
+	ex := &evmDex{
 		Config: cfg,
 		ts:     newTokens(),
 		pairs:  pairs,
@@ -78,7 +78,7 @@ func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 		d, err = uniswapV2.NewUniswapV2Dex(ex.Id(), ex.Network, ex.NativeToken, ex.Swapper, ex.Contract,
 			ex.ChainId, ex.privateKey, ex.providers, l)
 	default:
-		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported '%s'", ex.Name())))
+		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported '%s'", ex.NID())))
 		return nil, err
 	}
 
@@ -89,24 +89,28 @@ func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 	return ex, nil
 }
 
-func (d *EvmDex) Name() string {
-	return d.Config.Name + "-" + d.Config.Network
+func (d *evmDex) Name() string {
+	return d.Config.Name
 }
 
-func (d *EvmDex) Id() uint {
+func (d *evmDex) Id() uint {
 	return d.Config.Id
 }
 
-func (d *EvmDex) Chain() string {
+func (d *evmDex) NID() string {
+	return fmt.Sprintf("%s-%d", d.Name(), d.Id())
+}
+
+func (d *evmDex) Chain() string {
 	return d.Config.Network
 }
 
-func (d *EvmDex) Type() entity.ExType {
+func (d *evmDex) Type() entity.ExType {
 	return entity.EvmDEX
 }
 
-func (d *EvmDex) Configs() interface{} {
+func (d *evmDex) Configs() interface{} {
 	return d.Config
 }
 
-func (d *EvmDex) Remove() {}
+func (d *evmDex) Remove() {}

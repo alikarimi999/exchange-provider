@@ -35,21 +35,7 @@ func (r *Router) adminRoutes() {
 			// 	r.srv.GetPairsToAdmin(newContext(ctx, true))
 			// })
 
-			ps.POST("/get_min_deposit", func(ctx *gin.Context) {
-				r.srv.GetMinPairDeposit(newContext(ctx, true))
-			})
-
-			ps.POST("/change_min_deposit", func(ctx *gin.Context) {
-				r.srv.ChangeMinDeposit(newContext(ctx, true))
-			})
-
-			ps.POST("/get_all_min_deposit", func(ctx *gin.Context) {
-				r.srv.GetAllMinDeposit(newContext(ctx, true))
-			})
-
-			// ps.DELETE("", func(ctx *gin.Context) {
-			// 	r.srv.RemovePair(newContext(ctx, true))
-			// })
+			ps.DELETE("", func(ctx *gin.Context) { r.srv.RemovePair(newContext(ctx, true)) })
 		}
 
 		fee := a.Group("/fee")
@@ -70,26 +56,6 @@ func (r *Router) adminRoutes() {
 				r.srv.ChangeUserFee(newContext(ctx, true))
 			})
 
-		}
-
-		spread := a.Group("/spread")
-		{
-
-			spread.GET("/get_all", func(ctx *gin.Context) {
-				r.srv.GetAllPairsSpread(newContext(ctx, true))
-			})
-
-			spread.POST("/change", func(ctx *gin.Context) {
-				r.srv.ChangePairSpread(newContext(ctx, true))
-			})
-
-			spread.GET("/default", func(ctx *gin.Context) {
-				r.srv.GetDefaultSpread(newContext(ctx, true))
-			})
-
-			spread.POST("/default", func(ctx *gin.Context) {
-				r.srv.ChangeDefaultSpread(newContext(ctx, true))
-			})
 		}
 
 		es := a.Group("/exchanges")

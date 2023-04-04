@@ -9,11 +9,11 @@ type Token struct {
 	Standard string `json:"standard"`
 	Network  string `json:"network"`
 
-	Address  string  `json:"address,omitempty"`
-	Decimals uint64  `json:"decimals,omitempty"`
-	Native   bool    `json:"native,omitempty"`
-	Min      float64 `json:"min,omitempty"`
-	Max      float64 `json:"max,omitempty"`
+	ContractAddress string  `json:"contractAddress,omitempty"`
+	Decimals        uint64  `json:"decimals,omitempty"`
+	Native          bool    `json:"native,omitempty"`
+	Min             float64 `json:"min,omitempty"`
+	Max             float64 `json:"max,omitempty"`
 }
 
 func tokenFromEntity(et *entity.Token, info bool) Token {
@@ -23,7 +23,7 @@ func tokenFromEntity(et *entity.Token, info bool) Token {
 		Network:  et.Network,
 	}
 	if info {
-		t.Address = et.ContractAddress
+		t.ContractAddress = et.ContractAddress
 		t.Decimals = et.Decimals
 		t.Native = et.Native
 		t.Min = et.Min
@@ -39,7 +39,7 @@ func (t *Token) ToEntity() *entity.Token {
 		Standard: t.Standard,
 		Network:  t.Network,
 
-		ContractAddress: t.Address,
+		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
 		Native:          t.Native,
 		Min:             t.Min,

@@ -9,8 +9,9 @@ type AddPairsRequest struct {
 }
 
 type Pair struct {
-	T1 *EToken `json:"t1"`
-	T2 *EToken `json:"t2"`
+	T1      *EToken `json:"t1"`
+	T2      *EToken `json:"t2"`
+	FeeRate float64 `json:"feeRate"`
 }
 
 func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
@@ -28,7 +29,8 @@ func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
 
 func (p *Pair) ToEntity(fn func(Token) entity.ExchangeToken) *entity.Pair {
 	return &entity.Pair{
-		T1: p.T1.toEntity(fn),
-		T2: p.T2.toEntity(fn),
+		T1:      p.T1.toEntity(fn),
+		T2:      p.T2.toEntity(fn),
+		FeeRate: p.FeeRate,
 	}
 }

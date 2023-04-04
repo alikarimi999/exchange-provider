@@ -6,11 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type EvmOrder struct {
+type DexOrder struct {
 	*ObjectId
 	UserId    string
 	Status    string
-	Steps     map[uint]*EvmStep
+	Steps     map[uint]*Step
 	Sender    common.Address
 	Receiver  common.Address
 	AmountIn  float64
@@ -18,10 +18,10 @@ type EvmOrder struct {
 	CreatedAt int64
 }
 
-func NewEvmOrder(userId string, steps map[uint]*EvmStep, sender, receiver common.Address,
-	amountIn, feeRate float64) *EvmOrder {
+func NewDexOrder(userId string, steps map[uint]*Step, sender, receiver common.Address,
+	amountIn, feeRate float64) *DexOrder {
 
-	return &EvmOrder{
+	return &DexOrder{
 		UserId:    userId,
 		Steps:     steps,
 		Status:    ONew,
@@ -33,6 +33,6 @@ func NewEvmOrder(userId string, steps map[uint]*EvmStep, sender, receiver common
 	}
 }
 
-func (o *EvmOrder) ID() *ObjectId   { return o.ObjectId }
-func (o *EvmOrder) SetId(id string) { o.ObjectId = &ObjectId{Prefix: PrefOrder, Id: id} }
-func (o *EvmOrder) Type() OrderType { return EVMOrder }
+func (o *DexOrder) ID() *ObjectId   { return o.ObjectId }
+func (o *DexOrder) SetId(id string) { o.ObjectId = &ObjectId{Prefix: PrefOrder, Id: id} }
+func (o *DexOrder) Type() OrderType { return EVMOrder }

@@ -30,7 +30,7 @@ func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
 	}
 
 	for _, ex := range exs {
-		s.exchanges[ex.Name()] = ex
+		s.exchanges[ex.NID()] = ex
 		if ex.Type() == entity.CEX {
 			go ex.(entity.Cex).Run()
 		}
@@ -51,13 +51,13 @@ func (a *exStore) get(id uint) (entity.Exchange, error) {
 	return nil, errors.Wrap(errors.ErrNotFound)
 }
 
-func (a *exStore) getByName(name string) (entity.Exchange, error) {
+func (a *exStore) getByNID(name string) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	ex, ok := a.exchanges[name]
 	if !ok {
 		return nil, errors.Wrap(errors.ErrNotFound,
-			errors.NewMesssage(fmt.Sprintf("exchange %s not found", ex.Name())))
+			errors.NewMesssage(fmt.Sprintf("exchange %s not found", ex.NID())))
 	}
 	return ex, nil
 }
@@ -70,7 +70,7 @@ func (a *exStore) addExchange(ex entity.Exchange) error {
 		return err
 	}
 
-	a.exchanges[ex.Name()] = ex
+	a.exchanges[ex.NID()] = ex
 	if ex.Type() == entity.CEX {
 		go ex.(entity.Cex).Run()
 	}
@@ -110,7 +110,8 @@ func (a *exStore) remove(id uint) error {
 				return err
 			}
 			ex.Remove()
-			delete(a.exchanges, ex.Name())
+			delete(a.exchanges, ex.NID())
+			return nil
 		}
 	}
 

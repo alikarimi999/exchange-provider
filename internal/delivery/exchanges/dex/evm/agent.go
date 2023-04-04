@@ -1,5 +1,5 @@
 package evm
 
-func (d *EvmDex) agent(fn string) string {
-	return d.Name() + "." + fn
+func (d *evmDex) agent(fn string) string {
+	return d.NID() + "." + fn
 }

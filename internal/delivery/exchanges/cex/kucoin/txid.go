@@ -16,6 +16,19 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		return
 	}
 
+	in := o.Routes[0].In
+	out := o.Routes[0].Out
+	p, ok := k.pairs.Get(k.Id(), in.String(), out.String())
+	if !ok {
+		err := fmt.Errorf("pair not found")
+		o.Status = entity.OFailed
+		o.FailedCode = entity.FCExOrdFailed
+		o.FailedDesc = err.Error()
+		if err := k.repo.Update(o); err != nil {
+			k.l.Error(agent, err.Error())
+		}
+		return
+	}
 	k.trackDeposit(o, dc)
 	o.UpdatedAt = time.Now().Unix()
 	if o.Deposit.Status == entity.DepositFailed {
@@ -34,7 +47,7 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 	}
 
 	o.Swaps[0].InAmount = fmt.Sprintf("%v", o.Deposit.Volume)
-	id, err := k.swap(o, 0)
+	id, err := k.swap(o, p)
 	if err != nil {
 		o.Status = entity.OFailed
 		o.FailedCode = entity.FCExOrdFailed
@@ -42,7 +55,6 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		k.l.Error(agent, err.Error())
 		if err := k.repo.Update(o); err != nil {
 			k.l.Error(agent, err.Error())
-
 		}
 		return
 	}
@@ -59,7 +71,7 @@ func (k *kucoinExchange) TxIdSetted(o *entity.CexOrder) {
 		if err = k.repo.Update(o); err != nil {
 			k.l.Error(agent, err.Error())
 		}
-		if err := k.withdrawal(o); err != nil {
+		if err := k.withdrawal(o, p); err != nil {
 			k.l.Error(agent, err.Error())
 
 			o.Status = entity.OFailed

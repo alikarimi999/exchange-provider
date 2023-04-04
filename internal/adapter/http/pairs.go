@@ -5,7 +5,6 @@ import (
 	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	sdto "exchange-provider/internal/delivery/exchanges/cex/swapspace/dto"
 	"strconv"
-	"strings"
 
 	edto "exchange-provider/internal/delivery/exchanges/dex/evm/dto"
 	"exchange-provider/internal/entity"
@@ -25,7 +24,7 @@ func (s *Server) AddPairs(ctx Context) {
 	}
 
 	res := &entity.AddPairsResult{}
-	switch strings.Split(ex.Name(), "-")[0] {
+	switch ex.Name() {
 	case "swapspace":
 		req := &sdto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
@@ -52,7 +51,7 @@ func (s *Server) AddPairs(ctx Context) {
 			return
 		}
 
-	case "uniswapv3", "panckakeswapv2":
+	case "uniswapv3", "uniswapv2", "panckakeswapv2":
 		req := &edto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
 			ctx.JSON(nil, err)
@@ -99,6 +98,22 @@ func (s *Server) GePairsToUser(ctx Context) {
 		res.Pairs = append(res.Pairs, dto.PairFromEntity(p))
 	}
 	ctx.JSON(res, nil)
+}
+
+func (s *Server) RemovePair(ctx Context) {
+	p := &dto.Pair{}
+	if err := ctx.Bind(p); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+
+	if err := s.app.RemovePair(p.LP, p.T1.ToEntity(), p.T2.ToEntity()); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+	ctx.JSON(struct {
+		Msg string `json:"msg"`
+	}{"done"}, nil)
 }
 
 // func (s *Server) GetPairsToAdmin(ctx Context) {

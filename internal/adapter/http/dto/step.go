@@ -2,21 +2,13 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
-
-	"github.com/ethereum/go-ethereum/core/types"
-)
-
-type StepType string
-
-const (
-	evmStepType StepType = "EVM"
 )
 
 type OrderStep struct {
-	OrderId     string   `json:"orderId"`
-	Type        StepType `json:"type,omitempty"`
-	TotalSteps  int      `json:"totalSteps"`
-	CurrentStep int      `json:"currentStep"`
+	OrderId     string `json:"orderId"`
+	Type        string `json:"type,omitempty"`
+	TotalSteps  int    `json:"totalSteps"`
+	CurrentStep int    `json:"currentStep"`
 }
 
 type SingleStep struct {
@@ -47,19 +39,17 @@ func SingleStepResponse(o *entity.CexOrder) *SingleStep {
 
 type multiStep struct {
 	*OrderStep
-	IsApproveTx bool        `json:"isApproveTx"`
 	Transaction interface{} `json:"transaction"`
 }
 
-func MultiStep(oId, sender string, tx interface{}, step, steps int, isApprove bool) *multiStep {
+func MultiStep(oId, sender string, tx entity.Tx, step, steps int) *multiStep {
 	ms := &multiStep{
-		OrderStep:   &OrderStep{OrderId: oId, CurrentStep: step, TotalSteps: steps},
-		IsApproveTx: isApprove,
+		OrderStep: &OrderStep{OrderId: oId, CurrentStep: step, TotalSteps: steps},
 	}
-	switch t := tx.(type) {
-	case *types.Transaction:
-		ms.Type = evmStepType
-		ms.Transaction = evmTx(t, sender)
+	switch tx.Type() {
+	case entity.Evm:
+		ms.Type = string(tx.Type())
+		ms.Transaction = evmTx(tx, sender)
 	}
 	return ms
 }

@@ -3,6 +3,7 @@ package swapspace
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
+	"fmt"
 )
 
 const (
@@ -32,8 +33,11 @@ func SwapSpace(cfg *Config, repo entity.OrderRepo,
 	return ex, nil
 }
 
-func (ex *exchange) Id() uint         { return ex.Config.Id }
-func (*exchange) Name() string        { return "swapspace" }
+func (ex *exchange) Id() uint  { return ex.Config.Id }
+func (*exchange) Name() string { return "swapspace" }
+func (ex *exchange) NID() string {
+	return fmt.Sprintf("%s-%d", ex.Name(), ex.Id())
+}
 func (*exchange) Type() entity.ExType { return entity.CEX }
 func (ex *exchange) Remove()          {}
 func (ex *exchange) Run()             {}

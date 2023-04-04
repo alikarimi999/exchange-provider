@@ -19,7 +19,6 @@ type ExchangeRepo struct {
 	repo  entity.OrderRepo
 	pairs entity.PairsRepo
 	fee   entity.FeeService
-	pc    entity.PairConfigs
 	v     *viper.Viper
 	l     logger.Logger
 	app.WalletStore
@@ -27,14 +26,13 @@ type ExchangeRepo struct {
 }
 
 func NewExchangeRepo(db *mongo.Database, ws app.WalletStore, pairs entity.PairsRepo,
-	repo entity.OrderRepo, fee entity.FeeService, pc entity.PairConfigs,
+	repo entity.OrderRepo, fee entity.FeeService,
 	v *viper.Viper, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
 		db:          db.Collection("exchange-repository"),
 		repo:        repo,
 		pairs:       pairs,
 		fee:         fee,
-		pc:          pc,
 		v:           v,
 		l:           l,
 		WalletStore: ws,
@@ -81,9 +79,12 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 }
 
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
-	d, err := a.db.DeleteOne(context.Background(), bson.D{{"id", ex.Id()}})
+	if err := a.pairs.RemoveAll(ex.Id()); err != nil {
+		return err
+	}
+	d, err := a.db.DeleteOne(context.Background(), bson.D{{"_id", ex.Id()}})
 	if d.DeletedCount > 0 {
-		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %d deleted", ex.Id()))
+		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %s deleted", ex.NID()))
 	}
 	return err
 }

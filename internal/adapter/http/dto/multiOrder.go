@@ -23,7 +23,7 @@ type adminMultiOrder struct {
 	FeeRate  float64 `bson:"feeRate"`
 }
 
-func (a *adminMultiOrder) fromEntity(o *entity.EvmOrder) *order {
+func (a *adminMultiOrder) fromEntity(o *entity.DexOrder) *order {
 	a = &adminMultiOrder{
 		Steps:    make(map[uint]*evmStep),
 		Sender:   o.Sender.Hex(),
@@ -55,7 +55,7 @@ type userMultiOrder struct {
 	FeeRate    float64 `bson:"feeRate"`
 }
 
-func (u *userMultiOrder) fromEntity(o *entity.EvmOrder) *order {
+func (u *userMultiOrder) fromEntity(o *entity.DexOrder) *order {
 	u = &userMultiOrder{
 		TotalStpes: len(o.Steps),
 		Sender:     o.Sender.Hex(),

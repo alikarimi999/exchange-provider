@@ -2,19 +2,16 @@ package kucoin
 
 import (
 	"exchange-provider/internal/entity"
+	"math/big"
+	"strconv"
 )
 
-func (k *kucoinExchange) applySpreadAndFee(ord *entity.CexOrder, route *entity.Route) {
-	// aVol, sVol, rate, _ := k.pc.ApplySpread(route.In, route.Out, ord.Swaps[0].OutAmount)
-
-	// ord.SpreadCurrency = route.Out.String()
-	// ord.SpreadVol = sVol
-	// ord.SpreadRate = rate
-
-	r, f, _ := k.fee.ApplyFee(ord.UserId, ord.Swaps[0].OutAmount)
-
-	ord.Withdrawal.Token = route.Out
-	ord.Withdrawal.Volume = r
-	ord.Fee = f
+func (k *kucoinExchange) applySpreadAndFee(ord *entity.CexOrder, route *entity.Route, p *entity.Pair) {
+	total, _ := strconv.ParseFloat(ord.Swaps[0].OutAmount, 64)
+	fee := total * (p.FeeRate / 100)
+	ord.Withdrawal.Volume = big.NewFloat(total - fee).String()
+	ord.Fee = big.NewFloat(fee).String()
 	ord.FeeCurrency = route.Out.String()
+	ord.Withdrawal.Token = route.Out
+
 }

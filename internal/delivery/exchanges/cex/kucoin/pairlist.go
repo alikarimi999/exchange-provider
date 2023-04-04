@@ -32,7 +32,7 @@ func newPairList(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *pa
 }
 
 func (p *pairList) download() error {
-	op := errors.Op(fmt.Sprintf("%s.pairList.download", p.k.Name()))
+	op := errors.Op(fmt.Sprintf("%s.pairList.download", p.k.NID()))
 
 	res, err := p.api.Symbols("")
 	if err := handleSDKErr(err, res); err != nil {
@@ -53,7 +53,7 @@ func (p *pairList) download() error {
 }
 
 func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
-	agent := fmt.Sprintf("%s.pairList.support", pl.k.Name())
+	agent := fmt.Sprintf("%s.pairList.support", pl.k.NID())
 	if len(pl.pairs) == 0 {
 		if err := pl.download(); err != nil {
 			return err

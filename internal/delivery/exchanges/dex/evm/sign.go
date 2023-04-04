@@ -2,7 +2,7 @@ package evm
 
 import "github.com/ethereum/go-ethereum/crypto"
 
-func (d *EvmDex) sign(data interface{}) ([]byte, error) {
+func (d *evmDex) sign(data interface{}) ([]byte, error) {
 	packed, err := args.Pack(data)
 	if err != nil {
 		return nil, err

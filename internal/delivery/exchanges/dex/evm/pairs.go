@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
+func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	req := data.(*dto.AddPairsRequest)
 	ps := []*entity.Pair{}
@@ -46,7 +46,7 @@ func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			}
 			mux.Lock()
 			p.LP = d.Id()
-			p.Exchange = d.Name()
+			p.Exchange = d.NID()
 			add = append(add, p)
 			res.Added = append(res.Added, *p)
 			mux.Unlock()
@@ -73,7 +73,7 @@ func (d *EvmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	return res, nil
 }
 
-func (d *EvmDex) checkPair(t1, t2 *entity.Token) error {
+func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
 	amOut, _, err := d.dex.EstimateAmountOut(t1, t2, 1)
 	if err != nil {
 		return err
@@ -87,4 +87,6 @@ func (d *EvmDex) checkPair(t1, t2 *entity.Token) error {
 	return nil
 }
 
-func (d *EvmDex) RemovePair(t1, t2 *entity.Token) error { return nil }
+func (d *evmDex) RemovePair(t1, t2 *entity.Token) error {
+	return d.pairs.Remove(d.Id(), t1.String(), t2.String())
+}

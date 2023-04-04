@@ -17,19 +17,17 @@ type Server struct {
 	pairs entity.PairsRepo
 	fee   entity.FeeService
 	l     logger.Logger
-	pc    entity.PairConfigs
 	v     *viper.Viper
 	cf    *chainsFee
 }
 
 func NewServer(app *app.OrderUseCase, v *viper.Viper, pairs entity.PairsRepo,
-	repo entity.OrderRepo, fee entity.FeeService, pc entity.PairConfigs, l logger.Logger) *Server {
+	repo entity.OrderRepo, fee entity.FeeService, l logger.Logger) *Server {
 	s := &Server{
 		app:   app,
 		repo:  repo,
 		pairs: pairs,
 		fee:   fee,
-		pc:    pc,
 		l:     l,
 		v:     v,
 		cf: &chainsFee{
@@ -73,13 +71,14 @@ func (s *Server) NewOrder(ctx Context) {
 		ctx.JSON(dto.SingleStepResponse(o.(*entity.CexOrder)), nil)
 		return
 	default:
-		o := o.(*entity.EvmOrder)
-		tx, isApproveTx, err := s.app.GetMultiStep(o, 1)
+		o := o.(*entity.DexOrder)
+		tx, err := s.app.GetMultiStep(o, 1)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
-		ctx.JSON(dto.MultiStep(o.ObjectId.String(), o.Sender.Hex(), tx, 1, len(o.Steps), isApproveTx), nil)
+
+		ctx.JSON(dto.MultiStep(o.ObjectId.String(), o.Sender.Hex(), tx, 1, len(o.Steps)), nil)
 		return
 	}
 }

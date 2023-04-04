@@ -20,7 +20,7 @@ func userOrderFromEntity(o entity.Order) *order {
 		return s.fromEntity(o.(*entity.CexOrder))
 	case entity.EVMOrder:
 		m := &userMultiOrder{}
-		return m.fromEntity(o.(*entity.EvmOrder))
+		return m.fromEntity(o.(*entity.DexOrder))
 	default:
 		return nil
 	}
@@ -33,7 +33,7 @@ func adminOrderFromEntity(o entity.Order) *order {
 		return s.fromEntity(o.(*entity.CexOrder))
 	case entity.EVMOrder:
 		m := &adminMultiOrder{}
-		return m.fromEntity(o.(*entity.EvmOrder))
+		return m.fromEntity(o.(*entity.DexOrder))
 	default:
 		return nil
 	}

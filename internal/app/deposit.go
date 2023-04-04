@@ -38,7 +38,7 @@ func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 	if exist {
 		return errors.Wrap(errors.NewMesssage("tx id used before"), op, errors.ErrBadRequest)
 	}
-	ex, err := o.exs.getByName(ord.Routes[0].Exchange)
+	ex, err := o.exs.getByNID(ord.Routes[0].Exchange)
 	if err != nil {
 		return err
 	}
