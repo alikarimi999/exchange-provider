@@ -4,21 +4,24 @@ import (
 	"exchange-provider/internal/entity"
 )
 
-type PaginatedOrdersRequest struct {
-	*PaginatedRequest
-	Fs []*Filter `json:"filters"`
+type PaginatedReq struct {
+	PaginatedRequest
+	Desc bool      `json:"desc"`
+	Fs   []*Filter `json:"filters"`
 }
 
-func (r *PaginatedOrdersRequest) Map() *entity.Paginated {
+func (r *PaginatedReq) Map() *entity.Paginated {
 	fs := []*entity.Filter{}
-
 	for _, f := range r.Fs {
-		fs = append(fs, f.ToEntity())
+		if len(f.Values) > 0 {
+			fs = append(fs, f.ToEntity())
+		}
 	}
 
 	return &entity.Paginated{
 		Page:    r.CurrentPage,
 		PerPage: r.PageSize,
+		Desc:    r.Desc,
 		Filters: fs,
 		Orders:  []entity.Order{},
 	}
@@ -36,7 +39,7 @@ func OrderResponse(p *entity.Paginated, admin bool) *PaginatedOrdersResp {
 	r.Orders = []interface{}{}
 	if admin {
 		for _, o := range p.Orders {
-			r.Orders = append(r.Orders, interface{}(adminOrderFromEntity(o)))
+			r.Orders = append(r.Orders, interface{}(o))
 		}
 
 	} else {

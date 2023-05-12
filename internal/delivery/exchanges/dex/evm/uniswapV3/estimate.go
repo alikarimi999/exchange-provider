@@ -3,6 +3,7 @@ package uniswapV3
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"math"
 	"math/big"
 
@@ -16,7 +17,7 @@ func (d *dex) EstimateAmountOut(in, out *entity.Token, amount float64) (float64,
 	res, err := con.EstimateAmountOut(nil, d.factory, common.HexToAddress(in.ContractAddress),
 		common.HexToAddress(out.ContractAddress), amountIn, 3)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrap(errors.ErrInternal, err)
 	}
 	amountOut, _ := big.NewFloat(0).Quo(big.NewFloat(0).SetInt(res.AmountOut),
 		big.NewFloat(math.Pow10(int(out.Decimals)))).Float64()

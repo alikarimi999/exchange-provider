@@ -2,17 +2,15 @@ package uniswapV2
 
 import (
 	"crypto/ecdsa"
+	ts "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV2/contracts"
-	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/logger"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 type dex struct {
-	id          uint
 	network     string
 	chainId     *big.Int
 	nativeToken string
@@ -27,11 +25,10 @@ type dex struct {
 	l logger.Logger
 }
 
-func NewUniswapV2Dex(id uint, network, nativeToken, router, contract string, chainId int64,
+func NewUniswapV2Dex(nid string, network, nativeToken, router, contract string, chainId int64,
 	prvKey *ecdsa.PrivateKey, ps []*ts.EthProvider, l logger.Logger) (*dex, error) {
 
 	d := &dex{
-		id:          id,
 		network:     network,
 		chainId:     big.NewInt(chainId),
 		nativeToken: nativeToken,
@@ -56,7 +53,3 @@ func NewUniswapV2Dex(id uint, network, nativeToken, router, contract string, cha
 }
 
 func (d *dex) Router() common.Address { return d.router }
-
-func (d *dex) agent(fn string) string {
-	return fmt.Sprintf("%s.%s", d.id, fn)
-}

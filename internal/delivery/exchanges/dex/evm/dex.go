@@ -7,24 +7,22 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/spf13/viper"
 )
 
 type evmDex struct {
 	*Config
-
-	dex     IDex
-	pairs   entity.PairsRepo
-	version int8
-	ts      *tokens
-	v       *viper.Viper
-	l       logger.Logger
+	mux   *sync.Mutex
+	dex   IDex
+	pairs entity.PairsRepo
+	repo  entity.OrderRepo
+	l     logger.Logger
 }
 
-func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
+func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 	l logger.Logger, readConfig bool) (entity.EVMDex, error) {
 	var (
 		d   IDex
@@ -37,9 +35,9 @@ func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 
 	ex := &evmDex{
 		Config: cfg,
-		ts:     newTokens(),
+		mux:    &sync.Mutex{},
 		pairs:  pairs,
-		v:      v,
+		repo:   repo,
 		l:      l,
 	}
 
@@ -52,33 +50,20 @@ func NewEvmDex(cfg *Config, pairs entity.PairsRepo, v *viper.Viper,
 	ex.swapperAddress = common.HexToAddress(ex.Swapper)
 	ex.WrappedNativeToken = fmt.Sprintf("W%s", ex.NativeToken)
 
-	if readConfig {
-		ps := ex.pairs.GetAll(ex.Id())
-		for _, p := range ps {
-			if !ex.ts.exists(p.T1.String()) {
-				ex.ts.add(p.T1)
-			}
-			if !ex.ts.exists(p.T2.String()) {
-				ex.ts.add(p.T2)
-			}
-		}
-	}
 	if err := ex.checkProviders(); err != nil {
 		return nil, err
 	}
 
-	switch cfg.Name {
-	case "uniswapv3":
-		ex.version = 3
-		d, err = uniswapV3.NewUniswapV3Dex(ex.Id(), ex.Network, ex.NativeToken, ex.Swapper,
+	switch cfg.Version {
+	case 3:
+		d, err = uniswapV3.NewUniswapV3Dex(ex.NID(), ex.Network, ex.NativeToken, ex.Swapper,
 			ex.Contract, ex.ChainId, ex.privateKey, ex.providers, l)
 
-	case "uniswapv2", "panckakeswapv2":
-		ex.version = 2
-		d, err = uniswapV2.NewUniswapV2Dex(ex.Id(), ex.Network, ex.NativeToken, ex.Swapper, ex.Contract,
+	case 2:
+		d, err = uniswapV2.NewUniswapV2Dex(ex.NID(), ex.Network, ex.NativeToken, ex.Swapper, ex.Contract,
 			ex.ChainId, ex.privateKey, ex.providers, l)
 	default:
-		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage(fmt.Sprintf("unsupported '%s'", ex.NID())))
+		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("uniswap only support version '1' and '2'"))
 		return nil, err
 	}
 
@@ -111,6 +96,17 @@ func (d *evmDex) Type() entity.ExType {
 
 func (d *evmDex) Configs() interface{} {
 	return d.Config
+}
+
+func (d *evmDex) EnableDisable(enable bool) {
+	d.mux.Lock()
+	defer d.mux.Unlock()
+	d.Enable = enable
+}
+func (d *evmDex) IsEnable() bool {
+	d.mux.Lock()
+	defer d.mux.Unlock()
+	return d.Enable
 }
 
 func (d *evmDex) Remove() {}

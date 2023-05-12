@@ -24,18 +24,20 @@ type kucoinExchange struct {
 	wa    *withdrawalAggregator
 	pls   *pairList
 
-	l              logger.Logger
-	supportedCoins *supportedCoins
-	pairs          entity.PairsRepo
-	repo           entity.OrderRepo
-	fee            entity.FeeService
+	l     logger.Logger
+	pairs entity.PairsRepo
+	repo  entity.OrderRepo
+
+	fee entity.FeeTable
+	st  entity.SpreadTable
 
 	stopCh   chan struct{}
 	stopedAt time.Time
 }
 
 func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, readConfig bool,
-	repo entity.OrderRepo, fee entity.FeeService) (entity.Cex, error) {
+	repo entity.OrderRepo, fee entity.FeeTable, st entity.SpreadTable) (entity.Cex, error) {
+
 	cfg, err := validateConfigs(cfgi)
 	if err != nil {
 		return nil, errors.Wrap("NewKucoinExchange", err)
@@ -60,10 +62,10 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 			kucoin.ApiKeyVersionOption(cfg.ApiVersion),
 		),
 
-		supportedCoins: newSupportedCoins(),
-		repo:           repo,
-		fee:            fee,
-		l:              l,
+		repo: repo,
+		fee:  fee,
+		st:   st,
+		l:    l,
 
 		stopCh: make(chan struct{}),
 	}
@@ -82,27 +84,52 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 
 	if readConfig {
 		ps := k.pairs.GetAll(k.Id())
-		cs := []*entity.Token{}
-		for _, p := range ps {
-			if err := k.pls.support(p, true); err != nil {
-				k.l.Error(agent, err.Error())
-				continue
+		if len(ps) > 0 {
+			if err := k.pls.downloadList(); err != nil {
+				return nil, err
 			}
-			bc := p.T1
-			qc := p.T2
-			cs = append(cs, bc)
-			cs = append(cs, qc)
+			if err := k.pls.downloadTickers(); err != nil {
+				return nil, err
+			}
+			wg := &sync.WaitGroup{}
+			waitChan := make(chan struct{}, max_conccurrent_jobs)
+
+			for _, p := range ps {
+				waitChan <- struct{}{}
+				wg.Add(1)
+				go func(p *entity.Pair) {
+					defer func() {
+						<-waitChan
+						wg.Done()
+					}()
+					if err := k.support(p); err != nil {
+						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
+						k.l.Debug(agent, err.Error())
+						return
+					}
+
+					if err := k.setInfos(p); err != nil {
+						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
+						k.l.Debug(agent, err.Error())
+						return
+					}
+					if err := k.pairs.Update(k.Id(), p); err != nil {
+						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
+						k.l.Debug(agent, err.Error())
+						return
+					}
+				}(p)
+			}
+			wg.Wait()
+			if err := k.retreiveOrders(); err != nil {
+				return nil, err
+			}
 		}
-		k.supportedCoins.add(cs)
-
 	}
-
-	k.l.Debug(agent, fmt.Sprintf("exchange %s started successfully", k.NID()))
+	go k.da.run(k.stopCh)
+	go k.wa.run(k.stopCh)
+	k.l.Debug(agent, fmt.Sprintf("exchange '%s' started successfully", k.NID()))
 	return k, nil
-}
-
-func (k *kucoinExchange) Run() {
-	k.l.Debug(fmt.Sprintf("%s.Run", k.NID()), "started")
 }
 
 func (k *kucoinExchange) Remove() {
@@ -122,6 +149,17 @@ func (k *kucoinExchange) Id() uint {
 
 func (k *kucoinExchange) Name() string {
 	return "kucoin"
+}
+
+func (k *kucoinExchange) EnableDisable(enable bool) {
+	k.mux.Lock()
+	defer k.mux.Unlock()
+	k.cfg.Enable = enable
+}
+func (k *kucoinExchange) IsEnable() bool {
+	k.mux.Lock()
+	defer k.mux.Unlock()
+	return k.cfg.Enable
 }
 
 func (k *kucoinExchange) NID() string {

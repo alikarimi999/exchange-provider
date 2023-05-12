@@ -17,23 +17,11 @@ func userOrderFromEntity(o entity.Order) *order {
 	switch o.Type() {
 	case entity.CEXOrder:
 		s := &userSingleOrder{}
-		return s.fromEntity(o.(*entity.CexOrder))
+		return s.fromEntity(o)
+
 	case entity.EVMOrder:
 		m := &userMultiOrder{}
-		return m.fromEntity(o.(*entity.DexOrder))
-	default:
-		return nil
-	}
-}
-
-func adminOrderFromEntity(o entity.Order) *order {
-	switch o.Type() {
-	case entity.CEXOrder:
-		s := &adminSingleOrder{}
-		return s.fromEntity(o.(*entity.CexOrder))
-	case entity.EVMOrder:
-		m := &adminMultiOrder{}
-		return m.fromEntity(o.(*entity.DexOrder))
+		return m.evmFromEntity(o)
 	default:
 		return nil
 	}
@@ -41,8 +29,8 @@ func adminOrderFromEntity(o entity.Order) *order {
 
 type CreateOrderRequest struct {
 	UserId   string         `json:"userId"`
-	Input    Token          `json:"input"`
-	Output   Token          `json:"output"`
+	Input    entity.TokenId `json:"input"`
+	Output   entity.TokenId `json:"output"`
 	Sender   entity.Address `json:"sender"`
 	Refund   entity.Address `json:"refund"`
 	Receiver entity.Address `json:"receiver"`

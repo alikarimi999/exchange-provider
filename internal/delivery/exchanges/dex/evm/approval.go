@@ -11,22 +11,7 @@ import (
 	ts "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (d *evmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transaction, error) {
-	t1, err := d.ts.get(r.In.String())
-	if err != nil {
-		return nil, err
-	}
-	t2, err := d.ts.get(r.Out.String())
-	if err != nil {
-		return nil, err
-	}
-
-	var in *entity.Token
-	if t1.Equal(r.In) {
-		in = t1
-	} else {
-		in = t2
-	}
+func (d *evmDex) approveTx(in *entity.Token) (*ts.Transaction, error) {
 
 	c, err := contracts.NewIERC20(common.HexToAddress(in.ContractAddress), d.provider())
 	if err != nil {
@@ -42,12 +27,7 @@ func (d *evmDex) approveTx(r *entity.Route, owner common.Address) (*ts.Transacti
 	return c.Approve(opts, d.contractAddress, em.MaxBig256)
 }
 
-func (d *evmDex) needApproval(r *entity.Route, owner common.Address, minAmount float64) (bool, error) {
-	in, err := d.ts.get(r.In.String())
-	if err != nil {
-		return false, err
-	}
-
+func (d *evmDex) needApproval(in *entity.Token, owner common.Address, minAmount float64) (bool, error) {
 	if in.Native {
 		return false, nil
 	}

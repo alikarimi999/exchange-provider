@@ -1,6 +1,7 @@
 package kucoin
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -13,11 +14,15 @@ type depositRecord struct {
 	DownloadedAt time.Time
 }
 
-func (d *depositRecord) MatchCurrency(t *Token) bool {
-	return d.Currency == string(t.Currency)
+func (d *depositRecord) MatchCurrency(t *Token) error {
+	if !(d.Currency == string(t.Currency)) {
+		return fmt.Errorf("currency mismatch,`%s`:`%s` ",
+			t.Currency, d.Currency)
+	}
+	return nil
 }
 
-func (d *depositRecord) snapShot() *depositRecord {
+func (d *depositRecord) snapshot() *depositRecord {
 	return &depositRecord{
 		TxId:         d.TxId,
 		Currency:     d.Currency,

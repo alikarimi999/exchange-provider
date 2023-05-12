@@ -21,7 +21,7 @@ func (s *Server) ChangeDefaultFee(ctx Context) {
 		return
 	}
 
-	if err := s.app.ChangeDefaultFee(req.DefaultFeeRate); err != nil {
+	if err := s.fee.ChangeDefaultFee(req.DefaultFeeRate); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
@@ -32,34 +32,14 @@ func (s *Server) ChangeDefaultFee(ctx Context) {
 func (s *Server) GetDefaultFee(ctx Context) {
 	ctx.JSON(
 		struct {
-			D string `json:"defaultFee"`
+			D float64 `json:"defaultFee"`
 		}{
-			D: s.app.GetDefaultFee(),
+			D: s.fee.GetDefaultFee(),
 		}, nil)
 }
 
-func (s *Server) GetUsersFee(ctx Context) {
-	req := struct {
-		Users []string `json:"users"`
-	}{}
-
-	if err := ctx.Bind(&req); err != nil {
-		ctx.JSON(nil, err)
-		return
-	}
-
-	if len(req.Users) == 0 {
-		ctx.JSON(s.app.GetAllUsersFee(), nil)
-		return
-	}
-
-	resp := make(map[string]string)
-
-	for _, uId := range req.Users {
-		resp[uId] = s.app.GetUserFee(uId)
-	}
-
-	ctx.JSON(resp, nil)
+func (s *Server) GetFees(ctx Context) {
+	ctx.JSON(s.fee.GetAllBusFees(), nil)
 }
 
 func (s *Server) ChangeUserFee(ctx Context) {
@@ -88,7 +68,7 @@ func (s *Server) ChangeUserFee(ctx Context) {
 			continue
 		}
 
-		if err := s.app.ChangeUserFee(u.UserId, u.F); err != nil {
+		if err := s.fee.UpdateBusFee(u.UserId, u.F); err != nil {
 			u.M = err.Error()
 			resp.Users = append(resp.Users, u)
 			continue

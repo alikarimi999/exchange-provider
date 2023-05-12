@@ -3,7 +3,6 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
-	"exchange-provider/internal/delivery/exchanges/cex/swapspace"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -25,7 +24,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.fee)
+		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.fee, s.spread)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
@@ -39,33 +38,33 @@ func (s *Server) AddExchange(ctx Context) {
 		ctx.JSON(cfg, nil)
 		return
 
-	case "swapspace":
-		cfg := &swapspace.Config{}
-		if err := ctx.Bind(cfg); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// case "swapspace":
+	// 	cfg := &swapspace.Config{}
+	// 	if err := ctx.Bind(cfg); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		if s.app.ExchangeExists(cfg.Id) {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
-			return
-		}
+	// 	if s.app.ExchangeExists(cfg.Id) {
+	// 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+	// 		return
+	// 	}
 
-		ex, err := swapspace.SwapSpace(cfg, s.repo, s.pairs, s.l)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	// 	ex, err := swapspace.SwapSpace(cfg, s.repo, s.pairs, s.l)
+	// 	if err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
 
-		if err := s.app.AddExchange(ex); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-		cfg.Message = "done"
-		ctx.JSON(cfg, nil)
-		return
+	// 	if err := s.app.AddExchange(ex); err != nil {
+	// 		ctx.JSON(nil, err)
+	// 		return
+	// 	}
+	// 	cfg.Message = "done"
+	// 	ctx.JSON(cfg, nil)
+	// 	return
 
-	case "dex":
+	case "evmdex":
 		cfg := &evm.Config{}
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(nil, err)
@@ -77,7 +76,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := evm.NewEvmDex(cfg, s.pairs, s.v, s.l, false)
+		ex, err := evm.NewEvmDex(cfg, s.repo, s.pairs, s.l, false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
@@ -91,35 +90,6 @@ func (s *Server) AddExchange(ctx Context) {
 		cfg.Message = "done"
 		ctx.JSON(cfg, nil)
 		return
-
-	// case "multichain":
-
-	// 	cfg := &multichain.Config{}
-	// 	if err := ctx.Bind(cfg); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	if err := cfg.Validate(); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	ex, err := multichain.NewMultichain(cfg, s.app.WalletStore, s.v, s.l, false)
-	// 	if err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	cfg.Name = "multichain"
-	// 	if err := s.app.AddExchange(ex); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	cfg.Msg = "done"
-	// 	ctx.JSON(cfg, nil)
-	// 	return
 	default:
 		err := errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", name)))
@@ -130,50 +100,114 @@ func (s *Server) AddExchange(ctx Context) {
 }
 
 func (s *Server) GetExchangeList(ctx Context) {
-
-	res := &dto.GetAllExchangesResponse{
-		Exchanges: make(map[uint]*dto.Account),
-	}
-
-	for _, ex := range s.app.AllExchanges() {
-		res.Exchanges[ex.Id()] = &dto.Account{
-			Conf: ex.Configs(),
+	sid := ctx.Param("id")
+	var (
+		id  int
+		err error
+	)
+	if sid != "" {
+		id, err = strconv.Atoi(sid)
+		if err != nil || id == 0 {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage("id must be a number greater than zero")))
+			return
 		}
 	}
 
-	if len(res.Exchanges) == 0 {
-		err := errors.Wrap(errors.ErrNotFound,
-			errors.NewMesssage("set at least one exchange"))
-		ctx.JSON(nil, err)
-		return
-	}
+	res := &dto.GetAllExchangesResponse{}
+	if id > 0 {
+		ex, err := s.app.GetExchange(uint(id))
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
 
+		res.Exchanges = append(res.Exchanges, dto.Exchange{
+			Type: string(ex.Type()),
+			Conf: ex.Configs(),
+		})
+	} else {
+		for _, ex := range s.app.AllExchanges() {
+			res.Exchanges = append(res.Exchanges, dto.Exchange{
+				Type: string(ex.Type()),
+				Conf: ex.Configs(),
+			})
+		}
+	}
 	ctx.JSON(res, nil)
 }
 
-func (s *Server) RemoveExchange(ctx Context) {
-	sid := ctx.Param("id")
-	id, err := strconv.Atoi(sid)
-	if err != nil {
+func (s *Server) CommandExchanges(ctx Context) {
+	req := dto.LpsRequest{}
+	if err := ctx.Bind(&req); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
+	var enable bool
+	res := dto.CmdResp{}
+	switch req.Cmd {
+	case "remove":
+		if req.All {
+			if err := s.app.RemoveExchange(0, true); err != nil {
+				ctx.JSON(nil, err)
+				return
+			}
+			ctx.JSON(struct {
+				Msg string "json:\"msg\""
+			}{Msg: "done"}, nil)
+			return
+		}
 
-	if err := s.app.RemoveExchange(uint(id), true); err != nil {
-		ctx.JSON(nil, err)
+		for _, lp := range req.Lps {
+			resp := struct {
+				Lp  uint   "json:\"lp\""
+				Msg string "json:\"msg\""
+			}{Lp: lp}
+			err := s.app.RemoveExchange(lp, false)
+			if err != nil {
+				resp.Msg = err.Error()
+				res.LpsRes = append(res.LpsRes, resp)
+				continue
+			}
+			resp.Msg = "done"
+			res.LpsRes = append(res.LpsRes, resp)
+		}
+		ctx.JSON(res, nil)
+		return
+	case "enable":
+		enable = true
+	case "disable":
+		enable = false
+	default:
+		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+			fmt.Errorf("cmd '%s' is not supported", req.Cmd)))
 		return
 	}
 
-	s.v.Set(sid, struct{}{})
-	if err := s.v.WriteConfig(); err != nil {
-		ctx.JSON(nil, err)
+	if req.All {
+		if err := s.app.EnableDisable(0, enable, true); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+		ctx.JSON(struct {
+			Msg string "json:\"msg\""
+		}{Msg: "done"}, nil)
 		return
 	}
 
-	ctx.JSON(
-		struct {
-			M string `json:"message"`
-		}{
-			M: "done",
-		}, nil)
+	for _, lp := range req.Lps {
+		resp := struct {
+			Lp  uint   "json:\"lp\""
+			Msg string "json:\"msg\""
+		}{Lp: lp}
+		err := s.app.EnableDisable(lp, enable, false)
+		if err != nil {
+			resp.Msg = err.Error()
+			res.LpsRes = append(res.LpsRes, resp)
+			continue
+		}
+		resp.Msg = "done"
+		res.LpsRes = append(res.LpsRes, resp)
+	}
+	ctx.JSON(res, nil)
 }

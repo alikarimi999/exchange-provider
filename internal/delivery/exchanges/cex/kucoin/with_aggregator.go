@@ -2,7 +2,7 @@ package kucoin
 
 import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/pkg/logger"
 	"strconv"
 	"sync"
@@ -18,7 +18,6 @@ type withdrawalAggregator struct {
 	l          logger.Logger
 	c          *cache
 	ticker     *time.Ticker
-	params     map[string]string
 	windowSize time.Duration
 
 	pMux           *sync.RWMutex
@@ -31,15 +30,13 @@ func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator 
 		k:          k,
 		l:          k.l,
 		c:          c,
-		params:     make(map[string]string),
-		ticker:     time.NewTicker(time.Minute * 2),
-		windowSize: time.Hour * 1,
+		ticker:     time.NewTicker(time.Second * 15),
+		windowSize: time.Hour * 2,
 
 		pMux:           &sync.RWMutex{},
 		pTicker:        time.NewTicker(2 * time.Hour),
 		proccessedList: make(map[string]struct{ time.Time }),
 	}
-	go wa.run(k.stopCh)
 	return wa
 }
 
@@ -48,53 +45,8 @@ func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 
 	for {
 		select {
-		case t := <-wa.ticker.C:
-			wss, err := wa.aggregate("SUCCESS", t.Add(-wa.windowSize), t)
-			if err != nil {
-				wa.l.Error(agent, err.Error())
-				continue
-			}
-			wsf, err := wa.aggregate("FAILURE", t.Add(-wa.windowSize), t)
-			if err != nil {
-				wa.l.Error(agent, err.Error())
-				continue
-
-			}
-			wss = append(wss, wsf...)
-
-			for _, wd := range wss {
-				if !wa.isProccessed(wd.Id) {
-					o, err := wa.k.repo.GetWithFilter("orders.withdrawal.id", wd.Id)
-					if err != nil {
-						if errors.ErrorCode(err) == errors.ErrNotFound {
-							wa.addToProccessedList(wd.Id)
-						}
-						continue
-					}
-
-					co := o.(*entity.CexOrder)
-					switch wd.Status {
-					case "SUCCESS":
-						co.Withdrawal.Status = entity.WithdrawalSucceed
-						co.Withdrawal.Fee = wd.Fee
-						co.Withdrawal.TxId = wd.FixTxId()
-						co.Withdrawal.FeeCurrency = co.Withdrawal.Token.String()
-						co.Status = entity.OSucceeded
-						co.UpdatedAt = time.Now().Unix()
-					case "FAILURE":
-						co.Withdrawal.Status = entity.WithdrawalFailed
-						co.Withdrawal.FailedDesc = "failed by exchange"
-						co.Status = entity.OFailed
-						co.UpdatedAt = time.Now().Unix()
-					}
-					if err := wa.k.repo.Update(o); err != nil {
-						wa.l.Error(agent, err.Error())
-						continue
-					}
-					wa.addToProccessedList(wd.Id)
-				}
-			}
-
+		case <-wa.ticker.C:
+			wa.aggregateAll(-wa.windowSize, false)
 		case <-wa.pTicker.C:
 			wa.pMux.Lock()
 			for id, s := range wa.proccessedList {
@@ -111,10 +63,73 @@ func (wa *withdrawalAggregator) run(stopCh chan struct{}) {
 	}
 }
 
+func (wa *withdrawalAggregator) aggregateAll(windSize time.Duration,
+	withPending bool) ([]*dto.Withdrawal, error) {
+	agent := wa.k.agent("aggregateAll")
+	t := time.Now()
+
+	var (
+		ws  []*dto.Withdrawal
+		err error
+	)
+	if withPending {
+		ws, err = wa.aggregate("", t.Add(windSize), t)
+		if err != nil {
+			wa.l.Debug(agent, err.Error())
+			return nil, err
+		}
+	} else {
+		ws, err = wa.aggregate("SUCCESS", t.Add(windSize), t)
+		if err != nil {
+			wa.l.Debug(agent, err.Error())
+			return nil, err
+		}
+
+		ws1, err := wa.aggregate("FAILURE", t.Add(-wa.windowSize), t)
+		if err != nil {
+			wa.l.Debug(agent, err.Error())
+		}
+
+		ws = append(ws, ws1...)
+	}
+	for _, wd := range ws {
+		if !wa.isProccessed(wd.Id) && (wd.Status == "SUCCESS" || wd.Status == "FAILURE") {
+			os, err := wa.k.repo.GetWithFilter("order.withdrawal.id", wd.Id)
+			if err != nil {
+				if errors.ErrorCode(err) == errors.ErrNotFound {
+					wa.addToProccessedList(wd.Id)
+				}
+				continue
+			}
+
+			co := os[0].(*types.Order)
+			if co.Status == types.OWithdrawalTracking {
+				switch wd.Status {
+				case "SUCCESS":
+					co.Withdrawal.KucoinFee, _ = strconv.ParseFloat(wd.Fee, 64)
+					co.Withdrawal.TxId = wd.FixTxId()
+					co.Status = types.OWithdrawalConfirmed
+				case "FAILURE":
+					co.Status = types.OWithdrawalFailed
+					co.FailedDesc = "failed by kucoin"
+				}
+				if err := wa.k.repo.Update(os[0]); err != nil {
+					continue
+				}
+			}
+			wa.addToProccessedList(wd.Id)
+		}
+	}
+	return ws, nil
+}
+
 func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) ([]*dto.Withdrawal, error) {
-	wa.params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
-	wa.params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
-	wa.params["status"] = status
+	params := make(map[string]string)
+	params["startAt"] = strconv.FormatInt(start.UnixMilli(), 10)
+	params["endAt"] = strconv.FormatInt(end.UnixMilli(), 10)
+	if status != "" {
+		params["status"] = status
+	}
 
 	paginate := &kucoin.PaginationParam{
 		CurrentPage: 1,
@@ -122,7 +137,7 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 	}
 	for {
 
-		res, err := wa.k.readApi.Withdrawals(wa.params, paginate)
+		res, err := wa.k.readApi.Withdrawals(params, paginate)
 		if err = handleSDKErr(err, res); err != nil {
 			return nil, err
 		}
@@ -137,7 +152,6 @@ func (wa *withdrawalAggregator) aggregate(status string, start, end time.Time) (
 		for _, wd := range withdrawals {
 			if !wd.IsInner {
 				ws = append(ws, wd)
-
 			}
 		}
 

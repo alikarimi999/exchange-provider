@@ -1,45 +1,100 @@
 package kucoin
 
 import (
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
+	"math/big"
+	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) withdrawal(o *entity.CexOrder, p *entity.Pair) error {
-	k.applySpreadAndFee(o, o.Routes[0], p)
-	c := o.Withdrawal.Token
-	wc, err := k.supportedCoins.get(c.String())
-	if err != nil {
-		return errors.Wrap(err, errors.ErrBadRequest)
+func (k *kucoinExchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
+	withdrawalfromMain bool) {
+
+	s := o.Swaps[len(o.Swaps)-1]
+	// amountOut := applyFee(s.OutAmount, feeRate)
+	amountIn := o.Swaps[0].InAmountExecuted
+	amountOut := s.OutAmount
+	var price float64
+	if wc.Currency == p.T2.ET.(*Token).Currency {
+		o.SpreadAmount = (amountOut * o.SpreadRate)
+		amountOut = amountOut - o.SpreadAmount
+		price = s.OutAmount / amountIn
+	} else {
+		price = amountIn / s.OutAmount
+		o.SpreadAmount = amountOut - (amountIn / (price + (price * o.SpreadRate)))
+		amountOut = amountOut - o.SpreadAmount
+
 	}
+	amountOut = amountOut - o.ExchangeFeeAmount
+	o.FeeAmount = amountOut * o.FeeRate
+	o.Withdrawal.Amount = amountOut - o.FeeAmount
+	o.ExecutedPrice = price
+
 	opts := make(map[string]string)
 	opts["chain"] = wc.Chain
 	opts["memo"] = o.Withdrawal.Tag
+	opts["remark"] = o.ID().String()
+	opts["feeDeductType"] = "INTERNAL"
 
-	vol := trim(o.Withdrawal.Volume, wc.WithdrawalPrecision)
-	o.Withdrawal.Volume = vol
-	// first transfer from trade account to main account
-	res, err := k.writeApi.InnerTransferV2(uuid.New().String(), wc.Currency, "trade", "main", vol)
-	if err = handleSDKErr(err, res); err != nil {
-		return err
+	vol := trim(big.NewFloat(o.Withdrawal.Amount).Text('f', 18), wc.WithdrawalPrecision)
+	var (
+		res *kucoin.ApiResponse
+		err error
+	)
+
+	if !withdrawalfromMain {
+		if err := k.innerTransfer(wc.Currency, vol); err != nil {
+			o.Status = types.OWithdrawalFailed
+			o.FailedDesc = err.Error()
+			return
+		}
 	}
-
 	// then withdraw from main account
-	res, err = k.writeApi.ApplyWithdrawal(wc.Currency, o.Withdrawal.Addr, vol, opts)
-	if err = handleSDKErr(err, res); err != nil {
-		return err
+	for i := 0; i <= 10; i++ {
+		res, err = k.writeApi.ApplyWithdrawal(wc.Currency, o.Withdrawal.Addr, vol, opts)
+		if err = handleSDKErr(err, res); err != nil {
+			if withdrawalfromMain && res != nil && res.Code == "400100" &&
+				res.Message == "account.available.amount" {
+				if err := k.innerTransfer(wc.Currency, vol); err != nil {
+					o.Status = types.OWithdrawalFailed
+					o.FailedDesc = err.Error()
+					return
+				}
+				withdrawalfromMain = false
+				continue
+			}
+
+			if i == 10 {
+				o.Status = types.OWithdrawalFailed
+				o.FailedDesc = err.Error()
+				return
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
 	}
 
 	w := &kucoin.ApplyWithdrawalResultModel{}
-	if err = res.ReadData(w); err != nil {
-		return errors.Wrap(err, errors.ErrInternal)
-	}
+	res.ReadData(w)
+	o.Withdrawal.Id = w.WithdrawalId
+	o.Status = types.OWithdrawalTracking
+}
 
-	o.Withdrawal.TxId = w.WithdrawalId
-	o.Withdrawal.Status = entity.WithdrawalPending
-	o.Status = entity.OWaitForWithdrawalConfirm
+func (k *kucoinExchange) innerTransfer(currency, vol string) error {
+	for i := 0; i <= 10; i++ {
+		res, err := k.writeApi.InnerTransferV2(uuid.New().String(), currency, "trade", "main", vol)
+		if err = handleSDKErr(err, res); err != nil {
+			if i == 10 {
+				return err
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
+	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/try"
 	"fmt"
@@ -9,49 +9,34 @@ import (
 	"time"
 )
 
-func (k *kucoinExchange) SetDepositddress(o *entity.CexOrder) error {
-	kc, err := k.supportedCoins.get(o.Deposit.String())
-	if err != nil {
-		return err
-	}
-
-	o.Deposit.Address.Addr = kc.DepositAddress
-	o.Deposit.Address.Tag = kc.DepositTag
-	return nil
-}
-
-func (k *kucoinExchange) trackDeposit(o *entity.CexOrder, dc *Token) {
+func (k *kucoinExchange) trackDeposit(o *types.Order, dc *Token) {
 	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
-	if t < time.Minute {
-		time.Sleep(time.Minute)
-	}
-	err := try.Do(50, func(attempt uint64) (bool, error) {
+	err := try.Do(20, func(attempt uint64) (bool, error) {
 		fmt.Println(attempt)
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {
-			if !d.MatchCurrency(dc) {
-				o.Deposit.Status = entity.DepositFailed
-				o.Deposit.FailedDesc = fmt.Sprintf("currency mismatch, user: `%s`, exchange: `%s` ",
-					o.Deposit.Symbol, d.Currency)
+			if err := d.MatchCurrency(dc); err != nil {
+				o.Status = types.ODepositFailed
+				o.FailedDesc = err.Error()
 				return false, nil
 			}
-			o.Deposit.Status = entity.DepositConfirmed
+			if d.Status == "SUCCESS" {
+				o.Status = types.ODepositeConfimred
+			} else {
+				o.Status = types.ODepositFailed
+				o.FailedDesc = "order failed in kucoin"
+			}
 			vol, _ := strconv.ParseFloat(d.Volume, 64)
-			o.Deposit.Volume = vol
+			o.Deposit.Amount = vol
 			return false, nil
-
 		}
 
-		if t < time.Minute {
-			time.Sleep(time.Minute)
-		} else {
-			time.Sleep(t / 8)
-		}
+		time.Sleep(t / 2)
 		return true, errors.Wrap(errors.ErrNotFound)
 	})
 
 	if err != nil {
-		o.Deposit.Status = entity.DepositFailed
-		o.Deposit.FailedDesc = err.Error()
+		o.Status = types.ODepositFailed
+		o.FailedDesc = err.Error()
 	}
 }

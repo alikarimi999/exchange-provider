@@ -8,17 +8,21 @@ import (
 )
 
 type Exchange struct {
-	Id      uint   `bson:"_id"`
-	Name    string `bson:"name"`
-	Configs string `bson:"configs"`
+	Id      uint          `bson:"_id"`
+	Name    string        `bson:"name"`
+	Enable  bool          `bson:"enable"`
+	Type    entity.ExType `bson:"type"`
+	Configs string        `bson:"configs"`
 }
 
 func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
-		Id:   ex.Id(),
-		Name: ex.Name(),
+		Id:     ex.Id(),
+		Type:   ex.Type(),
+		Enable: ex.IsEnable(),
+		Name:   ex.Name(),
 	}
 
 	b, err := bson.Marshal(ex.Configs())

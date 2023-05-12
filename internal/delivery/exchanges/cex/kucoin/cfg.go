@@ -11,13 +11,14 @@ type API struct {
 }
 
 type Configs struct {
-	Id       uint
+	Id       uint `json:"id"`
+	Enable   bool `json:"enable"`
 	ReadApi  *API `json:"readApi,omitempty"`
 	WriteApi *API `json:"writeApi,omitempty"`
 
-	ApiVersion string
-	ApiUrl     string
-	Message    string
+	ApiVersion string `json:"apiVersion"`
+	ApiUrl     string `json:"apiUrl"`
+	Message    string `json:"message"`
 }
 
 func (k *kucoinExchange) Configs() interface{} {

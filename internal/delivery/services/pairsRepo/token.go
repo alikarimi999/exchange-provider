@@ -11,9 +11,9 @@ type token struct {
 	Standard string
 	Network  string
 
+	StableToken     string  `bson:"stableToken,omitempty"`
 	ContractAddress string  `bson:"contractAddress,omitempty"`
 	Decimals        uint64  `bson:"decimals,omitempty"`
-	HasExtraId      bool    `bson:"hasExtraId,omitempty"`
 	Native          bool    `bson:"native,omitempty"`
 	Min             float64 `bson:"min,omitempty"`
 	Max             float64 `bson:"max,omitempty"`
@@ -23,12 +23,13 @@ type token struct {
 func fromEntity(t *entity.Token) *token {
 	et, _ := bson.Marshal(t.ET)
 	return &token{
-		Symbol:          t.Symbol,
-		Standard:        t.Standard,
-		Network:         t.Network,
+
+		Symbol:          t.Id.Symbol,
+		Standard:        t.Id.Standard,
+		Network:         t.Id.Network,
+		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
-		HasExtraId:      t.HasExtraId,
 		Native:          t.Native,
 		Min:             t.Min,
 		Max:             t.Max,
@@ -38,12 +39,14 @@ func fromEntity(t *entity.Token) *token {
 
 func (t token) toEntity(fn func(bson.Raw) entity.ExchangeToken) *entity.Token {
 	return &entity.Token{
-		Symbol:          t.Symbol,
-		Standard:        t.Standard,
-		Network:         t.Network,
+		Id: entity.TokenId{
+			Symbol:   t.Symbol,
+			Standard: t.Standard,
+			Network:  t.Network,
+		},
+		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
-		HasExtraId:      t.HasExtraId,
 		Native:          t.Native,
 		Min:             t.Min,
 		Max:             t.Max,

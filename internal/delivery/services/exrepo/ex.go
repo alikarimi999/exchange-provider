@@ -9,31 +9,30 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ExchangeRepo struct {
-	db    *mongo.Collection
-	repo  entity.OrderRepo
-	pairs entity.PairsRepo
-	fee   entity.FeeService
-	v     *viper.Viper
-	l     logger.Logger
+	db     *mongo.Collection
+	repo   entity.OrderRepo
+	pairs  entity.PairsRepo
+	fee    entity.FeeTable
+	spread entity.SpreadTable
+	l      logger.Logger
 	app.WalletStore
 	prv *rsa.PrivateKey
 }
 
 func NewExchangeRepo(db *mongo.Database, ws app.WalletStore, pairs entity.PairsRepo,
-	repo entity.OrderRepo, fee entity.FeeService,
-	v *viper.Viper, l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
+	repo entity.OrderRepo, fee entity.FeeTable, spread entity.SpreadTable,
+	l logger.Logger, prvKey *rsa.PrivateKey) app.ExchangeRepo {
 	return &ExchangeRepo{
 		db:          db.Collection("exchange-repository"),
 		repo:        repo,
 		pairs:       pairs,
+		spread:      spread,
 		fee:         fee,
-		v:           v,
 		l:           l,
 		WalletStore: ws,
 		prv:         prvKey,
@@ -41,7 +40,6 @@ func NewExchangeRepo(db *mongo.Database, ws app.WalletStore, pairs entity.PairsR
 }
 
 func (a *ExchangeRepo) Add(ex entity.Exchange) error {
-
 	e, err := a.encryptConfigs(ex)
 	if err != nil {
 		return err
@@ -67,6 +65,7 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 			defer wg.Done()
 			exc, err := a.decrypt(&ex)
 			if err != nil {
+				a.pairs.RemoveAll(ex.Id, false)
 				a.l.Error(agent, err.Error())
 				return
 			}
@@ -78,13 +77,33 @@ func (a *ExchangeRepo) GetAll() ([]entity.Exchange, error) {
 	return exs, nil
 }
 
+func (a *ExchangeRepo) EnableDisable(exId uint, enable bool) error {
+	update := bson.M{"$set": bson.M{"enable": enable}}
+	_, err := a.db.UpdateByID(context.Background(), exId, update)
+	return err
+}
+func (a *ExchangeRepo) EnableDisableAll(enable bool) error {
+	update := bson.M{"$set": bson.M{"enable": enable}}
+	_, err := a.db.UpdateMany(context.Background(), bson.M{}, update)
+	return err
+}
+
 func (a *ExchangeRepo) Remove(ex entity.Exchange) error {
-	if err := a.pairs.RemoveAll(ex.Id()); err != nil {
+	if err := a.pairs.RemoveAll(ex.Id(), true); err != nil {
 		return err
 	}
 	d, err := a.db.DeleteOne(context.Background(), bson.D{{"_id", ex.Id()}})
 	if d.DeletedCount > 0 {
 		a.l.Debug("ExchangeRepo.Remove", fmt.Sprintf("exchange %s deleted", ex.NID()))
 	}
+	return err
+}
+
+func (a *ExchangeRepo) RemoveAll() error {
+	if err := a.pairs.RemoveAllExchanges(); err != nil {
+		return err
+	}
+
+	_, err := a.db.DeleteMany(context.Background(), bson.M{})
 	return err
 }

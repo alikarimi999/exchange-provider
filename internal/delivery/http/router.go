@@ -12,13 +12,11 @@ import (
 )
 
 type Router struct {
-	gin *gin.Engine
-	srv *http.Server
-	l   logger.Logger
-	v   *viper.Viper
-
-	auth *authService
-
+	gin  *gin.Engine
+	srv  *http.Server
+	l    logger.Logger
+	v    *viper.Viper
+	api  entity.ApiService
 	user string
 	pass string
 
@@ -31,15 +29,18 @@ func (r *Router) Run(addr ...string) error {
 }
 
 func NewRouter(app *app.OrderUseCase, repo entity.OrderRepo, pairs entity.PairsRepo,
-	fee entity.FeeService, v *viper.Viper, l logger.Logger, user, pass string) *Router {
+	fee entity.FeeTable, api entity.ApiService, v *viper.Viper, spread entity.SpreadTable,
+	l logger.Logger, user, pass string) *Router {
+
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
 	router := &Router{
 		gin: engine,
-		srv: http.NewServer(app, v, pairs, repo, fee, l),
+		srv: http.NewServer(app, v, pairs, api, repo, fee, spread, l),
 		l:   l,
 		v:   v,
+		api: api,
 
 		user: user,
 		pass: pass,

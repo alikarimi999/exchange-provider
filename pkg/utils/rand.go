@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"math/rand"
 	"strconv"
 	"time"
@@ -30,4 +32,10 @@ func RandString(l int) string {
 	}
 
 	return string(b)
+}
+
+func Hash(id string) string {
+	h := sha256.New()
+	h.Write([]byte(id))
+	return hex.EncodeToString(h.Sum(nil))
 }

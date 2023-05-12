@@ -14,6 +14,7 @@ type Withdrawal struct {
 	WalletTxId   string `json:"walletTxId"`
 	IsInner      bool   `json:"isInner"`
 	Status       string `json:"status"`
+	Remark       string `json:"remark"`
 	CreatedAt    int64  `json:"createdAt"`
 	UpdatedAt    int64  `json:"updatedAt"`
 	DownloadedAt time.Time
@@ -29,20 +30,4 @@ func (w *Withdrawal) FixTxId() string {
 	}
 
 	return w.WalletTxId
-}
-
-func (w *Withdrawal) SnapShot() *Withdrawal {
-	return &Withdrawal{
-		Id:           w.Id,
-		Address:      w.Address,
-		Currency:     w.Currency,
-		Amount:       w.Amount,
-		Fee:          w.Fee,
-		WalletTxId:   w.WalletTxId,
-		IsInner:      w.IsInner,
-		Status:       w.Status,
-		CreatedAt:    w.CreatedAt,
-		UpdatedAt:    w.UpdatedAt,
-		DownloadedAt: w.DownloadedAt,
-	}
 }

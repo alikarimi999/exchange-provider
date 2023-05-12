@@ -5,6 +5,7 @@ import (
 	"time"
 
 	h "exchange-provider/internal/adapter/http"
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 
 	"github.com/gin-gonic/gin"
@@ -68,12 +69,16 @@ func (ec *ginContext) JSON(obj interface{}, err error) {
 func (ec *ginContext) Request() *http.Request {
 	return ec.ctx.Request
 }
-func (ec *ginContext) GetKey(key string) (value interface{}, exists bool) {
-	return ec.ctx.Get(key)
+func (ec *ginContext) GetApi() *entity.APIToken {
+	a, ok := ec.ctx.Get("api")
+	if !ok {
+		return nil
+	}
+	return a.(*entity.APIToken)
 }
 
-func (ec *ginContext) SetKey(key string, value interface{}) {
-	ec.ctx.Set(key, value)
+func (ec *ginContext) SetApi(a *entity.APIToken) {
+	ec.ctx.Set("api", a)
 }
 
 func (ec *ginContext) GetHeader(key string) string {

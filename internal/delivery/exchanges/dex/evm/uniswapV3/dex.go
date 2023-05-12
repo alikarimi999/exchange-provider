@@ -2,8 +2,8 @@ package uniswapV3
 
 import (
 	"crypto/ecdsa"
+	ts "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV3/contracts"
-	ts "exchange-provider/internal/delivery/exchanges/dex/types"
 	"exchange-provider/pkg/logger"
 	"math/big"
 
@@ -11,7 +11,7 @@ import (
 )
 
 type dex struct {
-	id          uint
+	id          string
 	network     string
 	chainId     *big.Int
 	nativeToken string
@@ -23,11 +23,11 @@ type dex struct {
 	l           logger.Logger
 }
 
-func NewUniswapV3Dex(id uint, network, nativeToken, router, contract string, chainId int64,
+func NewUniswapV3Dex(nid string, network, nativeToken, router, contract string, chainId int64,
 	prvKey *ecdsa.PrivateKey, ps []*ts.EthProvider, l logger.Logger) (*dex, error) {
 
 	d := &dex{
-		id:          id,
+		id:          nid,
 		network:     network,
 		chainId:     big.NewInt(chainId),
 		nativeToken: nativeToken,

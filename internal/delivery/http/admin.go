@@ -12,8 +12,6 @@ func (r *Router) adminRoutes() {
 
 		ss := a.Group("/services")
 		{
-			ss.GET("", func(ctx *gin.Context) { r.GetServicesConfig(ctx) })
-			ss.POST("/:service", func(ctx *gin.Context) { r.ChangeSerivcesConfig(ctx) })
 			ss.POST("update_chains_fee", func(ctx *gin.Context) { r.srv.UpdateChainsFee(ctx) })
 
 		}
@@ -31,11 +29,17 @@ func (r *Router) adminRoutes() {
 				r.srv.AddPairs(newContext(ctx, true))
 			})
 
-			// ps.POST("", func(ctx *gin.Context) {
-			// 	r.srv.GetPairsToAdmin(newContext(ctx, true))
-			// })
+			ps.POST("", func(ctx *gin.Context) {
+				r.srv.GetPairs(newContext(ctx, true))
+			})
 
-			ps.DELETE("", func(ctx *gin.Context) { r.srv.RemovePair(newContext(ctx, true)) })
+			ps.POST("/update", func(ctx *gin.Context) {
+				r.srv.UpdatePairs(newContext(ctx, true))
+			})
+
+			ps.POST("cmd", func(ctx *gin.Context) {
+				r.srv.CommandPairs(newContext(ctx, true))
+			})
 		}
 
 		fee := a.Group("/fee")
@@ -48,62 +52,105 @@ func (r *Router) adminRoutes() {
 				r.srv.GetDefaultFee(newContext(ctx, true))
 			})
 
-			fee.POST("/get_by_users", func(ctx *gin.Context) {
-				r.srv.GetUsersFee(newContext(ctx, true))
+			fee.GET("", func(ctx *gin.Context) {
+				r.srv.GetFees(newContext(ctx, true))
 			})
 
-			fee.POST("/change_by_user", func(ctx *gin.Context) {
+			fee.POST("/change-by_user", func(ctx *gin.Context) {
 				r.srv.ChangeUserFee(newContext(ctx, true))
 			})
 
 		}
 
+		spread := a.Group("/spread")
+		{
+			spread.GET("", func(ctx *gin.Context) {
+				r.srv.GetAll(newContext(ctx, true))
+			})
+
+			spread.POST("", func(ctx *gin.Context) {
+				r.srv.AddSpread(newContext(ctx, true))
+			})
+
+			spread.POST("/remove", func(ctx *gin.Context) {
+				r.srv.RemoveSpread(newContext(ctx, true))
+			})
+		}
+
 		es := a.Group("/exchanges")
 		{
-			es.GET("/list", func(ctx *gin.Context) {
+			es.GET("", func(ctx *gin.Context) {
 				r.srv.GetExchangeList(newContext(ctx, true))
 			})
-			es.DELETE("/:id", func(ctx *gin.Context) {
-				r.srv.RemoveExchange(newContext(ctx, true))
+
+			es.GET("/:id", func(ctx *gin.Context) {
+				r.srv.GetExchangeList(newContext(ctx, true))
 			})
+
+			es.POST("/cmd", func(ctx *gin.Context) {
+				r.srv.CommandExchanges(newContext(ctx, true))
+			})
+
 			es.POST("/add/:name", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
 		}
 
-		limiter := a.Group("/limiter")
+		api := a.Group("/api")
 		{
-			limiter.GET("", func(ctx *gin.Context) {
-				res := struct {
-					GL struct {
-						Max    uint64
-						Period string
-					} `json:"general_limiter"`
-					Col struct {
-						Max    uint64
-						Period string
-					} `json:"create_order_limiter"`
-				}{
-					GL: struct {
-						Max    uint64
-						Period string
-					}{
-						Max:    r.gls.conf.Max,
-						Period: r.gls.conf.Period.String(),
-					},
-					Col: struct {
-						Max    uint64
-						Period string
-					}{
-						Max:    r.col.conf.Max,
-						Period: r.col.conf.Period.String(),
-					},
-				}
-				ctx.JSON(200, res)
+			api.POST("/generate", func(ctx *gin.Context) {
+				r.srv.GenerateAPIToken(newContext(ctx, true))
 			})
 
-			limiter.POST("", func(ctx *gin.Context) {
-				r.changeLimitersConf(ctx)
+			api.POST("/add-ip", func(ctx *gin.Context) {
+				r.srv.AddIP(newContext(ctx, true))
+			})
+
+			api.POST("remove-ip", func(ctx *gin.Context) {
+				r.srv.RemoveIp(newContext(ctx, true))
+			})
+
+			api.POST("/level", func(ctx *gin.Context) {
+				r.srv.UpdateLevel(newContext(ctx, true))
+			})
+
+			api.DELETE("/:id", func(ctx *gin.Context) {
+				r.srv.Remove(newContext(ctx, true))
 			})
 		}
+		// limiter := a.Group("/limiter")
+		// {
+		// 	limiter.GET("", func(ctx *gin.Context) {
+		// 		res := struct {
+		// 			GL struct {
+		// 				Max    uint64
+		// 				Period string
+		// 			} `json:"general_limiter"`
+		// 			Col struct {
+		// 				Max    uint64
+		// 				Period string
+		// 			} `json:"create_order_limiter"`
+		// 		}{
+		// 			GL: struct {
+		// 				Max    uint64
+		// 				Period string
+		// 			}{
+		// 				Max:    r.gls.conf.Max,
+		// 				Period: r.gls.conf.Period.String(),
+		// 			},
+		// 			Col: struct {
+		// 				Max    uint64
+		// 				Period string
+		// 			}{
+		// 				Max:    r.col.conf.Max,
+		// 				Period: r.col.conf.Period.String(),
+		// 			},
+		// 		}
+		// 		ctx.JSON(200, res)
+		// 	})
+
+		// 	limiter.POST("", func(ctx *gin.Context) {
+		// 		r.changeLimitersConf(ctx)
+		// 	})
+		// }
 	}
 
 }

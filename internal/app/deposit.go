@@ -3,54 +3,35 @@ package app
 import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
-	"time"
+	"fmt"
 )
 
-func (o *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
+func (u *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 	const op = errors.Op("OrderUseCase.SetTxId")
 
-	ord := &entity.CexOrder{
-		ObjectId: oId,
-	}
-
-	if err := o.read(ord); err != nil {
+	ord, err := u.repo.Get(oId)
+	if err != nil {
 		return err
 	}
 
-	if ord.Deposit.TxId != "" {
-		return errors.Wrap(errors.NewMesssage("order already has tx id"))
+	if ord.STATUS() != entity.OCreated {
+		return errors.Wrap(errors.ErrBadRequest,
+			errors.NewMesssage(fmt.Sprintf("unable to set txId for order in '%s' status", ord.STATUS())))
 	}
-
-	if ord.Status == entity.OExpired {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order expired"))
+	ex, err := u.exs.getByNID(ord.ExchangeNid())
+	if err != nil {
+		return err
 	}
-
-	if ord.Deposit.ExpireAt > 0 && time.Now().Unix() >= ord.Deposit.ExpireAt {
-		ord.Status = entity.OExpired
-		o.write(ord)
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("order expired"))
+	if ex.Type() != entity.CEX {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("unable to set transaction id for this order"))
 	}
-
-	exist, err := o.repo.TxIdExists(txId)
+	exist, err := u.repo.TxIdExists(txId)
 	if err != nil {
 		return errors.Wrap(err, op, errors.ErrInternal)
 	}
 	if exist {
-		return errors.Wrap(errors.NewMesssage("tx id used before"), op, errors.ErrBadRequest)
-	}
-	ex, err := o.exs.getByNID(ord.Routes[0].Exchange)
-	if err != nil {
-		return err
-	}
-	ord.Deposit.TxId = txId
-	ord.Deposit.Status = entity.DepositTxIdSet
-	ord.Status = entity.OConfimDeposit
-	ord.UpdatedAt = time.Now().Unix()
-	if err := o.write(ord); err != nil {
-		return err
+		return errors.Wrap(errors.NewMesssage("txId used before"), op, errors.ErrBadRequest)
 	}
 
-	cex := ex.(entity.Cex)
-	go cex.TxIdSetted(ord)
-	return nil
+	return ex.(entity.Cex).TxIdSetted(ord, txId)
 }

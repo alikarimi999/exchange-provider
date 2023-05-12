@@ -1,30 +1,42 @@
 package entity
 
+import "strings"
+
 type ExchangeToken interface {
 	Snapshot() ExchangeToken
 }
 
+type TokenId struct {
+	Symbol   string `json:"symbol"`
+	Standard string `json:"standard"`
+	Network  string `json:"network"`
+}
+
+func (t *TokenId) ToUpper() *TokenId {
+	t.Symbol = strings.ToUpper(t.Symbol)
+	t.Standard = strings.ToUpper(t.Standard)
+	t.Network = strings.ToUpper(t.Network)
+	return t
+}
+
+func (id *TokenId) String() string {
+	return strings.ToUpper(id.Symbol + "-" + id.Standard + "-" + id.Network)
+}
+
 type Token struct {
-	Symbol   string
-	Standard string
-	Network  string
+	Id              TokenId `json:"id"`
+	StableToken     string  `json:"stableToken"`
+	ContractAddress string  `json:"contractAddress"`
+	Decimals        uint64  `json:"decimals"`
+	Native          bool    `json:"native"`
+	Min             float64 `json:"min"`
+	Max             float64 `json:"max"`
 
-	ContractAddress string  `bson:"-"`
-	Decimals        uint64  `bson:"-"`
-	HasExtraId      bool    `bson:"-"`
-	Native          bool    `bson:"-"`
-	Min             float64 `bson:"-"`
-	Max             float64 `bson:"-"`
-
-	ET ExchangeToken `bson:"-"`
+	ET ExchangeToken `json:"et"`
 }
 
 func (t *Token) String() string {
-	return t.Symbol + "-" + t.Standard + "-" + t.Network
-}
-
-func (t *Token) Equal(t2 *Token) bool {
-	return t.String() == t2.String()
+	return t.Id.String()
 }
 
 func (t *Token) Snapshot() *Token {
@@ -36,13 +48,15 @@ func (t *Token) Snapshot() *Token {
 	}
 
 	return &Token{
-		Symbol:   t.Symbol,
-		Standard: t.Standard,
-		Network:  t.Network,
+		Id: TokenId{
+			Symbol:   t.Id.Symbol,
+			Standard: t.Id.Standard,
+			Network:  t.Id.Network,
+		},
 
+		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
-		HasExtraId:      t.HasExtraId,
 		Native:          t.Native,
 		Min:             t.Min,
 		Max:             t.Max,

@@ -2,41 +2,41 @@ package http
 
 import "github.com/gin-gonic/gin"
 
-func (o *Router) userRoutes() {
+func (r *Router) userRoutes() {
 
-	u := o.gin.Group("/orders")
+	u := r.gin.Group("/orders")
 	{
 
-		u.GET("/:orderId/:step", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+		u.GET("/:orderId/:step", r.CheckAccess(false),
 			func(ctx *gin.Context) {
-				o.srv.GetStep(newContext(ctx, false))
+				r.srv.GetStep(newContext(ctx, false))
 			})
 
-		u.POST("/get", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+		u.POST("/get", r.CheckAccess(false),
 			func(ctx *gin.Context) {
-				o.srv.GetPaginatedForUser(newContext(ctx, false))
+				r.srv.GetPaginatedForUser(newContext(ctx, false))
 			})
 
-		u.POST("/create", Limiter(o.col), o.auth.CheckAccess("orders", "write", o.l),
+		u.POST("/create", r.CheckAccess(true),
 			func(ctx *gin.Context) {
-				o.srv.NewOrder(newContext(ctx, false))
+				r.srv.NewOrder(newContext(ctx, false))
 			})
 
-		u.POST("/set_tx_id", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "write", o.l),
+		u.POST("/set_tx_id", r.CheckAccess(true),
 			func(ctx *gin.Context) {
-				o.srv.SetTxId(newContext(ctx, false))
+				r.srv.SetTxId(newContext(ctx, false))
 			})
 
 	}
 
-	o.gin.POST("/estimate", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+	r.gin.POST("/estimate", r.CheckAccess(false),
 		func(ctx *gin.Context) {
-			o.srv.EstimateAmountOut(newContext(ctx, false))
+			r.srv.EstimateAmountOut(newContext(ctx, false))
 		})
 
-	o.gin.POST("/pairs", Limiter(o.gls.addLimiter()), o.auth.CheckAccess("orders", "read", o.l),
+	r.gin.POST("/pairs", r.CheckAccess(true),
 		func(ctx *gin.Context) {
-			o.srv.GePairsToUser(newContext(ctx, false))
+			r.srv.GetPairs(newContext(ctx, false))
 		})
 
 }

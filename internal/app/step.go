@@ -2,27 +2,14 @@ package app
 
 import (
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 )
 
-func (u OrderUseCase) GetMultiStep(o *entity.DexOrder, step uint) (entity.Tx, error) {
-	st, ok := o.Steps[uint(step)]
-	if !ok {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range"))
-	}
-	ex, err := u.exs.getByNID(st.Exchange)
+func (u OrderUseCase) GetMultiStep(o entity.Order, step uint) (entity.Tx, error) {
+	ex, err := u.exs.getByNID(o.ExchangeNid())
 	if err != nil {
 		return nil, err
 	}
 
-	approvedBefore := st.Approved
-	tx, err := ex.(entity.EVMDex).GetStep(o, uint(step))
-	if err != nil {
-		return nil, err
-	}
+	return ex.(entity.EVMDex).CreateTx(o)
 
-	if !approvedBefore && st.Approved {
-		go u.write(o)
-	}
-	return tx, nil
 }

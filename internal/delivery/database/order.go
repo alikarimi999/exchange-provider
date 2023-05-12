@@ -4,6 +4,7 @@ import (
 	"context"
 	"exchange-provider/internal/delivery/database/dto"
 	"exchange-provider/internal/entity"
+	"fmt"
 
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
@@ -30,15 +31,11 @@ func (m *mongoDb) Add(order entity.Order) error {
 
 	id := primitive.NewObjectID()
 	order.SetId(id.Hex())
-	o, err := dto.UoToDto(order)
+	o := dto.UoToDto(order)
+	_, err := m.orders.InsertOne(context.Background(), o)
 	if err != nil {
-		m.l.Error(agent, err.Error())
-		return err
-	}
-	_, err = m.orders.InsertOne(context.Background(), o)
-	if err != nil {
-		m.l.Error(agent, err.Error())
-		return err
+		m.l.Error(agent, fmt.Sprintf("( %s ) ( %s )", order.String(), err.Error()))
+		return errors.Wrap(errors.ErrInternal)
 	}
 	return nil
 }
@@ -63,83 +60,74 @@ func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 	if err := r.Decode(o); err != nil {
 		return nil, err
 	}
+
 	eo, err := o.ToEntity()
 	if err != nil {
-		m.l.Error(agent, err.Error())
-		return nil, err
-	}
-	return eo, nil
-}
-
-func (m *mongoDb) GetAll(UserId string) ([]entity.Order, error) {
-	agent := m.agent("GetAll")
-
-	osDTO := []*dto.Order{}
-	cur, err := m.orders.Find(context.Background(), bson.D{{"userid", UserId}})
-	if err != nil {
-		m.l.Error(agent, err.Error())
+		m.l.Debug(agent, err.Error())
 		return nil, err
 	}
 
-	if err := cur.All(context.Background(), &osDTO); err != nil {
-		m.l.Error(agent, err.Error())
-		return nil, err
-	}
-
-	os := []entity.Order{}
-	for _, o := range osDTO {
-		eo, err := o.ToEntity()
+	if o.Status == entity.OCreated.String() && eo.Expire() {
+		o.Status = entity.OExpired.String()
+		o = dto.UoToDto(eo)
+		_, err := m.orders.ReplaceOne(context.Background(), bson.D{{"_id", oId}}, o)
 		if err != nil {
-			continue
+			m.l.Debug(agent, err.Error())
+			return nil, errors.Wrap(errors.ErrInternal)
 		}
-		os = append(os, eo)
 	}
-	return os, nil
+
+	return eo, nil
 }
 
 func (m *mongoDb) Update(order entity.Order) error {
 	agent := m.agent("Update")
 
 	id, _ := primitive.ObjectIDFromHex(order.ID().Id)
-	o, err := dto.UoToDto(order)
-	if err != nil {
-		m.l.Error(agent, err.Error())
-		return err
-	}
+	o := dto.UoToDto(order)
+	order.Update()
 	res, err := m.orders.ReplaceOne(context.Background(), bson.D{{"_id", id}}, o)
 	if err != nil {
-		m.l.Error(agent, err.Error())
+		m.l.Error(agent, fmt.Sprintf("( %s ) ( %s )", order.String(), err.Error()))
 		return err
 	}
 	if res.ModifiedCount == 0 {
 		return errors.Wrap(errors.ErrNotFound)
 	}
-
 	return nil
 }
 
-func (m *mongoDb) GetWithFilter(key string, value string) (entity.Order, error) {
-	agent := m.agent("Get")
+func (m *mongoDb) GetWithFilter(key string, value interface{}) ([]entity.Order, error) {
+	agent := m.agent("GetWithFilter")
 
-	r := m.orders.FindOne(context.Background(), bson.D{{key, value}})
-	if r.Err() != nil {
-		if r.Err() == mongo.ErrNoDocuments {
-			return nil, errors.Wrap(errors.ErrNotFound)
-		}
-		m.l.Error(agent, r.Err().Error())
-		return nil, r.Err()
-	}
-
-	o := &dto.Order{}
-	if err := r.Decode(o); err != nil {
-		return nil, err
-	}
-	eo, err := o.ToEntity()
+	cur, err := m.orders.Find(context.Background(), bson.D{{key, value}})
 	if err != nil {
-		m.l.Error(agent, r.Err().Error())
+		m.l.Debug(agent, err.Error())
+		return nil, cur.Err()
+	} else if cur.Err() != nil {
+		m.l.Debug(agent, cur.Err().Error())
+		return nil, cur.Err()
+	}
+
+	os := []*dto.Order{}
+	if err := cur.All(context.Background(), &os); err != nil {
 		return nil, err
 	}
-	return eo, nil
+
+	if len(os) == 0 {
+		return nil, errors.Wrap(errors.ErrNotFound)
+	}
+
+	eos := []entity.Order{}
+	for _, o := range os {
+		eo, err := o.ToEntity()
+		if err != nil {
+			m.l.Debug(agent, cur.Err().Error())
+			continue
+		}
+		eos = append(eos, eo)
+	}
+	return eos, nil
 }
 
 // check if any deposit has this tx_id

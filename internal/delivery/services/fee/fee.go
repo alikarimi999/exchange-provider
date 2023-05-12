@@ -3,168 +3,101 @@ package fee
 import (
 	"context"
 	"exchange-provider/internal/entity"
-	"strconv"
 	"sync"
 
-	"exchange-provider/pkg/errors"
-
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const (
-	dfr = "default_fee_rate"
-)
-
-type UserFee struct {
-	UserId string `gorm:"primary_key"`
-	Fee    float64
+type fTable struct {
+	Id         primitive.ObjectID `bson:"_id"`
+	DefaultFee float64
+	List       map[string]float64
 }
 
-type feeService struct {
-	db *mongo.Collection
-
-	mux        *sync.Mutex
-	defaultFee float64
-	fees       map[string]float64
-
-	v *viper.Viper
+type feeTable struct {
+	mux *sync.RWMutex
+	c   *mongo.Collection
+	fTable
 }
 
-func NewFeeService(db *mongo.Database, v *viper.Viper) (entity.FeeService, error) {
+func NewFeeTable(db *mongo.Database) (entity.FeeTable, error) {
 
-	f := &feeService{
-		db:         db.Collection("fee-service"),
-		v:          v,
-		mux:        &sync.Mutex{},
-		fees:       make(map[string]float64),
-		defaultFee: 0.001,
-	}
-
-	if err := f.retrievDefaultFee(); err != nil {
-		return nil, err
-	}
-
-	if err := f.getFees(); err != nil {
-		return nil, err
+	f := &feeTable{
+		c:   db.Collection("fee-table"),
+		mux: &sync.RWMutex{},
+		fTable: fTable{
+			DefaultFee: 0,
+			List:       make(map[string]float64),
+		},
 	}
 
 	return f, nil
 }
 
-func (f *feeService) GetDefaultFee() string {
-	f.mux.Lock()
-	defer f.mux.Unlock()
-	return strconv.FormatFloat(f.defaultFee, 'f', 6, 64)
+func (f *feeTable) GetDefaultFee() float64 {
+	f.mux.RLock()
+	defer f.mux.RUnlock()
+	return f.DefaultFee
 }
 
-func (f *feeService) ChangeDefaultFee(fee float64) error {
-	if fee < 0 || fee > 1 {
-		return errors.Wrap(errors.NewMesssage("fee rate must be between 0 and 1"))
+func (f *feeTable) ChangeDefaultFee(fee float64) error {
+	t := fTable{
+		DefaultFee: fee,
+		List:       f.List,
 	}
-
-	f.v.Set(dfr, fee)
-	if err := f.v.WriteConfig(); err != nil {
-		return errors.Wrap(errors.NewMesssage(err.Error()))
+	_, err := f.c.ReplaceOne(context.Background(), bson.D{{}}, t)
+	if err != nil {
+		return err
 	}
 
 	f.mux.Lock()
-	f.defaultFee = fee
+	f.DefaultFee = fee
 	f.mux.Unlock()
 	return nil
 }
 
-func (f *feeService) ApplyFee(userId string, total string) (remainder, fee string, err error) {
-	const op = errors.Op("FeeService.ApplyFee")
-
-	rate := f.feeRate(userId)
-	t, err := strconv.ParseFloat(total, 64)
-	if err != nil {
-		return "", "", errors.Wrap(op, err, errors.ErrInternal)
-	}
-	ff := t * rate
-	re := t - ff
-
-	return strconv.FormatFloat(re, 'f', -1, 64), strconv.FormatFloat(ff, 'f', 6, 64), nil
-}
-
-func (f *feeService) GetUserFee(userId string) string {
-	f.mux.Lock()
-	defer f.mux.Unlock()
-	fee := f.fees[userId]
+func (f *feeTable) GetBusFee(busId string) float64 {
+	f.mux.RLock()
+	defer f.mux.RUnlock()
+	fee := f.List[busId]
 	if fee == 0 {
-		fee = f.defaultFee
-	}
-
-	return strconv.FormatFloat(fee, 'f', 6, 64)
-}
-
-func (f *feeService) ChangeUserFee(userId string, fee float64) error {
-	f.mux.Lock()
-	defer f.mux.Unlock()
-
-	uf := &UserFee{UserId: userId, Fee: fee}
-	_, err := f.db.InsertOne(context.Background(), uf)
-	if err != nil {
-		return err
-	}
-
-	f.fees[userId] = fee
-
-	return nil
-}
-
-func (f *feeService) GetAllUsersFees() map[string]string {
-	f.mux.Lock()
-	defer f.mux.Unlock()
-	res := make(map[string]string)
-	for u, f := range f.fees {
-		res[u] = strconv.FormatFloat(f, 'f', 6, 64)
-	}
-	return res
-}
-
-func (f *feeService) getFees() error {
-
-	cur, err := f.db.Find(context.Background(), bson.D{})
-	if err != nil {
-		return err
-	}
-	fees := []*UserFee{}
-	if err := cur.All(context.Background(), &fees); err != nil {
-		return err
-	}
-
-	for _, fee := range fees {
-		f.fees[fee.UserId] = fee.Fee
-	}
-	return nil
-
-}
-
-func (f *feeService) feeRate(userId string) (rate float64) {
-	f.mux.Lock()
-	defer f.mux.Unlock()
-	fee := f.fees[userId]
-	if fee == 0 {
-		fee = f.defaultFee
+		fee = f.DefaultFee
 	}
 	return fee
 }
 
-func (f *feeService) retrievDefaultFee() error {
-	fee := f.v.GetFloat64(dfr)
+func (f *feeTable) UpdateBusFee(busId string, fee float64) error {
+	f.mux.RLock()
+	list := make(map[string]float64)
+	for k, v := range f.List {
+		list[k] = v
+	}
+	list[busId] = fee
+	t := fTable{
+		DefaultFee: f.DefaultFee,
+		List:       list,
+	}
+	f.mux.RUnlock()
 
-	if fee > 0 && fee < 1 {
-		f.defaultFee = fee
-		return nil
+	_, err := f.c.InsertOne(context.Background(), t)
+	if err != nil {
+		return err
 	}
 
-	f.defaultFee = 0.001
-	f.v.Set(dfr, f.defaultFee)
-	if err := f.v.WriteConfig(); err != nil {
-		return errors.Wrap(errors.NewMesssage(err.Error()))
-	}
+	f.mux.Lock()
+	f.List = list
+	f.mux.Unlock()
 	return nil
+}
+
+func (f *feeTable) GetAllBusFees() map[string]float64 {
+	f.mux.RLock()
+	defer f.mux.RUnlock()
+	list := make(map[string]float64)
+	for k, v := range f.List {
+		list[k] = v
+	}
+	return list
 }

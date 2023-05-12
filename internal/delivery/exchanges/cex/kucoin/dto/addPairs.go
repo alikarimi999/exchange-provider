@@ -2,6 +2,7 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"fmt"
 )
 
@@ -13,33 +14,38 @@ type Token struct {
 	ChainName string `json:"chainName"`
 	Chain     string
 
-	DepositAddress string `json:"depositAddress"`
-	DepositTag     string `json:"depositTag"`
-
 	BlockTime           string `json:"blockTime"`
 	WithdrawalPrecision int    `json:"withdrawalPrecision"`
 }
 
 type Pair struct {
-	BC      *EToken `json:"bc"`
-	QC      *EToken `json:"qc"`
-	FeeRate float64 `json:"feeRate"`
+	BC          *EToken          `json:"bc"`
+	QC          *EToken          `json:"qc"`
+	IC          string           `json:"ic"`
+	Enable      bool             `json:"enable"`
+	Spreads     map[uint]float64 `json:"spreads"`
+	FeeRate1    float64          `json:"feeRate1"`
+	FeeRate2    float64          `json:"feeRate2"`
+	ExchangeFee float64          `json:"exchangeFee"`
 }
 
 func (p Pair) String() string {
-	return fmt.Sprintf("%s-%s-%s/%s-%s-%s", p.BC.Symbol, p.BC.Standard, p.BC.Network,
-		p.QC.Symbol, p.QC.Standard, p.QC.Network)
+	return fmt.Sprintf("%s/%s", p.BC.String(), p.QC.String())
 }
 
 type EToken struct {
-	Symbol   string `json:"symbol"`
-	Standard string `json:"standard"`
-	Network  string `json:"network"`
+	entity.TokenId
+	StableToken     string  `json:"stableToken"`
+	ContractAddress string  `json:"contractAddress"`
+	Decimals        int     `json:"decimals"`
+	Native          bool    `json:"native"`
+	Min             float64 `json:"min"`
+	Max             float64 `json:"max"`
+	ET              Token   `json:"exchangeToken"`
+}
 
-	ContractAddress string `json:"contractAddress"`
-	Decimals        int    `json:"decimals"`
-	Native          bool   `json:"native"`
-	ET              Token  `json:"exchangeToken"`
+func (t *EToken) String() string {
+	return t.TokenId.String()
 }
 
 func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.Token, error) {
@@ -48,19 +54,28 @@ func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity
 		return nil, err
 	}
 
+	if t.StableToken == "" {
+		return nil, fmt.Errorf("stableToken cannot be empty")
+	}
 	return &entity.Token{
-		Symbol:   t.Symbol,
-		Standard: t.Standard,
-		Network:  t.Network,
-
+		Id:              *t.ToUpper(),
+		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        uint64(t.Decimals),
 		Native:          t.Native,
+		Min:             t.Min,
+		Max:             t.Max,
 		ET:              et,
 	}, nil
 }
 
 func (p *Pair) ToEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.Pair, error) {
+	if p.BC == nil {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("bc is required"))
+	}
+	if p.QC == nil {
+		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("qc is required"))
+	}
 	t1, err := p.BC.toEntity(fn)
 	if err != nil {
 		return nil, err
@@ -69,9 +84,20 @@ func (p *Pair) ToEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity.P
 	if err != nil {
 		return nil, err
 	}
-	return &entity.Pair{
-		T1:      t1,
-		T2:      t2,
-		FeeRate: p.FeeRate,
-	}, nil
+
+	ep := &entity.Pair{
+		T1:          t1,
+		T2:          t2,
+		Enable:      p.Enable,
+		FeeRate1:    p.FeeRate1,
+		FeeRate2:    p.FeeRate2,
+		ExchangeFee: p.ExchangeFee,
+	}
+	if p.Spreads == nil || len(p.Spreads) == 0 {
+		ep.Spreads = make(map[uint]float64)
+	} else {
+		ep.Spreads = p.Spreads
+	}
+
+	return ep, nil
 }

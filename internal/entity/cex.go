@@ -10,6 +10,8 @@ type Swap struct {
 	TxId   string
 	Status string // succed, failed
 
+	In          *Token
+	Out         *Token
 	InAmount    string
 	OutAmount   string
 	Fee         string
@@ -21,14 +23,17 @@ type Swap struct {
 
 type Cex interface {
 	Exchange
-	TxIdSetted(*CexOrder)
-	Run()
-	SetDepositddress(o *CexOrder) error
+	TxIdSetted(Order, string) error
 }
 
 type AddPairsResult struct {
-	Added   []Pair
+	Added   []string
 	Existed []string
+	Failed  []*PairsErr
+}
+
+type UpdatePairResult struct {
+	Updated []string
 	Failed  []*PairsErr
 }
 

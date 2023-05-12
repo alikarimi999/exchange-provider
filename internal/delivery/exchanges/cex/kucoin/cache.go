@@ -28,12 +28,13 @@ func newCache(k *kucoinExchange, l logger.Logger) *cache {
 		t: time.NewTicker(2 * time.Hour),
 		l: l,
 	}
+
 	go c.run(k.stopCh)
 	return c
 }
 
 func (c *cache) run(stopCh chan struct{}) {
-	agnet := "kucoin.cache.run"
+	agnet := c.k.agent("cache.run")
 	for {
 		select {
 		case <-c.t.C:
@@ -72,7 +73,7 @@ func (c *cache) getD(txid string) (*depositRecord, bool) {
 	if !ok {
 		return nil, false
 	}
-	return d.snapShot(), true
+	return d.snapshot(), true
 }
 
 func (c *cache) removeD(txid string) {

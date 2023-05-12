@@ -1,10 +1,10 @@
 package dto
 
-type Account struct {
+type Exchange struct {
+	Type string      `json:"type"`
 	Conf interface{} `json:"configs"`
 }
 
 type GetAllExchangesResponse struct {
-	Exchanges map[uint]*Account `json:"exchanges,omitempty"`
-	Msgs      []string          `json:"messages"`
+	Exchanges []Exchange `json:"exchanges"`
 }

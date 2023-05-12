@@ -1,33 +1,33 @@
 package kucoin
 
 import (
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
+	"exchange-provider/pkg/errors"
+	"fmt"
+	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) swap(o *entity.CexOrder, p *entity.Pair) (string, error) {
-	agent := k.agent("swap")
+func (k *kucoinExchange) swap(o *types.Order, bc, qc *Token, index int) error {
 
-	index := 0
-
-	bc := p.T1.ET.(*Token)
-	qc := p.T2.ET.(*Token)
-
-	var side, size, funds string
-	if p.T1.Equal(o.Routes[index].In) {
-		size = o.Swaps[index].InAmount
-		side = "sell"
+	var size, funds string
+	side := o.Swaps[index].Side
+	if side == sellSide {
+		size = big.NewFloat(o.Swaps[index].InAmountRequested).Text('f', 18)
 	} else {
-		funds = o.Swaps[index].InAmount
-		side = "buy"
+		funds = big.NewFloat(o.Swaps[index].InAmountRequested).Text('f', 18)
 	}
 
-	req, err := k.createOrderRequest(bc, qc, side, size, funds)
-	if err != nil {
-		k.l.Error(agent, err.Error())
-		return "", err
+	req := k.createOrderRequest(bc, qc, side, size, funds,
+		fmt.Sprintf("%s-%d", o.ID().String(), index))
+
+	if side == sellSide {
+		o.Swaps[index].InAmountRequested, _ = strconv.ParseFloat(req.Size, 64)
+	} else {
+		o.Swaps[index].InAmountRequested, _ = strconv.ParseFloat(req.Funds, 64)
 	}
 
 	// res, err := k.writeApi.InnerTransferV2(uuid.New().String(), in.Symbol, "main", "trade", amount)
@@ -38,51 +38,64 @@ func (k *kucoinExchange) swap(o *entity.CexOrder, p *entity.Pair) (string, error
 	// k.l.Debug(agent, fmt.Sprintf("%s %s transferred from main account to trade account",
 	// 	amount, in.Symbol))
 
-	res, err := k.writeApi.CreateOrder(req)
-	if err = handleSDKErr(err, res); err != nil {
-		k.l.Error(agent, err.Error())
-		return "", err
+	for i := 0; i <= 10; i++ {
+		res, err := k.writeApi.CreateOrder(req)
+		if err = handleSDKErr(err, res); err != nil {
+			if i == 10 {
+				return err
+			}
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		break
 	}
-
-	resp := &kucoin.CreateOrderResultModel{}
-	if err = res.ReadData(resp); err != nil {
-		k.l.Error(agent, err.Error())
-		return "", err
-	}
-	return resp.OrderId, nil
+	return nil
 
 }
 
-func (k *kucoinExchange) trackSwap(o *entity.CexOrder, index int) {
-	agent := k.agent("trackSap")
-
-	time.Sleep(3 * time.Second)
+func (k *kucoinExchange) trackSwap(o *types.Order, bc, qc *Token, index int) error {
 	s := o.Swaps[index]
-	resp, err := k.readApi.Order(s.TxId)
-	if err = handleSDKErr(err, resp); err != nil {
-		k.l.Error(agent, err.Error())
-		s.Status = entity.SwapFailed
-		s.FailedDesc = err.Error()
-		return
-	}
 
+	var (
+		resp *kucoin.ApiResponse
+		err  error
+	)
+
+	for i := 0; i <= 10; i++ {
+		resp, err = k.readApi.OrderByClient(fmt.Sprintf("%s-%d", o.ID().String(), index))
+		if err == nil && resp.Code == "400100" && i == 0 {
+			time.Sleep(2 * time.Second)
+			continue
+		} else if err == nil && resp.Code == "400100" && i == 1 {
+			return errors.Wrap(errors.ErrNotFound)
+		}
+		if err = handleSDKErr(err, resp); err != nil {
+			if i == 10 {
+				return err
+			}
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
+	}
 	order := &kucoin.OrderModel{}
-	if err = resp.ReadData(order); err != nil {
-		k.l.Error(agent, err.Error())
-		s.Status = entity.SwapFailed
-		s.FailedDesc = err.Error()
-		return
+	if err := resp.ReadData(order); err != nil {
+		return err
 	}
 
-	if order.Side == "sell" {
-		s.InAmount = order.DealSize
-		s.OutAmount = order.DealFunds
+	fee, _ := strconv.ParseFloat(order.Fee, 64)
+	if order.Side == sellSide {
+		s.InAmountExecuted, _ = strconv.ParseFloat(order.DealSize, 64)
+		outAmountS := trim(order.DealFunds, qc.OrderPrecision)
+		outAmountF, _ := strconv.ParseFloat(outAmountS, 64)
+		s.OutAmount = outAmountF
 	} else {
-		s.InAmount = order.DealFunds
-		s.OutAmount = order.DealSize
+		amIn, _ := strconv.ParseFloat(order.DealFunds, 64)
+		s.InAmountExecuted = amIn
+		s.OutAmount, _ = strconv.ParseFloat(order.DealSize, 64)
 	}
 
-	s.Fee = order.Fee
+	s.KucoinFee = fee
 	s.FeeCurrency = order.FeeCurrency
-	s.Status = entity.SwapSucceed
+	return nil
 }

@@ -9,8 +9,11 @@ import (
 	"exchange-provider/internal/app"
 	"exchange-provider/internal/delivery/database"
 	"exchange-provider/internal/delivery/http"
-	"exchange-provider/internal/delivery/services"
+	"exchange-provider/internal/delivery/services/api"
+	"exchange-provider/internal/delivery/services/exrepo"
+	"exchange-provider/internal/delivery/services/fee"
 	"exchange-provider/internal/delivery/services/pairsRepo"
+	walletstore "exchange-provider/internal/delivery/services/wallet-store"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"os"
@@ -22,8 +25,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -78,25 +81,37 @@ func production() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairsRepo.PairsRepo(db, l)
-	ss, err := services.WrapServices(&services.Config{
-		DB:     db,
-		Repo:   repo,
-		Pairs:  pairs,
-		V:      v,
-		L:      l,
-		PrvKey: prv,
-	})
 
+	f, err := fee.NewFeeTable(db)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore, ss.FeeService, l)
+	s, err := fee.NewSpreadTable(db)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
+	api, err := api.NewApiService(db, 20, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+	ws := walletstore.NewWalletStore()
+	pairs, err := pairsRepo.PairsRepo(db, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+
+	exRepo := exrepo.NewExchangeRepo(db, ws, pairs, repo, f, s, l, prv)
+	exs, err := exRepo.GetAll()
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+	pairs.AddExchanges(exs)
+	ou := app.NewOrderUseCase(repo, exRepo, exs, ws, f, l)
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, ss.FeeService,
-		v, l, user, pass).Run(":8000"); err != nil {
+	if err := http.NewRouter(ou, repo, pairs, f, api,
+		v, s, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }
@@ -152,25 +167,39 @@ func test() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs := pairsRepo.PairsRepo(db, l)
-	ss, err := services.WrapServices(&services.Config{
-		DB:     db,
-		Repo:   repo,
-		Pairs:  pairs,
-		V:      v,
-		L:      l,
-		PrvKey: prv,
-	})
 
+	f, err := fee.NewFeeTable(db)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
 
-	ou := app.NewOrderUseCase(repo, ss.ExchangeRepo, ss.WalletStore, ss.FeeService, l)
+	s, err := fee.NewSpreadTable(db)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
 
+	api, err := api.NewApiService(db, 20, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+	ws := walletstore.NewWalletStore()
+	pairs, err := pairsRepo.PairsRepo(db, l)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+
+	exRepo := exrepo.NewExchangeRepo(db, ws, pairs, repo,
+		f, s, l, prv)
+
+	exs, err := exRepo.GetAll()
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+	pairs.AddExchanges(exs)
+	ou := app.NewOrderUseCase(repo, exRepo, exs, ws, f, l)
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, ss.FeeService,
-		v, l, user, pass).Run(":8081"); err != nil {
+	if err := http.NewRouter(ou, repo, pairs, f, api,
+		v, s, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
 }

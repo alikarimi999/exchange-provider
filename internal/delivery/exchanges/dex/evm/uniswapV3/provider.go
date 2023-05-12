@@ -1,7 +1,7 @@
 package uniswapV3
 
 import (
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"math/rand"
 	"time"
 )

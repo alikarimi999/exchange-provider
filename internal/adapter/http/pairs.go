@@ -3,7 +3,8 @@ package http
 import (
 	"exchange-provider/internal/adapter/http/dto"
 	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
-	sdto "exchange-provider/internal/delivery/exchanges/cex/swapspace/dto"
+	"exchange-provider/pkg/errors"
+	"fmt"
 	"strconv"
 
 	edto "exchange-provider/internal/delivery/exchanges/dex/evm/dto"
@@ -24,66 +25,54 @@ func (s *Server) AddPairs(ctx Context) {
 	}
 
 	res := &entity.AddPairsResult{}
-	switch ex.Name() {
-	case "swapspace":
-		req := &sdto.AddPairsRequest{}
+	var req interface{}
+	switch ex.Type() {
+	case entity.CEX:
+		switch ex.Name() {
+		case "kucoin":
+			req = &kdto.AddPairsRequest{}
+			if err := ctx.Bind(req); err != nil {
+				ctx.JSON(nil, err)
+				return
+			}
+		}
+	case entity.EvmDEX:
+		req = &edto.AddPairsRequest{}
 		if err := ctx.Bind(req); err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
 
-		res, err = s.app.AddPairs(ex, req)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
-	case "kucoin":
-		req := &kdto.AddPairsRequest{}
-		if err := ctx.Bind(req); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
-		res, err = s.app.AddPairs(ex, req)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
-	case "uniswapv3", "uniswapv2", "panckakeswapv2":
-		req := &edto.AddPairsRequest{}
-		if err := ctx.Bind(req); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
-
-		res, err = s.app.AddPairs(ex, req)
-		if err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
 	}
-
+	res, err = ex.AddPairs(req)
+	if err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
 	ctx.JSON(dto.FromEntity(res), nil)
 }
 
-func (s *Server) GePairsToUser(ctx Context) {
-	req := &dto.PaginatedPairsRequest{}
+func (s *Server) GetPairs(ctx Context) {
+	api := ctx.GetApi()
+	admin := api == nil
+	req := &dto.PaginatedReq{}
 	if err := ctx.Bind(req); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	pa := req.ToEntity()
+	pa := req.Map()
 	if err := s.pairs.GetPaginated(pa); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	totalPage := pa.Total / pa.PerPage
-	if pa.Total%pa.PerPage > 0 {
-		totalPage++
+	var totalPage int64
+	if pa.Page != 0 && pa.PerPage != 0 {
+		totalPage = pa.Total / pa.PerPage
+		if pa.Total%pa.PerPage > 0 {
+			totalPage++
+		}
 	}
 	res := &dto.PaginatedPairsResp{
 		PaginatedResponse: dto.PaginatedResponse{
@@ -94,91 +83,148 @@ func (s *Server) GePairsToUser(ctx Context) {
 		},
 	}
 
-	for _, p := range pa.Pairs {
-		res.Pairs = append(res.Pairs, dto.PairFromEntity(p))
+	if admin {
+		res.Pairs = pa.Pairs
+	} else {
+		ps := []dto.Pair{}
+		for _, p := range pa.Pairs {
+			ps = append(ps, dto.Pair{
+				T1:          dto.TokenFromEntity(p.T1),
+				T2:          dto.TokenFromEntity(p.T2),
+				Enable:      p.Enable,
+				FeeRate1:    p.FeeRate1,
+				FeeRate2:    p.FeeRate2,
+				ExchangeFee: p.ExchangeFee,
+				LP:          p.LP,
+			})
+		}
+		res.Pairs = ps
 	}
 	ctx.JSON(res, nil)
 }
 
-func (s *Server) RemovePair(ctx Context) {
-	p := &dto.Pair{}
-	if err := ctx.Bind(p); err != nil {
+func (s *Server) UpdatePairs(ctx Context) {
+	req := &dto.UpdatePairReq{}
+	if err := ctx.Bind(req); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	if err := s.app.RemovePair(p.LP, p.T1.ToEntity(), p.T2.ToEntity()); err != nil {
-		ctx.JSON(nil, err)
-		return
+	res := &dto.CmdResp{}
+	for _, p := range req.Pairs {
+		resp := struct {
+			Pair string "json:\"pair\""
+			Msg  string "json:\"msg\""
+		}{
+			Pair: fmt.Sprintf("%s/%s", p.T1.String(), p.T2.String()),
+		}
+
+		ex, err := s.app.GetExchange(p.LP)
+		if err != nil {
+			resp.Msg = err.Error()
+			res.PairsRes = append(res.PairsRes, resp)
+			continue
+		}
+
+		p.T1.ToUpper()
+		p.T2.ToUpper()
+		dp, err := s.pairs.Get(ex.Id(), p.T1.String(), p.T2.String())
+		if err != nil {
+			resp.Msg = err.Error()
+			res.PairsRes = append(res.PairsRes, resp)
+			continue
+		}
+		p.Update(dp, req.AcceptZero)
+		if err := s.pairs.Update(ex.Id(), dp); err != nil {
+			resp.Msg = err.Error()
+			res.PairsRes = append(res.PairsRes, resp)
+			continue
+		}
+		resp.Msg = "done"
+		res.PairsRes = append(res.PairsRes, resp)
 	}
-	ctx.JSON(struct {
-		Msg string `json:"msg"`
-	}{"done"}, nil)
+	ctx.JSON(res, nil)
 }
 
-// func (s *Server) GetPairsToAdmin(ctx Context) {
-// req := &dto.PaginatedPairsRequest{}
-// 	if err := ctx.Bind(req); err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
-// 	if err := req.Validate(true); err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
+func (s *Server) CommandPairs(ctx Context) {
+	req := &dto.PairsRequest{}
+	if err := ctx.Bind(req); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
 
-// 	pa := req.ToEntity()
-// 	if err := s.pairs.GetPaginated(pa); err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
+	if req.Cmd != "enable" && req.Cmd != "disable" && req.Cmd != "remove" {
+		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+			fmt.Errorf("cmd '%s' is not supported", req.Cmd)))
+		return
+	}
 
-// 	exs := make(map[string]entity.Exchange)
-// 	ps := []*entity.Pair{}
-// 	for _, p := range pa.Pairs {
-// 		ex, ok := exs[p.Exchange]
-// 		if !ok {
-// 			var err error
-// 			ex, err = s.app.GetExchange(p.Exchange)
-// 			if err != nil {
-// 				continue
-// 			}
-// 			exs[p.Exchange] = ex
-// 		}
-// 		p.T1.MinDeposit, p.T2.MinDeposit = s.app.GetMinPairDeposit(p.T1.String(), p.T2.String())
-// 		p.SpreadRate = s.app.GetPairSpread(p.T1.Token, p.T2.Token)
-// 		ps = append(ps, p)
-// 	}
+	if req.All {
+		err := s.pairs.UpdateAll(req.Cmd)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+		ctx.JSON(struct {
+			Msg string "json:\"msg\""
+		}{Msg: "done"}, nil)
+		return
+	}
 
-// 	pa.Pairs = ps
-// 	ctx.JSON(dto.PairsResp(pa, true), nil)
-// }
+	res := &dto.CmdResp{}
+	for _, p := range req.Pairs {
+		resp := struct {
+			Pair string "json:\"pair\""
+			Msg  string "json:\"msg\""
+		}{
+			Pair: fmt.Sprintf("%s/%s", p.T1.String(), p.T2.String()),
+		}
+		ex, err := s.app.GetExchange(p.LP)
+		if err != nil {
+			resp.Msg = err.Error()
+			res.PairsRes = append(res.PairsRes, resp)
+			continue
+		}
+		p.T1.ToUpper()
+		p.T2.ToUpper()
 
-// func (s *Server) RemovePair(ctx Context) {
-// 	req := &dto.RemovePairRequest{}
-// 	if err := ctx.Bind(req); err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
+		switch req.Cmd {
+		case dto.RemoveCmd:
+			err := s.app.RemovePair(ex, p.T1, p.T2)
+			if err != nil {
+				resp.Msg = err.Error()
+			} else {
+				resp.Msg = "done"
+			}
+		case dto.EnableCmd:
+			ep, err := s.pairs.Get(ex.Id(), p.T1.String(), p.T2.String())
+			if err != nil {
+				resp.Msg = err.Error()
+				break
+			}
+			if ep.Enable {
+				resp.Msg = "pair is enable"
+				break
+			}
+			ep.Enable = true
+			s.pairs.Update(ex.Id(), ep)
+			resp.Msg = "done"
+		case dto.DisableCmd:
+			ep, err := s.pairs.Get(ex.Id(), p.T1.String(), p.T2.String())
+			if err != nil {
+				resp.Msg = err.Error()
+				break
+			}
+			if !ep.Enable {
+				resp.Msg = "pair is disable"
+				break
+			}
+			ep.Enable = false
+			s.pairs.Update(ex.Id(), ep)
+			resp.Msg = "done"
+		}
+		res.PairsRes = append(res.PairsRes, resp)
+	}
 
-// 	t1, t2, err := req.Parse()
-// 	if err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
-
-// 	ex, err := s.app.GetExchange(req.Exchange)
-// 	if err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
-
-// 	err = s.app.RemovePair(ex, t1, t2, req.Force)
-// 	if err != nil {
-// 		ctx.JSON(nil, err)
-// 		return
-// 	}
-
-// 	req.Msg = "done"
-// 	ctx.JSON(req, nil)
-// }
+	ctx.JSON(res, nil)
+}

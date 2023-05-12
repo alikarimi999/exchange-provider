@@ -4,82 +4,108 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"strings"
 	"sync"
 )
 
 type estimate struct {
-	ex        entity.Exchange
-	amountOut float64
+	ex entity.Exchange
+	*entity.EstimateAmount
 }
 
-func (o *OrderUseCase) EstimateAmountOut(in, out *entity.Token,
-	amount float64, lp uint) (entity.Exchange, float64, error) {
-	return o.estimateAmountOut(in, out, amount, lp)
+func (o *OrderUseCase) EstimateAmountOut(in, out entity.TokenId,
+	amount float64, lp, lvl uint) (*entity.EstimateAmount, entity.Exchange, error) {
+	return o.estimateAmountOut(in, out, amount, lp, lvl)
 }
 
-func (o *OrderUseCase) estimateAmountOut(in, out *entity.Token,
-	amount float64, lp uint) (ex entity.Exchange, amountOut float64, err error) {
+func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
+	lp, lvl uint) (*entity.EstimateAmount, entity.Exchange, error) {
 
 	if lp > 0 {
 		ex, err := o.exs.get(lp)
 		if err != nil {
-			return nil, 0, err
+			return nil, nil, err
 		}
-		amOut, min, err := ex.EstimateAmountOut(in, out, amount)
+		if !ex.IsEnable() {
+			return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("lp is disable"))
+		}
+		es, err := ex.EstimateAmountOut(in, out, amount, lvl)
 		if err != nil {
-			if min > 0 {
-				return nil, 0, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("min amount is %f", min)))
-			}
-			return nil, 0, err
+			return nil, nil, err
 		}
-		return ex, amOut, nil
+		return es, ex, nil
 	}
 
 	exs := o.exs.getAll()
 	wg := &sync.WaitGroup{}
 	pMux := &sync.Mutex{}
-	mins := []float64{}
+	minAndMax := []*entity.Pair{}
 	estimates := []*estimate{}
 	for _, ex := range exs {
+		if !ex.IsEnable() {
+			continue
+		}
 		wg.Add(1)
 		go func(ex entity.Exchange) {
 			defer wg.Done()
-			pr, min, err := ex.EstimateAmountOut(in, out, amount)
+			es, err := ex.EstimateAmountOut(in, out, amount, lvl)
 			pMux.Lock()
-			if err == nil && pr > 0 {
+			if err == nil && es.AmountOut > 0 {
 				estimates = append(estimates, &estimate{
-					ex:        ex,
-					amountOut: pr,
+					ex:             ex,
+					EstimateAmount: es,
 				})
-			} else if min > 0 {
-				mins = append(mins, min)
+			} else if err != nil && es != nil && strings.Contains(err.Error(), "min") && es.P != nil {
+				minAndMax = append(minAndMax, es.P)
 			}
 			pMux.Unlock()
 		}(ex)
 	}
 	wg.Wait()
 
-	var min float64
+	var max, min float64
 
 	if len(estimates) == 0 {
-		if len(mins) > 0 {
-			min = mins[0]
-			for _, m := range mins {
-				if m < min {
-					min = m
+		if len(minAndMax) > 0 {
+			if minAndMax[0].T1.String() == in.String() {
+				min = minAndMax[0].T1.Min
+				max = minAndMax[0].T1.Max
+				for _, p := range minAndMax {
+					if p.T1.Min < min {
+						min = p.T1.Min
+					}
+					if p.T1.Max == 0 || p.T1.Max > max {
+						max = p.T1.Max
+					}
+				}
+			} else {
+				min = minAndMax[0].T2.Min
+				max = minAndMax[0].T2.Max
+				for _, p := range minAndMax {
+					if p.T2.Min < min {
+						min = p.T2.Min
+					}
+					if p.T2.Max == 0 || p.T2.Max > max {
+						max = p.T2.Max
+					}
 				}
 			}
-			return nil, 0, errors.Wrap(errors.ErrNotFound, errors.NewMesssage(fmt.Sprintf("min amount is %f", min)))
+
+			return nil, nil, errors.Wrap(errors.ErrNotFound,
+				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
 		}
-		return nil, 0, errors.Wrap(errors.ErrNotFound)
+		return nil, nil, errors.Wrap(errors.ErrNotFound,
+			errors.NewMesssage(fmt.Sprintf("pair '%s/%s' not found", in.String(), out.String())))
 	}
 
-	es := &estimate{}
+	es := &estimate{
+		EstimateAmount: &entity.EstimateAmount{},
+	}
 	for _, est := range estimates {
-		if est.amountOut > es.amountOut {
+		if est.EstimateAmount != nil && est.AmountOut > es.AmountOut {
 			es = est
 		}
 	}
 
-	return es.ex, es.amountOut, nil
+	return es.EstimateAmount, es.ex, nil
 }

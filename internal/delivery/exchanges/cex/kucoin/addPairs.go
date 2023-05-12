@@ -6,8 +6,12 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 )
+
+const max_conccurrent_jobs = 20
 
 func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	agent := fmt.Sprintf("%s.AddPairs", k.NID())
@@ -17,14 +21,18 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 	}
 
 	res := &entity.AddPairsResult{}
-	cs := []*entity.Token{}
 	ps := []*entity.Pair{}
 	ts, err := k.retreiveTokens()
 	if err != nil {
 		return nil, err
 	}
-
 	for _, p := range req.Pairs {
+		p.BC.ToUpper()
+		p.QC.ToUpper()
+		if k.pairs.Exists(k.Id(), p.BC.String(), p.QC.String()) {
+			res.Existed = append(res.Existed, p.String())
+			continue
+		}
 		for _, t := range ts.Data {
 			if t.Currency == p.BC.ET.Currency && t.ChainName == p.BC.ET.ChainName {
 				p.BC.ET.Chain = t.Chain
@@ -37,24 +45,40 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 				break
 			}
 		}
-		ep, err := p.ToEntity(func(t dto.Token) (entity.ExchangeToken, error) {
+
+		if p.BC.ET.Chain == "" {
+			res.Failed = append(res.Failed, &entity.PairsErr{
+				Pair: p.String(),
+				Err: fmt.Errorf("token with currency '%s' and chainName '%s' does not exists in kucoin",
+					p.BC.ET.Currency, p.BC.ET.ChainName),
+			})
+			continue
+		}
+		if p.QC.ET.Chain == "" {
+			res.Failed = append(res.Failed, &entity.PairsErr{
+				Pair: p.String(),
+				Err: fmt.Errorf("token with currency '%s' and chainName '%s' does not exists in kucoin",
+					p.QC.ET.Currency, p.QC.ET.ChainName),
+			})
+			continue
+		}
+
+		fn := func(t dto.Token) (entity.ExchangeToken, error) {
 			bt, err := time.ParseDuration(t.BlockTime)
 			if err != nil {
 				return nil, err
 			}
 
 			return &Token{
-				Currency:  t.Currency,
-				ChainName: t.ChainName,
-				Chain:     t.Chain,
-
-				DepositAddress: t.DepositAddress,
-				DepositTag:     t.DepositTag,
-
+				Currency:            t.Currency,
+				ChainName:           t.ChainName,
+				Chain:               t.Chain,
 				BlockTime:           bt,
 				WithdrawalPrecision: t.WithdrawalPrecision,
 			}, nil
-		})
+		}
+
+		ep, err := p.ToEntity(fn)
 		if err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p.String(),
@@ -62,47 +86,77 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			})
 			continue
 		}
+		ep.EP = &ExchangePair{}
+		if p.IC != "" {
+			ic := Token{Currency: strings.ToUpper(p.IC)}
+			ep.EP = &ExchangePair{
+				HasIntermediaryCoin: true,
+				IC1:                 ic.snapshot(),
+				IC2:                 ic.snapshot(),
+			}
+		}
 		ps = append(ps, ep)
 	}
 
 	ps2 := []*entity.Pair{}
-	for _, p := range ps {
-		if k.pairs.Exists(k.Id(), p.T1.String(), p.T2.String()) {
-			res.Existed = append(res.Existed, p.String())
-			continue
+	if len(ps) > 0 {
+		if err := k.pls.downloadList(); err != nil {
+			return nil, err
 		}
+		if err := k.pls.downloadTickers(); err != nil {
+			return nil, err
+		}
+		wg := &sync.WaitGroup{}
+		mux := sync.Mutex{}
+		waitChan := make(chan struct{}, max_conccurrent_jobs)
 
-		if err := k.pls.support(p, false); err != nil {
-			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p.String(),
-				Err:  err,
-			})
-			continue
-		}
+		for _, p := range ps {
+			waitChan <- struct{}{}
+			wg.Add(1)
+			go func(p *entity.Pair) {
+				defer func() {
+					<-waitChan
+					wg.Done()
+				}()
+				if err := k.support(p); err != nil {
+					mux.Lock()
+					res.Failed = append(res.Failed, &entity.PairsErr{
+						Pair: p.String(),
+						Err:  err,
+					})
+					mux.Unlock()
+					return
+				}
 
-		if err := k.setInfos(p); err != nil {
-			res.Failed = append(res.Failed, &entity.PairsErr{
-				Pair: p.String(),
-				Err:  err,
-			})
-			continue
+				if err := k.setInfos(p); err != nil {
+					mux.Lock()
+					res.Failed = append(res.Failed, &entity.PairsErr{
+						Pair: p.String(),
+						Err:  err,
+					})
+					mux.Unlock()
+					return
+				}
+				p.LP = k.Id()
+				p.Exchange = k.NID()
+				mux.Lock()
+				res.Added = append(res.Added, p.String())
+				ps2 = append(ps2, p)
+				mux.Unlock()
+			}(p)
 		}
-		p.LP = k.Id()
-		p.Exchange = k.NID()
-		res.Added = append(res.Added, *p)
-		ps2 = append(ps2, p)
-		bc := p.T1
-		qc := p.T2
-		cs = append(cs, bc)
-		cs = append(cs, qc)
+		wg.Wait()
 	}
 
 	if len(ps2) > 0 {
 		if err := k.pairs.Add(k, ps2...); err != nil {
 			return nil, err
 		}
-		k.supportedCoins.add(cs)
 	}
 	return res, nil
 
+}
+
+func (k *kucoinExchange) RemovePair(t1, t2 entity.TokenId) error {
+	return k.pairs.Remove(k.Id(), t1.String(), t2.String(), true)
 }

@@ -2,7 +2,7 @@ package evm
 
 import (
 	"context"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"fmt"
 	"math/big"
 	"math/rand"

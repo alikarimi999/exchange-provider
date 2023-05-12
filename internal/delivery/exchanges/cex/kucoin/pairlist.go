@@ -7,34 +7,44 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
 type pairList struct {
-	k     *kucoinExchange
-	mux   *sync.Mutex
-	api   *kucoin.ApiService
-	pairs []*kucoin.SymbolModel
-
-	l logger.Logger
+	k       *kucoinExchange
+	pairs   []*kucoin.SymbolModel
+	tickers *kucoin.TickersResponseModel
+	l       logger.Logger
 }
 
 func newPairList(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *pairList {
-	return &pairList{
+	pl := &pairList{
 		k:     k,
-		mux:   &sync.Mutex{},
-		api:   api,
 		pairs: make([]*kucoin.SymbolModel, 0),
 		l:     l,
 	}
+	return pl
 }
 
-func (p *pairList) download() error {
-	op := errors.Op(fmt.Sprintf("%s.pairList.download", p.k.NID()))
+func (p *pairList) downloadTickers() error {
+	agent := p.k.agent("pairList.downloadTickers")
+	res, err := p.k.readApi.Tickers()
+	if err := handleSDKErr(err, res); err != nil {
+		return err
+	}
+	ts := &kucoin.TickersResponseModel{}
+	if err := res.ReadData(ts); err != nil {
+		return err
+	}
+	p.tickers = ts
+	p.l.Debug(agent, fmt.Sprintf("'%d' tickers downloaded", len(ts.Tickers)))
+	return nil
+}
 
-	res, err := p.api.Symbols("")
+func (p *pairList) downloadList() error {
+	agent := p.k.agent("pairList.downloadList")
+	res, err := p.k.readApi.Symbols("")
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -43,30 +53,30 @@ func (p *pairList) download() error {
 	if err := res.ReadData(&pairs); err != nil {
 		return err
 	}
-
-	p.mux.Lock()
-	defer p.mux.Unlock()
 	p.pairs = pairs
-
-	p.l.Debug(string(op), fmt.Sprintf("%d pairs downloaded", len(pairs)))
+	p.l.Debug(agent, fmt.Sprintf("'%d' pairs downloaded", len(pairs)))
 	return nil
 }
 
-func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
-	agent := fmt.Sprintf("%s.pairList.support", pl.k.NID())
-	if len(pl.pairs) == 0 {
-		if err := pl.download(); err != nil {
+func (k *kucoinExchange) support(p *entity.Pair) error {
+	var bc, qc *Token
+	ep := p.EP.(*ExchangePair)
+	if ep.HasIntermediaryCoin {
+		bc = p.T1.ET.(*Token)
+		qc = ep.IC1
+		if err := k.pls.support(bc, qc); err != nil {
 			return err
 		}
-		pl.l.Debug(agent, "pairs list downloaded")
+		bc = p.T2.ET.(*Token)
+		qc = ep.IC2
+		return k.pls.support(bc, qc)
 	}
+	bc = p.T1.ET.(*Token)
+	qc = p.T2.ET.(*Token)
+	return k.pls.support(bc, qc)
+}
 
-	bc := p.T1.ET.(*Token)
-	qc := p.T2.ET.(*Token)
-
-	pl.mux.Lock()
-	defer pl.mux.Unlock()
-
+func (pl *pairList) support(bc, qc *Token) error {
 	for _, pair := range pl.pairs {
 		if !pair.EnableTrading {
 			continue
@@ -78,38 +88,17 @@ func (pl *pairList) support(p *entity.Pair, fromDB bool) error {
 		bSymbol := symbol[0]
 		qSymbol := symbol[1]
 		if bSymbol == bc.Currency && qSymbol == qc.Currency {
-			if fromDB {
-				return nil
-			}
 			bc.MinOrderSize, _ = strconv.ParseFloat(pair.BaseMinSize, 64)
 			bc.MaxOrderSize, _ = strconv.ParseFloat(pair.BaseMaxSize, 64)
 			bc.OrderPrecision = calcPrecision(pair.BaseIncrement)
 			qc.MinOrderSize, _ = strconv.ParseFloat(pair.QuoteMinSize, 64)
 			qc.MaxOrderSize, _ = strconv.ParseFloat(pair.QuoteMaxSize, 64)
 			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
-
-			return nil
-		} else if bSymbol == qc.Currency && qSymbol == bc.Currency {
-			tx := p.T1
-			t1 := p.T2
-			t2 := tx
-
-			bc := t1.ET.(*Token)
-			qc := t2.ET.(*Token)
-
-			bc.MinOrderSize, _ = strconv.ParseFloat(pair.BaseMinSize, 64)
-			bc.MaxOrderSize, _ = strconv.ParseFloat(pair.BaseMaxSize, 64)
-			bc.OrderPrecision = calcPrecision(pair.BaseIncrement)
-			qc.MinOrderSize, _ = strconv.ParseFloat(pair.QuoteMinSize, 64)
-			qc.MaxOrderSize, _ = strconv.ParseFloat(pair.QuoteMaxSize, 64)
-			qc.OrderPrecision = calcPrecision(pair.QuoteIncrement)
-
-			p.T1 = t1
-			p.T2 = t2
 			return nil
 		}
 	}
-	return errors.New(fmt.Sprintf("pair '%s' not supported", p.String()))
+	return errors.Wrap(errors.ErrNotFound, fmt.Errorf("kucoin does not support pair '%s/%s'",
+		bc.Currency, qc.Currency))
 }
 
 func calcPrecision(s string) int {

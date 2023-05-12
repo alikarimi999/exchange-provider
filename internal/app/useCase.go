@@ -7,19 +7,19 @@ import (
 
 type OrderUseCase struct {
 	repo entity.OrderRepo
-	fs   entity.FeeService
+	fs   entity.FeeTable
 	WalletStore
-	exs *exStore
+	exs *ExStore
 	l   logger.Logger
 }
 
-func NewOrderUseCase(repo entity.OrderRepo, exRepo ExchangeRepo, ws WalletStore,
-	fee entity.FeeService, l logger.Logger) *OrderUseCase {
+func NewOrderUseCase(repo entity.OrderRepo, exRepo ExchangeRepo, exs []entity.Exchange,
+	ws WalletStore, fee entity.FeeTable, l logger.Logger) *OrderUseCase {
 
 	o := &OrderUseCase{
 		repo:        repo,
 		WalletStore: ws,
-		exs:         newExStore(l, exRepo),
+		exs:         newExStore(l, exRepo, exs),
 		fs:          fee,
 		l:           l,
 	}

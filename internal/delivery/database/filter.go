@@ -2,11 +2,11 @@ package database
 
 import (
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
-	"fmt"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func wrapFilter(filters []*entity.Filter) (bson.D, error) {
@@ -17,26 +17,75 @@ func wrapFilter(filters []*entity.Filter) (bson.D, error) {
 	ds := make([]bson.D, 0)
 	for _, f := range filters {
 		param := strings.ToLower(f.Param)
-
-		switch param {
+		switch strings.ToLower(param) {
 		case "id":
 			for i, v := range f.Values {
 				id, ok := v.(string)
 				if !ok {
-					return nil, errors.Wrap(errors.ErrBadRequest,
-						errors.NewMesssage(fmt.Sprintf("%v is not a string", v)))
+					return nil, invalidErr(param, v)
+
 				}
 				ss := strings.Split(id, "-")
 				if len(ss) != 2 || ss[0] != string(entity.PrefOrder) {
-					errors.Wrap(errors.ErrBadRequest,
-						errors.NewMesssage(fmt.Sprintf("%s is invalid", id)))
+					return nil, invalidErr(param, id)
+
 				}
-				f.Values[i] = ss[1]
+				sid, err := primitive.ObjectIDFromHex(ss[1])
+				if err != nil {
+					return nil, invalidErr(param, id)
+				}
+				f.Values[i] = sid
 			}
-			param = "objectid." + param
+			param = "_id"
+		case "pairid":
+			sd := []primitive.D{}
+			for _, v := range f.Values {
+				id, ok := v.(string)
+				if !ok {
+					return nil, invalidErr(param, v)
+				}
+				in, out, err := pairFromString(id)
+				if err != nil {
+					return nil, err
+				}
+				if in != nil {
+					sd = append(sd, bson.D{{"order.in", bson.D{{"$eq", in}}}})
+				}
+				if out != nil {
+					sd = append(sd, bson.D{{"order.out", bson.D{{"$eq", out}}}})
+				}
+			}
+			ds = append(ds, bson.D{{"$or", sd}})
+			continue
+		case "status":
+			sd := []primitive.D{}
+			for _, v := range f.Values {
+				s, ok := v.(string)
+				if !ok {
+					return nil, invalidErr(param, v)
+				}
+
+				switch s {
+				case entity.OCreated.String():
+					sd = append(sd, bson.D{{"$and", bson.A{bson.D{{"status", "created"}}, bson.D{{"order.expireat", bson.D{{"$gt", time.Now().Unix()}}}}}}})
+				case entity.OExpired.String():
+					sd = append(sd, bson.D{{"$or", bson.A{bson.D{{"status", "expired"}}, bson.D{{"$and", bson.A{bson.D{{"status", "created"}}, bson.D{{"order.expireat", bson.D{{"$lt", time.Now().Unix()}}}}}}}}}})
+
+				case entity.OPending.String(), entity.OFailed.String():
+					sd = append(sd, bson.D{{"status", s}})
+				default:
+					return nil, invalidErr(param, s)
+				}
+			}
+			ds = append(ds, bson.D{{"$or", sd}})
+			continue
+
+		case "busid":
+			param = "order.busid"
+		case "userid":
+			param = "order.userid"
 		}
 
-		param = "order." + param
 		switch f.Operator {
 		case entity.FilterOperatorEqual:
 			ds = append(ds, bson.D{{param, bson.D{{"$eq", f.Values[0]}}}})

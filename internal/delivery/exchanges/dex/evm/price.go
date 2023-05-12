@@ -2,19 +2,33 @@ package evm
 
 import (
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 )
 
-func (d *evmDex) EstimateAmountOut(in, out *entity.Token, amount float64) (float64, float64, error) {
-	t1, err := d.ts.get(in.String())
+func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
+	amount float64, lvl uint) (*entity.EstimateAmount, error) {
+	p, err := d.pairs.Get(d.Id(), in.String(), out.String())
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 
-	t2, err := d.ts.get(out.String())
-	if err != nil {
-		return 0, 0, err
+	if !p.Enable {
+		return nil, errors.Wrap(errors.ErrNotFound,
+			errors.NewMesssage("pair is not enable right now"))
 	}
 
-	amountOut, _, err := d.dex.EstimateAmountOut(t1, t2, amount)
-	return amountOut, 0, err
+	es := &entity.EstimateAmount{P: p}
+
+	var In, Out *entity.Token
+	if p.T1.String() == in.String() {
+		In = p.T1
+		Out = p.T2
+	} else {
+		In = p.T2
+		Out = p.T1
+	}
+
+	amountOut, _, err := d.dex.EstimateAmountOut(In, Out, amount)
+	es.AmountOut = amountOut
+	return es, err
 }

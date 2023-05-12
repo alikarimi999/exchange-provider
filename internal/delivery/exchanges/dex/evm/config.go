@@ -2,7 +2,7 @@ package evm
 
 import (
 	"crypto/ecdsa"
-	"exchange-provider/internal/delivery/exchanges/dex/types"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -10,7 +10,9 @@ import (
 
 type Config struct {
 	Id                 uint   `json:"id"`
+	Enable             bool   `json:"enable"`
 	Name               string `json:"name"`
+	Version            uint   `json:"version"`
 	NativeToken        string `json:"nativeToken"`
 	WrappedNativeToken string `json:"wrappedNativeToken"`
 	ChainId            int64  `json:"chainId"`

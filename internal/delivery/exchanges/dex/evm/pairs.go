@@ -8,6 +8,10 @@ import (
 	"sync"
 )
 
+type ExchangePair struct{}
+
+func (e *ExchangePair) Snapshot() entity.ExchangePair { return &ExchangePair{} }
+
 func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	req := data.(*dto.AddPairsRequest)
@@ -22,7 +26,7 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	add := []*entity.Pair{}
 
 	for _, p := range ps {
-		if p.T1.Network != d.Network || p.T2.Network != d.Network {
+		if p.T1.Id.Network != d.Network || p.T2.Id.Network != d.Network {
 			mux.Lock()
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
 				Err: fmt.Errorf("invalid token network")})
@@ -48,7 +52,7 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			p.LP = d.Id()
 			p.Exchange = d.NID()
 			add = append(add, p)
-			res.Added = append(res.Added, *p)
+			res.Added = append(res.Added, p.String())
 			mux.Unlock()
 		}(p)
 	}
@@ -58,16 +62,6 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	if len(add) > 0 {
 		if err := d.pairs.Add(d, add...); err != nil {
 			return nil, err
-		}
-
-		for _, p := range add {
-			if !d.ts.exists(p.T1.String()) {
-				d.ts.add(p.T1)
-			}
-			if !d.ts.exists(p.T2.String()) {
-				d.ts.add(p.T2)
-			}
-			p.LP = d.Id()
 		}
 	}
 	return res, nil
@@ -87,6 +81,6 @@ func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
 	return nil
 }
 
-func (d *evmDex) RemovePair(t1, t2 *entity.Token) error {
-	return d.pairs.Remove(d.Id(), t1.String(), t2.String())
+func (d *evmDex) RemovePair(t1, t2 entity.TokenId) error {
+	return d.pairs.Remove(d.Id(), t1.String(), t2.String(), true)
 }

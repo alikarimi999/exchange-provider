@@ -23,11 +23,10 @@ func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
 	da := &depositAggregator{
 		k:     k,
 		l:     k.l,
-		t:     time.NewTicker(time.Minute),
+		t:     time.NewTicker(15 * time.Second),
 		c:     c,
 		wSize: time.Hour * 2,
 	}
-	go da.run(k.stopCh)
 	return da
 }
 
@@ -37,33 +36,39 @@ func (a *depositAggregator) run(stopCh chan struct{}) {
 	for {
 		select {
 		case <-a.t.C:
-			s := time.Now().Add(-a.wSize)
-			e := time.Now()
-			ds, err := a.aggregate("SUCCESS", s, e)
-			if err != nil {
-				a.l.Error(agent, err.Error())
-				continue
-			}
-
-			dsf, err := a.aggregate("FAILURE", s, e)
-			if err != nil {
-				a.l.Error(agent, err.Error())
-
-			}
-			ds = append(ds, dsf...)
-			for _, d := range ds {
-				if !a.c.existsOrProccessedD(d.TxId) {
-					a.c.saveD(d)
-					continue
-				}
-			}
-
+			a.aggregateAll(-a.wSize)
 		case <-stopCh:
 			a.l.Debug(agent, "stopped")
 			return
 		}
 	}
 
+}
+
+func (a *depositAggregator) aggregateAll(windSize time.Duration) error {
+	agent := a.k.agent("aggregateAll")
+	s := time.Now().Add(windSize)
+	e := time.Now()
+	ds, err := a.aggregate("SUCCESS", s, e)
+	if err != nil {
+		a.l.Debug(agent, err.Error())
+		return err
+	}
+
+	dsf, err := a.aggregate("FAILURE", s, e)
+	if err != nil {
+		a.l.Debug(agent, err.Error())
+		return err
+	}
+
+	ds = append(ds, dsf...)
+	for _, d := range ds {
+		if !a.c.existsOrProccessedD(d.TxId) {
+			a.c.saveD(d)
+			continue
+		}
+	}
+	return nil
 }
 
 func (a *depositAggregator) aggregate(status string, start, end time.Time) ([]*depositRecord, error) {

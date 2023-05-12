@@ -9,18 +9,15 @@ type AddPairsRequest struct {
 }
 
 type Pair struct {
-	T1      *EToken `json:"t1"`
-	T2      *EToken `json:"t2"`
+	T1      EToken  `json:"t1"`
+	T2      EToken  `json:"t2"`
 	FeeRate float64 `json:"feeRate"`
 }
 
 func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
 	return &entity.Token{
-		Symbol:   t.Symbol,
-		Standard: t.Standard,
-		Network:  t.Network,
-
-		ContractAddress: t.Address,
+		Id:              *t.TokenId.ToUpper(),
+		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
 		Native:          t.Native,
 		ET:              fn(t.ET),
@@ -29,8 +26,8 @@ func (t *EToken) toEntity(fn func(Token) entity.ExchangeToken) *entity.Token {
 
 func (p *Pair) ToEntity(fn func(Token) entity.ExchangeToken) *entity.Pair {
 	return &entity.Pair{
-		T1:      p.T1.toEntity(fn),
-		T2:      p.T2.toEntity(fn),
-		FeeRate: p.FeeRate,
+		T1:       p.T1.toEntity(fn),
+		T2:       p.T2.toEntity(fn),
+		FeeRate1: p.FeeRate,
 	}
 }

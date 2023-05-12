@@ -1,6 +1,8 @@
 package pairsRepo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func (pr *pairsRepo) agent(fn string) string {
 	return fmt.Sprintf("pairsRepo.%s", fn)

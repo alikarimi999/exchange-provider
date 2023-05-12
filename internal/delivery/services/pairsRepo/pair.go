@@ -3,7 +3,6 @@ package pairsRepo
 import (
 	"context"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
-	"exchange-provider/internal/delivery/exchanges/cex/swapspace"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/entity"
 	"fmt"
@@ -14,55 +13,75 @@ import (
 )
 
 type exchangePairs struct {
-	NID   string `bson:"_id"`
-	ExId  uint
-	Pairs []pair
+	NID    string `bson:"_id"`
+	ExId   uint
+	ExType entity.ExType
+	Pairs  []pair
 }
 
 type pair struct {
-	Id string `bson:"_id"`
-	T1 *token `bson:"t1"`
+	Id string
+	T1 *token
 	T2 *token
 
-	FeeRate    float64
-	SpreadRate float64
+	FeeRate1    float64
+	FeeRate2    float64
+	ExchangeFee float64
+	Spreads     map[uint]float64
+	Enable      bool
+	EP          bson.Raw
 }
 
 func pFromEntity(p *entity.Pair) pair {
+	ep, _ := bson.Marshal(p.EP)
 	return pair{
-		Id:         pairId(p.T1.String(), p.T2.String()),
-		T1:         fromEntity(p.T1),
-		T2:         fromEntity(p.T2),
-		FeeRate:    p.FeeRate,
-		SpreadRate: p.SpreadRate,
+		Id:          pairId(p.T1.String(), p.T2.String()),
+		T1:          fromEntity(p.T1),
+		T2:          fromEntity(p.T2),
+		FeeRate1:    p.FeeRate1,
+		FeeRate2:    p.FeeRate2,
+		ExchangeFee: p.ExchangeFee,
+		Spreads:     p.Spreads,
+		Enable:      p.Enable,
+		EP:          ep,
 	}
 }
 
-func (p *pair) toEntity(exNID string, exId uint) *entity.Pair {
-	ep := &entity.Pair{
-		Exchange:   exNID,
-		LP:         exId,
-		FeeRate:    p.FeeRate,
-		SpreadRate: p.SpreadRate,
+func (p *pair) toEntity(exType entity.ExType, exNID string, exId uint) *entity.Pair {
+	pair := &entity.Pair{
+		Exchange:    exNID,
+		LP:          exId,
+		FeeRate1:    p.FeeRate1,
+		FeeRate2:    p.FeeRate2,
+		Spreads:     p.Spreads,
+		ExchangeFee: p.ExchangeFee,
+		Enable:      p.Enable,
 	}
-	var t entity.ExchangeToken
 
+	var t entity.ExchangeToken
 	fn := func(et bson.Raw) entity.ExchangeToken {
 		bson.Unmarshal(et, t)
 		return t.Snapshot()
 	}
 
-	switch strings.Split(exNID, "-")[0] {
-	case "swapspace":
-		t = &swapspace.Token{}
-	case "uniswapv3", "uniswapv2", "panckakeswapv2":
+	switch exType {
+	case entity.CEX:
+		switch strings.Split(exNID, "-")[0] {
+		case "kucoin":
+			ep := &kucoin.ExchangePair{}
+			bson.Unmarshal(p.EP, ep)
+			pair.EP = ep
+			t = &kucoin.Token{}
+		}
+	case entity.EvmDEX:
+		ep := &evm.ExchangePair{}
+		bson.Unmarshal(p.EP, ep)
+		pair.EP = ep
 		t = &evm.Token{}
-	case "kucoin":
-		t = &kucoin.Token{}
 	}
-	ep.T1 = p.T1.toEntity(fn)
-	ep.T2 = p.T2.toEntity(fn)
-	return ep
+	pair.T1 = p.T1.toEntity(fn)
+	pair.T2 = p.T2.toEntity(fn)
+	return pair
 }
 
 func (pr *pairsRepo) retrievePairs() error {
@@ -71,7 +90,6 @@ func (pr *pairsRepo) retrievePairs() error {
 	if err != nil {
 		return err
 	}
-
 	eps := []*exchangePairs{}
 	if err := cur.All(context.Background(), &eps); err != nil {
 		return err
@@ -86,7 +104,7 @@ func (pr *pairsRepo) retrievePairs() error {
 		}
 
 		for _, p := range ep.Pairs {
-			pr.eps[ep.NID].pairs[p.Id] = p.toEntity(ep.NID, ep.ExId)
+			pr.eps[ep.NID].pairs[p.Id] = p.toEntity(ep.ExType, ep.NID, ep.ExId)
 			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.NID))
 		}
 	}

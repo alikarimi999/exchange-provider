@@ -2,22 +2,21 @@ package dto
 
 import (
 	"exchange-provider/internal/entity"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type evmTX struct {
-	Type        uint8    `json:"type"`
-	IsApproveTx bool     `json:"isApproveTx"`
-	From        string   `json:"from"`
-	To          string   `json:"to"`
-	Data        string   `json:"data"`
-	Value       *big.Int `json:"value"`
-	Gas         uint64   `json:"gas"`
-	GasPrice    *big.Int `json:"gasPrice"`
-	GasFeeCap   *big.Int `json:"gasFeeCap"`
-	GasTipCap   *big.Int `json:"gasTipCap"`
+	Type        uint8  `json:"type"`
+	IsApproveTx bool   `json:"isApproveTx"`
+	From        string `json:"from"`
+	To          string `json:"to"`
+	Data        string `json:"data"`
+	Value       string `json:"value"`
+	Gas         string `json:"gas"`
+	GasPrice    string `json:"gasPrice"`
+	GasFeeCap   string `json:"gasFeeCap"`
+	GasTipCap   string `json:"gasTipCap"`
 }
 
 func evmTx(t entity.Tx, from string) *evmTX {
@@ -29,10 +28,10 @@ func evmTx(t entity.Tx, from string) *evmTX {
 		From:        from,
 		To:          tx.To().Hex(),
 		Data:        hexutil.Encode(tx.Data()),
-		Value:       tx.Value(),
-		Gas:         tx.Gas(),
-		GasPrice:    tx.GasPrice(),
-		GasFeeCap:   tx.GasFeeCap(),
-		GasTipCap:   tx.GasTipCap(),
+		Value:       hexutil.EncodeBig(tx.Value()),
+		Gas:         hexutil.EncodeUint64(tx.Gas()),
+		GasPrice:    hexutil.EncodeBig(tx.GasPrice()),
+		GasFeeCap:   hexutil.EncodeBig(tx.GasFeeCap()),
+		GasTipCap:   hexutil.EncodeBig(tx.GasTipCap()),
 	}
 }

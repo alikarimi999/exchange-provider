@@ -17,17 +17,21 @@ import (
 )
 
 func errSTF() error {
-	return errors.New("execution reverted: ExchangeAggregator::TransferHelper:safeTransferFrom")
+	return errors.New("execution reverted: TransferHelper:safeTransferFrom")
 }
 
 var (
 	arguments, _ = abi.NewType("tuple", "struct data", []abi.ArgumentMarshaling{
-		{Name: "input", Type: "address"},
+		{Name: "tokenIn", Type: "address"},
+		{Name: "tokenOut", Type: "address"},
 		{Name: "totalAmount", Type: "uint256"},
 		{Name: "feeAmount", Type: "uint256"},
+		{Name: "amountIn", Type: "uint256"},
+		{Name: "fromContract", Type: "bool"},
 		{Name: "swapper", Type: "address"},
-		{Name: "data", Type: "bytes"},
+		{Name: "swapperData", Type: "bytes"},
 		{Name: "sender", Type: "address"},
+		{Name: "native", Type: "bool"},
 	})
 
 	args = abi.Arguments{
@@ -35,7 +39,7 @@ var (
 	}
 )
 
-func (d *evmDex) createTx(r *entity.Route, tokenOwner, sender, receiver common.Address,
+func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver common.Address,
 	amount, feeRate float64) (*ts.Transaction, error) {
 	agent := d.agent("createTx")
 
@@ -44,18 +48,8 @@ func (d *evmDex) createTx(r *entity.Route, tokenOwner, sender, receiver common.A
 		err error
 	)
 
-	in, err := d.ts.get(r.In.String())
-	if err != nil {
-		return nil, err
-	}
-
-	out, err := d.ts.get(r.Out.String())
-	if err != nil {
-		return nil, err
-	}
-
 	var feeTier uint64
-	if d.version == 3 {
+	if d.Version == 3 {
 		_, feeTier, err = d.dex.EstimateAmountOut(in, out, amount)
 		if err != nil {
 			return nil, err
@@ -66,11 +60,10 @@ func (d *evmDex) createTx(r *entity.Route, tokenOwner, sender, receiver common.A
 	totalAmountF := big.NewFloat(0).Mul(big.NewFloat(amount), decF)
 	totalAmountI, _ := totalAmountF.Int(nil)
 
-	feeAmountF := big.NewFloat(0).Mul(big.NewFloat(amount*feeRate), decF)
+	feeAmountF := big.NewFloat(0).Mul(totalAmountF, big.NewFloat(feeRate/100))
 	feeAmountI, _ := feeAmountF.Int(nil)
 
-	swapAmountF := big.NewFloat(0).Sub(totalAmountF, feeAmountF)
-	swapAmountI, _ := swapAmountF.Int(nil)
+	swapAmountI := big.NewInt(0).Sub(totalAmountI, feeAmountI)
 
 	input, err := d.dex.TxData(in, out, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
@@ -95,6 +88,7 @@ func (d *evmDex) createTx(r *entity.Route, tokenOwner, sender, receiver common.A
 
 	data := contracts.IExchangeAggregatorswapInput{
 		TokenIn:      common.HexToAddress(in.ContractAddress),
+		TokenOut:     common.HexToAddress(out.ContractAddress),
 		TotalAmount:  totalAmountI,
 		FeeAmount:    feeAmountI,
 		AmountIn:     swapAmountI,

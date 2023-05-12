@@ -8,39 +8,30 @@ import (
 	"sync"
 )
 
-type exStore struct {
+type ExStore struct {
 	repo      ExchangeRepo
 	mux       *sync.RWMutex
 	exchanges map[string]entity.Exchange
 	l         logger.Logger
 }
 
-func newExStore(l logger.Logger, exRepo ExchangeRepo) *exStore {
-	s := &exStore{
+func newExStore(l logger.Logger, exRepo ExchangeRepo, exs []entity.Exchange) *ExStore {
+	s := &ExStore{
 		repo:      exRepo,
 		mux:       &sync.RWMutex{},
 		exchanges: make(map[string]entity.Exchange),
 		l:         l,
 	}
 
-	exs, err := s.repo.GetAll()
-	if err != nil {
-		s.l.Error("exStore", err.Error())
-		return s
-	}
-
 	for _, ex := range exs {
 		s.exchanges[ex.NID()] = ex
-		if ex.Type() == entity.CEX {
-			go ex.(entity.Cex).Run()
-		}
-		l.Debug("exStore.add", fmt.Sprintf("exchange '%d' added", ex.Id()))
+		l.Debug("exStore.add", fmt.Sprintf("lp '%d' added", ex.Id()))
 
 	}
 	return s
 }
 
-func (a *exStore) get(id uint) (entity.Exchange, error) {
+func (a *ExStore) get(id uint) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	for _, ex := range a.exchanges {
@@ -48,21 +39,24 @@ func (a *exStore) get(id uint) (entity.Exchange, error) {
 			return ex, nil
 		}
 	}
-	return nil, errors.Wrap(errors.ErrNotFound)
+	err := fmt.Errorf("lp '%d' not found", id)
+	return nil, errors.Wrap(errors.ErrNotFound, err,
+		errors.NewMesssage(err.Error()))
 }
 
-func (a *exStore) getByNID(name string) (entity.Exchange, error) {
+func (a *ExStore) getByNID(name string) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	ex, ok := a.exchanges[name]
 	if !ok {
-		return nil, errors.Wrap(errors.ErrNotFound,
-			errors.NewMesssage(fmt.Sprintf("exchange %s not found", ex.NID())))
+		err := fmt.Errorf("lp '%s' not found", ex.NID())
+		return nil, errors.Wrap(errors.ErrNotFound, err,
+			errors.NewMesssage(err.Error()))
 	}
 	return ex, nil
 }
 
-func (a *exStore) addExchange(ex entity.Exchange) error {
+func (a *ExStore) addExchange(ex entity.Exchange) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
@@ -71,14 +65,11 @@ func (a *exStore) addExchange(ex entity.Exchange) error {
 	}
 
 	a.exchanges[ex.NID()] = ex
-	if ex.Type() == entity.CEX {
-		go ex.(entity.Cex).Run()
-	}
-	a.l.Debug("exStore.add", fmt.Sprintf("exchange '%d' added", ex.Id()))
+	a.l.Debug("exStore.addExchange", fmt.Sprintf("lp '%d' added", ex.Id()))
 	return nil
 }
 
-func (a *exStore) exists(id uint) bool {
+func (a *ExStore) exists(id uint) bool {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	for _, ex := range a.exchanges {
@@ -89,7 +80,7 @@ func (a *exStore) exists(id uint) bool {
 	return false
 }
 
-func (a *exStore) getAll() []entity.Exchange {
+func (a *ExStore) getAll() []entity.Exchange {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 
@@ -101,7 +92,53 @@ func (a *exStore) getAll() []entity.Exchange {
 	return exs
 }
 
-func (a *exStore) remove(id uint) error {
+func (a *ExStore) enableDisable(exId uint, enable bool) error {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+	for _, ex := range a.exchanges {
+		if ex.Id() == exId {
+			if ex.IsEnable() == enable {
+				if enable {
+					return errors.Wrap(errors.ErrBadRequest, fmt.Errorf("lp is enable"))
+				} else {
+					return errors.Wrap(errors.ErrBadRequest, fmt.Errorf("lp is disable"))
+				}
+			}
+			if err := a.repo.EnableDisable(exId, enable); err != nil {
+				return err
+			}
+			ex.EnableDisable(enable)
+			return nil
+		}
+	}
+	return errors.Wrap(errors.ErrNotFound, fmt.Errorf("lp not found"))
+}
+func (a *ExStore) enableDisableAll(enable bool) error {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+	if err := a.repo.EnableDisableAll(enable); err != nil {
+		return err
+	}
+	for _, ex := range a.exchanges {
+		ex.EnableDisable(enable)
+	}
+	return nil
+}
+
+func (a *ExStore) RemoveAll() error {
+	a.mux.Lock()
+	defer a.mux.Unlock()
+	if err := a.repo.RemoveAll(); err != nil {
+		return err
+	}
+	for _, ex := range a.exchanges {
+		ex.Remove()
+	}
+	a.exchanges = make(map[string]entity.Exchange)
+	return nil
+}
+
+func (a *ExStore) Remove(id uint) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	for _, ex := range a.exchanges {
@@ -115,5 +152,7 @@ func (a *exStore) remove(id uint) error {
 		}
 	}
 
-	return fmt.Errorf("exchange %d not found", id)
+	err := fmt.Errorf("lp '%d' not found", id)
+	return errors.Wrap(errors.ErrNotFound, err,
+		errors.NewMesssage(err.Error()))
 }
