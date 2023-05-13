@@ -2,6 +2,7 @@ package evm
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"math/big"
 	"strings"
@@ -49,8 +50,11 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 	)
 
 	var feeTier uint64
+	inT := types.TokenFromEntity(in)
+	outT := types.TokenFromEntity(out)
+
 	if d.Version == 3 {
-		_, feeTier, err = d.dex.EstimateAmountOut(in, out, amount)
+		_, feeTier, err = d.dex.EstimateAmountOut(inT, outT, amount)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +69,7 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 
 	swapAmountI := big.NewInt(0).Sub(totalAmountI, feeAmountI)
 
-	input, err := d.dex.TxData(in, out, receiver, swapAmountI, int64(feeTier))
+	input, err := d.dex.TxData(inT, outT, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
 		return nil, err

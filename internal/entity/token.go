@@ -25,7 +25,6 @@ func (id *TokenId) String() string {
 
 type Token struct {
 	Id              TokenId `json:"id"`
-	StableToken     string  `json:"stableToken"`
 	ContractAddress string  `json:"contractAddress"`
 	Decimals        uint64  `json:"decimals"`
 	Native          bool    `json:"native"`
@@ -54,7 +53,6 @@ func (t *Token) Snapshot() *Token {
 			Network:  t.Id.Network,
 		},
 
-		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
 		Native:          t.Native,

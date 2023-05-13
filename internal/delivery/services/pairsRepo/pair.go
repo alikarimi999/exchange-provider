@@ -4,6 +4,7 @@ import (
 	"context"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
+	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"fmt"
 	"strings"
@@ -77,7 +78,7 @@ func (p *pair) toEntity(exType entity.ExType, exNID string, exId uint) *entity.P
 		ep := &evm.ExchangePair{}
 		bson.Unmarshal(p.EP, ep)
 		pair.EP = ep
-		t = &evm.Token{}
+		t = &et.Token{}
 	}
 	pair.T1 = p.T1.toEntity(fn)
 	pair.T2 = p.T2.toEntity(fn)

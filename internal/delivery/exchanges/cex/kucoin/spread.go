@@ -10,12 +10,12 @@ func (k *kucoinExchange) spread(lvl uint, p *entity.Pair, price float64) (float6
 	t2 := p.T2.ET.(*Token)
 	if len(p.Spreads) > 0 {
 		s = p.Spread(lvl)
-	} else if t2.Currency == p.T2.StableToken {
+	} else if t2.Currency == p.T2.ET.(*Token).StableToken {
 		s = k.st.GetByPrice(lvl, price)
-	} else if t1.Currency == p.T1.StableToken {
+	} else if t1.Currency == p.T1.ET.(*Token).StableToken {
 		s = k.st.GetByPrice(lvl, 1)
 	} else {
-		bcDollar, err := k.stableTicker(t1.Currency, p.T1.StableToken)
+		bcDollar, err := k.stableTicker(t1.Currency, p.T1.ET.(*Token).StableToken)
 		if err != nil {
 			return 0, err
 		}

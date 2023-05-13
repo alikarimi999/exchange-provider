@@ -208,22 +208,22 @@ func (k *kucoinExchange) checkStableToken(p *entity.Pair) error {
 	t2 := p.T2.ET.(*Token)
 	var err1, err2 error
 	wg := &sync.WaitGroup{}
-	if t1.Currency != p.T1.StableToken {
+	if t1.Currency != p.T1.ET.(*Token).StableToken {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := k.stableTicker(t1.Currency, p.T1.StableToken)
+			_, err := k.stableTicker(t1.Currency, p.T1.ET.(*Token).StableToken)
 			if err != nil {
 				err1 = err
 			}
 		}()
 	}
 
-	if t2.Currency != p.T2.StableToken {
+	if t2.Currency != p.T2.ET.(*Token).StableToken {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := k.stableTicker(t2.Currency, p.T2.StableToken)
+			_, err := k.stableTicker(t2.Currency, p.T2.ET.(*Token).StableToken)
 			if err != nil {
 				err2 = err
 			}

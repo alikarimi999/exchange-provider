@@ -1,15 +1,15 @@
 package uniswapV2
 
 import (
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV2/contracts"
-	"exchange-provider/internal/entity"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (p *dex) TxData(in, out *entity.Token, receiver common.Address,
+func (p *dex) TxData(in, out *types.Token, receiver common.Address,
 	amount *big.Int, fee int64) ([]byte, error) {
 
 	abi, err := contracts.ContractMetaData.GetAbi()

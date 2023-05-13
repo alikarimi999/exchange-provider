@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/entity"
 )
 
@@ -40,7 +41,7 @@ type Pair struct {
 	LP          uint             `json:"lp"`
 }
 
-func (p *Pair) Update(ep *entity.Pair, acceptZero bool) {
+func (p *Pair) Update(ep *entity.Pair, ex string, acceptZero bool) {
 	if acceptZero {
 		ep.T1.Min = float64(p.T1.Min)
 		ep.T1.Max = float64(p.T1.Max)
@@ -72,12 +73,15 @@ func (p *Pair) Update(ep *entity.Pair, acceptZero bool) {
 			ep.ExchangeFee = p.ExchangeFee
 		}
 	}
-	if p.T1.StableToken != "" {
-		ep.T1.StableToken = p.T1.StableToken
-	}
 
-	if p.T2.StableToken != "" {
-		ep.T2.StableToken = p.T2.StableToken
+	switch ex {
+	case "kucoin":
+		if p.T1.StableToken != "" {
+			ep.T1.ET.(*kucoin.Token).StableToken = p.T1.StableToken
+		}
+		if p.T2.StableToken != "" {
+			ep.T2.ET.(*kucoin.Token).StableToken = p.T2.StableToken
+		}
 	}
 
 	for k, v := range p.Spreads {

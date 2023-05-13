@@ -11,7 +11,6 @@ type token struct {
 	Standard string
 	Network  string
 
-	StableToken     string  `bson:"stableToken,omitempty"`
 	ContractAddress string  `bson:"contractAddress,omitempty"`
 	Decimals        uint64  `bson:"decimals,omitempty"`
 	Native          bool    `bson:"native,omitempty"`
@@ -27,7 +26,6 @@ func fromEntity(t *entity.Token) *token {
 		Symbol:          t.Id.Symbol,
 		Standard:        t.Id.Standard,
 		Network:         t.Id.Network,
-		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
 		Native:          t.Native,
@@ -44,7 +42,6 @@ func (t token) toEntity(fn func(bson.Raw) entity.ExchangeToken) *entity.Token {
 			Standard: t.Standard,
 			Network:  t.Network,
 		},
-		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        t.Decimals,
 		Native:          t.Native,

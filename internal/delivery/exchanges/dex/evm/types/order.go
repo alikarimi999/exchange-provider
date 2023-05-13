@@ -8,12 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type Token struct {
-	Symbol   string
-	Standard string
-	Network  string
-}
-
 type Order struct {
 	*entity.ObjectId
 	UserID string

@@ -2,6 +2,7 @@ package evm
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/dto"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -17,7 +18,13 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	req := data.(*dto.AddPairsRequest)
 	ps := []*entity.Pair{}
 	for _, p := range req.Pairs {
-		ps = append(ps, p.ToEntity(func(t dto.Token) entity.ExchangeToken { return &Token{} }))
+		ps = append(ps, p.ToEntity(func(t dto.Token) entity.ExchangeToken {
+			return &types.Token{
+				Name:            t.Name,
+				ContractAddress: t.ContractAddress,
+				Decimals:        t.Decimals,
+			}
+		}))
 	}
 
 	wg := &sync.WaitGroup{}
@@ -68,7 +75,10 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 }
 
 func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
-	amOut, _, err := d.dex.EstimateAmountOut(t1, t2, 1)
+	T1 := types.TokenFromEntity(t1)
+	T2 := types.TokenFromEntity(t2)
+
+	amOut, _, err := d.dex.EstimateAmountOut(T1, T2, 1)
 	if err != nil {
 		return err
 	}

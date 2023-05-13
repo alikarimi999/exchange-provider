@@ -68,11 +68,15 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 			if err != nil {
 				return nil, err
 			}
+			if t.StableToken == "" {
+				return nil, fmt.Errorf("stableToken cannot be empty")
+			}
 
 			return &Token{
 				Currency:            t.Currency,
 				ChainName:           t.ChainName,
 				Chain:               t.Chain,
+				StableToken:         t.StableToken,
 				BlockTime:           bt,
 				WithdrawalPrecision: t.WithdrawalPrecision,
 			}, nil

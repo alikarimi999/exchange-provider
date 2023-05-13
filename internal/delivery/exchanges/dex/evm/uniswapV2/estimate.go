@@ -2,7 +2,7 @@ package uniswapV2
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
-	"exchange-provider/internal/entity"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/pkg/errors"
 	"math"
 	"math/big"
@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (d *dex) EstimateAmountOut(in, out *entity.Token, amount float64) (float64, uint64, error) {
+func (d *dex) EstimateAmountOut(in, out *types.Token, amount float64) (float64, uint64, error) {
 	con, _ := contracts.NewContracts(d.contract, d.provider())
 	amountIn, _ := big.NewFloat(0).Mul(big.NewFloat(amount),
 		big.NewFloat(math.Pow10(int(in.Decimals)))).Int(nil)

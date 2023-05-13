@@ -11,4 +11,8 @@ type EToken struct {
 	ET              Token  `json:"exchangeToken"`
 }
 
-type Token struct{}
+type Token struct {
+	Name            string
+	ContractAddress string `json:"contractAddress"`
+	Decimals        uint64 `json:"decimals"`
+}

@@ -60,10 +60,10 @@ func (k *kucoinExchange) exchangeFeeAmount(out *entity.Token, p *entity.Pair) (f
 		qcDollar float64
 	)
 
-	if out.ET.(*Token).Currency == out.StableToken {
+	if out.ET.(*Token).Currency == out.ET.(*Token).StableToken {
 		qcDollar = 1
 	} else {
-		qd, err := k.stableTicker(out.ET.(*Token).Currency, out.StableToken)
+		qd, err := k.stableTicker(out.ET.(*Token).Currency, out.ET.(*Token).StableToken)
 		if err != nil {
 			return 0, err
 		}

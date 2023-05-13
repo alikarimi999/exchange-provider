@@ -10,9 +10,10 @@ type AddPairsRequest struct {
 	Pairs []*Pair `json:"pairs"`
 }
 type Token struct {
-	Currency  string `json:"currency"`
-	ChainName string `json:"chainName"`
-	Chain     string
+	Currency    string `json:"currency"`
+	ChainName   string `json:"chainName"`
+	Chain       string
+	StableToken string `json:"stableToken"`
 
 	BlockTime           string `json:"blockTime"`
 	WithdrawalPrecision int    `json:"withdrawalPrecision"`
@@ -35,7 +36,6 @@ func (p Pair) String() string {
 
 type EToken struct {
 	entity.TokenId
-	StableToken     string  `json:"stableToken"`
 	ContractAddress string  `json:"contractAddress"`
 	Decimals        int     `json:"decimals"`
 	Native          bool    `json:"native"`
@@ -54,12 +54,8 @@ func (t *EToken) toEntity(fn func(Token) (entity.ExchangeToken, error)) (*entity
 		return nil, err
 	}
 
-	if t.StableToken == "" {
-		return nil, fmt.Errorf("stableToken cannot be empty")
-	}
 	return &entity.Token{
 		Id:              *t.ToUpper(),
-		StableToken:     t.StableToken,
 		ContractAddress: t.ContractAddress,
 		Decimals:        uint64(t.Decimals),
 		Native:          t.Native,

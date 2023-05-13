@@ -134,7 +134,7 @@ func (s *Server) UpdatePairs(ctx Context) {
 			res.PairsRes = append(res.PairsRes, resp)
 			continue
 		}
-		p.Update(dp, req.AcceptZero)
+		p.Update(dp, ex.Name(), req.AcceptZero)
 		if err := s.pairs.Update(ex.Id(), dp); err != nil {
 			resp.Msg = err.Error()
 			res.PairsRes = append(res.PairsRes, resp)
