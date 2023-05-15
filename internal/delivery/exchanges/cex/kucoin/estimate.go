@@ -22,6 +22,11 @@ func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
 			errors.NewMesssage("pair is not enable right now"))
 	}
 
+	return k.estimateAmountOut(p, in, out, amount, lvl)
+}
+
+func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
+	amount float64, lvl uint) (*entity.EstimateAmount, error) {
 	es := &entity.EstimateAmount{
 		P: p,
 	}
@@ -50,8 +55,6 @@ func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
 		Out = p.T1.ET.(*Token)
 		eOut = p.T1
 	}
-	sIn := In.Snapshot().(*Token)
-	sOut := Out.Snapshot().(*Token)
 
 	var (
 		depositEnable, withdrawEnable               bool
@@ -63,13 +66,13 @@ func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		depositEnable, _, err1 = k.isDipositAndWithdrawEnable(sIn)
+		depositEnable, _, err1 = k.isDipositAndWithdrawEnable(In)
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		_, withdrawEnable, err2 = k.isDipositAndWithdrawEnable(sOut)
+		_, withdrawEnable, err2 = k.isDipositAndWithdrawEnable(Out)
 	}()
 
 	wg.Add(1)
@@ -106,7 +109,24 @@ func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
 
 	amountOut = amountOut - exchangeFeeAmount
 	feeAmount := amountOut * es.FeeRate
-	amountOut = amountOut - feeAmount - sOut.MinWithdrawalFee
+	amountOut = amountOut - feeAmount - Out.MinWithdrawalFee
+	if amountOut < Out.MinWithdrawalSize {
+		if err := k.minAndMax(p); err != nil {
+			return nil, errors.Wrap(errors.ErrInternal)
+		}
+		if err := k.pairs.Update(k.Id(), p); err != nil {
+			return nil, errors.Wrap(errors.ErrInternal)
+		}
+
+		if p.T1.String() == in.String() {
+			return es, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min amount updated to %f", p.T1.Min)))
+		} else {
+			return es, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min amount updated to %f", p.T2.Min)))
+		}
+	}
+
 	if depositEnable && withdrawEnable {
 		es.FeeAmount = feeAmount
 		es.ExchangeFee = p.ExchangeFee

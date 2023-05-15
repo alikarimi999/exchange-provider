@@ -88,9 +88,6 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 			if err := k.pls.downloadList(); err != nil {
 				return nil, err
 			}
-			if err := k.pls.downloadTickers(); err != nil {
-				return nil, err
-			}
 			wg := &sync.WaitGroup{}
 			waitChan := make(chan struct{}, max_conccurrent_jobs)
 

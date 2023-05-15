@@ -41,6 +41,11 @@ func (pr *pairsRepo) AddExchanges(exs []entity.Exchange) {
 			ep.ex = ex
 		}
 	}
+	for id, ep := range pr.eps {
+		if ep.ex == nil {
+			delete(pr.eps, id)
+		}
+	}
 }
 
 func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {

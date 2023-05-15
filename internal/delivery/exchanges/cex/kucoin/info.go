@@ -116,7 +116,7 @@ func (k *kucoinExchange) retreiveTokens() (*tokens, error) {
 func (k *kucoinExchange) isDipositAndWithdrawEnable(t *Token) (bool, bool, error) {
 	agent := k.agent("isDipositAndWithdrawEnable")
 
-	res, err := k.readApi.CurrencyV2(t.Currency, "")
+	res, err := k.readApi.CurrencyV2(t.Currency, t.Chain)
 	if err := handleSDKErr(err, res); err != nil {
 		k.l.Error(agent, err.Error())
 		return false, false, err
@@ -143,7 +143,7 @@ func (k *kucoinExchange) isDipositAndWithdrawEnable(t *Token) (bool, bool, error
 func (k *kucoinExchange) setWithdrawalLimit(et *entity.Token) error {
 	agent := k.agent("setWithdrawalLimit")
 	t := et.ET.(*Token)
-	res, err := k.readApi.CurrencyV2(t.Currency, "")
+	res, err := k.readApi.CurrencyV2(t.Currency, t.Chain)
 	if err := handleSDKErr(err, res); err != nil {
 		return err
 	}
@@ -203,49 +203,9 @@ func (k *kucoinExchange) getAddress(t *Token) error {
 	return nil
 }
 
-func (k *kucoinExchange) checkStableToken(p *entity.Pair) error {
-	t1 := p.T1.ET.(*Token)
-	t2 := p.T2.ET.(*Token)
-	var err1, err2 error
-	wg := &sync.WaitGroup{}
-	if t1.Currency != p.T1.ET.(*Token).StableToken {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_, err := k.stableTicker(t1.Currency, p.T1.ET.(*Token).StableToken)
-			if err != nil {
-				err1 = err
-			}
-		}()
-	}
-
-	if t2.Currency != p.T2.ET.(*Token).StableToken {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			_, err := k.stableTicker(t2.Currency, p.T2.ET.(*Token).StableToken)
-			if err != nil {
-				err2 = err
-			}
-		}()
-	}
-
-	wg.Wait()
-	if err1 != nil {
-		return err1
-	} else if err2 != nil {
-		return err2
-	}
-	return nil
-}
-
 func (k *kucoinExchange) setInfos(p *entity.Pair) error {
 	var err error
 	wg := &sync.WaitGroup{}
-
-	if err := k.checkStableToken(p); err != nil {
-		return err
-	}
 
 	wg.Add(1)
 	go func() {
@@ -282,7 +242,7 @@ func (k *kucoinExchange) setInfos(p *entity.Pair) error {
 		return err
 	}
 
-	if _, err := k.price(p); err != nil {
+	if err := k.minAndMax(p); err != nil {
 		return err
 	}
 	return nil

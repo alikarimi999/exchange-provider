@@ -34,14 +34,14 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 		es.FeeRate = p.FeeRate2
 	}
 
-	exFeeAmount, err := d.exchangeFeeAmount(in, p)
+	exchangeFeeAmount, err := d.exchangeFeeAmount(in, p)
 	if err != nil {
 		return nil, err
 	}
 	es.ExchangeFee = p.ExchangeFee
-	es.ExchangeFeeAmount = exFeeAmount
+	es.ExchangeFeeAmount = exchangeFeeAmount
 
-	amount = amount - exFeeAmount
+	amount = amount - exchangeFeeAmount
 	es.FeeAmount = amount * es.FeeRate
 	amount = amount - es.FeeAmount
 	amountOut, _, err := d.dex.EstimateAmountOut(In, Out, amount)
@@ -74,5 +74,5 @@ func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, 
 	if stOut == 0 {
 		return 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
 	}
-	return ((1 * stOut) / stAmount) * p.ExchangeFee, nil
+	return (stOut / stAmount) * p.ExchangeFee, nil
 }

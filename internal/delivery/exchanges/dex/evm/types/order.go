@@ -24,7 +24,16 @@ type Order struct {
 	Approved    bool
 	Sender      common.Address
 	Receiver    common.Address
-	AmountIn    float64
+
+	AmountIn          float64
+	EstimateAmountOut float64
+
+	FeeRate           float64
+	FeeAmount         float64
+	ExchangeFee       float64
+	ExchangeFeeAmount float64
+
+	FeeCurrency entity.TokenId
 	CreatedAT   int64
 	UpdatedAt   int64
 	ExpireAt    int64

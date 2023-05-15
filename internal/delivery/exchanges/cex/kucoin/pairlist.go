@@ -13,33 +13,17 @@ import (
 
 type pairList struct {
 	k       *kucoinExchange
-	pairs   []*kucoin.SymbolModel
-	tickers *kucoin.TickersResponseModel
+	symbols []*kucoin.SymbolModel
 	l       logger.Logger
 }
 
 func newPairList(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *pairList {
 	pl := &pairList{
-		k:     k,
-		pairs: make([]*kucoin.SymbolModel, 0),
-		l:     l,
+		k:       k,
+		symbols: make([]*kucoin.SymbolModel, 0),
+		l:       l,
 	}
 	return pl
-}
-
-func (p *pairList) downloadTickers() error {
-	agent := p.k.agent("pairList.downloadTickers")
-	res, err := p.k.readApi.Tickers()
-	if err := handleSDKErr(err, res); err != nil {
-		return err
-	}
-	ts := &kucoin.TickersResponseModel{}
-	if err := res.ReadData(ts); err != nil {
-		return err
-	}
-	p.tickers = ts
-	p.l.Debug(agent, fmt.Sprintf("'%d' tickers downloaded", len(ts.Tickers)))
-	return nil
 }
 
 func (p *pairList) downloadList() error {
@@ -53,7 +37,7 @@ func (p *pairList) downloadList() error {
 	if err := res.ReadData(&pairs); err != nil {
 		return err
 	}
-	p.pairs = pairs
+	p.symbols = pairs
 	p.l.Debug(agent, fmt.Sprintf("'%d' pairs downloaded", len(pairs)))
 	return nil
 }
@@ -77,7 +61,7 @@ func (k *kucoinExchange) support(p *entity.Pair) error {
 }
 
 func (pl *pairList) support(bc, qc *Token) error {
-	for _, pair := range pl.pairs {
+	for _, pair := range pl.symbols {
 		if !pair.EnableTrading {
 			continue
 		}

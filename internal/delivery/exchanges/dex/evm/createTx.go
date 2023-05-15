@@ -41,7 +41,7 @@ var (
 )
 
 func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver common.Address,
-	amount, feeRate float64) (*ts.Transaction, error) {
+	amount, feeAmount float64) (*ts.Transaction, error) {
 	agent := d.agent("createTx")
 
 	var (
@@ -64,7 +64,7 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 	totalAmountF := big.NewFloat(0).Mul(big.NewFloat(amount), decF)
 	totalAmountI, _ := totalAmountF.Int(nil)
 
-	feeAmountF := big.NewFloat(0).Mul(totalAmountF, big.NewFloat(feeRate/100))
+	feeAmountF := big.NewFloat(0).Mul(big.NewFloat(feeAmount), decF)
 	feeAmountI, _ := feeAmountF.Int(nil)
 
 	swapAmountI := big.NewInt(0).Sub(totalAmountI, feeAmountI)

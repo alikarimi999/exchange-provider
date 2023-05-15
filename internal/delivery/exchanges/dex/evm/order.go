@@ -3,7 +3,6 @@ package evm
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -21,14 +20,7 @@ type NewOrderData struct {
 func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
 
 	d := data.(*NewOrderData)
-	p, err := ex.pairs.Get(ex.Id(), d.In.String(), d.Out.String())
-	if err != nil {
-		return nil, err
-	}
-
-	if !p.Enable {
-		return nil, errors.Wrap(errors.ErrNotFound, errors.NewMesssage("pair is not enable right now"))
-	}
+	p := d.Es.P
 
 	var in, out *entity.Token
 	if p.T1.Id.String() == d.In.String() {
@@ -38,6 +30,7 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 		in = p.T2
 		out = p.T1
 	}
+
 	o := &types.Order{
 		UserID: d.UserId,
 		Status: entity.OCreated,
@@ -51,13 +44,19 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 
 		Sender:   d.Sender,
 		Receiver: d.Reciever,
-		AmountIn: d.AmountIn,
+
+		AmountIn:          d.AmountIn,
+		EstimateAmountOut: d.Es.AmountOut,
+		FeeRate:           d.Es.FeeRate,
+		FeeAmount:         d.Es.FeeAmount,
+		ExchangeFee:       d.Es.ExchangeFee,
+		ExchangeFeeAmount: d.Es.ExchangeFeeAmount,
 	}
 
-	o.NeedApprove, err = ex.needApproval(in, o.Sender, o.AmountIn)
+	approve, err := ex.needApproval(in, o.Sender, o.AmountIn)
 	if err != nil {
 		return nil, err
 	}
-
+	o.NeedApprove = approve
 	return o, nil
 }
