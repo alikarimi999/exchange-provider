@@ -76,7 +76,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := evm.NewEvmDex(cfg, s.repo, s.pairs, s.l, false)
+		ex, err := evm.NewEvmDex(cfg, s.repo, s.pairs, s.l)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

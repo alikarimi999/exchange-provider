@@ -13,7 +13,7 @@ const (
 
 type Token struct {
 	entity.TokenId
-	StableToken string `json:"stableToken"`
+	StableToken string `json:"stableToken,omitempty"`
 	Min         Number `json:"min"`
 	Max         Number `json:"max"`
 }

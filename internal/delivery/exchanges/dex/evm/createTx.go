@@ -59,14 +59,12 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 			return nil, err
 		}
 	}
-
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
 	totalAmountF := big.NewFloat(0).Mul(big.NewFloat(amount), decF)
 	totalAmountI, _ := totalAmountF.Int(nil)
 
 	feeAmountF := big.NewFloat(0).Mul(big.NewFloat(feeAmount), decF)
 	feeAmountI, _ := feeAmountF.Int(nil)
-
 	swapAmountI := big.NewInt(0).Sub(totalAmountI, feeAmountI)
 
 	input, err := d.dex.TxData(inT, outT, receiver, swapAmountI, int64(feeTier))
@@ -105,15 +103,19 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 
 	sig, err := d.sign(data)
 	if err != nil {
-		d.l.Debug(agent, err.Error())
 		return nil, err
 	}
 
 	if in.Native {
 		opts.Value = totalAmountI
 	}
-	tx, err = c.Swap(opts, data, sig)
 
+	b, err := d.abi.Pack("Swap", data, sig)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err = c.Multicall(opts, [][]byte{b})
 	if err != nil {
 		if err.Error() == errSTF().Error() {
 			return nil, errors.Wrap(errors.ErrBadRequest,
@@ -123,9 +125,7 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 			return nil, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage(err.Error()))
 		}
-		d.l.Debug(agent, err.Error())
 		return nil, err
 	}
-
 	return tx, nil
 }

@@ -7,6 +7,7 @@ import (
 	"exchange-provider/pkg/logger"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -15,34 +16,43 @@ type dex struct {
 	chainId     *big.Int
 	nativeToken string
 
-	router   common.Address
-	contract common.Address
-	factory  common.Address
-
-	prvKey *ecdsa.PrivateKey
-	ps     []*ts.EthProvider
+	priceProvider common.Address
+	router        common.Address
+	contract      common.Address
+	factory       common.Address
+	abi           *abi.ABI
+	prvKey        *ecdsa.PrivateKey
+	ps            []*ts.EthProvider
 
 	l logger.Logger
 }
 
-func NewUniswapV2Dex(nid string, network, nativeToken, router, contract string, chainId int64,
+func NewUniswapV2Dex(nid string, network, nativeToken, router, priceProvide, contract string, chainId int64,
 	prvKey *ecdsa.PrivateKey, ps []*ts.EthProvider, l logger.Logger) (*dex, error) {
 
+	abi, err := contracts.ContractMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
 	d := &dex{
-		network:     network,
-		chainId:     big.NewInt(chainId),
-		nativeToken: nativeToken,
-		router:      common.HexToAddress(router),
-		contract:    common.HexToAddress(contract),
-		prvKey:      prvKey,
-		ps:          ps,
-		l:           l,
+		network:       network,
+		chainId:       big.NewInt(chainId),
+		nativeToken:   nativeToken,
+		priceProvider: common.HexToAddress(priceProvide),
+		router:        common.HexToAddress(router),
+		contract:      common.HexToAddress(contract),
+		abi:           abi,
+		prvKey:        prvKey,
+		ps:            ps,
+		l:             l,
 	}
 
 	r, err := contracts.NewContract(d.router, d.provider())
 	if err != nil {
 		return nil, err
 	}
+
 	f, err := r.Factory(nil)
 	if err != nil {
 		return nil, err

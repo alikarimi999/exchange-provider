@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV2"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV3"
 	"exchange-provider/internal/entity"
@@ -9,6 +10,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -19,17 +21,23 @@ type evmDex struct {
 	dex   IDex
 	pairs entity.PairsRepo
 	repo  entity.OrderRepo
+	abi   *abi.ABI
 	l     logger.Logger
 }
 
 func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
-	l logger.Logger, readConfig bool) (entity.EVMDex, error) {
+	l logger.Logger) (entity.EVMDex, error) {
 	var (
 		d   IDex
 		err error
 	)
 
-	if err := cfg.Validate(readConfig); err != nil {
+	abi, err := contracts.ContractsMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -38,6 +46,7 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 		mux:    &sync.Mutex{},
 		pairs:  pairs,
 		repo:   repo,
+		abi:    abi,
 		l:      l,
 	}
 
@@ -57,13 +66,13 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 	switch cfg.Version {
 	case 3:
 		d, err = uniswapV3.NewUniswapV3Dex(ex.NID(), ex.Network, ex.NativeToken, ex.Swapper,
-			ex.Contract, ex.ChainId, ex.privateKey, ex.providers, l)
+			ex.PriceProvider, ex.Contract, ex.ChainId, ex.privateKey, ex.providers, l)
 
 	case 2:
-		d, err = uniswapV2.NewUniswapV2Dex(ex.NID(), ex.Network, ex.NativeToken, ex.Swapper, ex.Contract,
-			ex.ChainId, ex.privateKey, ex.providers, l)
+		d, err = uniswapV2.NewUniswapV2Dex(ex.NID(), ex.Network, ex.NativeToken, ex.Swapper,
+			ex.PriceProvider, ex.Contract, ex.ChainId, ex.privateKey, ex.providers, l)
 	default:
-		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("uniswap only support version '1' and '2'"))
+		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("uniswap only support version '2' and '3'"))
 		return nil, err
 	}
 

@@ -31,6 +31,7 @@ func PairsRepo(db *mongo.Database, l logger.Logger) (*pairsRepo, error) {
 	if err := pr.retrievePairs(); err != nil {
 		return nil, err
 	}
+
 	return pr, nil
 }
 
@@ -46,6 +47,7 @@ func (pr *pairsRepo) AddExchanges(exs []entity.Exchange) {
 			delete(pr.eps, id)
 		}
 	}
+
 }
 
 func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
@@ -60,14 +62,13 @@ func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 			ExId:   ex.Id(),
 			ExType: ex.Type(),
 		}
-
 		for _, p := range ps {
 			exp.Pairs = append(exp.Pairs, pFromEntity(p))
 		}
 
 		_, err := pr.c.InsertOne(context.Background(), exp)
 		if err != nil {
-			pr.l.Error(agent, err.Error())
+			pr.l.Debug(agent, err.Error())
 			return err
 		}
 		ep = newExPairs(ex)

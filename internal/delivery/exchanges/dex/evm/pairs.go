@@ -9,27 +9,22 @@ import (
 	"sync"
 )
 
-type ExchangePair struct{}
-
-func (e *ExchangePair) Snapshot() entity.ExchangePair { return &ExchangePair{} }
-
 func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	req := data.(*dto.AddPairsRequest)
 	ps := []*entity.Pair{}
+	res := &entity.AddPairsResult{}
 	for _, p := range req.Pairs {
-		ps = append(ps, p.ToEntity(func(t dto.Token) entity.ExchangeToken {
-			return &types.Token{
-				Name:            t.Name,
-				ContractAddress: t.ContractAddress,
-				Decimals:        t.Decimals,
-			}
-		}))
+		ep, err := p.ToEntity(d.TokenStandard, d.Network)
+		if err != nil {
+			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
+			continue
+		}
+		ps = append(ps, ep)
 	}
 
 	wg := &sync.WaitGroup{}
 	mux := &sync.Mutex{}
-	res := &entity.AddPairsResult{}
 	add := []*entity.Pair{}
 
 	for _, p := range ps {

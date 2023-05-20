@@ -18,6 +18,7 @@ type Config struct {
 	ChainId            int64  `json:"chainId"`
 	TokenStandard      string `json:"tokenStandard"`
 	Network            string `json:"network"`
+	PriceProvider      string `json:"priceProvider"`
 	Contract           string `json:"contract"`
 	contractAddress    common.Address
 	Swapper            string `json:"swapper"`
@@ -29,37 +30,38 @@ type Config struct {
 	Message            string `json:"message"`
 }
 
-func (c *Config) Validate(readConfig bool) error {
+func (c *Config) Validate() error {
 	if c.Id == 0 {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("id must not be empty"))
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("id cannot be empty"))
 	}
 	if c.Name == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("name must not be empty"))
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("name cannot be empty"))
 	}
 	if c.Network == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("network must not be empty"))
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("network cannot be empty"))
 	}
 	if c.HexKey == "" {
-		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("hexKey must not be empty"))
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("hexKey cannot be empty"))
 	}
 
-	if !readConfig {
-
-		if c.NativeToken == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("nativeToken must not be empty"))
-		}
-		if c.TokenStandard == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tokenStandard must not be empty"))
-		}
-		if c.Contract == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("contract must not be empty"))
-		}
-		if c.Swapper == "" {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("swapper must not be empty"))
-		}
-		if len(c.Providers) == 0 {
-			return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("providers must not be empty"))
-		}
+	if c.NativeToken == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("nativeToken cannot be empty"))
 	}
+	if c.TokenStandard == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("tokenStandard cannot be empty"))
+	}
+	if c.PriceProvider == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("priceProvider cannot be empty"))
+	}
+	if c.Contract == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("contract cannot be empty"))
+	}
+	if c.Swapper == "" {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("swapper cannot be empty"))
+	}
+	if len(c.Providers) == 0 {
+		return errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("providers cannot be empty"))
+	}
+
 	return nil
 }

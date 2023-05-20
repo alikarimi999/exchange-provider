@@ -42,7 +42,7 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 			return nil, err
 		}
 		cfg.Enable = ex.Enable
-		return evm.NewEvmDex(cfg, r.repo, r.pairs, r.l, true)
+		return evm.NewEvmDex(cfg, r.repo, r.pairs, r.l)
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%d`", ex.Id)))
 }

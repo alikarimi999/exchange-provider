@@ -1,5 +1,10 @@
 [
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -86,58 +91,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_feeReciever",
-				"type": "address"
-			}
-		],
-		"name": "changeFeeReciever",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_priceProvider",
-				"type": "address"
-			}
-		],
-		"name": "changePriceProvider",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes[]",
-				"name": "data",
-				"type": "bytes[]"
-			}
-		],
-		"name": "multicall",
-		"outputs": [
-			{
-				"internalType": "bytes[]",
-				"name": "results",
-				"type": "bytes[]"
-			}
-		],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "renounceOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"components": [
 					{
 						"internalType": "address",
@@ -209,11 +162,11 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "newOwner",
+				"name": "_feeReciever",
 				"type": "address"
 			}
 		],
-		"name": "transferOwnership",
+		"name": "changeFeeReciever",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -222,15 +175,9 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_priceProvider",
+				"name": "priceProvider",
 				"type": "address"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [
+			},
 			{
 				"internalType": "address",
 				"name": "provider",
@@ -287,6 +234,25 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "bytes[]",
+				"name": "data",
+				"type": "bytes[]"
+			}
+		],
+		"name": "multicall",
+		"outputs": [
+			{
+				"internalType": "bytes[]",
+				"name": "results",
+				"type": "bytes[]"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "owner",
 		"outputs": [
@@ -301,15 +267,9 @@
 	},
 	{
 		"inputs": [],
-		"name": "priceProvider",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
+		"name": "renounceOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -323,6 +283,19 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

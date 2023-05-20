@@ -109,12 +109,14 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 	for _, id := range exIds {
 		for _, ep := range pr.eps {
 			if ep.exId == id {
-				ps = append(ps, ep.getAll()...)
+				ps0 := []*entity.Pair{}
+				ps0 = append(ps0, ep.getAll()...)
 				if !ep.ex.IsEnable() {
-					for _, p := range ps {
+					for _, p := range ps0 {
 						p.Enable = false
 					}
 				}
+				ps = append(ps, ps0...)
 			}
 		}
 	}

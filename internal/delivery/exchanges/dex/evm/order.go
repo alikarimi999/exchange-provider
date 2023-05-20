@@ -18,7 +18,6 @@ type NewOrderData struct {
 }
 
 func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
-
 	d := data.(*NewOrderData)
 	p := d.Es.P
 
@@ -58,5 +57,6 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 		return nil, err
 	}
 	o.NeedApprove = approve
+
 	return o, nil
 }

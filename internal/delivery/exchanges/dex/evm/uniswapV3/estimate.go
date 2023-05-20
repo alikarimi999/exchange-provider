@@ -14,7 +14,7 @@ func (d *dex) EstimateAmountOut(in, out *types.Token, amount float64) (float64, 
 	con, _ := contracts.NewContracts(d.contract, d.provider())
 	amountIn, _ := big.NewFloat(0).Mul(big.NewFloat(amount),
 		big.NewFloat(math.Pow10(int(in.Decimals)))).Int(nil)
-	res, err := con.EstimateAmountOut(nil, d.factory, common.HexToAddress(in.ContractAddress),
+	res, err := con.EstimateAmountOut(nil, d.priceProvider, d.factory, common.HexToAddress(in.ContractAddress),
 		common.HexToAddress(out.ContractAddress), amountIn, 3)
 	if err != nil {
 		return 0, 0, errors.Wrap(errors.ErrInternal, err)

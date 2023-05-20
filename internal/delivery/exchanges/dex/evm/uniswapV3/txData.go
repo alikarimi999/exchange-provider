@@ -13,11 +13,6 @@ func (p *dex) TxData(in, out *types.Token, receiver common.Address,
 	amount *big.Int, fee int64) ([]byte, error) {
 
 	data := [][]byte{}
-	abi, err := contracts.RouteMetaData.GetAbi()
-	if err != nil {
-		return nil, err
-	}
-
 	var rec common.Address
 	if out.Native {
 		rec = p.router
@@ -34,7 +29,7 @@ func (p *dex) TxData(in, out *types.Token, receiver common.Address,
 		SqrtPriceLimitX96: big.NewInt(0),
 	}
 
-	input, err := abi.Pack("exactInputSingle", params)
+	input, err := p.abi.Pack("exactInputSingle", params)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +37,7 @@ func (p *dex) TxData(in, out *types.Token, receiver common.Address,
 	data = append(data, input)
 
 	if out.Native {
-		input, err := abi.Pack("unwrapWETH9", common.Big0, receiver)
+		input, err := p.abi.Pack("unwrapWETH9", common.Big0, receiver)
 		if err != nil {
 			return nil, err
 		}
@@ -50,6 +45,6 @@ func (p *dex) TxData(in, out *types.Token, receiver common.Address,
 	}
 
 	deadline := big.NewInt(time.Now().Add(time.Minute * time.Duration(15)).Unix())
-	return abi.Pack("multicall0", deadline, data)
+	return p.abi.Pack("multicall0", deadline, data)
 
 }

@@ -25,10 +25,23 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 	)
 
 	if p.T1.String() == in.String() {
+		min := p.T1.Min
+		max := p.T1.Max
+		if (min != 0 && amount < min) || (max != 0 && amount > max) {
+			return es, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
+		}
 		In = types.TokenFromEntity(p.T1)
 		Out = types.TokenFromEntity(p.T2)
 		es.FeeRate = p.FeeRate1
 	} else {
+		min := p.T2.Min
+		max := p.T2.Max
+		if (min != 0 && amount < min) || (max != 0 && amount > max) {
+			return es, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
+
+		}
 		In = types.TokenFromEntity(p.T2)
 		Out = types.TokenFromEntity(p.T1)
 		es.FeeRate = p.FeeRate2
@@ -40,7 +53,6 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 	}
 	es.ExchangeFee = p.ExchangeFee
 	es.ExchangeFeeAmount = exchangeFeeAmount
-
 	amount = amount - exchangeFeeAmount
 	es.FeeAmount = amount * es.FeeRate
 	amount = amount - es.FeeAmount
@@ -58,11 +70,11 @@ func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, 
 
 	if p.T1.String() == in.String() {
 		In = types.TokenFromEntity(p.T1)
-		St = p.T1.ET.(*types.Token)
+		St = &p.T1.ET.(*types.EToken).StableToken
 		stAmount = p.T1.Min
 	} else {
 		In = types.TokenFromEntity(p.T2)
-		St = p.T2.ET.(*types.Token)
+		St = &p.T2.ET.(*types.EToken).StableToken
 		stAmount = p.T2.Min
 	}
 
@@ -70,9 +82,8 @@ func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, 
 	if err != nil {
 		return 0, err
 	}
-
 	if stOut == 0 {
 		return 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
 	}
-	return (stOut / stAmount) * p.ExchangeFee, nil
+	return (stAmount / stOut) * p.ExchangeFee, nil
 }

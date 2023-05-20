@@ -38,7 +38,7 @@ func (d *evmDex) CreateTx(ord entity.Order) (entity.Tx, error) {
 		}
 	}
 
-	tx, err := d.createTx(in, out, o.Sender, o.Sender, o.Receiver, o.AmountIn, p.FeeRate1)
+	tx, err := d.createTx(in, out, o.Sender, o.Sender, o.Receiver, o.AmountIn, o.FeeAmount+o.ExchangeFeeAmount)
 	if err != nil {
 		return nil, err
 	}
