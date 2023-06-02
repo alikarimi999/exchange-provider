@@ -12,6 +12,8 @@ func (r *Router) userRoutes() {
 				r.srv.GetStep(newContext(ctx, false))
 			})
 
+		u.GET("/:orderId", r.CheckAccess(false),
+			func(ctx *gin.Context) { r.srv.GetOrder(newContext(ctx, false)) })
 		u.POST("/get", r.CheckAccess(false),
 			func(ctx *gin.Context) {
 				r.srv.GetPaginatedForUser(newContext(ctx, false))

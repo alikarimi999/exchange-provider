@@ -98,3 +98,33 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
 	ctx.JSON(dto.OrderResponse(pao, true), nil)
 }
+
+func (s *Server) GetOrder(ctx Context) {
+	api := ctx.GetApi()
+	oId := ctx.Param("orderId")
+
+	f0 := &entity.Filter{
+		Param:    "busid",
+		Operator: entity.FilterOperatorEqual,
+		Values:   []interface{}{api.BusId},
+	}
+
+	f1 := &entity.Filter{
+		Param:    "id",
+		Operator: entity.FilterOperatorEqual,
+		Values:   []interface{}{oId},
+	}
+	pa := &entity.Paginated{
+		Filters: []*entity.Filter{f0, f1},
+	}
+	if err := s.repo.GetPaginated(pa, false); err != nil {
+		ctx.JSON(nil, err)
+		return
+	}
+
+	if len(pa.Orders) == 0 {
+		ctx.JSON(nil, errors.Wrap(errors.ErrNotFound))
+		return
+	}
+	ctx.JSON(dto.OrderFromEntityForUser(pa.Orders[0]), nil)
+}

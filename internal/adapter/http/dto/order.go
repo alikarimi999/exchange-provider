@@ -13,7 +13,7 @@ type order struct {
 	Order     interface{} `json:"order"`
 }
 
-func userOrderFromEntity(o entity.Order) *order {
+func OrderFromEntityForUser(o entity.Order) *order {
 	switch o.Type() {
 	case entity.CEXOrder:
 		s := &userSingleOrder{}

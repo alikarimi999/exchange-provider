@@ -44,7 +44,7 @@ func OrderResponse(p *entity.Paginated, admin bool) *PaginatedOrdersResp {
 
 	} else {
 		for _, o := range p.Orders {
-			r.Orders = append(r.Orders, interface{}(userOrderFromEntity(o)))
+			r.Orders = append(r.Orders, interface{}(OrderFromEntityForUser(o)))
 		}
 	}
 	return r

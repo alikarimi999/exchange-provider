@@ -102,7 +102,6 @@ func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
 	}
 
 	for _, est := range estimates {
-		fmt.Println(est.ex.NID(), est.AmountIn, est.AmountOut)
 		if est.EstimateAmount != nil && est.AmountOut > es.AmountOut {
 			es = est
 		}
