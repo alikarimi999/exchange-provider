@@ -64,7 +64,6 @@ func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
 	wg.Wait()
 
 	var max, min float64
-
 	if len(estimates) == 0 {
 		if len(minAndMax) > 0 {
 			if minAndMax[0].T1.String() == in.String() {
@@ -101,7 +100,9 @@ func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
 	es := &estimate{
 		EstimateAmount: &entity.EstimateAmount{},
 	}
+
 	for _, est := range estimates {
+		fmt.Println(est.ex.NID(), est.AmountIn, est.AmountOut)
 		if est.EstimateAmount != nil && est.AmountOut > es.AmountOut {
 			es = est
 		}

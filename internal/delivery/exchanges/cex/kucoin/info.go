@@ -13,7 +13,7 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) orderFeeRat(p *entity.Pair) error {
+func (k *exchange) orderFeeRat(p *entity.Pair) error {
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 		var (
@@ -33,7 +33,7 @@ func (k *kucoinExchange) orderFeeRat(p *entity.Pair) error {
 		go func() {
 			defer wg.Done()
 			bc := p.T2.ET.(*Token)
-			qc := ep.IC1
+			qc := ep.IC2
 			f2, err = k.orderFeeRate(bc.Currency, qc.Currency)
 		}()
 		wg.Wait()
@@ -52,7 +52,7 @@ func (k *kucoinExchange) orderFeeRat(p *entity.Pair) error {
 	return err
 }
 
-func (k *kucoinExchange) orderFeeRate(bc, qc string) (float64, error) {
+func (k *exchange) orderFeeRate(bc, qc string) (float64, error) {
 	agent := k.agent("orderFeeRate")
 	res, err := k.readApi.ActualFee(bc + "-" + qc)
 	if err := handleSDKErr(err, res); err != nil {
@@ -88,7 +88,7 @@ type tokens struct {
 	Data []token `json:"data"`
 }
 
-func (k *kucoinExchange) retreiveTokens() (*tokens, error) {
+func (k *exchange) retreiveTokens() (*tokens, error) {
 	url := "https://www.kucoin.com/_api/currency/currency/chain-info?lang=en_US"
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -113,7 +113,7 @@ func (k *kucoinExchange) retreiveTokens() (*tokens, error) {
 	return ts, nil
 }
 
-func (k *kucoinExchange) isDipositAndWithdrawEnable(t *Token) (bool, bool, error) {
+func (k *exchange) isDipositAndWithdrawEnable(t *Token) (bool, bool, error) {
 	agent := k.agent("isDipositAndWithdrawEnable")
 
 	res, err := k.readApi.CurrencyV2(t.Currency, t.Chain)
@@ -140,7 +140,7 @@ func (k *kucoinExchange) isDipositAndWithdrawEnable(t *Token) (bool, bool, error
 	return false, false, errors.Wrap(errors.ErrNotFound)
 }
 
-func (k *kucoinExchange) setWithdrawalLimit(et *entity.Token) error {
+func (k *exchange) setWithdrawalLimit(et *entity.Token) error {
 	agent := k.agent("setWithdrawalLimit")
 	t := et.ET.(*Token)
 	res, err := k.readApi.CurrencyV2(t.Currency, t.Chain)
@@ -186,7 +186,7 @@ func (k *kucoinExchange) setWithdrawalLimit(et *entity.Token) error {
 			t.Currency, t.ChainName, t.Currency, ch)))
 }
 
-func (k *kucoinExchange) getAddress(t *Token) error {
+func (k *exchange) getAddress(t *Token) error {
 	agent := k.agent("getAddress")
 	res, err := k.readApi.DepositAddresses(t.Currency, t.Chain)
 	if err := handleSDKErr(err, res); err != nil {
@@ -203,7 +203,7 @@ func (k *kucoinExchange) getAddress(t *Token) error {
 	return nil
 }
 
-func (k *kucoinExchange) setInfos(p *entity.Pair) error {
+func (k *exchange) setInfos(p *entity.Pair) error {
 	var err error
 	wg := &sync.WaitGroup{}
 

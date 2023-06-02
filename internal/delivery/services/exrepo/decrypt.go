@@ -1,6 +1,7 @@
 package exrepo
 
 import (
+	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/entity"
@@ -26,7 +27,14 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 				return nil, err
 			}
 			cfg.Enable = ex.Enable
-			return kucoin.NewKucoinExchange(cfg, r.pairs, r.l, true, r.repo, r.fee, r.spread)
+			return kucoin.NewExchange(cfg, r.pairs, r.l, true, r.repo, r.fee, r.spread)
+		case "binance":
+			cfg := &binance.Configs{}
+			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
+				return nil, err
+			}
+			cfg.Enable = ex.Enable
+			return binance.NewExchange(cfg, r.repo, r.pairs, r.spread, r.l, true)
 
 			// case "swapspace":
 			// 	cfg := &swapspace.Config{}

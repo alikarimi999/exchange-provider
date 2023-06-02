@@ -23,7 +23,7 @@ func (s *Server) EstimateAmountOut(ctx Context) {
 	res := &dto.EstimateAmountOutRes{
 		Input:             req.Input,
 		Output:            req.Output,
-		AmountIn:          dto.Number(req.AmountIn),
+		AmountIn:          dto.Number(es.AmountIn),
 		AmountOut:         dto.Number(es.AmountOut),
 		FeeRate:           dto.Number(es.FeeRate),
 		FeeAmount:         dto.Number(es.FeeAmount),

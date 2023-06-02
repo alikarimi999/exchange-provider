@@ -2,6 +2,7 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
+	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/pkg/errors"
@@ -24,7 +25,32 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := kucoin.NewKucoinExchange(cfg, s.pairs, s.l, false, s.repo, s.fee, s.spread)
+		ex, err := kucoin.NewExchange(cfg, s.pairs, s.l, false, s.repo, s.fee, s.spread)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+		if err := s.app.AddExchange(ex); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+		cfg.Message = "done"
+		ctx.JSON(cfg, nil)
+		return
+
+	case "binance":
+		cfg := &binance.Configs{}
+		if err := ctx.Bind(cfg); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+		if s.app.ExchangeExists(cfg.Id) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			return
+		}
+
+		ex, err := binance.NewExchange(cfg, s.repo, s.pairs, s.spread, s.l, false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

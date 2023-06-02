@@ -2,9 +2,11 @@ package kucoin
 
 import (
 	"exchange-provider/internal/entity"
+	"math/big"
+	"strconv"
 )
 
-func (k *kucoinExchange) minAndMax(p *entity.Pair) error {
+func (k *exchange) minAndMax(p *entity.Pair) error {
 	price, err := k.price(p)
 	if err != nil {
 		return err
@@ -18,23 +20,28 @@ func (k *kucoinExchange) minAndMax(p *entity.Pair) error {
 	t2 := p.T2
 
 	amountOut := t2.ET.(*Token).MinWithdrawalFee + t2.ET.(*Token).MinWithdrawalSize
-	amountOut = amountOut + (amountOut * 0.2)
 	amountOut = amountOut + (amountOut * p.FeeRate2)
 	efa, err := k.exchangeFeeAmount(t2, p)
 	if err != nil {
 		return err
 	}
 	amountOut = amountOut + efa
-	p.T1.Min = amountOut / (price - (price * spread))
+	min0 := amountOut / (price - (price * spread))
 
 	amountOut = t1.ET.(*Token).MinWithdrawalFee + t1.ET.(*Token).MinWithdrawalSize
-	amountOut = amountOut + (amountOut * 0.2)
 	amountOut = amountOut + (amountOut * p.FeeRate1)
 	efa, err = k.exchangeFeeAmount(t1, p)
 	if err != nil {
 		return err
 	}
 	amountOut = amountOut + efa
-	p.T2.Min = amountOut * (price + (price * spread))
+	min1 := amountOut * (price + (price * spread))
+	p.T1.Min, p.T2.Min = min(p, min0, min1)
 	return nil
+}
+
+func min(p *entity.Pair, min0, min1 float64) (float64, float64) {
+	m0, _ := strconv.ParseFloat(trim(big.NewFloat(min0+(min0*0.5)).Text('f', 18), p.T1.ET.(*Token).OrderPrecision), 64)
+	m1, _ := strconv.ParseFloat(trim(big.NewFloat(min1+(min1*0.5)).Text('f', 18), p.T2.ET.(*Token).OrderPrecision), 64)
+	return m0, m1
 }

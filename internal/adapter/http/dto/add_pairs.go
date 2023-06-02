@@ -20,9 +20,7 @@ func FromEntity(r *entity.AddPairsResult) *AddPairsResult {
 		Exs:    []string{},
 		Failed: []*PairsErr{},
 	}
-	for _, p := range r.Added {
-		res.Addedd = append(res.Addedd, p)
-	}
+	res.Addedd = append(res.Addedd, r.Added...)
 	res.Exs = append(res.Exs, r.Existed...)
 
 	for _, p := range r.Failed {

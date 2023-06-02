@@ -7,7 +7,7 @@ import (
 )
 
 type cache struct {
-	k *kucoinExchange
+	k *exchange
 
 	dMux *sync.RWMutex
 	ds   map[string]depositRecord
@@ -17,7 +17,7 @@ type cache struct {
 	l logger.Logger
 }
 
-func newCache(k *kucoinExchange, l logger.Logger) *cache {
+func newCache(k *exchange, l logger.Logger) *cache {
 	c := &cache{
 		k: k,
 

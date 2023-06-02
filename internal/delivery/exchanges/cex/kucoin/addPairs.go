@@ -13,7 +13,7 @@ import (
 
 const max_conccurrent_jobs = 20
 
-func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
+func (k *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	agent := fmt.Sprintf("%s.AddPairs", k.NID())
 	req, ok := data.(*dto.AddPairsRequest)
 	if !ok {
@@ -49,7 +49,7 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 		if p.BC.ET.Chain == "" {
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p.String(),
-				Err: fmt.Errorf("token with currency '%s' and chainName '%s' does not exists in kucoin",
+				Err: fmt.Errorf("token with '%s-%s' not found in kucoin",
 					p.BC.ET.Currency, p.BC.ET.ChainName),
 			})
 			continue
@@ -57,7 +57,7 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 		if p.QC.ET.Chain == "" {
 			res.Failed = append(res.Failed, &entity.PairsErr{
 				Pair: p.String(),
-				Err: fmt.Errorf("token with currency '%s' and chainName '%s' does not exists in kucoin",
+				Err: fmt.Errorf("token with '%s-%s' not found in kucoin",
 					p.QC.ET.Currency, p.QC.ET.ChainName),
 			})
 			continue
@@ -158,6 +158,6 @@ func (k *kucoinExchange) AddPairs(data interface{}) (*entity.AddPairsResult, err
 
 }
 
-func (k *kucoinExchange) RemovePair(t1, t2 entity.TokenId) error {
+func (k *exchange) RemovePair(t1, t2 entity.TokenId) error {
 	return k.pairs.Remove(k.Id(), t1.String(), t2.String(), true)
 }

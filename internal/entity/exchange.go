@@ -10,6 +10,7 @@ const (
 
 type EstimateAmount struct {
 	Price             float64
+	AmountIn          float64
 	AmountOut         float64
 	SpreadRate        float64
 	FeeRate           float64
@@ -32,6 +33,5 @@ type Exchange interface {
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 TokenId) error
 	Configs() interface{}
-	Command(Command) (CommandResult, error)
 	Remove()
 }

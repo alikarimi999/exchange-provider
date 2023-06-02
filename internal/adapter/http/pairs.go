@@ -2,6 +2,7 @@ package http
 
 import (
 	"exchange-provider/internal/adapter/http/dto"
+	bdto "exchange-provider/internal/delivery/exchanges/cex/binance/dto"
 	kdto "exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -31,18 +32,16 @@ func (s *Server) AddPairs(ctx Context) {
 		switch ex.Name() {
 		case "kucoin":
 			req = &kdto.AddPairsRequest{}
-			if err := ctx.Bind(req); err != nil {
-				ctx.JSON(nil, err)
-				return
-			}
+		case "binance":
+			req = &bdto.AddPairsRequest{}
 		}
 	case entity.EvmDEX:
 		req = &edto.AddPairsRequest{}
-		if err := ctx.Bind(req); err != nil {
-			ctx.JSON(nil, err)
-			return
-		}
+	}
 
+	if err := ctx.Bind(req); err != nil {
+		ctx.JSON(nil, err)
+		return
 	}
 	res, err = ex.AddPairs(req)
 	if err != nil {

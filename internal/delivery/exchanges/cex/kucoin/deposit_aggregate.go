@@ -12,14 +12,14 @@ import (
 )
 
 type depositAggregator struct {
-	k     *kucoinExchange
+	k     *exchange
 	l     logger.Logger
 	t     *time.Ticker
 	c     *cache
 	wSize time.Duration
 }
 
-func newDepositAggregator(k *kucoinExchange, c *cache) *depositAggregator {
+func newDepositAggregator(k *exchange, c *cache) *depositAggregator {
 	da := &depositAggregator{
 		k:     k,
 		l:     k.l,

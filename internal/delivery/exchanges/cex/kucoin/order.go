@@ -11,13 +11,12 @@ type NewOrderData struct {
 	UserId            string
 	In                entity.TokenId
 	Out               entity.TokenId
-	AmountIn          float64
 	Es                *entity.EstimateAmount
 	SenderAddress     entity.Address
 	WithdrawalAddress entity.Address
 }
 
-func (k *kucoinExchange) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
+func (k *exchange) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
 	d := data.(*NewOrderData)
 	p := d.Es.P
 	var (
@@ -46,7 +45,7 @@ func (k *kucoinExchange) NewOrder(data interface{}, api *entity.APIToken) (entit
 		BusId:  api.BusId,
 		Level:  api.Level,
 
-		SetAmountIn:               d.AmountIn,
+		SetAmountIn:               d.Es.AmountIn,
 		InitialPrice:              d.Es.Price,
 		EstimateAmountOut:         d.Es.AmountOut,
 		EstimateExchangeFeeAmount: d.Es.ExchangeFeeAmount,

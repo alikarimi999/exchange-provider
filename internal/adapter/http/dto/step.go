@@ -1,6 +1,7 @@
 package dto
 
 import (
+	bt "exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	kt "exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
@@ -39,6 +40,27 @@ func SingleStepResponse(ord entity.Order) (*SingleStep, error) {
 	switch strings.Split(ord.ExchangeNid(), "-")[0] {
 	case "kucoin":
 		o := ord.(*kt.Order)
+		return &SingleStep{
+			OrderStep: &OrderStep{OrderId: o.ObjectId.String(), CurrentStep: 1, TotalSteps: 1},
+			Token:     o.In,
+			Address:   o.Deposit.Address.Addr,
+			Tag:       o.Deposit.Address.Tag,
+
+			AmountIn:                  Number(o.SetAmountIn),
+			EstimateAmountOut:         Number(o.EstimateAmountOut),
+			FeeRate:                   Number(o.FeeRate),
+			EstimateFeeAmount:         Number(o.EstimateFeeAmount),
+			ExchangeFee:               Number(o.ExchangeFee),
+			EstimateExchangeFeeAmount: Number(o.EstimateExchangeFeeAmount),
+			FeeCurrency:               o.FeeAndSpreadCurrency,
+
+			CreatedAt: o.CreatedAT,
+			UpdatedAt: o.UpdatedAt,
+			ExpireAt:  o.ExpireAt,
+		}, nil
+
+	case "binance":
+		o := ord.(*bt.Order)
 		return &SingleStep{
 			OrderStep: &OrderStep{OrderId: o.ObjectId.String(), CurrentStep: 1, TotalSteps: 1},
 			Token:     o.In,

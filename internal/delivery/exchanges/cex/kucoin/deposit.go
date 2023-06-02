@@ -4,15 +4,13 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/try"
-	"fmt"
 	"strconv"
 	"time"
 )
 
-func (k *kucoinExchange) trackDeposit(o *types.Order, dc *Token) {
+func (k *exchange) trackDeposit(o *types.Order, dc *Token) {
 	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
-	err := try.Do(20, func(attempt uint64) (bool, error) {
-		fmt.Println(attempt)
+	err := try.Do(100, func(attempt uint64) (bool, error) {
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {
 			if err := d.MatchCurrency(dc); err != nil {

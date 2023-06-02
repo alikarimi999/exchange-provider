@@ -2,6 +2,7 @@ package pairsRepo
 
 import (
 	"context"
+	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
@@ -72,6 +73,12 @@ func (p *pair) toEntity(exType entity.ExType, exNID string, exId uint) *entity.P
 			bson.Unmarshal(p.EP, ep)
 			pair.EP = ep
 			t = &kucoin.Token{}
+
+		case "binance":
+			ep := &binance.ExchangePair{}
+			bson.Unmarshal(p.EP, ep)
+			pair.EP = ep
+			t = &binance.Token{}
 		}
 	case entity.EvmDEX:
 		ep := &et.ExchangePair{}

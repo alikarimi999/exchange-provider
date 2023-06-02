@@ -6,7 +6,7 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) createOrderRequest(bc, qc *Token, side, size, funds,
+func (k *exchange) createOrderRequest(bc, qc *Token, side, size, funds,
 	remark string) *kucoin.CreateOrderModel {
 	return &kucoin.CreateOrderModel{
 		ClientOid: remark,

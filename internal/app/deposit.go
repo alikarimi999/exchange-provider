@@ -13,7 +13,6 @@ func (u *OrderUseCase) SetTxId(oId *entity.ObjectId, txId string) error {
 	if err != nil {
 		return err
 	}
-
 	if ord.STATUS() != entity.OCreated {
 		return errors.Wrap(errors.ErrBadRequest,
 			errors.NewMesssage(fmt.Sprintf("unable to set txId for order in '%s' status", ord.STATUS())))

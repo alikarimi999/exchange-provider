@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (k *kucoinExchange) retreiveOrders() error {
+func (k *exchange) retreiveOrders() error {
 	if err := k.da.aggregateAll(-2 * time.Hour); err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (k *kucoinExchange) retreiveOrders() error {
 // for orders that sends withdrawal requests to kucoin but
 // the server restarts before update on the database
 // Status: "OFirstSwapCompleted" and "OSecondSwapCompleted"
-func (k *kucoinExchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.Withdrawal,
+func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.Withdrawal,
 	ps map[string]*entity.Pair) {
 	for _, o := range os {
 		co := o.(*types.Order)
@@ -248,7 +248,7 @@ func (k *kucoinExchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.W
 	}
 }
 
-func (k *kucoinExchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
+func (k *exchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
 	var (
 		bc, qc *Token
 	)
@@ -285,7 +285,7 @@ func (k *kucoinExchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
 	}
 }
 
-func (k *kucoinExchange) getOrders(status string) ([]entity.Order, error) {
+func (k *exchange) getOrders(status string) ([]entity.Order, error) {
 	f0 := &entity.Filter{
 		Param:    "order.Status",
 		Operator: entity.FilterOperatorEqual,

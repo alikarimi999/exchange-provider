@@ -1,6 +1,7 @@
 package dto
 
 import (
+	bt "exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	kt "exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
@@ -29,6 +30,12 @@ func (o *Order) ToEntity() (entity.Order, error) {
 				return nil, err
 			}
 			return ko, nil
+		case "binance":
+			bo := &bt.Order{}
+			if err := bson.Unmarshal(o.Order, bo); err != nil {
+				return nil, err
+			}
+			return bo, nil
 		}
 	case entity.EVMOrder:
 		eo := &et.Order{}

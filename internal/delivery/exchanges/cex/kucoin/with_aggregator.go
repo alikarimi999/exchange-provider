@@ -14,7 +14,7 @@ import (
 )
 
 type withdrawalAggregator struct {
-	k          *kucoinExchange
+	k          *exchange
 	l          logger.Logger
 	c          *cache
 	ticker     *time.Ticker
@@ -25,7 +25,7 @@ type withdrawalAggregator struct {
 	proccessedList map[string]struct{ time.Time }
 }
 
-func newWithdrawalAggregator(k *kucoinExchange, c *cache) *withdrawalAggregator {
+func newWithdrawalAggregator(k *exchange, c *cache) *withdrawalAggregator {
 	wa := &withdrawalAggregator{
 		k:          k,
 		l:          k.l,
@@ -106,6 +106,7 @@ func (wa *withdrawalAggregator) aggregateAll(windSize time.Duration,
 			if co.Status == types.OWithdrawalTracking {
 				switch wd.Status {
 				case "SUCCESS":
+					co.Withdrawal.Amount, _ = strconv.ParseFloat(wd.Amount, 64)
 					co.Withdrawal.KucoinFee, _ = strconv.ParseFloat(wd.Fee, 64)
 					co.Withdrawal.TxId = wd.FixTxId()
 					co.Status = types.OWithdrawalConfirmed

@@ -21,7 +21,7 @@ type Configs struct {
 	Message    string `json:"message"`
 }
 
-func (k *kucoinExchange) Configs() interface{} {
+func (k *exchange) Configs() interface{} {
 	return k.cfg
 }
 

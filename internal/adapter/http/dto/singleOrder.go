@@ -1,6 +1,7 @@
 package dto
 
 import (
+	bt "exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	kt "exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/internal/entity"
 	"strings"
@@ -47,7 +48,7 @@ func (s *userSingleOrder) fromEntity(ord entity.Order) *order {
 			SetInAmount:       Number(o.SetAmountIn),
 			EstimateAmountOut: Number(o.EstimateAmountOut),
 			InAmount:          Number(o.Deposit.Amount),
-
+			OutAmount:         Number(o.Withdrawal.Amount),
 			FeeRate:           Number(o.FeeRate),
 			FeeRateAmount:     Number(o.FeeAmount),
 			ExchangeFee:       Number(o.ExchangeFee),
@@ -64,9 +65,40 @@ func (s *userSingleOrder) fromEntity(ord entity.Order) *order {
 			ExpireAt:       o.ExpireAt,
 		}
 
-		if ord.STATUS() == entity.OCompleted {
-			so.OutAmount = Number(o.Withdrawal.Amount - o.Withdrawal.KucoinFee)
+		return &order{
+			Id:        ord.ID().String(),
+			Type:      singleStep,
+			UserId:    o.UserID,
+			CreatedAt: o.CreatedAT,
+			Order:     so,
 		}
+
+	case "binance":
+		o := ord.(*bt.Order)
+		so := userSingleOrder{
+			Status:            o.STATUS().String(),
+			Input:             o.In,
+			Output:            o.Out,
+			SetInAmount:       Number(o.SetAmountIn),
+			EstimateAmountOut: Number(o.EstimateAmountOut),
+			InAmount:          Number(o.Deposit.Amount),
+			OutAmount:         Number(o.Withdrawal.Amount),
+			FeeRate:           Number(o.FeeRate),
+			FeeRateAmount:     Number(o.FeeAmount),
+			ExchangeFee:       Number(o.ExchangeFee),
+			ExchangeFeeAmount: Number(o.ExchangeFeeAmount),
+			FeeCurrency:       o.FeeAndSpreadCurrency,
+
+			Deposit:    o.Deposit.Address,
+			Withdrawal: o.Withdrawal.Address,
+
+			DepositTxId:    o.Deposit.TxId,
+			WithdrawalTxId: o.Withdrawal.TxId,
+			CreatedAt:      o.CreatedAT,
+			UpdatedAt:      o.UpdatedAt,
+			ExpireAt:       o.ExpireAt,
+		}
+
 		return &order{
 			Id:        ord.ID().String(),
 			Type:      singleStep,

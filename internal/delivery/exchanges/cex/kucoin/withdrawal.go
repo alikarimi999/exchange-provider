@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (k *kucoinExchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
+func (k *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 	withdrawalfromMain bool) {
 
 	s := o.Swaps[len(o.Swaps)-1]
@@ -72,7 +72,7 @@ func (k *kucoinExchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 				o.FailedDesc = err.Error()
 				return
 			}
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 		break
@@ -81,10 +81,12 @@ func (k *kucoinExchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 	w := &kucoin.ApplyWithdrawalResultModel{}
 	res.ReadData(w)
 	o.Withdrawal.Id = w.WithdrawalId
+	o.Withdrawal.Amount = o.Withdrawal.Amount - wc.MinWithdrawalFee
+	o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
 	o.Status = types.OWithdrawalTracking
 }
 
-func (k *kucoinExchange) innerTransfer(currency, vol string) error {
+func (k *exchange) innerTransfer(currency, vol string) error {
 	for i := 0; i <= 10; i++ {
 		res, err := k.writeApi.InnerTransferV2(uuid.New().String(), currency, "trade", "main", vol)
 		if err = handleSDKErr(err, res); err != nil {

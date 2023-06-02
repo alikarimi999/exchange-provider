@@ -4,7 +4,7 @@ import (
 	"exchange-provider/internal/entity"
 )
 
-func (k *kucoinExchange) spread(lvl uint, p *entity.Pair, price float64) (float64, error) {
+func (k *exchange) spread(lvl uint, p *entity.Pair, price float64) (float64, error) {
 	var s float64
 	t1 := p.T1.ET.(*Token)
 	t2 := p.T2.ET.(*Token)
@@ -15,7 +15,7 @@ func (k *kucoinExchange) spread(lvl uint, p *entity.Pair, price float64) (float6
 	} else if t1.Currency == p.T1.ET.(*Token).StableToken {
 		s = k.st.GetByPrice(lvl, 1)
 	} else {
-		bcDollar, err := k.stableTicker(t1.Currency, p.T1.ET.(*Token).StableToken)
+		bcDollar, err := k.ticker(t1.Currency, p.T1.ET.(*Token).StableToken)
 		if err != nil {
 			return 0, err
 		}

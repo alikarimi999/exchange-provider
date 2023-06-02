@@ -4,13 +4,14 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"sync"
 
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
+func (k *exchange) EstimateAmountOut(in, out entity.TokenId,
 	amount float64, lvl uint) (*entity.EstimateAmount, error) {
 	p, err := k.pairs.Get(k.Id(), in.String(), out.String())
 	if err != nil {
@@ -25,7 +26,7 @@ func (k *kucoinExchange) EstimateAmountOut(in, out entity.TokenId,
 	return k.estimateAmountOut(p, in, out, amount, lvl)
 }
 
-func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
+func (k *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 	amount float64, lvl uint) (*entity.EstimateAmount, error) {
 	es := &entity.EstimateAmount{
 		P: p,
@@ -55,6 +56,7 @@ func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenI
 		Out = p.T1.ET.(*Token)
 		eOut = p.T1
 	}
+	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 18), In.OrderPrecision), 64)
 
 	var (
 		depositEnable, withdrawEnable               bool
@@ -110,7 +112,7 @@ func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenI
 	amountOut = amountOut - exchangeFeeAmount
 	feeAmount := amountOut * es.FeeRate
 	amountOut = amountOut - feeAmount - Out.MinWithdrawalFee
-	if amountOut < Out.MinWithdrawalSize {
+	if amountOut < Out.MinWithdrawalSize+Out.MinWithdrawalFee {
 		if err := k.minAndMax(p); err != nil {
 			return nil, errors.Wrap(errors.ErrInternal)
 		}
@@ -128,6 +130,8 @@ func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenI
 	}
 
 	if depositEnable && withdrawEnable {
+		fmt.Println(amount)
+		es.AmountIn = amount
 		es.FeeAmount = feeAmount
 		es.ExchangeFee = p.ExchangeFee
 		es.ExchangeFeeAmount = exchangeFeeAmount
@@ -140,27 +144,27 @@ func (k *kucoinExchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenI
 	return es, errors.Wrap(errors.ErrNotFound)
 }
 
-func (k *kucoinExchange) price(p *entity.Pair) (float64, error) {
+func (k *exchange) price(p *entity.Pair) (float64, error) {
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 		var (
-			bc, qc     string
 			p0, p1     float64
 			err0, err1 error
 		)
 		wg := &sync.WaitGroup{}
-		qc = ep.IC1.Currency
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			bc = p.T1.ET.(*Token).Currency
+			bc := p.T1.ET.(*Token).Currency
+			qc := ep.IC1.Currency
 			p0, err1 = k.ticker(bc, qc)
 		}()
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			bc = p.T2.ET.(*Token).Currency
+			bc := p.T2.ET.(*Token).Currency
+			qc := ep.IC2.Currency
 			p1, err1 = k.ticker(bc, qc)
 		}()
 		wg.Wait()
@@ -181,7 +185,7 @@ func (k *kucoinExchange) price(p *entity.Pair) (float64, error) {
 	return price, nil
 }
 
-func (k *kucoinExchange) ticker(bc, qc string) (float64, error) {
+func (k *exchange) ticker(bc, qc string) (float64, error) {
 	res, err := k.readApi.TickerLevel1(bc + "-" + qc)
 	if err != nil {
 		return 0, err
@@ -190,7 +194,9 @@ func (k *kucoinExchange) ticker(bc, qc string) (float64, error) {
 	if err := res.ReadData(tl); err != nil {
 		return 0, err
 	}
-
+	if tl.Price == "" {
+		return 0, fmt.Errorf("pair '%s/%s' not found in kucoin", bc, qc)
+	}
 	return strconv.ParseFloat(tl.Price, 64)
 }
 

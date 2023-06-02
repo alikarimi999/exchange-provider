@@ -6,7 +6,7 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (k *kucoinExchange) TxIdSetted(ord entity.Order, txId string) error {
+func (k *exchange) TxIdSetted(ord entity.Order, txId string) error {
 	agent := k.agent("TxIdSetted")
 	o := ord.(*types.Order)
 	p, err := k.pairs.Get(k.Id(), o.In.String(), o.Out.String())
@@ -41,7 +41,7 @@ func (k *kucoinExchange) TxIdSetted(ord entity.Order, txId string) error {
 	return nil
 }
 
-func (k *kucoinExchange) handleOrder(o *types.Order, p *entity.Pair) {
+func (k *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 	if o.Status == types.ODepositTxIdSetted {
 		var dc *Token
 		if p.T1.String() == o.In.String() {

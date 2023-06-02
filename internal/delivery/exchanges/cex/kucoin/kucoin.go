@@ -12,7 +12,7 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-type kucoinExchange struct {
+type exchange struct {
 	cfg *Configs
 	mux *sync.Mutex
 
@@ -35,7 +35,7 @@ type kucoinExchange struct {
 	stopedAt time.Time
 }
 
-func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, readConfig bool,
+func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, fromDB bool,
 	repo entity.OrderRepo, fee entity.FeeTable, st entity.SpreadTable) (entity.Cex, error) {
 
 	cfg, err := validateConfigs(cfgi)
@@ -43,7 +43,7 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 		return nil, errors.Wrap("NewKucoinExchange", err)
 	}
 
-	k := &kucoinExchange{
+	k := &exchange{
 		cfg:   cfg,
 		mux:   &sync.Mutex{},
 		pairs: pairs,
@@ -82,7 +82,7 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 	k.wa = newWithdrawalAggregator(k, k.cache)
 	k.pls = newPairList(k, k.readApi, l)
 
-	if readConfig {
+	if fromDB {
 		ps := k.pairs.GetAll(k.Id())
 		if len(ps) > 0 {
 			if err := k.pls.downloadList(); err != nil {
@@ -129,41 +129,41 @@ func NewKucoinExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger
 	return k, nil
 }
 
-func (k *kucoinExchange) Remove() {
+func (k *exchange) Remove() {
 	op := fmt.Sprintf("%s.Stop", k.NID())
 	close(k.stopCh)
 	k.stopedAt = time.Now()
 	k.l.Debug(string(op), "stopped")
 }
 
-func (k *kucoinExchange) Type() entity.ExType {
+func (k *exchange) Type() entity.ExType {
 	return entity.CEX
 }
 
-func (k *kucoinExchange) Id() uint {
+func (k *exchange) Id() uint {
 	return k.cfg.Id
 }
 
-func (k *kucoinExchange) Name() string {
+func (k *exchange) Name() string {
 	return "kucoin"
 }
 
-func (k *kucoinExchange) EnableDisable(enable bool) {
+func (k *exchange) EnableDisable(enable bool) {
 	k.mux.Lock()
 	defer k.mux.Unlock()
 	k.cfg.Enable = enable
 }
-func (k *kucoinExchange) IsEnable() bool {
+func (k *exchange) IsEnable() bool {
 	k.mux.Lock()
 	defer k.mux.Unlock()
 	return k.cfg.Enable
 }
 
-func (k *kucoinExchange) NID() string {
+func (k *exchange) NID() string {
 	return fmt.Sprintf("%s-%d", k.Name(), k.Id())
 }
 
-func (k *kucoinExchange) ping() error {
+func (k *exchange) ping() error {
 	resp, err := k.readApi.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
 		return errors.Wrap(k.agent("ping"), errors.NewMesssage(err.Error()))

@@ -1,6 +1,7 @@
 package app
 
 import (
+	b "exchange-provider/internal/delivery/exchanges/cex/binance"
 	k "exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	e "exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/entity"
@@ -43,7 +44,15 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 				UserId:            userId,
 				In:                in,
 				Out:               out,
-				AmountIn:          amount,
+				Es:                es,
+				SenderAddress:     sender,
+				WithdrawalAddress: reciever,
+			}
+		case "binance":
+			d = &b.NewOrderData{
+				UserId:            userId,
+				In:                in,
+				Out:               out,
 				Es:                es,
 				SenderAddress:     sender,
 				WithdrawalAddress: reciever,

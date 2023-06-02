@@ -120,7 +120,6 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 			}
 		}
 	}
-
 	ps2 := []*entity.Pair{}
 	if len(pairIds) > 0 {
 		for _, p := range ps {

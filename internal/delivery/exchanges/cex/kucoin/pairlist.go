@@ -12,12 +12,12 @@ import (
 )
 
 type pairList struct {
-	k       *kucoinExchange
+	k       *exchange
 	symbols []*kucoin.SymbolModel
 	l       logger.Logger
 }
 
-func newPairList(k *kucoinExchange, api *kucoin.ApiService, l logger.Logger) *pairList {
+func newPairList(k *exchange, api *kucoin.ApiService, l logger.Logger) *pairList {
 	pl := &pairList{
 		k:       k,
 		symbols: make([]*kucoin.SymbolModel, 0),
@@ -42,7 +42,7 @@ func (p *pairList) downloadList() error {
 	return nil
 }
 
-func (k *kucoinExchange) support(p *entity.Pair) error {
+func (k *exchange) support(p *entity.Pair) error {
 	var bc, qc *Token
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {

@@ -11,7 +11,7 @@ import (
 	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *kucoinExchange) swap(o *types.Order, bc, qc *Token, index int) error {
+func (k *exchange) swap(o *types.Order, bc, qc *Token, index int) error {
 
 	var size, funds string
 	side := o.Swaps[index].Side
@@ -53,7 +53,7 @@ func (k *kucoinExchange) swap(o *types.Order, bc, qc *Token, index int) error {
 
 }
 
-func (k *kucoinExchange) trackSwap(o *types.Order, bc, qc *Token, index int) error {
+func (k *exchange) trackSwap(o *types.Order, bc, qc *Token, index int) error {
 	s := o.Swaps[index]
 
 	var (
@@ -73,7 +73,7 @@ func (k *kucoinExchange) trackSwap(o *types.Order, bc, qc *Token, index int) err
 			if i == 10 {
 				return err
 			}
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 		break
