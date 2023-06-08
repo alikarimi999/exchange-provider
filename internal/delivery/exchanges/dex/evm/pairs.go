@@ -50,6 +50,12 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				mux.Unlock()
 				return
 			}
+			if err := d.checkExchangeFee(p); err != nil {
+				mux.Lock()
+				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
+				mux.Unlock()
+				return
+			}
 			mux.Lock()
 			p.LP = d.Id()
 			p.Exchange = d.NID()
@@ -82,6 +88,16 @@ func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
 	}
 	if amOut == 0 {
 		return errors.Wrap(errors.ErrNotFound)
+	}
+	return nil
+}
+
+func (d *evmDex) checkExchangeFee(p *entity.Pair) error {
+	if _, err := d.exchangeFeeAmount(p.T1.Id, p); err != nil {
+		return err
+	}
+	if _, err := d.exchangeFeeAmount(p.T2.Id, p); err != nil {
+		return err
 	}
 	return nil
 }

@@ -3,6 +3,7 @@ package evm
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -29,7 +30,7 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 		in = p.T2
 		out = p.T1
 	}
-
+	t := time.Now()
 	o := &types.Order{
 		UserID: d.UserId,
 		Status: entity.OCreated,
@@ -44,12 +45,18 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 		Sender:   d.Sender,
 		Receiver: d.Reciever,
 
-		AmountIn:          d.AmountIn,
-		EstimateAmountOut: d.Es.AmountOut,
-		FeeRate:           d.Es.FeeRate,
-		FeeAmount:         d.Es.FeeAmount,
-		ExchangeFee:       d.Es.ExchangeFee,
-		ExchangeFeeAmount: d.Es.ExchangeFeeAmount,
+		AmountIn:                  d.AmountIn,
+		EstimateAmountOut:         d.Es.AmountOut,
+		FeeRate:                   d.Es.FeeRate,
+		EstimateFeeAmount:         d.Es.FeeAmount,
+		FeeAmount:                 d.Es.FeeAmount,
+		ExchangeFee:               d.Es.ExchangeFee,
+		ExchangeFeeAmount:         d.Es.ExchangeFeeAmount,
+		EstimateExchangeFeeAmount: d.Es.ExchangeFeeAmount,
+
+		FeeCurrency: d.In,
+		CreatedAT:   t.Unix(),
+		UpdatedAt:   t.Unix(),
 	}
 
 	approve, err := ex.needApproval(in, o.Sender, o.AmountIn)

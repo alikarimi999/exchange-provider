@@ -36,7 +36,6 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 			Reciever: common.HexToAddress(reciever.Addr),
 			AmountIn: amount,
 		}
-
 	case entity.CEX:
 		switch ex.Name() {
 		case "kucoin":
@@ -63,5 +62,8 @@ func (u *OrderUseCase) NewOrder(userId string, sender, refund, reciever entity.A
 	if err != nil {
 		return nil, err
 	}
-	return o, u.repo.Add(o)
+	if err := u.repo.Add(o); err != nil {
+		return nil, err
+	}
+	return o, nil
 }

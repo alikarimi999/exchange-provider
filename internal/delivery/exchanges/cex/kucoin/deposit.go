@@ -10,6 +10,10 @@ import (
 
 func (k *exchange) trackDeposit(o *types.Order, dc *Token) {
 	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
+	if t < time.Minute {
+		time.Sleep(time.Minute)
+		t *= 2
+	}
 	err := try.Do(100, func(attempt uint64) (bool, error) {
 		d, ok := k.cache.getD(o.Deposit.TxId)
 		if ok {

@@ -14,7 +14,7 @@ type userSingleOrder struct {
 	Input             entity.TokenId `json:"input"`
 	Output            entity.TokenId `json:"output"`
 	SetInAmount       Number         `json:"setInAmount"`
-	EstimateAmountOut Number         `json:"estimateAmount"`
+	EstimateAmountOut Number         `json:"estimateAmountOut"`
 
 	InAmount  Number `json:"inAmount"`
 	OutAmount Number `json:"outAmount"`

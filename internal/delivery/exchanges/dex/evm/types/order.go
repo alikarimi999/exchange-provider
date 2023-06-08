@@ -28,10 +28,12 @@ type Order struct {
 	AmountIn          float64
 	EstimateAmountOut float64
 
-	FeeRate           float64
-	FeeAmount         float64
-	ExchangeFee       float64
-	ExchangeFeeAmount float64
+	FeeRate                   float64
+	EstimateFeeAmount         float64
+	FeeAmount                 float64
+	ExchangeFee               float64
+	ExchangeFeeAmount         float64
+	EstimateExchangeFeeAmount float64
 
 	FeeCurrency entity.TokenId
 	CreatedAT   int64

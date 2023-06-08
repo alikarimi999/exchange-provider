@@ -13,13 +13,11 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 	if err != nil {
 		return nil, err
 	}
-
 	if !p.Enable {
 		return nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage("pair is not enable right now"))
 	}
-
-	es := &entity.EstimateAmount{P: p, FeeCurrency: in}
+	es := &entity.EstimateAmount{P: p, FeeCurrency: in, AmountIn: amount}
 	var (
 		In, Out *types.Token
 	)
@@ -27,6 +25,7 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 	if p.T1.String() == in.String() {
 		min := p.T1.Min
 		max := p.T1.Max
+
 		if (min != 0 && amount < min) || (max != 0 && amount > max) {
 			return es, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
@@ -46,7 +45,6 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 		Out = types.TokenFromEntity(p.T1)
 		es.FeeRate = p.FeeRate2
 	}
-
 	exchangeFeeAmount, err := d.exchangeFeeAmount(in, p)
 	if err != nil {
 		return nil, err
@@ -64,8 +62,9 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, error) {
 
 	var (
-		stAmount float64
-		St, In   *types.Token
+		stAmount, stOut float64
+		St, In          *types.Token
+		err             error
 	)
 
 	if p.T1.String() == in.String() {
@@ -78,12 +77,17 @@ func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, 
 		stAmount = p.T2.Min
 	}
 
-	stOut, _, err := d.dex.EstimateAmountOut(In, St, stAmount)
-	if err != nil {
-		return 0, err
+	if In.ContractAddress != St.ContractAddress {
+		stOut, _, err = d.dex.EstimateAmountOut(In, St, stAmount)
+		if err != nil {
+			return 0, err
+		}
+		if stOut == 0 {
+			return 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
+		}
+	} else {
+		stOut = 1
 	}
-	if stOut == 0 {
-		return 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
-	}
+
 	return (stAmount / stOut) * p.ExchangeFee, nil
 }

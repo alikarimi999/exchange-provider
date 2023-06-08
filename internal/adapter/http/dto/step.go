@@ -85,7 +85,20 @@ func SingleStepResponse(ord entity.Order) (*SingleStep, error) {
 
 type multiStep struct {
 	*OrderStep
+
+	AmountIn                  Number         `json:"amountIn"`
+	EstimateAmountOut         Number         `json:"estimateAmountOut"`
+	FeeRate                   Number         `json:"feeRate"`
+	EstimateFeeAmount         Number         `json:"estimateFeeAmount"`
+	ExchangeFee               Number         `json:"exchangeFee"`
+	EstimateExchangeFeeAmount Number         `json:"estimateExchangeFeeAmount"`
+	FeeCurrency               entity.TokenId `json:"feeCurrency"`
+
 	Transaction interface{} `json:"transaction"`
+
+	CreatedAt int64 `json:"createdAt"`
+	UpdatedAt int64 `json:"updatedAt"`
+	ExpireAt  int64 `json:"expireAt"`
 }
 
 func MultiStep(o entity.Order, tx entity.Tx, step, steps int) *multiStep {
@@ -95,8 +108,19 @@ func MultiStep(o entity.Order, tx entity.Tx, step, steps int) *multiStep {
 	switch tx.Type() {
 	case entity.Evm:
 		eo := o.(*types.Order)
+		ms.AmountIn = Number(eo.AmountIn)
+		ms.EstimateAmountOut = Number(eo.EstimateAmountOut)
+		ms.FeeRate = Number(eo.FeeRate)
+		ms.EstimateFeeAmount = Number(eo.EstimateFeeAmount)
+		ms.ExchangeFee = Number(eo.ExchangeFee)
+		ms.EstimateExchangeFeeAmount = Number(eo.EstimateExchangeFeeAmount)
+		ms.FeeCurrency = eo.FeeCurrency
 		ms.Type = string(tx.Type())
 		ms.Transaction = evmTx(tx, eo.Sender.Hex())
+		ms.CreatedAt = eo.CreatedAT
+		ms.UpdatedAt = eo.UpdatedAt
+		ms.ExpireAt = eo.ExpireAt
+
 	}
 	return ms
 }

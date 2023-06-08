@@ -18,6 +18,10 @@ const (
 
 func (k *exchange) trackDeposit(o *types.Order, dc *Token) {
 	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
+	if t < time.Minute {
+		time.Sleep(time.Minute)
+		t *= 2
+	}
 	err := try.Do(100, func(attempt uint64) (bool, error) {
 		ds, err := k.c.NewListDepositsService().TxID(o.Deposit.TxId).Do(context.Background())
 		if err == nil {

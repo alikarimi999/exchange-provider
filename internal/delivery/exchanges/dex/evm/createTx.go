@@ -32,6 +32,7 @@ var (
 		{Name: "swapper", Type: "address"},
 		{Name: "swapperData", Type: "bytes"},
 		{Name: "sender", Type: "address"},
+		{Name: "receiver", Type: "address"},
 		{Name: "native", Type: "bool"},
 	})
 
@@ -43,7 +44,6 @@ var (
 func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver common.Address,
 	amount, feeAmount float64) (*ts.Transaction, error) {
 	agent := d.agent("createTx")
-
 	var (
 		tx  *ts.Transaction
 		err error
@@ -94,10 +94,11 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 		TotalAmount:  totalAmountI,
 		FeeAmount:    feeAmountI,
 		AmountIn:     swapAmountI,
-		FromContract: tokenOwner.Hash().Big().Cmp(d.contractAddress.Hash().Big()) == 1,
+		FromContract: tokenOwner.Hash().Big().Cmp(d.contractAddress.Hash().Big()) == 0,
 		Swapper:      d.dex.Router(),
 		SwapperData:  input,
 		Sender:       sender,
+		Receiver:     receiver,
 		Native:       in.Native,
 	}
 
