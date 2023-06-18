@@ -84,19 +84,20 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 
 func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
-	pa := &dto.PaginatedReq{}
-	if err := ctx.Bind(pa); err != nil {
+	req := &dto.PaginatedReq{}
+	if err := ctx.Bind(req); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	pao := pa.Map()
-	if err := s.repo.GetPaginated(pao, false); err != nil {
+	req.Validate()
+	pa := req.Map()
+	if err := s.repo.GetPaginated(pa, false); err != nil {
 		ctx.JSON(nil, err)
 		return
 	}
 
-	ctx.JSON(dto.OrderResponse(pao, true), nil)
+	ctx.JSON(dto.OrderResponse(pa, true), nil)
 }
 
 func (s *Server) GetOrder(ctx Context) {

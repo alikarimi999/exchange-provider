@@ -22,7 +22,7 @@ type exchange struct {
 	cache *cache
 	da    *depositAggregator
 	wa    *withdrawalAggregator
-	pls   *pairList
+	si    *serverInfos
 
 	l     logger.Logger
 	pairs entity.PairsRepo
@@ -70,103 +70,85 @@ func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, from
 		stopCh: make(chan struct{}),
 	}
 
-	agent := k.agent("NewKucoinExchange")
-
 	if err := k.ping(); err != nil {
 		return nil, err
 	}
-	k.l.Debug(agent, "ping was successful")
+
+	si, err := newServerInfos(k, k.readApi)
+	if err != nil {
+		return nil, err
+	}
+	k.si = si
+
 	k.cache = newCache(k, k.l)
 
 	k.da = newDepositAggregator(k, k.cache)
 	k.wa = newWithdrawalAggregator(k, k.cache)
-	k.pls = newPairList(k, k.readApi, l)
 
 	if fromDB {
 		ps := k.pairs.GetAll(k.Id())
 		if len(ps) > 0 {
-			if err := k.pls.downloadList(); err != nil {
-				return nil, err
-			}
-			wg := &sync.WaitGroup{}
-			waitChan := make(chan struct{}, max_conccurrent_jobs)
-
 			for _, p := range ps {
-				waitChan <- struct{}{}
-				wg.Add(1)
-				go func(p *entity.Pair) {
-					defer func() {
-						<-waitChan
-						wg.Done()
-					}()
-					if err := k.support(p); err != nil {
-						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
-						k.l.Debug(agent, err.Error())
-						return
-					}
-
-					if err := k.setInfos(p); err != nil {
-						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
-						k.l.Debug(agent, err.Error())
-						return
-					}
-					if err := k.pairs.Update(k.Id(), p); err != nil {
-						k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
-						k.l.Debug(agent, err.Error())
-						return
-					}
-				}(p)
+				if err := k.setInfos(p); err != nil {
+					k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
+					continue
+				}
+				if err := k.pairs.Update(k.Id(), p); err != nil {
+					k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
+					continue
+				}
 			}
-			wg.Wait()
+
 			if err := k.retreiveOrders(); err != nil {
 				return nil, err
 			}
 		}
 	}
+
+	go k.si.run(k, k.stopCh)
 	go k.da.run(k.stopCh)
 	go k.wa.run(k.stopCh)
-	k.l.Debug(agent, fmt.Sprintf("exchange '%s' started successfully", k.NID()))
 	return k, nil
 }
 
-func (k *exchange) Remove() {
-	op := fmt.Sprintf("%s.Stop", k.NID())
-	close(k.stopCh)
-	k.stopedAt = time.Now()
-	k.l.Debug(string(op), "stopped")
+func (ex *exchange) Remove() {
+	op := fmt.Sprintf("%s.Stop", ex.NID())
+	close(ex.stopCh)
+	ex.stopedAt = time.Now()
+	ex.l.Debug(string(op), "stopped")
 }
 
-func (k *exchange) Type() entity.ExType {
+func (ex *exchange) Type() entity.ExType {
 	return entity.CEX
 }
 
-func (k *exchange) Id() uint {
-	return k.cfg.Id
+func (ex *exchange) Id() uint {
+	return ex.cfg.Id
 }
 
-func (k *exchange) Name() string {
+func (ex *exchange) Name() string {
 	return "kucoin"
 }
 
-func (k *exchange) EnableDisable(enable bool) {
-	k.mux.Lock()
-	defer k.mux.Unlock()
-	k.cfg.Enable = enable
+func (ex *exchange) EnableDisable(enable bool) {
+	ex.mux.Lock()
+	defer ex.mux.Unlock()
+	ex.cfg.Enable = enable
 }
-func (k *exchange) IsEnable() bool {
-	k.mux.Lock()
-	defer k.mux.Unlock()
-	return k.cfg.Enable
-}
-
-func (k *exchange) NID() string {
-	return fmt.Sprintf("%s-%d", k.Name(), k.Id())
+func (ex *exchange) IsEnable() bool {
+	ex.mux.Lock()
+	defer ex.mux.Unlock()
+	return ex.cfg.Enable
 }
 
-func (k *exchange) ping() error {
-	resp, err := k.readApi.Accounts("", "")
+func (ex *exchange) NID() string {
+	return fmt.Sprintf("%s-%d", ex.Name(), ex.Id())
+}
+
+func (ex *exchange) ping() error {
+	resp, err := ex.readApi.Accounts("", "")
 	if err = handleSDKErr(err, resp); err != nil {
-		return errors.Wrap(k.agent("ping"), errors.NewMesssage(err.Error()))
+		return errors.Wrap(ex.agent("ping"), errors.NewMesssage(err.Error()))
 	}
 
 	return nil

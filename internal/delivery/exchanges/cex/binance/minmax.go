@@ -10,7 +10,7 @@ import (
 )
 
 func (k *exchange) minAndMax(p *entity.Pair, p0, p1,
-	bcEFA, qcEFA float64, s0, s1 *binance.Symbol) error {
+	bcEFA, qcEFA float64, s0, s1 binance.Symbol) error {
 
 	price := k.calcPrice(p0, p1, p.T1.Id, p.T2.Id, p)
 	spread, err := k.spread(0, p, price)
@@ -61,12 +61,12 @@ func (k *exchange) minAndMax(p *entity.Pair, p0, p1,
 }
 
 func min(p *entity.Pair, min0, min1 float64) (float64, float64) {
-	m0, _ := strconv.ParseFloat(trim(big.NewFloat(min0+(min0*0.5)).Text('f', 18), p.T1.ET.(*Token).OrderPrecision), 64)
-	m1, _ := strconv.ParseFloat(trim(big.NewFloat(min1+(min1*0.5)).Text('f', 18), p.T2.ET.(*Token).OrderPrecision), 64)
+	m0, _ := strconv.ParseFloat(trim(big.NewFloat(min0+(min0*0.5)).Text('f', 12), p.T1.ET.(*Token).OrderPrecision), 64)
+	m1, _ := strconv.ParseFloat(trim(big.NewFloat(min1+(min1*0.5)).Text('f', 12), p.T2.ET.(*Token).OrderPrecision), 64)
 	return m0, m1
 }
 
-func bcMin(p *entity.Pair, s *binance.Symbol, bc, qc *Token, price, spread float64) float64 {
+func bcMin(p *entity.Pair, s binance.Symbol, bc, qc *Token, price, spread float64) float64 {
 	ps := (price - (price * spread))
 	min0 := getNotionalMin(s) / ps
 	min1 := (qc.MinWithdrawalFee + qc.MinWithdrawalSize) / ps
@@ -74,13 +74,13 @@ func bcMin(p *entity.Pair, s *binance.Symbol, bc, qc *Token, price, spread float
 	return math.Max(math.Max(min0, min1), min2)
 }
 
-func qcMin(p *entity.Pair, s *binance.Symbol, bc, qc *Token, price, spread float64) float64 {
+func qcMin(p *entity.Pair, s binance.Symbol, bc, qc *Token, price, spread float64) float64 {
 	min0 := getNotionalMin(s)
 	min1 := (bc.MinWithdrawalFee + bc.MinWithdrawalSize) * (price + (price * spread))
 	return math.Max(min0, min1)
 }
 
-func getNotionalMin(s *binance.Symbol) float64 {
+func getNotionalMin(s binance.Symbol) float64 {
 	var min float64
 	for _, fs := range s.Filters {
 		if fs["filterType"] == "NOTIONAL" {
@@ -94,7 +94,7 @@ func getNotionalMin(s *binance.Symbol) float64 {
 	return min
 }
 
-func getMinLS(s *binance.Symbol) float64 {
+func getMinLS(s binance.Symbol) float64 {
 	var min float64
 	for _, fs := range s.Filters {
 		if fs["filterType"] == "LOT_SIZE" {

@@ -61,7 +61,8 @@ func (s *Server) GetPairs(ctx Context) {
 	}
 
 	pa := req.Map()
-	if err := s.pairs.GetPaginated(pa); err != nil {
+	if err := s.pairs.GetPaginated(pa, admin); err != nil {
+		fmt.Println(err)
 		ctx.JSON(nil, err)
 		return
 	}

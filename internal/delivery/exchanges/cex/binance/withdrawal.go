@@ -29,10 +29,12 @@ func (ex *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair) {
 
 	amountOut = amountOut - o.ExchangeFeeAmount
 	o.FeeAmount = amountOut * o.FeeRate
-	o.Withdrawal.Amount = amountOut - o.FeeAmount
+	amountOut = amountOut - o.FeeAmount
+	o.Withdrawal.Amount = amountOut - wc.MinWithdrawalFee
+	o.Withdrawal.BinanceFee = wc.MinWithdrawalFee
 	o.ExecutedPrice = price
 
-	vol := trim(big.NewFloat(o.Withdrawal.Amount).Text('f', 18), wc.WithdrawalPrecision)
+	vol := trim(big.NewFloat(amountOut).Text('f', 18), wc.WithdrawalPrecision)
 
 	var (
 		err error
@@ -55,7 +57,5 @@ func (ex *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair) {
 	}
 
 	o.Withdrawal.Id = res.ID
-	o.Withdrawal.Amount = o.Withdrawal.Amount - wc.MinWithdrawalFee
-	o.Withdrawal.BinanceFee = wc.MinWithdrawalFee
 	o.Status = types.OWithdrawalTracking
 }

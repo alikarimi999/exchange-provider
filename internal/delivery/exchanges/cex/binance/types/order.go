@@ -30,6 +30,7 @@ type Order struct {
 	UserID string
 	Status string
 	ExNid  string
+	ExLp   uint
 
 	ApiKey string
 	BusId  uint

@@ -10,5 +10,5 @@ type PairsRepo interface {
 	Remove(exId uint, t1, t2 string, hard bool) error
 	RemoveAll(exId uint, hard bool) error
 	RemoveAllExchanges() error
-	GetPaginated(pa *Paginated) error
+	GetPaginated(pa *Paginated, admin bool) error
 }

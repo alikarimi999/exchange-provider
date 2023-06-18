@@ -17,7 +17,6 @@ func (ex *exchange) EstimateAmountOut(in, out entity.TokenId,
 	if err != nil {
 		return nil, err
 	}
-
 	if !p.Enable {
 		return nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage("pair is not enable right now"))
@@ -63,6 +62,7 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		outEFA, price, amountOut, spread float64
 		errs                             error
 		p0, p1                           float64
+		s0, s1                           binance.Symbol
 	)
 
 	depositEnable, _, err := ex.isDipositAndWithdrawEnable(In)
@@ -80,7 +80,16 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		return nil, errors.Wrap(errors.ErrInternal)
 	}
 
-	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 18), In.OrderPrecision), 64)
+	s0, s1, err = ex.getPairSymbols(p)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isPairEnable(p, s0, s1) {
+		return nil, fmt.Errorf("pair is disable right now")
+	}
+
+	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 10), In.OrderPrecision), 64)
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -131,41 +140,22 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 	feeAmount := amountOut * es.FeeRate
 	amountOut = amountOut - feeAmount - Out.MinWithdrawalFee
 
-	if amountOut < Out.MinWithdrawalSize+Out.MinWithdrawalFee {
+	if amountOut <= Out.MinWithdrawalSize+Out.MinWithdrawalFee {
 
 		var (
 			bcEFA, qcEFA float64
-			s0, s1       *binance.Symbol
-			err0, err1   error
 		)
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			inEFA, err := ex.exchangeFeeAmount(eIn, p)
-			if err != nil {
-				err0 = err
-			}
-			if eIn.String() == p.T1.String() {
-				bcEFA = inEFA
-				qcEFA = outEFA
-			} else {
-				bcEFA = outEFA
-				qcEFA = inEFA
-			}
-		}()
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			s0, s1, err1 = ex.getPairSymbols(p)
-		}()
-		wg.Wait()
-		if err0 != nil {
-			return nil, err0
+		inEFA, err := ex.exchangeFeeAmount(eIn, p)
+		if err != nil {
+			return nil, err
 		}
-		if err1 != nil {
-			return nil, err1
+		if eIn.String() == p.T1.String() {
+			bcEFA = inEFA
+			qcEFA = outEFA
+		} else {
+			bcEFA = outEFA
+			qcEFA = inEFA
 		}
 
 		if err := ex.minAndMax(p, p0, p1, bcEFA, qcEFA, s0, s1); err != nil {

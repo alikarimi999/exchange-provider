@@ -28,7 +28,6 @@ func newCache(k *exchange, l logger.Logger) *cache {
 		t: time.NewTicker(2 * time.Hour),
 		l: l,
 	}
-
 	go c.run(k.stopCh)
 	return c
 }

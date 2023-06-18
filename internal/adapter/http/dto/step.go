@@ -30,10 +30,10 @@ type SingleStep struct {
 	ExchangeFee               Number         `json:"exchangeFee"`
 	EstimateExchangeFeeAmount Number         `json:"estimateExchangeFeeAmount"`
 	FeeCurrency               entity.TokenId `json:"feeCurrency"`
-
-	CreatedAt int64 `json:"createdAt"`
-	UpdatedAt int64 `json:"updatedAt"`
-	ExpireAt  int64 `json:"expireAt"`
+	LP                        uint           `json:"lp"`
+	CreatedAt                 int64          `json:"createdAt"`
+	UpdatedAt                 int64          `json:"updatedAt"`
+	ExpireAt                  int64          `json:"expireAt"`
 }
 
 func SingleStepResponse(ord entity.Order) (*SingleStep, error) {
@@ -53,6 +53,7 @@ func SingleStepResponse(ord entity.Order) (*SingleStep, error) {
 			ExchangeFee:               Number(o.ExchangeFee),
 			EstimateExchangeFeeAmount: Number(o.EstimateExchangeFeeAmount),
 			FeeCurrency:               o.FeeAndSpreadCurrency,
+			LP:                        o.ExLp,
 
 			CreatedAt: o.CreatedAT,
 			UpdatedAt: o.UpdatedAt,
@@ -74,6 +75,7 @@ func SingleStepResponse(ord entity.Order) (*SingleStep, error) {
 			ExchangeFee:               Number(o.ExchangeFee),
 			EstimateExchangeFeeAmount: Number(o.EstimateExchangeFeeAmount),
 			FeeCurrency:               o.FeeAndSpreadCurrency,
+			LP:                        o.ExLp,
 
 			CreatedAt: o.CreatedAT,
 			UpdatedAt: o.UpdatedAt,

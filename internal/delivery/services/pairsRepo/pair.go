@@ -6,7 +6,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -92,7 +91,7 @@ func (p *pair) toEntity(exType entity.ExType, exNID string, exId uint) *entity.P
 }
 
 func (pr *pairsRepo) retrievePairs() error {
-	agent := pr.agent("retrievePairs")
+	// agent := pr.agent("retrievePairs")
 	cur, err := pr.c.Find(context.Background(), bson.D{{}})
 	if err != nil {
 		return err
@@ -112,7 +111,7 @@ func (pr *pairsRepo) retrievePairs() error {
 
 		for _, p := range ep.Pairs {
 			pr.eps[ep.NID].pairs[p.Id] = p.toEntity(ep.ExType, ep.NID, ep.ExId)
-			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.NID))
+			// pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.NID))
 		}
 	}
 	return nil

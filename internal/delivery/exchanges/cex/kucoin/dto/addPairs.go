@@ -10,13 +10,11 @@ type AddPairsRequest struct {
 	Pairs []*Pair `json:"pairs"`
 }
 type Token struct {
-	Currency    string `json:"currency"`
-	ChainName   string `json:"chainName"`
-	Chain       string
-	StableToken string `json:"stableToken"`
-
-	BlockTime           string `json:"blockTime"`
+	Currency            string `json:"currency"`
+	ChainName           string `json:"chainName"`
+	StableToken         string `json:"stableToken"`
 	WithdrawalPrecision int    `json:"withdrawalPrecision"`
+	BlockTime           string `json:"blockTime"`
 }
 
 type Pair struct {

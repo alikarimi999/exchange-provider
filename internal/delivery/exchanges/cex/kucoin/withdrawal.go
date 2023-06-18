@@ -28,9 +28,12 @@ func (k *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 		amountOut = amountOut - o.SpreadAmount
 
 	}
+
 	amountOut = amountOut - o.ExchangeFeeAmount
 	o.FeeAmount = amountOut * o.FeeRate
-	o.Withdrawal.Amount = amountOut - o.FeeAmount
+	amountOut = amountOut - o.FeeAmount
+	o.Withdrawal.Amount = amountOut - wc.MinWithdrawalFee
+	o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
 	o.ExecutedPrice = price
 
 	opts := make(map[string]string)
@@ -39,7 +42,7 @@ func (k *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 	opts["remark"] = o.ID().String()
 	opts["feeDeductType"] = "INTERNAL"
 
-	vol := trim(big.NewFloat(o.Withdrawal.Amount).Text('f', 18), wc.WithdrawalPrecision)
+	vol := trim(big.NewFloat(amountOut).Text('f', 18), wc.WithdrawalPrecision)
 	var (
 		res *kucoin.ApiResponse
 		err error
@@ -81,8 +84,6 @@ func (k *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 	w := &kucoin.ApplyWithdrawalResultModel{}
 	res.ReadData(w)
 	o.Withdrawal.Id = w.WithdrawalId
-	o.Withdrawal.Amount = o.Withdrawal.Amount - wc.MinWithdrawalFee
-	o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
 	o.Status = types.OWithdrawalTracking
 }
 

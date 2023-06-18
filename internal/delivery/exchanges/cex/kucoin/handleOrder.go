@@ -7,7 +7,6 @@ import (
 )
 
 func (k *exchange) TxIdSetted(ord entity.Order, txId string) error {
-	agent := k.agent("TxIdSetted")
 	o := ord.(*types.Order)
 	p, err := k.pairs.Get(k.Id(), o.In.String(), o.Out.String())
 	if err != nil {
@@ -23,12 +22,10 @@ func (k *exchange) TxIdSetted(ord entity.Order, txId string) error {
 
 	f, err := k.exchangeFeeAmount(out, p)
 	if err != nil {
-		k.l.Debug(agent, err.Error())
-		return errors.Wrap(errors.ErrInternal, errors.NewMesssage("try again"))
+		return err
 	}
-	if err := k.orderFeeRat(p); err != nil {
-		k.l.Debug(agent, err.Error())
-		return errors.Wrap(errors.ErrInternal, errors.NewMesssage("try again"))
+	if err := k.setOrderFeeRate(p); err != nil {
+		return err
 	}
 
 	o.Deposit.TxId = txId

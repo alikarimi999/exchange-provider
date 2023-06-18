@@ -75,11 +75,11 @@ func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 		pr.eps[ex.NID()] = ep
 		pr.sortEps()
 		ep.add(ps...)
-		for _, p := range ps {
-			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'",
-				pairId(p.T1.String(), p.T2.String()), ex.NID()))
+		// for _, p := range ps {
+		// 	pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'",
+		// 		pairId(p.T1.String(), p.T2.String()), ex.NID()))
 
-		}
+		// }
 	} else {
 		ps2 := []*entity.Pair{}
 		psi := []interface{}{}
@@ -93,6 +93,9 @@ func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 
 		update := bson.M{"$push": bson.M{"pairs": bson.M{"$each": psi}}}
 		res, err := pr.c.UpdateByID(context.Background(), ex.NID(), update)
+		if err != nil {
+			return err
+		}
 		if res.MatchedCount == 0 {
 			return fmt.Errorf("mongo response MatchedCount is 0")
 		}
@@ -102,11 +105,11 @@ func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 			return err
 		}
 		ep.add(ps2...)
-		for _, p := range ps2 {
-			pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'",
-				pairId(p.T1.String(), p.T2.String()), ex.NID()))
+		// for _, p := range ps2 {
+		// 	pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'",
+		// 		pairId(p.T1.String(), p.T2.String()), ex.NID()))
 
-		}
+		// }
 	}
 	return nil
 }
@@ -139,7 +142,7 @@ func (pr *pairsRepo) Exists(exId uint, t1, t2 string) bool {
 }
 
 func (pr *pairsRepo) Update(exId uint, p *entity.Pair) error {
-	agent := pr.agent("Update")
+	// agent := pr.agent("Update")
 	pr.mux.RLock()
 	defer pr.mux.RUnlock()
 	for _, ep := range pr.eps {
@@ -156,8 +159,8 @@ func (pr *pairsRepo) Update(exId uint, p *entity.Pair) error {
 				return fmt.Errorf("mongo response MatchedCount is 0")
 			}
 			ep.update(p)
-			pr.l.Debug(agent, fmt.Sprintf("pair '%s' updated in exchange '%s'",
-				p.String(), ep.exNID))
+			// pr.l.Debug(agent, fmt.Sprintf("pair '%s' updated in exchange '%s'",
+			// 	p.String(), ep.exNID))
 			return nil
 		}
 	}
@@ -165,7 +168,7 @@ func (pr *pairsRepo) Update(exId uint, p *entity.Pair) error {
 }
 
 func (pr *pairsRepo) Remove(exId uint, t1, t2 string, hard bool) error {
-	agent := pr.agent("Remove")
+	// agent := pr.agent("Remove")
 	pr.mux.RLock()
 	defer pr.mux.RUnlock()
 	for _, ep := range pr.eps {
@@ -182,8 +185,8 @@ func (pr *pairsRepo) Remove(exId uint, t1, t2 string, hard bool) error {
 					}
 				}
 				ep.remove(t1, t2)
-				pr.l.Debug(agent, fmt.Sprintf("pair '%s' removed from exchange '%s'",
-					pairId(t1, t2), ep.exNID))
+				// pr.l.Debug(agent, fmt.Sprintf("pair '%s' removed from exchange '%s'",
+				// 	pairId(t1, t2), ep.exNID))
 				return nil
 			}
 		}
@@ -237,7 +240,7 @@ func (pr *pairsRepo) RemoveAllExchanges() error {
 }
 
 func (pr *pairsRepo) RemoveAll(exId uint, hard bool) error {
-	agent := pr.agent("RemoveAll")
+	// agent := pr.agent("RemoveAll")
 	pr.mux.Lock()
 	defer pr.mux.Unlock()
 	for nid, ep := range pr.eps {
@@ -249,11 +252,11 @@ func (pr *pairsRepo) RemoveAll(exId uint, hard bool) error {
 				}
 				delete(pr.eps, nid)
 				if res.DeletedCount == 1 {
-					pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory and database", nid))
+					// pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory and database", nid))
 				}
 			} else {
 				delete(pr.eps, nid)
-				pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory", nid))
+				// pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory", nid))
 			}
 
 		}

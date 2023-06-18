@@ -10,8 +10,6 @@ import (
 	"github.com/adshao/go-binance/v2"
 )
 
-const max_conccurrent_jobs = 20
-
 type exchange struct {
 	cfg *Configs
 	mux *sync.Mutex
@@ -21,8 +19,9 @@ type exchange struct {
 	st    entity.SpreadTable
 	repo  entity.OrderRepo
 
+	si *serverInfos
+
 	wa *withdrawalAggregator
-	cl *coinsList
 	l  logger.Logger
 
 	stopedAt time.Time
@@ -43,62 +42,46 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 	}
 	agent := ex.agent("NewExchange")
 
-	ex.wa = newWithdrawalAggregator(ex)
-	cl, err := newCoinsLIst(ex.c, l, ex.stopCh)
+	si, err := newServerInfos(ex)
 	if err != nil {
 		return nil, err
 	}
-	ex.cl = cl
+	ex.si = si
+	ex.wa = newWithdrawalAggregator(ex)
 
 	if fromDB {
 		ps := pairs.GetAll(ex.cfg.Id)
-		wg := &sync.WaitGroup{}
-		waitChan := make(chan struct{}, max_conccurrent_jobs)
-
 		for _, p := range ps {
-			waitChan <- struct{}{}
-			wg.Add(1)
-			go func(p *entity.Pair) {
-				defer func() {
-					<-waitChan
-					wg.Done()
-				}()
-				bt := p.T1.ET.(*Token)
-				bc, ok := ex.cl.getCoin(bt.Coin, bt.Network)
-				if !ok || (!bc.DepositEnable || !bc.WithdrawEnable) {
-					ex.l.Debug(agent, fmt.Sprintf("somthing is wrong about pair %s: coin %s-%s",
-						p.String(), bt.Coin, bt.Network))
-					pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
-					return
-				}
+			bt := p.T1.ET.(*Token)
+			bc, err := si.getCoin(bt.Coin, bt.Network)
+			if err != nil || (!bc.DepositEnable || !bc.WithdrawEnable) {
+				pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
+				continue
+			}
 
-				qt := p.T2.ET.(*Token)
-				qc, ok := ex.cl.getCoin(qt.Coin, qt.Network)
-				if !ok || (!qc.DepositEnable || !qc.WithdrawEnable) {
-					ex.l.Debug(agent, fmt.Sprintf("somthing is wrong about pair %s: coin %s-%s",
-						p.String(), qt.Coin, qt.Network))
-					pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
-					return
-				}
-				p.T1.ET.(*Token).setInfos(bc)
-				p.T2.ET.(*Token).setInfos(qc)
+			qt := p.T2.ET.(*Token)
+			qc, err := si.getCoin(qt.Coin, qt.Network)
+			if err != nil || (!qc.DepositEnable || !qc.WithdrawEnable) {
+				pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
+				continue
+			}
+			p.T1.ET.(*Token).setInfos(bc)
+			p.T2.ET.(*Token).setInfos(qc)
 
-				if err := ex.infos(p); err != nil {
-					ex.l.Debug(agent, fmt.Sprintf("%s: %s", p.String(), err.Error()))
-					pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
-					return
-				}
-				if err := ex.pairs.Update(ex.Id(), p); err != nil {
-					ex.pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
-					ex.l.Debug(agent, err.Error())
-					return
-				}
-
-			}(p)
+			if err := ex.infos(p); err != nil {
+				ex.l.Debug(agent, fmt.Sprintf("%s: %s", p.String(), err.Error()))
+				pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
+				continue
+			}
+			if err := ex.pairs.Update(ex.Id(), p); err != nil {
+				ex.pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
+				ex.l.Debug(agent, err.Error())
+				continue
+			}
 		}
-		wg.Wait()
 	}
 
+	go ex.si.run(ex, ex.stopCh)
 	go ex.wa.run(ex.stopCh)
 	return ex, nil
 }

@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"sync"
-
-	"github.com/Kucoin/kucoin-go-sdk"
 )
 
-func (k *exchange) EstimateAmountOut(in, out entity.TokenId,
+func (ex *exchange) EstimateAmountOut(in, out entity.TokenId,
 	amount float64, lvl uint) (*entity.EstimateAmount, error) {
-	p, err := k.pairs.Get(k.Id(), in.String(), out.String())
+	p, err := ex.pairs.Get(ex.Id(), in.String(), out.String())
 	if err != nil {
 		return nil, err
 	}
@@ -23,10 +20,10 @@ func (k *exchange) EstimateAmountOut(in, out entity.TokenId,
 			errors.NewMesssage("pair is not enable right now"))
 	}
 
-	return k.estimateAmountOut(p, in, out, amount, lvl)
+	return ex.estimateAmountOut(p, in, out, amount, lvl)
 }
 
-func (k *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
+func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 	amount float64, lvl uint) (*entity.EstimateAmount, error) {
 	es := &entity.EstimateAmount{
 		P: p,
@@ -56,67 +53,62 @@ func (k *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		Out = p.T1.ET.(*Token)
 		eOut = p.T1
 	}
-	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 18), In.OrderPrecision), 64)
+	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 12), In.OrderPrecision), 64)
+	depositEnable, _, err := ex.isDipositAndWithdrawEnable(In)
+	if err != nil {
+		return nil, err
+	}
 
-	var (
-		depositEnable, withdrawEnable               bool
-		exchangeFeeAmount, price, amountOut, spread float64
-		err1, err2, err3, err4                      error
-	)
+	if !depositEnable {
+		return nil, fmt.Errorf("pair is not enable")
+	}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		depositEnable, _, err1 = k.isDipositAndWithdrawEnable(In)
-	}()
+	_, withdrawEnable, err := ex.isDipositAndWithdrawEnable(Out)
+	if err != nil {
+		return nil, err
+	}
+	if !withdrawEnable {
+		return nil, fmt.Errorf("pair is not enable")
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, withdrawEnable, err2 = k.isDipositAndWithdrawEnable(Out)
-	}()
+	if !ex.isPairEnabled(p) {
+		return nil, fmt.Errorf("pair is not enable")
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		price, err3 = k.price(p)
-		if err3 != nil {
-			return
-		}
-		spread, err3 = k.spread(lvl, p, price)
-		if err3 != nil {
-			return
-		}
+	if err := ex.setOrderFeeRate(p); err != nil {
+		return nil, err
+	}
 
-		if p.T1.String() == in.String() {
-			amountOut = (price - (price * spread)) * amount
-			es.FeeRate = p.FeeRate2
-		} else {
-			amountOut = (1 / (price + (price * spread))) * amount
-			es.FeeRate = p.FeeRate1
-		}
-	}()
+	price, err := ex.price(p)
+	if err != nil {
+		return nil, err
+	}
+	spread, err := ex.spread(lvl, p, price)
+	if err != nil {
+		return nil, err
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		exchangeFeeAmount, err4 = k.exchangeFeeAmount(eOut, p)
-	}()
-	wg.Wait()
-
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-		return es, errors.Wrap(errors.ErrInternal)
+	var amountOut float64
+	if p.T1.String() == in.String() {
+		amountOut = (price - (price * spread)) * amount
+		es.FeeRate = p.FeeRate2
+	} else {
+		amountOut = (1 / (price + (price * spread))) * amount
+		es.FeeRate = p.FeeRate1
+	}
+	exchangeFeeAmount, err := ex.exchangeFeeAmount(eOut, p)
+	if err != nil {
+		return nil, err
 	}
 
 	amountOut = amountOut - exchangeFeeAmount
 	feeAmount := amountOut * es.FeeRate
 	amountOut = amountOut - feeAmount - Out.MinWithdrawalFee
 	if amountOut < Out.MinWithdrawalSize+Out.MinWithdrawalFee {
-		if err := k.minAndMax(p); err != nil {
+		if err := ex.minAndMax(p); err != nil {
 			return nil, errors.Wrap(errors.ErrInternal)
 		}
-		if err := k.pairs.Update(k.Id(), p); err != nil {
+		if err := ex.pairs.Update(ex.Id(), p); err != nil {
 			return nil, errors.Wrap(errors.ErrInternal)
 		}
 
@@ -129,55 +121,37 @@ func (k *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		}
 	}
 
-	if depositEnable && withdrawEnable {
-		fmt.Println(amount)
-		es.AmountIn = amount
-		es.FeeAmount = feeAmount
-		es.ExchangeFee = p.ExchangeFee
-		es.ExchangeFeeAmount = exchangeFeeAmount
-		es.FeeCurrency = out
-		es.AmountOut = amountOut
-		es.SpreadRate = spread
-		es.Price = price
-		return es, nil
-	}
-	return es, errors.Wrap(errors.ErrNotFound)
+	es.AmountIn = amount
+	es.FeeAmount = feeAmount
+	es.ExchangeFee = p.ExchangeFee
+	es.ExchangeFeeAmount = exchangeFeeAmount
+	es.FeeCurrency = out
+	es.AmountOut = amountOut
+	es.SpreadRate = spread
+	es.Price = price
+	return es, nil
 }
 
-func (k *exchange) price(p *entity.Pair) (float64, error) {
+func (ex *exchange) price(p *entity.Pair) (float64, error) {
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
-		var (
-			p0, p1     float64
-			err0, err1 error
-		)
-		wg := &sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			bc := p.T1.ET.(*Token).Currency
-			qc := ep.IC1.Currency
-			p0, err1 = k.ticker(bc, qc)
-		}()
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			bc := p.T2.ET.(*Token).Currency
-			qc := ep.IC2.Currency
-			p1, err1 = k.ticker(bc, qc)
-		}()
-		wg.Wait()
-
-		if err0 != nil {
-			return 0, err0
+		bc := p.T1.ET.(*Token).Currency
+		qc := ep.IC1.Currency
+		p0, err := ex.ticker(bc, qc)
+		if err != nil {
+			return 0, err
 		}
-		if err1 != nil {
-			return 0, err1
+
+		bc = p.T2.ET.(*Token).Currency
+		qc = ep.IC2.Currency
+		p1, err := ex.ticker(bc, qc)
+		if err != nil {
+			return 0, err
 		}
 		return applyFee(applyFee(p0, ep.KucoinFeeRate1), ep.KucoinFeeRate2) / p1, nil
 	}
-	price, err := k.ticker(p.T1.ET.(*Token).Currency, p.T2.ET.(*Token).Currency)
+	price, err := ex.ticker(p.T1.ET.(*Token).Currency, p.T2.ET.(*Token).Currency)
 	if err != nil {
 		return 0, err
 	}
@@ -185,21 +159,9 @@ func (k *exchange) price(p *entity.Pair) (float64, error) {
 	return price, nil
 }
 
-func (k *exchange) ticker(bc, qc string) (float64, error) {
-	res, err := k.readApi.TickerLevel1(bc + "-" + qc)
-	if err != nil {
-		return 0, err
-	}
-	tl := &kucoin.TickerLevel1Model{}
-	if err := res.ReadData(tl); err != nil {
-		return 0, err
-	}
-	if tl.Price == "" {
-		return 0, fmt.Errorf("pair '%s/%s' not found in kucoin", bc, qc)
-	}
-	return strconv.ParseFloat(tl.Price, 64)
+func (ex *exchange) ticker(bc, qc string) (float64, error) {
+	return ex.si.getPrice(bc, qc)
 }
-
 func applyFee(price, fee float64) float64 {
 	return price - (price * fee)
 }

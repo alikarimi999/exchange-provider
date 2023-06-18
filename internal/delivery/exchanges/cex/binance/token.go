@@ -13,7 +13,8 @@ type Token struct {
 	Coin    string `json:"coin"`
 	Network string `json:"network,omitempty"  bson:"network,omitempty"`
 
-	StableToken    string `json:"stableToken"`
+	StableToken string `json:"stableToken"`
+
 	DepositAddress string `json:"depositAddress,omitempty" bson:"-"`
 	DepositTag     string `json:"depositTag,omitempty" bson:"-"`
 

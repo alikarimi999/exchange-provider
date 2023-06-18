@@ -23,7 +23,7 @@ type Token struct {
 	MinWithdrawalSize float64 `json:"minWithdrawalSize,omitempty" bson:"-"`
 	MinWithdrawalFee  float64 `json:"minWithdrawalFee,omitempty" bson:"-"`
 
-	WithdrawalPrecision int `json:"withdrawalPrecision,omitempty" bson:"-"`
+	WithdrawalPrecision int `json:"withdrawalPrecision,omitempty"`
 	OrderPrecision      int `json:"orderPrecision" bson:"-"`
 }
 

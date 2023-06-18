@@ -41,7 +41,7 @@ func (k *exchange) minAndMax(p *entity.Pair) error {
 }
 
 func min(p *entity.Pair, min0, min1 float64) (float64, float64) {
-	m0, _ := strconv.ParseFloat(trim(big.NewFloat(min0+(min0*0.5)).Text('f', 18), p.T1.ET.(*Token).OrderPrecision), 64)
-	m1, _ := strconv.ParseFloat(trim(big.NewFloat(min1+(min1*0.5)).Text('f', 18), p.T2.ET.(*Token).OrderPrecision), 64)
+	m0, _ := strconv.ParseFloat(trim(big.NewFloat(min0+(min0*0.5)).Text('f', 12), p.T1.ET.(*Token).OrderPrecision), 64)
+	m1, _ := strconv.ParseFloat(trim(big.NewFloat(min1+(min1*0.5)).Text('f', 12), p.T2.ET.(*Token).OrderPrecision), 64)
 	return m0, m1
 }

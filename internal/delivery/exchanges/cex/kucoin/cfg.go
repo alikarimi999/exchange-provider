@@ -16,6 +16,8 @@ type Configs struct {
 	ReadApi  *API `json:"readApi,omitempty"`
 	WriteApi *API `json:"writeApi,omitempty"`
 
+	CoinListUrl string `json:"coinListUrl"`
+
 	ApiVersion string `json:"apiVersion"`
 	ApiUrl     string `json:"apiUrl"`
 	Message    string `json:"message"`

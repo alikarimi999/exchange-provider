@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
+func (pr *pairsRepo) GetPaginated(pa *entity.Paginated, admin bool) error {
 	pr.mux.RLock()
 	defer pr.mux.RUnlock()
 
@@ -123,6 +123,9 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 	ps2 := []*entity.Pair{}
 	if len(pairIds) > 0 {
 		for _, p := range ps {
+			if !admin && !p.Enable {
+				continue
+			}
 			for _, pId := range pairIds {
 				if pairId(p.T1.String(), p.T2.String()) == pId {
 					ps2 = append(ps2, p)
@@ -131,12 +134,20 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated) error {
 		}
 	} else if up != nil {
 		for _, dp := range ps {
+			if !admin && !dp.Enable {
+				continue
+			}
 			if pairEqual(up, dp) {
 				ps2 = append(ps2, dp)
 			}
 		}
 	} else {
-		ps2 = ps
+		for _, p := range ps {
+			if !admin && !p.Enable {
+				continue
+			}
+			ps2 = append(ps2, p)
+		}
 	}
 	sortPairs(ps2)
 

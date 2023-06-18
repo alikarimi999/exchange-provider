@@ -6,7 +6,6 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/adshao/go-binance/v2"
@@ -22,10 +21,6 @@ func (ex *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	res := &entity.AddPairsResult{}
 	ps := []*entity.Pair{}
 
-	wg := &sync.WaitGroup{}
-	mux := sync.Mutex{}
-	waitChan := make(chan struct{}, max_conccurrent_jobs)
-
 	for _, p := range req.Pairs {
 		p.BC.ToUpper()
 		p.QC.ToUpper()
@@ -34,46 +29,44 @@ func (ex *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			continue
 		}
 
-		bc, ok := ex.cl.getCoin(p.BC.ET.Coin, p.BC.ET.Network)
-		if !ok {
+		bc, err := ex.si.getCoin(p.BC.ET.Coin, p.BC.ET.Network)
+		if err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' not found in binance",
-					p.BC.ET.Coin, p.BC.ET.Network)})
+				Err: err})
 			continue
 		}
 
 		if !bc.DepositEnable {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' deposit is disable in binance",
+				Err: fmt.Errorf("token '%s-%s' deposit is disable in binance",
 					p.BC.ET.Coin, p.BC.ET.Network)})
 			continue
 		}
 
 		if !bc.WithdrawEnable {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' withdraw is disable in binance",
+				Err: fmt.Errorf("token '%s-%s' withdraw is disable in binance",
 					p.BC.ET.Coin, p.BC.ET.Network)})
 			continue
 		}
 
-		qc, ok := ex.cl.getCoin(p.QC.ET.Coin, p.QC.ET.Network)
-		if !ok {
+		qc, err := ex.si.getCoin(p.QC.ET.Coin, p.QC.ET.Network)
+		if err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' not found in binance",
-					p.QC.ET.Coin, p.QC.ET.Network)})
+				Err: err})
 			continue
 		}
 
 		if !qc.DepositEnable {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' deposit is disable in binance",
+				Err: fmt.Errorf("token '%s-%s' deposit is disable in binance",
 					p.QC.ET.Coin, p.QC.ET.Network)})
 			continue
 		}
 
 		if !qc.WithdrawEnable {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
-				Err: fmt.Errorf("token with '%s-%s' withdraw is disable in binance",
+				Err: fmt.Errorf("token '%s-%s' withdraw is disable in binance",
 					p.QC.ET.Coin, p.QC.ET.Network)})
 			continue
 		}
@@ -116,27 +109,17 @@ func (ex *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 			}
 		}
 
-		waitChan <- struct{}{}
-		wg.Add(1)
-		go func(p *entity.Pair) {
-			defer func() {
-				<-waitChan
-				wg.Done()
-			}()
-			if err := ex.infos(ep); err != nil {
-				mux.Lock()
-				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
-				mux.Unlock()
-				return
-			}
-
-			mux.Lock()
-			ps = append(ps, ep)
-			res.Added = append(res.Added, p.String())
-			mux.Unlock()
-		}(ep)
+		if err := ex.infos(ep); err != nil {
+			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
+			continue
+		}
+		ep.LP = ex.Id()
+		ps = append(ps, ep)
+		res.Added = append(res.Added, p.String())
 	}
-	wg.Wait()
+	if len(ps) == 0 {
+		return res, nil
+	}
 	return res, ex.pairs.Add(ex, ps...)
 }
 

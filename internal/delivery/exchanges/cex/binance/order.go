@@ -40,8 +40,10 @@ func (ex *exchange) NewOrder(data interface{}, api *entity.APIToken) (entity.Ord
 		Status: types.OCreated,
 		UserID: d.UserId,
 		ExNid:  ex.NID(),
-		In:     d.In,
-		Out:    d.Out,
+		ExLp:   ex.Id(),
+
+		In:  d.In,
+		Out: d.Out,
 
 		ApiKey: api.Id,
 		BusId:  api.BusId,
