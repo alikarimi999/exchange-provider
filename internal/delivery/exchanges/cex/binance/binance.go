@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/adshao/go-binance/v2"
@@ -12,7 +11,6 @@ import (
 
 type exchange struct {
 	cfg *Configs
-	mux *sync.Mutex
 
 	c     *binance.Client
 	pairs entity.PairsRepo
@@ -32,7 +30,6 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 	st entity.SpreadTable, l logger.Logger, fromDB bool) (entity.Cex, error) {
 	ex := &exchange{
 		cfg:    cfg,
-		mux:    &sync.Mutex{},
 		st:     st,
 		repo:   repo,
 		pairs:  pairs,
@@ -95,13 +92,9 @@ func (ex *exchange) Name() string {
 }
 
 func (ex *exchange) EnableDisable(enable bool) {
-	ex.mux.Lock()
-	defer ex.mux.Unlock()
 	ex.cfg.Enable = enable
 }
 func (ex *exchange) IsEnable() bool {
-	ex.mux.Lock()
-	defer ex.mux.Unlock()
 	return ex.cfg.Enable
 }
 

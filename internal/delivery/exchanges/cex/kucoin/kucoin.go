@@ -4,7 +4,6 @@ import (
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"fmt"
-	"sync"
 	"time"
 
 	"exchange-provider/pkg/errors"
@@ -14,7 +13,6 @@ import (
 
 type exchange struct {
 	cfg *Configs
-	mux *sync.Mutex
 
 	readApi  *kucoin.ApiService
 	writeApi *kucoin.ApiService
@@ -45,7 +43,6 @@ func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, from
 
 	k := &exchange{
 		cfg:   cfg,
-		mux:   &sync.Mutex{},
 		pairs: pairs,
 		readApi: kucoin.NewApiService(
 			kucoin.ApiBaseURIOption(cfg.ApiUrl),
@@ -131,13 +128,9 @@ func (ex *exchange) Name() string {
 }
 
 func (ex *exchange) EnableDisable(enable bool) {
-	ex.mux.Lock()
-	defer ex.mux.Unlock()
 	ex.cfg.Enable = enable
 }
 func (ex *exchange) IsEnable() bool {
-	ex.mux.Lock()
-	defer ex.mux.Unlock()
 	return ex.cfg.Enable
 }
 

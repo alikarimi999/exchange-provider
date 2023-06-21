@@ -6,6 +6,9 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
 )
 
 func (s *Server) GenerateAPIToken(ctx Context) {
@@ -20,27 +23,42 @@ func (s *Server) GenerateAPIToken(ctx Context) {
 		return
 	}
 
-	if uint(len(req.Ips)) > s.api.MaxIps() {
-		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
-			fmt.Errorf("only %d ips allowed", s.api.MaxIps())))
-		return
-	}
-
 	if req.CheckIp && len(req.Ips) == 0 {
 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
 			fmt.Errorf("you have to add at least one ip")))
 		return
 	}
+	for _, ip := range req.Ips {
+		if !isValidIP(ip) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				fmt.Errorf("ip %s is not valid", ip)))
+			return
+		}
+	}
 
-	id := utils.RandString(32)
+	if uint(len(req.Ips)) > s.api.MaxIps() {
+		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+			fmt.Errorf("only %d ips are allowed", s.api.MaxIps())))
+		return
+	}
+
+	id := fmt.Sprintf("%s_%s", s.api.ApiPrefix(), utils.RandString(32))
 	at := &entity.APIToken{
 		Id:      utils.Hash(id),
 		BusName: req.BusName,
 		BusId:   req.BusId,
 		Level:   req.Level,
-		Ips:     req.Ips,
 		Write:   req.Write,
 		CheckIp: req.CheckIp,
+	}
+
+	for _, ip := range req.Ips {
+		if isIn(ip, at.Ips) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				fmt.Errorf("ip %s is repetitive", ip)))
+			return
+		}
+		at.Ips = append(at.Ips, ip)
 	}
 
 	if err := s.api.AddApiToken(at); err != nil {
@@ -74,13 +92,29 @@ func (s *Server) AddIP(ctx Context) {
 		return
 	}
 
-	if uint(len(at.Ips)+len(req.Ips)) > s.api.MaxIps() {
+	for _, ip := range req.Ips {
+		if !isValidIP(ip) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				fmt.Errorf("ip %s is not valid", ip)))
+			return
+		}
+	}
+
+	for _, ip := range req.Ips {
+		if isIn(ip, at.Ips) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				fmt.Errorf("ip %s is repetitive", ip)))
+			return
+		}
+		at.Ips = append(at.Ips, ip)
+	}
+
+	if uint(len(at.Ips)) > s.api.MaxIps() {
 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
-			fmt.Errorf("you can only add %d IPs", s.api.MaxIps())))
+			fmt.Errorf("only %d ips are allowed", s.api.MaxIps())))
 		return
 	}
 
-	at.Ips = append(at.Ips, req.Ips...)
 	if err := s.api.Update(at); err != nil {
 		ctx.JSON(nil, err)
 		return
@@ -92,6 +126,20 @@ func (s *Server) AddIP(ctx Context) {
 	req.Write = at.Write
 	req.CheckIp = at.CheckIp
 	ctx.JSON(req, nil)
+}
+
+func (s *Server) GetApi(ctx Context) {
+	id := ctx.Param("id")
+	if strings.Contains(id, s.api.ApiPrefix()) {
+		ctx.JSON(s.api.Get(utils.Hash(id)))
+		return
+	}
+	busId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, fmt.Errorf("'%s' is invalid", id)))
+		return
+	}
+	ctx.JSON(s.api.GetByBusId(uint(busId)))
 }
 
 func (s *Server) RemoveIp(ctx Context) {
@@ -119,6 +167,11 @@ func (s *Server) RemoveIp(ctx Context) {
 	}
 
 	for _, ip := range req.Ips {
+		if !isIn(ip, at.Ips) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrNotFound,
+				fmt.Errorf("ip %s not exists", ip)))
+			return
+		}
 		for i := 0; i < len(at.Ips); i++ {
 			if ip == at.Ips[i] {
 				at.Ips = append(at.Ips[:i], at.Ips[i+1:]...)
@@ -190,4 +243,20 @@ func (s *Server) Remove(ctx Context) {
 	ctx.JSON(struct {
 		Msg string `json:"msg"`
 	}{Msg: "done"}, nil)
+}
+
+func isIn(s string, ss []string) bool {
+	for _, si := range ss {
+		if si == s {
+			return true
+		}
+	}
+	return false
+}
+func isValidIP(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+	return true
 }

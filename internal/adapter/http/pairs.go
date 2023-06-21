@@ -62,7 +62,6 @@ func (s *Server) GetPairs(ctx Context) {
 
 	pa := req.Map()
 	if err := s.pairs.GetPaginated(pa, admin); err != nil {
-		fmt.Println(err)
 		ctx.JSON(nil, err)
 		return
 	}
@@ -91,7 +90,6 @@ func (s *Server) GetPairs(ctx Context) {
 			ps = append(ps, dto.Pair{
 				T1:          dto.TokenFromEntity(p.T1),
 				T2:          dto.TokenFromEntity(p.T2),
-				Enable:      p.Enable,
 				FeeRate1:    p.FeeRate1,
 				FeeRate2:    p.FeeRate2,
 				ExchangeFee: p.ExchangeFee,

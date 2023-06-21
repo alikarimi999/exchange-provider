@@ -120,7 +120,7 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated, admin bool) error {
 			}
 		}
 	}
-	ps2 := []*entity.Pair{}
+	ps2 := make(map[string][]*entity.Pair)
 	if len(pairIds) > 0 {
 		for _, p := range ps {
 			if !admin && !p.Enable {
@@ -128,7 +128,7 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated, admin bool) error {
 			}
 			for _, pId := range pairIds {
 				if pairId(p.T1.String(), p.T2.String()) == pId {
-					ps2 = append(ps2, p)
+					ps2[pId] = append(ps2[pId], p)
 				}
 			}
 		}
@@ -138,7 +138,8 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated, admin bool) error {
 				continue
 			}
 			if pairEqual(up, dp) {
-				ps2 = append(ps2, dp)
+				ps2[pairId(dp.T1.String(), dp.T2.String())] =
+					append(ps2[pairId(dp.T1.String(), dp.T2.String())], dp)
 			}
 		}
 	} else {
@@ -146,30 +147,40 @@ func (pr *pairsRepo) GetPaginated(pa *entity.Paginated, admin bool) error {
 			if !admin && !p.Enable {
 				continue
 			}
-			ps2 = append(ps2, p)
+			ps2[pairId(p.T1.String(), p.T2.String())] =
+				append(ps2[pairId(p.T1.String(), p.T2.String())], p)
 		}
 	}
-	sortPairs(ps2)
+
+	ps3 := []*entity.Pair{}
+	for _, ps := range ps2 {
+		if admin {
+			ps3 = append(ps3, ps...)
+		} else {
+			ps3 = append(ps3, findLowestMinAndHighestMax(ps))
+		}
+	}
+	sortPairs(ps3)
 
 	var start, end int64
 	if pa.PerPage == 0 {
 		start = 0
-		end = int64(len(ps2))
+		end = int64(len(ps3))
 	} else {
 		start = (pa.Page - 1) * pa.PerPage
 		end = pa.Page * pa.PerPage
 	}
-	if len(ps2) <= int(start) {
-		pa.Total = int64(len(ps2))
+	if len(ps3) <= int(start) {
+		pa.Total = int64(len(ps3))
 		return nil
 	}
 
-	if len(ps2) < int(end) {
-		end = int64(len(ps2))
+	if len(ps3) < int(end) {
+		end = int64(len(ps3))
 	}
 
-	pa.Pairs = ps2[start:end]
-	pa.Total = int64(len(ps2))
+	pa.Pairs = ps3[start:end]
+	pa.Total = int64(len(ps3))
 	return nil
 }
 
@@ -213,4 +224,48 @@ func string2TokenId(id string) entity.TokenId {
 		t.Network = ts[2]
 	}
 	return t
+}
+func toPointer(n float64) *float64 { return &n }
+
+func findLowestMinAndHighestMax(ps []*entity.Pair) *entity.Pair {
+
+	var min1, min2, max1, max2 *float64
+
+	for _, p := range ps {
+		if min1 == nil || p.T2.Min < *min1 {
+			min1 = toPointer(p.T1.Min)
+		}
+
+		if min2 == nil || p.T2.Min < *min2 {
+			min2 = toPointer(p.T2.Min)
+		}
+
+		if max1 == nil || (p.T1.Max == 0 || p.T1.Max > *max1) {
+			max1 = toPointer(p.T1.Max)
+		}
+
+		if max2 == nil || (p.T2.Max == 0 || p.T2.Max > *max2) {
+			max2 = toPointer(p.T2.Max)
+		}
+	}
+
+	return &entity.Pair{
+		T1: &entity.Token{
+			Id:     ps[0].T1.Id,
+			Native: ps[0].T1.Native,
+			Min:    *min1,
+			Max:    *max1,
+		},
+		T2: &entity.Token{
+			Id:     ps[0].T2.Id,
+			Native: ps[0].T2.Native,
+			Min:    *min2,
+			Max:    *max2,
+		},
+
+		FeeRate1:    ps[0].FeeRate1,
+		FeeRate2:    ps[0].FeeRate2,
+		ExchangeFee: ps[0].ExchangeFee,
+	}
+
 }

@@ -34,15 +34,12 @@ func (k *exchange) setOrderFeeRate(p *entity.Pair) error {
 }
 
 func (k *exchange) getAddress(t *Token) error {
-	agent := k.agent("getAddress")
 	res, err := k.readApi.DepositAddresses(t.Currency, t.Chain)
 	if err := handleSDKErr(err, res); err != nil {
-		k.l.Debug(agent, err.Error())
 		return err
 	}
 	da := &kucoin.DepositAddressModel{}
 	if err := res.ReadData(da); err != nil {
-		k.l.Debug(agent, err.Error())
 		return handleSDKErr(err, res)
 	}
 	t.DepositAddress = da.Address

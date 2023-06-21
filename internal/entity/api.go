@@ -11,8 +11,10 @@ type APIToken struct {
 }
 
 type ApiService interface {
+	ApiPrefix() string
 	AddApiToken(*APIToken) error
 	Get(id string) (*APIToken, error)
+	GetByBusId(id uint) ([]*APIToken, error)
 	Update(api *APIToken) error
 	Remove(id string) error
 	MaxIps() uint

@@ -96,6 +96,9 @@ func (r *Router) adminRoutes() {
 
 		api := a.Group("/api")
 		{
+			api.GET("/:id", func(ctx *gin.Context) {
+				r.srv.GetApi(newContext(ctx, true))
+			})
 			api.POST("/generate", func(ctx *gin.Context) {
 				r.srv.GenerateAPIToken(newContext(ctx, true))
 			})

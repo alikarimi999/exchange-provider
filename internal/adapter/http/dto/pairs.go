@@ -33,7 +33,6 @@ func TokenFromEntity(et *entity.Token) Token {
 type Pair struct {
 	T1          Token            `json:"t1"`
 	T2          Token            `json:"t2"`
-	Enable      bool             `json:"enable"`
 	FeeRate1    float64          `json:"feeRate1"`
 	FeeRate2    float64          `json:"feeRate2"`
 	ExchangeFee float64          `json:"exchangeFee"`

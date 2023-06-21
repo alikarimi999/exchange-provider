@@ -10,28 +10,28 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type ApiService struct {
+type apiService struct {
 	c      *mongo.Collection
 	maxIps uint
 	l      logger.Logger
 }
 
 func NewApiService(db *mongo.Database, maxIps uint, l logger.Logger) (entity.ApiService, error) {
-	return &ApiService{
+	return &apiService{
 		c:      db.Collection("api"),
 		maxIps: maxIps,
 		l:      l,
 	}, nil
 }
 
-func (a *ApiService) AddApiToken(api *entity.APIToken) error {
+func (a *apiService) AddApiToken(api *entity.APIToken) error {
 	_, err := a.c.InsertOne(context.Background(), api)
 	return err
 }
 
-func (a *ApiService) Get(id string) (*entity.APIToken, error) {
+func (a *apiService) Get(id string) (*entity.APIToken, error) {
 	agent := a.agent("Get")
-	res := a.c.FindOne(context.Background(), bson.D{{"_id", id}})
+	res := a.c.FindOne(context.Background(), bson.M{"_id": id})
 	if res.Err() != nil {
 		if res.Err() == mongo.ErrNoDocuments {
 			return nil, errors.Wrap(errors.ErrNotFound)
@@ -47,13 +47,22 @@ func (a *ApiService) Get(id string) (*entity.APIToken, error) {
 	return api, nil
 }
 
-func (a *ApiService) Update(api *entity.APIToken) error {
-	_, err := a.c.ReplaceOne(context.Background(), bson.D{{"_id", api.Id}}, api)
+func (a *apiService) GetByBusId(id uint) ([]*entity.APIToken, error) {
+	cur, err := a.c.Find(context.Background(), bson.M{"busid": id})
+	if err != nil {
+		return nil, err
+	}
+	apis := []*entity.APIToken{}
+	return apis, cur.All(context.Background(), &apis)
+}
+
+func (a *apiService) Update(api *entity.APIToken) error {
+	_, err := a.c.ReplaceOne(context.Background(), bson.M{"_id": api.Id}, api)
 	return err
 }
 
-func (a *ApiService) Remove(id string) error {
-	res, err := a.c.DeleteOne(context.Background(), bson.D{{"_id", id}})
+func (a *apiService) Remove(id string) error {
+	res, err := a.c.DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
 		return errors.Wrap(errors.ErrInternal, err)
 	}
@@ -63,4 +72,6 @@ func (a *ApiService) Remove(id string) error {
 	return nil
 }
 
-func (a *ApiService) MaxIps() uint { return a.maxIps }
+func (a *apiService) MaxIps() uint { return a.maxIps }
+
+func (a *apiService) ApiPrefix() string { return "api_key" }

@@ -13,7 +13,7 @@ type Pair struct {
 	ExchangeFee float64 `json:"exchangeFee"`
 
 	Spreads  map[uint]float64 `json:"spreads"`
-	LP       uint             `json:"lp"`
+	LP       uint             `json:"lp,omitempty"`
 	Exchange string           `json:"exchange"`
 	Enable   bool             `json:"enable"`
 	EP       ExchangePair     `json:"ep"`
@@ -30,6 +30,11 @@ func (p *Pair) Snapshot() *Pair {
 			sp[k] = v
 		}
 	}
+
+	var ep ExchangePair
+	if p.EP != nil {
+		ep = p.EP.Snapshot()
+	}
 	return &Pair{
 		T1:          p.T1.Snapshot(),
 		T2:          p.T2.Snapshot(),
@@ -40,7 +45,7 @@ func (p *Pair) Snapshot() *Pair {
 		LP:          p.LP,
 		Exchange:    p.Exchange,
 		Enable:      p.Enable,
-		EP:          p.EP.Snapshot(),
+		EP:          ep,
 	}
 }
 

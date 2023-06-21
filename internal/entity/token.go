@@ -42,8 +42,6 @@ func (t *Token) Snapshot() *Token {
 	var et ExchangeToken
 	if t.ET != nil {
 		et = t.ET.Snapshot()
-	} else {
-		et = nil
 	}
 
 	return &Token{

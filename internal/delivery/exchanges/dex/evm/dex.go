@@ -8,7 +8,6 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +16,6 @@ import (
 
 type evmDex struct {
 	*Config
-	mux   *sync.Mutex
 	dex   IDex
 	pairs entity.PairsRepo
 	repo  entity.OrderRepo
@@ -43,7 +41,6 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 
 	ex := &evmDex{
 		Config: cfg,
-		mux:    &sync.Mutex{},
 		pairs:  pairs,
 		repo:   repo,
 		abi:    abi,
@@ -108,13 +105,9 @@ func (d *evmDex) Configs() interface{} {
 }
 
 func (d *evmDex) EnableDisable(enable bool) {
-	d.mux.Lock()
-	defer d.mux.Unlock()
 	d.Enable = enable
 }
 func (d *evmDex) IsEnable() bool {
-	d.mux.Lock()
-	defer d.mux.Unlock()
 	return d.Enable
 }
 
