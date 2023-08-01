@@ -3,6 +3,7 @@ package dto
 import (
 	bt "exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	kt "exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
+	at "exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
 	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -38,11 +39,22 @@ func (o *Order) ToEntity() (entity.Order, error) {
 			return bo, nil
 		}
 	case entity.EVMOrder:
-		eo := &et.Order{}
-		if err := bson.Unmarshal(o.Order, eo); err != nil {
-			return nil, err
+		switch strings.Split(o.ExchangeNID, "-")[0] {
+		case "allbridge":
+			ao := &at.Order{}
+			if err := bson.Unmarshal(o.Order, ao); err != nil {
+				return nil, err
+			}
+			return ao, nil
+
+		default:
+			eo := &et.Order{}
+			if err := bson.Unmarshal(o.Order, eo); err != nil {
+				return nil, err
+			}
+			return eo, nil
 		}
-		return eo, nil
+
 	}
 	return nil, errors.Wrap(errors.ErrBadRequest)
 

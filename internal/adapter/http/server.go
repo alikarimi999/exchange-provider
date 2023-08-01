@@ -14,6 +14,7 @@ type Server struct {
 	app    *app.OrderUseCase
 	repo   entity.OrderRepo
 	pairs  entity.PairsRepo
+	exs    entity.ExchangeStore
 	fee    entity.FeeTable
 	spread entity.SpreadTable
 	api    entity.ApiService
@@ -22,12 +23,14 @@ type Server struct {
 	cf     *chainsFee
 }
 
-func NewServer(app *app.OrderUseCase, v *viper.Viper, pairs entity.PairsRepo, api entity.ApiService,
-	repo entity.OrderRepo, fee entity.FeeTable, spread entity.SpreadTable, l logger.Logger) *Server {
+func NewServer(app *app.OrderUseCase, v *viper.Viper, pairs entity.PairsRepo,
+	api entity.ApiService, repo entity.OrderRepo, exs entity.ExchangeStore, fee entity.FeeTable,
+	spread entity.SpreadTable, l logger.Logger) *Server {
 	s := &Server{
 		app:    app,
 		repo:   repo,
 		pairs:  pairs,
+		exs:    exs,
 		fee:    fee,
 		spread: spread,
 		l:      l,

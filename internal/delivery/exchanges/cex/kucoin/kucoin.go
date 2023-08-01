@@ -137,6 +137,7 @@ func (ex *exchange) IsEnable() bool {
 func (ex *exchange) NID() string {
 	return fmt.Sprintf("%s-%d", ex.Name(), ex.Id())
 }
+func (ex *exchange) UpdateStatus(eo entity.Order) error { return nil }
 
 func (ex *exchange) ping() error {
 	resp, err := ex.readApi.Accounts("", "")

@@ -1,7 +1,7 @@
 package evm
 
 import (
-	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
+	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts/erc20"
 	"exchange-provider/internal/entity"
 	"math/big"
 
@@ -11,33 +11,33 @@ import (
 	ts "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (d *evmDex) approveTx(in *entity.Token) (*ts.Transaction, error) {
+func (d *exchange) approveTx(in *entity.Token) (*ts.Transaction, error) {
 
-	c, err := contracts.NewIERC20(common.HexToAddress(in.ContractAddress), d.provider())
+	c, err := erc20.NewContracts(common.HexToAddress(in.ContractAddress), d.provider())
 	if err != nil {
 		return nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(d.privateKey, big.NewInt(d.ChainId))
+	opts, err := bind.NewKeyedTransactorWithChainID(d.cfg.prvKey, big.NewInt(d.cfg.ChainId))
 	if err != nil {
 		return nil, err
 	}
 	opts.NoSend = true
 
-	return c.Approve(opts, d.contractAddress, em.MaxBig256)
+	return c.Approve(opts, d.cfg.contractAddress, em.MaxBig256)
 }
 
-func (d *evmDex) needApproval(in *entity.Token, owner common.Address, minAmount float64) (bool, error) {
+func (d *exchange) needApproval(in *entity.Token, owner common.Address, minAmount float64) (bool, error) {
 	if in.Native {
 		return false, nil
 	}
 
-	c, err := contracts.NewIERC20(common.HexToAddress(in.ContractAddress), d.provider())
+	c, err := erc20.NewContracts(common.HexToAddress(in.ContractAddress), d.provider())
 	if err != nil {
 		return false, err
 	}
 
-	amount, err := c.Allowance(nil, owner, d.contractAddress)
+	amount, err := c.Allowance(nil, owner, d.cfg.contractAddress)
 	if err != nil {
 		return false, err
 	}

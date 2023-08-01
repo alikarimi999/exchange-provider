@@ -10,6 +10,13 @@ type EstimateAmountOutReq struct {
 }
 
 type EstimateAmountOutRes struct {
+	InUsd  Number `json:"inUSD"`
+	OutUsd Number `json:"outUSD"`
+	EstimateAmount
+	ReverseEstimate EstimateAmount `json:"reverseEstimate"`
+}
+
+type EstimateAmount struct {
 	Input             entity.TokenId `json:"input"`
 	Output            entity.TokenId `json:"output"`
 	AmountIn          Number         `json:"amountIn"`

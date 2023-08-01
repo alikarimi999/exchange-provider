@@ -39,7 +39,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -167,7 +167,7 @@ func (k *exchange) retreiveOrders() error {
 			out = p.T2
 		}
 
-		f, err := k.exchangeFeeAmount(out, p)
+		f, _, err := k.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}

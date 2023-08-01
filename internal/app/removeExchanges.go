@@ -25,7 +25,7 @@ func (o *OrderUseCase) RemoveExchange(id uint, all bool) error {
 	}
 
 	if all {
-		for _, ex := range o.exs.getAll() {
+		for _, ex := range o.exs.GetAll() {
 			f0.Values = append(f0.Values, ex.NID())
 		}
 		if err := o.repo.GetPaginated(pa, true); err != nil {
@@ -38,7 +38,7 @@ func (o *OrderUseCase) RemoveExchange(id uint, all bool) error {
 
 		return o.exs.RemoveAll()
 	}
-	ex, err := o.exs.get(id)
+	ex, err := o.exs.Get(id)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (o *OrderUseCase) RemoveExchange(id uint, all bool) error {
 
 func (o *OrderUseCase) EnableDisable(id uint, enable, all bool) error {
 	if all {
-		return o.exs.enableDisableAll(enable)
+		return o.exs.EnableDisableAll(enable)
 	}
-	return o.exs.enableDisable(id, enable)
+	return o.exs.EnableDisable(id, enable)
 }

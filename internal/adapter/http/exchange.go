@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/adapter/http/dto"
 	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/pkg/errors"
 	"fmt"
@@ -98,11 +99,40 @@ func (s *Server) AddExchange(ctx Context) {
 		}
 
 		if s.app.ExchangeExists(cfg.Id) {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage("exchange already exists")))
 			return
 		}
 
 		ex, err := evm.NewEvmDex(cfg, s.repo, s.pairs, s.l)
+		if err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+		if err := s.app.AddExchange(ex); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+		cfg.Message = "done"
+		ctx.JSON(cfg, nil)
+		return
+
+	case "allbridge":
+		cfg := &allbridge.Config{}
+		if err := ctx.Bind(cfg); err != nil {
+			ctx.JSON(nil, err)
+			return
+		}
+
+		if s.app.ExchangeExists(cfg.Id) {
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage("exchange already exists")))
+			return
+		}
+
+		ex, err := allbridge.NewExchange(cfg, s.exs, s.repo, s.pairs, s.l, false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

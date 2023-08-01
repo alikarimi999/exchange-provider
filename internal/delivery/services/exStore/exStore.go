@@ -1,37 +1,48 @@
-package app
+package store
 
 import (
+	"crypto/rsa"
+	"exchange-provider/internal/app"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"sync"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type ExStore struct {
-	repo      ExchangeRepo
+type exStore struct {
+	repo      *exchangeRepo
 	mux       *sync.RWMutex
 	exchanges map[string]entity.Exchange
 	l         logger.Logger
 }
 
-func newExStore(l logger.Logger, exRepo ExchangeRepo, exs []entity.Exchange) *ExStore {
-	s := &ExStore{
-		repo:      exRepo,
+func NewExchangeStore(db *mongo.Database, ws app.WalletStore, pairs entity.PairsRepo,
+	repo entity.OrderRepo, fee entity.FeeTable, spread entity.SpreadTable,
+	l logger.Logger, prvKey *rsa.PrivateKey) (entity.ExchangeStore, error) {
+
+	s := &exStore{
+		repo:      newExchangeRepo(db, ws, pairs, repo, fee, spread, l, prvKey),
 		mux:       &sync.RWMutex{},
 		exchanges: make(map[string]entity.Exchange),
 		l:         l,
 	}
-
+	s.repo.exs = s
+	exs, err := s.repo.getAll()
+	if err != nil {
+		return nil, err
+	}
 	for _, ex := range exs {
 		s.exchanges[ex.NID()] = ex
 		l.Debug("exStore.add", fmt.Sprintf("lp '%d' added", ex.Id()))
 
 	}
-	return s
+	return s, nil
 }
 
-func (a *ExStore) get(id uint) (entity.Exchange, error) {
+func (a *exStore) Get(id uint) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	for _, ex := range a.exchanges {
@@ -44,7 +55,7 @@ func (a *ExStore) get(id uint) (entity.Exchange, error) {
 		errors.NewMesssage(err.Error()))
 }
 
-func (a *ExStore) getByNID(name string) (entity.Exchange, error) {
+func (a *exStore) GetByNID(name string) (entity.Exchange, error) {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	ex, ok := a.exchanges[name]
@@ -56,11 +67,11 @@ func (a *ExStore) getByNID(name string) (entity.Exchange, error) {
 	return ex, nil
 }
 
-func (a *ExStore) addExchange(ex entity.Exchange) error {
+func (a *exStore) AddExchange(ex entity.Exchange) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	if err := a.repo.Add(ex); err != nil {
+	if err := a.repo.add(ex); err != nil {
 		return err
 	}
 
@@ -69,7 +80,7 @@ func (a *ExStore) addExchange(ex entity.Exchange) error {
 	return nil
 }
 
-func (a *ExStore) exists(id uint) bool {
+func (a *exStore) Exists(id uint) bool {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	for _, ex := range a.exchanges {
@@ -80,7 +91,7 @@ func (a *ExStore) exists(id uint) bool {
 	return false
 }
 
-func (a *ExStore) getAll() []entity.Exchange {
+func (a *exStore) GetAll() []entity.Exchange {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 
@@ -92,7 +103,18 @@ func (a *ExStore) getAll() []entity.Exchange {
 	return exs
 }
 
-func (a *ExStore) enableDisable(exId uint, enable bool) error {
+func (a *exStore) GetAllMap() map[string]entity.Exchange {
+	a.mux.RLock()
+	defer a.mux.RUnlock()
+
+	m := make(map[string]entity.Exchange)
+	for _, ex := range a.exchanges {
+		m[ex.NID()] = ex
+	}
+	return m
+}
+
+func (a *exStore) EnableDisable(exId uint, enable bool) error {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
 	for _, ex := range a.exchanges {
@@ -104,7 +126,7 @@ func (a *ExStore) enableDisable(exId uint, enable bool) error {
 					return errors.Wrap(errors.ErrBadRequest, fmt.Errorf("lp is disable"))
 				}
 			}
-			if err := a.repo.EnableDisable(exId, enable); err != nil {
+			if err := a.repo.enableDisable(exId, enable); err != nil {
 				return err
 			}
 			ex.EnableDisable(enable)
@@ -113,10 +135,10 @@ func (a *ExStore) enableDisable(exId uint, enable bool) error {
 	}
 	return errors.Wrap(errors.ErrNotFound, fmt.Errorf("lp not found"))
 }
-func (a *ExStore) enableDisableAll(enable bool) error {
+func (a *exStore) EnableDisableAll(enable bool) error {
 	a.mux.RLock()
 	defer a.mux.RUnlock()
-	if err := a.repo.EnableDisableAll(enable); err != nil {
+	if err := a.repo.enableDisableAll(enable); err != nil {
 		return err
 	}
 	for _, ex := range a.exchanges {
@@ -125,10 +147,10 @@ func (a *ExStore) enableDisableAll(enable bool) error {
 	return nil
 }
 
-func (a *ExStore) RemoveAll() error {
+func (a *exStore) RemoveAll() error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
-	if err := a.repo.RemoveAll(); err != nil {
+	if err := a.repo.removeAll(); err != nil {
 		return err
 	}
 	for _, ex := range a.exchanges {
@@ -138,12 +160,12 @@ func (a *ExStore) RemoveAll() error {
 	return nil
 }
 
-func (a *ExStore) Remove(id uint) error {
+func (a *exStore) Remove(id uint) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 	for _, ex := range a.exchanges {
 		if ex.Id() == id {
-			if err := a.repo.Remove(ex); err != nil {
+			if err := a.repo.eemove(ex); err != nil {
 				return err
 			}
 			ex.Remove()

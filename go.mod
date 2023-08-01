@@ -9,7 +9,6 @@ require (
 	github.com/gin-gonic/gin v1.9.0
 	github.com/google/uuid v1.3.0
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
-	github.com/rabbitmq/amqp091-go v1.8.1
 	github.com/sethvargo/go-limiter v0.7.2
 	github.com/spf13/viper v1.15.0
 	go.mongodb.org/mongo-driver v1.11.6
@@ -68,6 +67,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.5.0 // indirect

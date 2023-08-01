@@ -11,10 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func (u *evmDex) checkProviders() error {
+func (u *exchange) checkProviders() error {
 	var chainId *big.Int
 	ps := []*types.EthProvider{}
-	for i, p := range u.Providers {
+	for i, p := range u.cfg.Providers {
 		c, err := ethclient.Dial(p)
 		if err != nil {
 			return err
@@ -34,15 +34,15 @@ func (u *evmDex) checkProviders() error {
 		ps = append(ps, &types.EthProvider{URL: p, Client: c})
 	}
 
-	u.ChainId = chainId.Int64()
-	u.providers = ps
+	u.cfg.ChainId = chainId.Int64()
+	u.cfg.providers = ps
 	return nil
 }
 
-func (d *evmDex) provider() *types.EthProvider {
+func (d *exchange) provider() *types.EthProvider {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	if len(d.providers) > 0 {
-		p := d.providers[r.Intn(len(d.providers))]
+	if len(d.cfg.providers) > 0 {
+		p := d.cfg.providers[r.Intn(len(d.cfg.providers))]
 		return p
 	}
 	return &types.EthProvider{}

@@ -47,7 +47,7 @@ func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 		return nil, errors.Wrap(errors.ErrBadRequest)
 	}
 
-	r := m.orders.FindOne(context.Background(), bson.D{{"_id", oId}})
+	r := m.orders.FindOne(context.Background(), bson.M{"_id": oId})
 	if r.Err() != nil {
 		if r.Err() == mongo.ErrNoDocuments {
 			return nil, errors.Wrap(errors.ErrNotFound)
@@ -70,7 +70,7 @@ func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 	if o.Status == entity.OCreated.String() && eo.Expire() {
 		o.Status = entity.OExpired.String()
 		o = dto.UoToDto(eo)
-		_, err := m.orders.ReplaceOne(context.Background(), bson.D{{"_id", oId}}, o)
+		_, err := m.orders.ReplaceOne(context.Background(), bson.M{"_id": oId}, o)
 		if err != nil {
 			m.l.Debug(agent, err.Error())
 			return nil, errors.Wrap(errors.ErrInternal)
@@ -83,24 +83,26 @@ func (m *mongoDb) Get(id *entity.ObjectId) (entity.Order, error) {
 func (m *mongoDb) Update(order entity.Order) error {
 	agent := m.agent("Update")
 
-	id, _ := primitive.ObjectIDFromHex(order.ID().Id)
-	o := dto.UoToDto(order)
-	order.Update()
-	res, err := m.orders.ReplaceOne(context.Background(), bson.D{{"_id", id}}, o)
-	if err != nil {
-		m.l.Error(agent, fmt.Sprintf("( %s ) ( %s )", order.String(), err.Error()))
-		return err
+	id := order.ID()
+	if id != nil {
+		ids, _ := primitive.ObjectIDFromHex(order.ID().Id)
+		o := dto.UoToDto(order)
+		order.Update()
+		_, err := m.orders.ReplaceOne(context.Background(), bson.M{"_id": ids}, o)
+		if err != nil {
+			m.l.Error(agent, fmt.Sprintf("( %s ) ( %s )", order.String(), err.Error()))
+			return err
+		}
+
+		return nil
 	}
-	if res.ModifiedCount == 0 {
-		return errors.Wrap(errors.ErrNotFound)
-	}
-	return nil
+	return m.Add(order)
 }
 
 func (m *mongoDb) GetWithFilter(key string, value interface{}) ([]entity.Order, error) {
 	agent := m.agent("GetWithFilter")
 
-	cur, err := m.orders.Find(context.Background(), bson.D{{key, value}})
+	cur, err := m.orders.Find(context.Background(), bson.M{key: value})
 	if err != nil {
 		m.l.Debug(agent, err.Error())
 		return nil, cur.Err()
@@ -132,15 +134,25 @@ func (m *mongoDb) GetWithFilter(key string, value interface{}) ([]entity.Order, 
 
 // check if any deposit has this tx_id
 func (m *mongoDb) TxIdExists(txId string) (bool, error) {
-	agent := m.agent("CheckTxId")
+	return m.checkDocumentByTxID(txId)
+}
 
-	res := m.orders.FindOne(context.Background(), bson.D{{"order.deposit.txid", txId}})
-	if res.Err() != nil {
-		if res.Err() == mongo.ErrNoDocuments {
-			return false, nil
-		}
-		m.l.Error(agent, res.Err().Error())
-		return false, res.Err()
+func (m *mongoDb) checkDocumentByTxID(txId string) (bool, error) {
+	agent := m.agent("checkDocumentByTtxID")
+	filter := bson.M{
+		"$or": []bson.M{
+			{"order.steps.0.srctxid": txId},
+			{"order.steps.1.srctxid": txId},
+			{"order.deposit.txid": txId},
+		},
+	}
+	err := m.orders.FindOne(context.Background(), filter, nil).Err()
+	if err == mongo.ErrNoDocuments {
+		return false, nil
+	}
+	if err != nil {
+		m.l.Error(agent, err.Error())
+		return false, err
 	}
 	return true, nil
 }

@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"crypto/ecdsa"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
@@ -41,8 +42,10 @@ var (
 	}
 )
 
-func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver common.Address,
-	amount, feeAmount float64) (*ts.Transaction, error) {
+func (d *exchange) createTx(in, out *entity.Token, tokenOwner, sender, receiver,
+	contractAddress common.Address, amount, feeAmount float64,
+	prvKey *ecdsa.PrivateKey) (*ts.Transaction, [][]byte, error) {
+
 	agent := d.agent("createTx")
 	var (
 		tx  *ts.Transaction
@@ -53,10 +56,10 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 	inT := types.TokenFromEntity(in)
 	outT := types.TokenFromEntity(out)
 
-	if d.Version == 3 {
+	if d.cfg.Version == 3 {
 		_, feeTier, err = d.dex.EstimateAmountOut(inT, outT, amount)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
@@ -70,19 +73,19 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 	input, err := d.dex.TxData(inT, outT, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 
-	c, err := contracts.NewContracts(d.contractAddress, d.provider().Client)
+	c, err := contracts.NewContracts(contractAddress, d.provider().Client)
 	if err != nil {
 		d.l.Debug(agent, err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 
-	opts, err := bind.NewKeyedTransactorWithChainID(d.privateKey, big.NewInt(d.ChainId))
+	opts, err := bind.NewKeyedTransactorWithChainID(prvKey, big.NewInt(d.cfg.ChainId))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 	opts.NoSend = true
 	opts.From = sender
@@ -94,7 +97,7 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 		TotalAmount:  totalAmountI,
 		FeeAmount:    feeAmountI,
 		AmountIn:     swapAmountI,
-		FromContract: tokenOwner.Hash().Big().Cmp(d.contractAddress.Hash().Big()) == 0,
+		FromContract: tokenOwner.Hash().Big().Cmp(contractAddress.Hash().Big()) == 0,
 		Swapper:      d.dex.Router(),
 		SwapperData:  input,
 		Sender:       sender,
@@ -102,9 +105,9 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 		Native:       in.Native,
 	}
 
-	sig, err := d.sign(data)
+	sig, err := d.sign(data, d.cfg.prvKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if in.Native {
@@ -113,20 +116,21 @@ func (d *evmDex) createTx(in, out *entity.Token, tokenOwner, sender, receiver co
 
 	b, err := d.abi.Pack("Swap", data, sig)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	tx, err = c.Multicall(opts, [][]byte{b})
+	bs := [][]byte{b}
+	tx, err = c.Multicall(opts, bs)
 	if err != nil {
 		if err.Error() == errSTF().Error() {
-			return nil, errors.Wrap(errors.ErrBadRequest,
+			return nil, nil, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage("insufficient funds or the previous step was unsuccessful"))
 		}
 		if strings.Contains(err.Error(), "insufficient funds") {
-			return nil, errors.Wrap(errors.ErrBadRequest,
+			return nil, nil, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage(err.Error()))
 		}
-		return nil, err
+		return nil, nil, err
 	}
-	return tx, nil
+	return tx, bs, nil
 }

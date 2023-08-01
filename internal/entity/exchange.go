@@ -9,6 +9,8 @@ const (
 )
 
 type EstimateAmount struct {
+	InUsd             float64
+	OutUsd            float64
 	Price             float64
 	AmountIn          float64
 	AmountOut         float64
@@ -19,6 +21,7 @@ type EstimateAmount struct {
 	ExchangeFeeAmount float64
 	FeeCurrency       TokenId
 	P                 *Pair
+	Data              interface{}
 }
 
 type Exchange interface {
@@ -29,9 +32,11 @@ type Exchange interface {
 	IsEnable() bool
 	Type() ExType
 	NewOrder(interface{}, *APIToken) (Order, error)
-	EstimateAmountOut(t1, t2 TokenId, amount float64, lvl uint) (*EstimateAmount, error)
+	SetTxId(o Order, txId string) error
+	EstimateAmountOut(t1, t2 TokenId, amount float64, lvl uint, opts interface{}) ([]*EstimateAmount, error)
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 TokenId) error
 	Configs() interface{}
 	Remove()
+	UpdateStatus(Order) error
 }

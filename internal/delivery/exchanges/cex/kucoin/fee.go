@@ -55,7 +55,7 @@ func getBcQcWcFeeRate(o *types.Order, p *entity.Pair,
 	return
 }
 
-func (k *exchange) exchangeFeeAmount(out *entity.Token, p *entity.Pair) (float64, error) {
+func (k *exchange) exchangeFeeAmount(out *entity.Token, p *entity.Pair) (float64, float64, error) {
 	var (
 		qcDollar float64
 	)
@@ -65,10 +65,10 @@ func (k *exchange) exchangeFeeAmount(out *entity.Token, p *entity.Pair) (float64
 	} else {
 		qd, err := k.ticker(out.ET.(*Token).Currency, out.ET.(*Token).StableToken)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		qcDollar = qd
 	}
 
-	return p.ExchangeFee / qcDollar, nil
+	return p.ExchangeFee / qcDollar, qcDollar, nil
 }

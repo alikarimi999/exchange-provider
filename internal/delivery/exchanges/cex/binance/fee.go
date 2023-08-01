@@ -76,7 +76,7 @@ func (ex *exchange) setOrderFeeRate(p *entity.Pair) error {
 	return err
 }
 
-func (ex *exchange) exchangeFeeAmount(t *entity.Token, p *entity.Pair) (float64, error) {
+func (ex *exchange) exchangeFeeAmount(t *entity.Token, p *entity.Pair) (float64, float64, error) {
 	var (
 		qcDollar float64
 	)
@@ -88,10 +88,10 @@ func (ex *exchange) exchangeFeeAmount(t *entity.Token, p *entity.Pair) (float64,
 		qc := t.ET.(*Token).StableToken
 		qd, err := ex.si.getPrice(bc, qc)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		qcDollar = qd
 	}
 
-	return p.ExchangeFee / qcDollar, nil
+	return p.ExchangeFee / qcDollar, qcDollar, nil
 }

@@ -10,7 +10,7 @@ import (
 	"exchange-provider/internal/delivery/database"
 	"exchange-provider/internal/delivery/http"
 	"exchange-provider/internal/delivery/services/api"
-	"exchange-provider/internal/delivery/services/exrepo"
+	store "exchange-provider/internal/delivery/services/exStore"
 	"exchange-provider/internal/delivery/services/fee"
 	"exchange-provider/internal/delivery/services/pairsRepo"
 	walletstore "exchange-provider/internal/delivery/services/wallet-store"
@@ -25,8 +25,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -102,15 +102,15 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	exRepo := exrepo.NewExchangeRepo(db, ws, pairs, repo, f, s, l, prv)
-	exs, err := exRepo.GetAll()
+	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs.AddExchanges(exs)
-	ou := app.NewOrderUseCase(repo, exRepo, exs, ws, f, l)
+
+	pairs.AddExchanges(exStore.GetAll())
+	ou := app.NewOrderUseCase(repo, exStore, ws, f, l)
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, f, api,
+	if err := http.NewRouter(ou, repo, pairs, exStore, f, api,
 		v, s, l, user, pass).Run(":8000"); err != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -188,17 +188,15 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	exRepo := exrepo.NewExchangeRepo(db, ws, pairs, repo,
-		f, s, l, prv)
-
-	exs, err := exRepo.GetAll()
+	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-	pairs.AddExchanges(exs)
-	ou := app.NewOrderUseCase(repo, exRepo, exs, ws, f, l)
+
+	pairs.AddExchanges(exStore.GetAll())
+	ou := app.NewOrderUseCase(repo, exStore, ws, f, l)
 	go ou.Run()
-	if err := http.NewRouter(ou, repo, pairs, f, api,
+	if err := http.NewRouter(ou, repo, pairs, exStore, f, api,
 		v, s, l, user, pass).Run(":8081"); err != nil {
 		l.Fatal(agent, err.Error())
 	}

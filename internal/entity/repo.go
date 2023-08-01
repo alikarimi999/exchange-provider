@@ -15,4 +15,5 @@ type Paginated struct {
 	Desc                 bool
 	Orders               []Order
 	Pairs                []*Pair
+	Exs                  map[string]Exchange
 }

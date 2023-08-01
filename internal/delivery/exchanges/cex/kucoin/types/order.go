@@ -94,7 +94,7 @@ func (o *Order) ExchangeNid() string { return o.ExNid }
 func (o *Order) Update()             { o.UpdatedAt = time.Now().Unix() }
 func (o *Order) UserId() string      { return o.UserID }
 func (o *Order) CreatedAt() int64    { return o.CreatedAT }
-func (o *Order) Steps() uint         { return 1 }
+func (o *Order) StepsCount() uint    { return 1 }
 func (o *Order) String() string {
 	b, _ := json.Marshal(o)
 	return string(b)

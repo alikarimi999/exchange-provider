@@ -1,8 +1,9 @@
-package exrepo
+package store
 
 import (
 	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
@@ -12,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
+func (r *exchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 	dec, err := utils.RSA_OAEP_Decrypt(ex.Configs, *r.prv)
 	if err != nil {
 		return nil, err
@@ -51,6 +52,16 @@ func (r *ExchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 		}
 		cfg.Enable = ex.Enable
 		return evm.NewEvmDex(cfg, r.repo, r.pairs, r.l)
+
+	case entity.CrossDex:
+		if ex.Name == "allbridge" {
+			cfg := &allbridge.Config{}
+			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
+				return nil, err
+			}
+			cfg.Enable = ex.Enable
+			return allbridge.NewExchange(cfg, r.exs, r.repo, r.pairs, r.l, true)
+		}
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%d`", ex.Id)))
 }

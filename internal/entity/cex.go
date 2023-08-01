@@ -2,7 +2,6 @@ package entity
 
 type Cex interface {
 	Exchange
-	TxIdSetted(Order, string) error
 }
 
 type AddPairsResult struct {

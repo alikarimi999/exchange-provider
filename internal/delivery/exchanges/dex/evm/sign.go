@@ -1,12 +1,16 @@
 package evm
 
-import "github.com/ethereum/go-ethereum/crypto"
+import (
+	"crypto/ecdsa"
 
-func (d *evmDex) sign(data interface{}) ([]byte, error) {
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+func (d *exchange) sign(data interface{}, prvKey *ecdsa.PrivateKey) ([]byte, error) {
 	packed, err := args.Pack(data)
 	if err != nil {
 		return nil, err
 	}
 
-	return crypto.Sign(crypto.Keccak256Hash(packed).Bytes(), d.privateKey)
+	return crypto.Sign(crypto.Keccak256Hash(packed).Bytes(), prvKey)
 }

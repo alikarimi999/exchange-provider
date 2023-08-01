@@ -1,4 +1,4 @@
-package exrepo
+package store
 
 import (
 	"exchange-provider/internal/entity"
@@ -15,7 +15,7 @@ type Exchange struct {
 	Configs string        `bson:"configs"`
 }
 
-func (r *ExchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
+func (r *exchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 	pub := r.prv.PublicKey
 
 	e := &Exchange{

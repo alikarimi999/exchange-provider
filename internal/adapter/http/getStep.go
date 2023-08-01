@@ -35,16 +35,12 @@ func (s *Server) GetStep(ctx Context) {
 		ctx.JSON(dto.SingleStepResponse(ord))
 		return
 	case entity.EVMOrder:
-		if step != 1 {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("step out of range")))
-			return
-		}
 		tx, err := s.app.GetMultiStep(ord, uint(step))
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
-		ctx.JSON(dto.MultiStep(ord, tx, step, step), nil)
+		ctx.JSON(dto.MultiStep(ord, tx), nil)
 		return
 	}
 }

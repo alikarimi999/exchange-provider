@@ -56,7 +56,7 @@ func (ex *exchange) downloadSymbols() ([]binance.Symbol, error) {
 
 	ss := []binance.Symbol{}
 	for _, s := range infos.Symbols {
-		if s.Status == "TRADING" && s.IsSpotTradingAllowed && s.QuoteOrderQtyMarketAllowed {
+		if s.Status == "TRADING" && s.IsSpotTradingAllowed {
 			var hasMarket bool
 			for _, ot := range s.OrderTypes {
 				if ot == "MARKET" {
@@ -173,12 +173,12 @@ func (ex *exchange) infos(p *entity.Pair) error {
 		return err
 	}
 
-	bEFA, err := ex.exchangeFeeAmount(p.T1, p)
+	bEFA, _, err := ex.exchangeFeeAmount(p.T1, p)
 	if err != nil {
 		return err
 	}
 
-	qEFA, err := ex.exchangeFeeAmount(p.T2, p)
+	qEFA, _, err := ex.exchangeFeeAmount(p.T2, p)
 	if err != nil {
 		return err
 	}

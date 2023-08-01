@@ -3,7 +3,8 @@ package dto
 import (
 	bt "exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	kt "exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
-	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
+	at "exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
+	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"strings"
@@ -96,33 +97,55 @@ type multiStep struct {
 	EstimateExchangeFeeAmount Number         `json:"estimateExchangeFeeAmount"`
 	FeeCurrency               entity.TokenId `json:"feeCurrency"`
 
-	Transaction interface{} `json:"transaction"`
-
-	CreatedAt int64 `json:"createdAt"`
-	UpdatedAt int64 `json:"updatedAt"`
-	ExpireAt  int64 `json:"expireAt"`
+	Transaction interface{}       `json:"transaction"`
+	Developer   *entity.Developer `json:"developer"`
+	CreatedAt   int64             `json:"createdAt"`
+	UpdatedAt   int64             `json:"updatedAt"`
+	ExpireAt    int64             `json:"expireAt"`
 }
 
-func MultiStep(o entity.Order, tx entity.Tx, step, steps int) *multiStep {
+func MultiStep(o entity.Order, tx entity.Tx) *multiStep {
 	ms := &multiStep{
-		OrderStep: &OrderStep{OrderId: o.ID().String(), CurrentStep: step, TotalSteps: steps},
+		OrderStep: &OrderStep{OrderId: o.ID().String(), CurrentStep: int(tx.Step())},
 	}
 	switch tx.Type() {
 	case entity.Evm:
-		eo := o.(*types.Order)
-		ms.AmountIn = Number(eo.AmountIn)
-		ms.EstimateAmountOut = Number(eo.EstimateAmountOut)
-		ms.FeeRate = Number(eo.FeeRate)
-		ms.EstimateFeeAmount = Number(eo.EstimateFeeAmount)
-		ms.ExchangeFee = Number(eo.ExchangeFee)
-		ms.EstimateExchangeFeeAmount = Number(eo.EstimateExchangeFeeAmount)
-		ms.FeeCurrency = eo.FeeCurrency
-		ms.Type = string(tx.Type())
-		ms.Transaction = evmTx(tx, eo.Sender.Hex())
-		ms.CreatedAt = eo.CreatedAT
-		ms.UpdatedAt = eo.UpdatedAt
-		ms.ExpireAt = eo.ExpireAt
-
+		etx := tx.(*entity.EvmTx)
+		switch strings.Split(o.ExchangeNid(), "-")[0] {
+		case "allbridge":
+			ao := o.(*at.Order)
+			ms.AmountIn = Number(ao.AmountIn)
+			ls := ao.Steps[len(ao.Steps)-1]
+			ms.EstimateAmountOut = Number(ls.Routes[len(ls.Routes)-1].EstimateAmountOut)
+			ms.FeeRate = Number(ao.FeeRate)
+			ms.EstimateFeeAmount = Number(ao.FeeAmount)
+			ms.ExchangeFee = Number(ao.ExchangeFee)
+			ms.EstimateExchangeFeeAmount = Number(ao.ExchangeFeeAmount)
+			ms.FeeCurrency = ao.FeeCurrency
+			ms.Type = string(tx.Type())
+			ms.Transaction = evmTx(etx)
+			ms.CreatedAt = ao.CreatedAT
+			ms.UpdatedAt = ao.UpdatedAt
+			ms.ExpireAt = ao.ExpireAt
+			ms.OrderStep.TotalSteps = int(ao.StepsCount())
+			ms.Developer = etx.Developer
+		default:
+			eo := o.(*et.Order)
+			ms.AmountIn = Number(eo.AmountIn)
+			ms.EstimateAmountOut = Number(eo.EstimateAmountOut)
+			ms.FeeRate = Number(eo.FeeRate)
+			ms.EstimateFeeAmount = Number(eo.FeeAmount)
+			ms.ExchangeFee = Number(eo.ExchangeFee)
+			ms.EstimateExchangeFeeAmount = Number(eo.ExchangeFeeAmount)
+			ms.FeeCurrency = eo.FeeCurrency
+			ms.Type = string(tx.Type())
+			ms.Transaction = evmTx(etx)
+			ms.CreatedAt = eo.CreatedAT
+			ms.UpdatedAt = eo.UpdatedAt
+			ms.ExpireAt = eo.ExpireAt
+			ms.OrderStep.TotalSteps = int(eo.StepsCount())
+			ms.Developer = etx.Developer
+		}
 	}
 	return ms
 }

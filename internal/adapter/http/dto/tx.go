@@ -19,13 +19,12 @@ type evmTX struct {
 	GasTipCap   string `json:"gasTipCap"`
 }
 
-func evmTx(t entity.Tx, from string) *evmTX {
-	et := t.(*entity.EvmTx)
+func evmTx(et *entity.EvmTx) *evmTX {
 	tx := et.Tx
 	return &evmTX{
 		Type:        tx.Type(),
 		IsApproveTx: et.IsApproveTx,
-		From:        from,
+		From:        et.From(),
 		To:          tx.To().Hex(),
 		Data:        hexutil.Encode(tx.Data()),
 		Value:       hexutil.EncodeBig(tx.Value()),

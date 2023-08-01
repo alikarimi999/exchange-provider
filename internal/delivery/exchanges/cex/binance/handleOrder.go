@@ -4,11 +4,21 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 )
 
-func (ex *exchange) TxIdSetted(ord entity.Order, txId string) error {
+func (ex *exchange) SetTxId(ord entity.Order, txId string) error {
 	agent := ex.agent("TxIdSetted")
 	o := ord.(*types.Order)
+	if ord.STATUS() != entity.OCreated {
+		return errors.Wrap(errors.ErrBadRequest,
+			errors.NewMesssage(fmt.Sprintf("unable to set txId for order in '%s' status", ord.STATUS())))
+	}
+
+	if o.Deposit.TxId != "" {
+		return errors.Wrap(errors.ErrForbidden,
+			errors.NewMesssage("txId for this order has setted before"))
+	}
 	p, err := ex.pairs.Get(ex.Id(), o.In.String(), o.Out.String())
 	if err != nil {
 		return err
@@ -21,7 +31,7 @@ func (ex *exchange) TxIdSetted(ord entity.Order, txId string) error {
 		out = p.T2
 	}
 
-	f, err := ex.exchangeFeeAmount(out, p)
+	f, _, err := ex.exchangeFeeAmount(out, p)
 	if err != nil {
 		ex.l.Debug(agent, err.Error())
 		return errors.Wrap(errors.ErrInternal, errors.NewMesssage("try again"))

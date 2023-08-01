@@ -9,13 +9,13 @@ import (
 	"sync"
 )
 
-func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
+func (d *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 
 	req := data.(*dto.AddPairsRequest)
 	ps := []*entity.Pair{}
 	res := &entity.AddPairsResult{}
 	for _, p := range req.Pairs {
-		ep, err := p.ToEntity(d.TokenStandard, d.Network)
+		ep, err := p.ToEntity(d.cfg.TokenStandard, d.cfg.Network)
 		if err != nil {
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
 			continue
@@ -28,7 +28,7 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	add := []*entity.Pair{}
 
 	for _, p := range ps {
-		if p.T1.Id.Network != d.Network || p.T2.Id.Network != d.Network {
+		if p.T1.Id.Network != d.cfg.Network || p.T2.Id.Network != d.cfg.Network {
 			mux.Lock()
 			res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(),
 				Err: fmt.Errorf("invalid token network")})
@@ -50,12 +50,14 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 				mux.Unlock()
 				return
 			}
-			if err := d.checkExchangeFee(p); err != nil {
+
+			if err := d.minAndMax(p); err != nil {
 				mux.Lock()
 				res.Failed = append(res.Failed, &entity.PairsErr{Pair: p.String(), Err: err})
 				mux.Unlock()
 				return
 			}
+
 			mux.Lock()
 			p.LP = d.Id()
 			p.Exchange = d.NID()
@@ -75,7 +77,7 @@ func (d *evmDex) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	return res, nil
 }
 
-func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
+func (d *exchange) checkPair(t1, t2 *entity.Token) error {
 	T1 := types.TokenFromEntity(t1)
 	T2 := types.TokenFromEntity(t2)
 
@@ -92,16 +94,6 @@ func (d *evmDex) checkPair(t1, t2 *entity.Token) error {
 	return nil
 }
 
-func (d *evmDex) checkExchangeFee(p *entity.Pair) error {
-	if _, err := d.exchangeFeeAmount(p.T1.Id, p); err != nil {
-		return err
-	}
-	if _, err := d.exchangeFeeAmount(p.T2.Id, p); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *evmDex) RemovePair(t1, t2 entity.TokenId) error {
+func (d *exchange) RemovePair(t1, t2 entity.TokenId) error {
 	return d.pairs.Remove(d.Id(), t1.String(), t2.String(), true)
 }

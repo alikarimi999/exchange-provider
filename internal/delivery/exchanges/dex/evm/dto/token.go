@@ -5,8 +5,9 @@ import (
 )
 
 type EToken struct {
+	Symbol string
 	types.Token
-	Min float64       `json:"min"`
-	Max float64       `json:"max"`
-	ET  *types.EToken `json:"exchangeToken"`
+	Min float64      `json:"min"`
+	Max float64      `json:"max"`
+	Et  types.EToken `json:"exchangeToken"`
 }

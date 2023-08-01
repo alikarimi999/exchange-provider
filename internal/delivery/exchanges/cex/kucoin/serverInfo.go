@@ -215,7 +215,7 @@ func (pl *serverInfos) setPairInfos(bc, qc *Token) error {
 func (ex *exchange) downloadPrices() ([]*kucoin.TickerModel, error) {
 	res, err := ex.readApi.Tickers()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	ts := kucoin.TickersResponseModel{}

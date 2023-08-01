@@ -7,8 +7,15 @@ import (
 	"fmt"
 )
 
-func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
-	amount float64, lvl uint) (*entity.EstimateAmount, error) {
+type EstimateOpts struct {
+	CustomizeFee   bool
+	ExchangeFee    float64
+	FeeRate        float64
+	RevertEstimate bool
+}
+
+func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
+	amountIn float64, lvl uint, opts interface{}) ([]*entity.EstimateAmount, error) {
 	p, err := d.pairs.Get(d.Id(), in.String(), out.String())
 	if err != nil {
 		return nil, err
@@ -17,7 +24,15 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 		return nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage("pair is not enable right now"))
 	}
-	es := &entity.EstimateAmount{P: p, FeeCurrency: in, AmountIn: amount}
+
+	opt := &EstimateOpts{
+		RevertEstimate: true,
+	}
+	if opts != nil {
+		opt = opts.(*EstimateOpts)
+	}
+	es0 := &entity.EstimateAmount{P: p, FeeCurrency: in, AmountIn: amountIn}
+	ess := []*entity.EstimateAmount{es0}
 	var (
 		In, Out *types.Token
 	)
@@ -26,45 +41,107 @@ func (d *evmDex) EstimateAmountOut(in, out entity.TokenId,
 		min := p.T1.Min
 		max := p.T1.Max
 
-		if (min != 0 && amount < min) || (max != 0 && amount > max) {
-			return es, errors.Wrap(errors.ErrBadRequest,
+		if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
+			return ess, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
 		}
 		In = types.TokenFromEntity(p.T1)
 		Out = types.TokenFromEntity(p.T2)
-		es.FeeRate = p.FeeRate1
+		es0.FeeRate = p.FeeRate1
 	} else {
 		min := p.T2.Min
 		max := p.T2.Max
-		if (min != 0 && amount < min) || (max != 0 && amount > max) {
-			return es, errors.Wrap(errors.ErrBadRequest,
+		if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
+			return ess, errors.Wrap(errors.ErrBadRequest,
 				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
 
 		}
 		In = types.TokenFromEntity(p.T2)
 		Out = types.TokenFromEntity(p.T1)
-		es.FeeRate = p.FeeRate2
+		es0.FeeRate = p.FeeRate2
 	}
-	exchangeFeeAmount, err := d.exchangeFeeAmount(in, p)
+
+	var ef, fr float64
+	if opt.CustomizeFee {
+		ef = opt.ExchangeFee
+		fr = opt.FeeRate
+	} else {
+		ef = p.ExchangeFee
+		fr = es0.FeeRate
+	}
+	inEFA, priceIn, err := d.ExchangeFeeAmount(in, p, ef)
 	if err != nil {
 		return nil, err
 	}
-	es.ExchangeFee = p.ExchangeFee
-	es.ExchangeFeeAmount = exchangeFeeAmount
-	amount = amount - exchangeFeeAmount
-	es.FeeAmount = amount * es.FeeRate
-	amount = amount - es.FeeAmount
+
+	outEFA, priceOut, err := d.ExchangeFeeAmount(out, p, ef)
+	if err != nil {
+		return nil, err
+	}
+	es0.InUsd = priceIn
+	es0.OutUsd = priceOut
+	es0.ExchangeFee = ef
+	es0.ExchangeFeeAmount = inEFA
+	amount := amountIn - inEFA
+	es0.FeeRate = fr
+	es0.FeeAmount = amount * fr
+	amount = amount - es0.FeeAmount
+
+	if amount <= 0 {
+		if err := d.minAndMax(p); err != nil {
+			return nil, errors.Wrap(errors.ErrInternal)
+		}
+		if err := d.pairs.Update(d.Id(), p); err != nil {
+			return nil, errors.Wrap(errors.ErrInternal)
+		}
+
+		if p.T1.String() == in.String() {
+			return ess, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min amount updated to %f", p.T1.Min)))
+		} else {
+			return ess, errors.Wrap(errors.ErrBadRequest,
+				errors.NewMesssage(fmt.Sprintf("min amount updated to %f", p.T2.Min)))
+		}
+	}
+
 	amountOut, _, err := d.dex.EstimateAmountOut(In, Out, amount)
-	es.AmountOut = amountOut
-	return es, err
+	if err != nil {
+		return nil, err
+	}
+	es0.AmountOut = amountOut
+
+	if opt.RevertEstimate {
+
+		amIn, _, err := d.dex.EstimateAmountOut(Out, In, amountOut)
+		if err != nil {
+			return nil, err
+		}
+		amIn = (amountIn * amountOut) / amIn
+		amInPlusFee := (amIn / (1 - fr))
+		feeAmount := amInPlusFee - amIn
+		amIn = amInPlusFee + outEFA
+
+		es1 := &entity.EstimateAmount{
+			AmountIn:          amIn,
+			AmountOut:         amountIn,
+			FeeRate:           fr,
+			FeeAmount:         feeAmount,
+			ExchangeFee:       ef,
+			ExchangeFeeAmount: outEFA,
+			FeeCurrency:       out,
+		}
+		ess = append(ess, es1)
+	}
+	return ess, err
 }
 
-func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, error) {
+func (d *exchange) ExchangeFeeAmount(in entity.TokenId, p *entity.Pair,
+	exchangeFee float64) (float64, float64, error) {
 
 	var (
-		stAmount, stOut float64
-		St, In          *types.Token
-		err             error
+		stAmount, stOut, price float64
+		St, In                 *types.Token
+		err                    error
 	)
 
 	if p.T1.String() == in.String() {
@@ -80,14 +157,15 @@ func (d *evmDex) exchangeFeeAmount(in entity.TokenId, p *entity.Pair) (float64, 
 	if In.ContractAddress != St.ContractAddress {
 		stOut, _, err = d.dex.EstimateAmountOut(In, St, stAmount)
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		if stOut == 0 {
-			return 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
+			return 0, 0, fmt.Errorf("unable to calculate exchangeFeeAmount")
 		}
+		price = stOut / stAmount
 	} else {
-		stOut = 1
+		price = 1
 	}
 
-	return (stAmount / stOut) * p.ExchangeFee, nil
+	return exchangeFee / price, price, nil
 }

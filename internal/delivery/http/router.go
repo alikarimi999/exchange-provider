@@ -29,15 +29,15 @@ func (r *Router) Run(addr ...string) error {
 }
 
 func NewRouter(app *app.OrderUseCase, repo entity.OrderRepo, pairs entity.PairsRepo,
-	fee entity.FeeTable, api entity.ApiService, v *viper.Viper, spread entity.SpreadTable,
-	l logger.Logger, user, pass string) *Router {
+	exs entity.ExchangeStore, fee entity.FeeTable, api entity.ApiService,
+	v *viper.Viper, spread entity.SpreadTable, l logger.Logger, user, pass string) *Router {
 
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 
 	router := &Router{
 		gin: engine,
-		srv: http.NewServer(app, v, pairs, api, repo, fee, spread, l),
+		srv: http.NewServer(app, v, pairs, api, repo, exs, fee, spread, l),
 		l:   l,
 		v:   v,
 		api: api,

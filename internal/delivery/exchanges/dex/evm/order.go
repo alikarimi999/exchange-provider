@@ -18,7 +18,7 @@ type NewOrderData struct {
 	AmountIn float64
 }
 
-func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
+func (ex *exchange) NewOrder(data interface{}, api *entity.APIToken) (entity.Order, error) {
 	d := data.(*NewOrderData)
 	p := d.Es.P
 
@@ -45,14 +45,12 @@ func (ex *evmDex) NewOrder(data interface{}, api *entity.APIToken) (entity.Order
 		Sender:   d.Sender,
 		Receiver: d.Reciever,
 
-		AmountIn:                  d.AmountIn,
-		EstimateAmountOut:         d.Es.AmountOut,
-		FeeRate:                   d.Es.FeeRate,
-		EstimateFeeAmount:         d.Es.FeeAmount,
-		FeeAmount:                 d.Es.FeeAmount,
-		ExchangeFee:               d.Es.ExchangeFee,
-		ExchangeFeeAmount:         d.Es.ExchangeFeeAmount,
-		EstimateExchangeFeeAmount: d.Es.ExchangeFeeAmount,
+		AmountIn:          d.AmountIn,
+		EstimateAmountOut: d.Es.AmountOut,
+		FeeRate:           d.Es.FeeRate,
+		FeeAmount:         d.Es.FeeAmount,
+		ExchangeFee:       d.Es.ExchangeFee,
+		ExchangeFeeAmount: d.Es.ExchangeFeeAmount,
 
 		FeeCurrency: d.In,
 		CreatedAT:   t.Unix(),

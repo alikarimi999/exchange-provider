@@ -37,7 +37,6 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 		l:      l,
 		stopCh: make(chan struct{}),
 	}
-	agent := ex.agent("NewExchange")
 
 	si, err := newServerInfos(ex)
 	if err != nil {
@@ -66,13 +65,11 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 			p.T2.ET.(*Token).setInfos(qc)
 
 			if err := ex.infos(p); err != nil {
-				ex.l.Debug(agent, fmt.Sprintf("%s: %s", p.String(), err.Error()))
 				pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
 				continue
 			}
 			if err := ex.pairs.Update(ex.Id(), p); err != nil {
 				ex.pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
-				ex.l.Debug(agent, err.Error())
 				continue
 			}
 		}
@@ -101,6 +98,8 @@ func (ex *exchange) IsEnable() bool {
 func (ex *exchange) NID() string {
 	return fmt.Sprintf("%s-%d", ex.Name(), ex.Id())
 }
+
+func (ex *exchange) UpdateStatus(eo entity.Order) error { return nil }
 
 func (ex *exchange) Type() entity.ExType { return entity.CEX }
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"exchange-provider/internal/delivery/exchanges/cex/binance"
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
+	at "exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
 	et "exchange-provider/internal/delivery/exchanges/dex/evm/types"
+
 	"exchange-provider/internal/entity"
 	"strings"
 	"sync"
@@ -84,6 +86,13 @@ func (p *pair) toEntity(exType entity.ExType, exNID string, exId uint) *entity.P
 		bson.Unmarshal(p.EP, ep)
 		pair.EP = ep
 		t = &et.EToken{}
+	case entity.CrossDex:
+		if strings.Split(exNID, "-")[0] == "allbridge" {
+			ep := &at.ExchangePair{}
+			bson.Unmarshal(p.EP, ep)
+			pair.EP = ep
+			t = &at.EToken{}
+		}
 	}
 	pair.T1 = p.T1.toEntity(fn)
 	pair.T2 = p.T2.toEntity(fn)

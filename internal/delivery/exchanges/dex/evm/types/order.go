@@ -26,16 +26,17 @@ type Order struct {
 	Receiver    common.Address
 
 	AmountIn          float64
+	AmountOut         float64
 	EstimateAmountOut float64
 
-	FeeRate                   float64
-	EstimateFeeAmount         float64
-	FeeAmount                 float64
-	ExchangeFee               float64
-	ExchangeFeeAmount         float64
-	EstimateExchangeFeeAmount float64
+	FeeRate           float64
+	FeeAmount         float64
+	ExchangeFee       float64
+	ExchangeFeeAmount float64
 
 	FeeCurrency entity.TokenId
+	TxId        string
+	FailedDesc  string
 	CreatedAT   int64
 	UpdatedAt   int64
 	ExpireAt    int64
@@ -47,9 +48,20 @@ func (o *Order) Type() entity.OrderType     { return entity.EVMOrder }
 func (o *Order) STATUS() entity.OrderStatus { return o.Status }
 func (o *Order) ExchangeNid() string        { return o.ExNid }
 func (o *Order) UserId() string             { return o.UserID }
-func (o *Order) CreatedAt() int64           { return o.CreatedAT }
-func (o *Order) Update()                    { o.UpdatedAt = time.Now().Unix() }
-func (o *Order) Steps() uint                { return 1 }
+func (o *Order) StepsStatus() interface{} {
+	ss := make(OrderStatus)
+	ss[1] = &StepStatus{
+		Status:     o.Status.String(),
+		TxId:       o.TxId,
+		AmountIn:   Number(o.AmountIn),
+		AmountOut:  Number(o.AmountOut),
+		FailedDesc: o.FailedDesc,
+	}
+	return ss
+}
+func (o *Order) CreatedAt() int64 { return o.CreatedAT }
+func (o *Order) Update()          { o.UpdatedAt = time.Now().Unix() }
+func (o *Order) StepsCount() uint { return 1 }
 func (o *Order) String() string {
 	b, _ := json.Marshal(o)
 	return string(b)

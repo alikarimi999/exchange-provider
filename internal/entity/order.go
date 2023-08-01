@@ -5,6 +5,7 @@ type OrderType uint
 const (
 	CEXOrder OrderType = iota
 	EVMOrder
+	CrossOrder
 )
 
 type OrderStatus string
@@ -28,9 +29,14 @@ type Order interface {
 	STATUS() OrderStatus
 	ExchangeNid() string
 	Update()
-	Steps() uint
+	StepsCount() uint
 	Expire() bool
 	String() string
 	UserId() string
 	CreatedAt() int64
+}
+
+type EvmOrder interface {
+	Order
+	StepsStatus() interface{}
 }

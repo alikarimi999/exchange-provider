@@ -41,7 +41,7 @@ func (s *Server) NewOrder(ctx Context) {
 			return
 		}
 
-		ctx.JSON(dto.MultiStep(o, tx, 1, 1), nil)
+		ctx.JSON(dto.MultiStep(o, tx), nil)
 		return
 	}
 }
@@ -75,6 +75,7 @@ func (s *Server) GetPaginatedForUser(ctx Context) {
 	fs = append([]*entity.Filter{f}, fs...)
 	pa.Filters = fs
 
+	pa.Exs = s.exs.GetAllMap()
 	if err := s.repo.GetPaginated(pa, false); err != nil {
 		ctx.JSON(nil, err)
 		return
@@ -92,6 +93,7 @@ func (s *Server) GetPaginatedForAdmin(ctx Context) {
 
 	req.Validate()
 	pa := req.Map()
+	pa.Exs = s.exs.GetAllMap()
 	if err := s.repo.GetPaginated(pa, false); err != nil {
 		ctx.JSON(nil, err)
 		return
@@ -118,6 +120,8 @@ func (s *Server) GetOrder(ctx Context) {
 	pa := &entity.Paginated{
 		Filters: []*entity.Filter{f0, f1},
 	}
+
+	pa.Exs = s.exs.GetAllMap()
 	if err := s.repo.GetPaginated(pa, false); err != nil {
 		ctx.JSON(nil, err)
 		return
@@ -127,5 +131,6 @@ func (s *Server) GetOrder(ctx Context) {
 		ctx.JSON(nil, errors.Wrap(errors.ErrNotFound))
 		return
 	}
-	ctx.JSON(dto.OrderFromEntityForUser(pa.Orders[0]), nil)
+	o := pa.Orders[0]
+	ctx.JSON(dto.OrderFromEntityForUser(o), nil)
 }

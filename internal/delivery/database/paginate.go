@@ -50,10 +50,16 @@ func (m *mongoDb) GetPaginated(p *entity.Paginated, onlyCount bool) error {
 		if o.Status == entity.OCreated.String() && eo.Expire() {
 			o.Status = entity.OExpired.String()
 			o = dto.UoToDto(eo)
-			_, err := m.orders.ReplaceOne(context.Background(), bson.D{{"_id", o.Id}}, o)
+			_, err := m.orders.ReplaceOne(context.Background(), bson.M{"_id": o.Id}, o)
 			if err != nil {
 				m.l.Debug(agent, err.Error())
 				continue
+			}
+		}
+		if eo.STATUS() != entity.OCompleted && !eo.Expire() {
+			ex, ok := p.Exs[eo.ExchangeNid()]
+			if ok {
+				ex.UpdateStatus(eo)
 			}
 		}
 		p.Orders = append(p.Orders, eo)
@@ -75,5 +81,5 @@ func wrapOptions(page, perPage int64, desc bool) *options.FindOptions {
 	limit := perPage
 	skip := perPage * (page - 1)
 	return &options.FindOptions{Limit: &limit, Skip: &skip,
-		Sort: bson.D{{"order.createdat", value}}}
+		Sort: bson.M{"order.createdat": value}}
 }

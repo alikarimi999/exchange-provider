@@ -9,54 +9,66 @@ import (
 )
 
 type estimate struct {
-	ex entity.Exchange
-	*entity.EstimateAmount
+	exs []entity.Exchange
+	ess []*entity.EstimateAmount
 }
 
 func (o *OrderUseCase) EstimateAmountOut(in, out entity.TokenId,
-	amount float64, lp, lvl uint) (*entity.EstimateAmount, entity.Exchange, error) {
-	return o.estimateAmountOut(in, out, amount, lp, lvl)
+	amount float64, lp, lvl uint) ([]*entity.EstimateAmount, []entity.Exchange, error) {
+	ess, exs, _, err := o.estimateAmountOut(in, out, amount, lp, lvl, nil)
+	return ess, exs, err
 }
 
 func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
-	lp, lvl uint) (*entity.EstimateAmount, entity.Exchange, error) {
+	lp, lvl uint, excludeLp []uint) ([]*entity.EstimateAmount, []entity.Exchange, []uint, error) {
 
 	if lp > 0 {
-		ex, err := o.exs.get(lp)
+		ex, err := o.exs.Get(lp)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		if !ex.IsEnable() {
-			return nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("lp is disable"))
+			return nil, nil, nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("lp is disable"))
 		}
-		es, err := ex.EstimateAmountOut(in, out, amount, lvl)
+		es, err := ex.EstimateAmountOut(in, out, amount, lvl, nil)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
-		return es, ex, nil
+		return es, []entity.Exchange{ex, ex}, nil, nil
 	}
 
-	exs := o.exs.getAll()
+	exs := o.exs.GetAll()
 	wg := &sync.WaitGroup{}
 	pMux := &sync.Mutex{}
 	minAndMax := []*entity.Pair{}
 	estimates := []*estimate{}
+
+start:
 	for _, ex := range exs {
 		if !ex.IsEnable() {
 			continue
 		}
+		for _, el := range excludeLp {
+			if ex.Id() == el {
+				continue start
+			}
+		}
+
 		wg.Add(1)
 		go func(ex entity.Exchange) {
 			defer wg.Done()
-			es, err := ex.EstimateAmountOut(in, out, amount, lvl)
+			ess, err := ex.EstimateAmountOut(in, out, amount, lvl, nil)
 			pMux.Lock()
-			if err == nil && es.AmountOut > 0 {
-				estimates = append(estimates, &estimate{
-					ex:             ex,
-					EstimateAmount: es,
-				})
-			} else if err != nil && es != nil && strings.Contains(err.Error(), "min") && es.P != nil {
-				minAndMax = append(minAndMax, es.P)
+			if err == nil && ess[0].AmountOut > 0 {
+				es := &estimate{}
+				es.ess = append(es.ess, ess[0])
+				es.exs = append(es.exs, ex)
+				if len(ess) == 2 && ess[1].AmountOut > 0 {
+					es.ess = append(es.ess, ess[1])
+				}
+				estimates = append(estimates, es)
+			} else if err != nil && strings.Contains(err.Error(), "min") && ess[0].P != nil {
+				minAndMax = append(minAndMax, ess[0].P)
 			}
 			pMux.Unlock()
 		}(ex)
@@ -90,22 +102,39 @@ func (o *OrderUseCase) estimateAmountOut(in, out entity.TokenId, amount float64,
 				}
 			}
 
-			return nil, nil, errors.Wrap(errors.ErrNotFound,
+			return nil, nil, nil, errors.Wrap(errors.ErrNotFound,
 				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
 		}
-		return nil, nil, errors.Wrap(errors.ErrNotFound,
+		return nil, nil, nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage(fmt.Sprintf("pair '%s/%s' not found", in.String(), out.String())))
 	}
-
-	es := &estimate{
-		EstimateAmount: &entity.EstimateAmount{},
+	aLPs := []uint{}
+	es := &estimate{}
+	for _, est := range estimates {
+		if len(est.ess) > 0 {
+			aLPs = append(aLPs, est.exs[0].Id())
+			if len(es.ess) == 0 || est.ess[0].AmountOut > es.ess[0].AmountOut {
+				if len(es.ess) == 0 {
+					es.ess = append(es.ess, est.ess[0])
+					es.exs = append(es.exs, est.exs[0])
+				} else if len(es.ess) == 1 {
+					es.ess[0] = est.ess[0]
+					es.exs[0] = est.exs[0]
+				}
+			}
+		}
 	}
 
 	for _, est := range estimates {
-		if est.EstimateAmount != nil && est.AmountOut > es.AmountOut {
-			es = est
+		if len(est.ess) == 2 && (len(es.ess) == 1 || est.ess[1].AmountIn < es.ess[1].AmountIn) {
+			if len(es.ess) == 1 {
+				es.ess = append(es.ess, est.ess[1])
+				es.exs = append(es.exs, est.exs[0])
+			} else if len(es.ess) == 2 {
+				es.ess[1] = est.ess[1]
+				es.exs[1] = est.exs[0]
+			}
 		}
 	}
-
-	return es.EstimateAmount, es.ex, nil
+	return es.ess, es.exs, aLPs, nil
 }

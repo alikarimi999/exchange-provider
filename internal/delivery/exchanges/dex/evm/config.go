@@ -24,7 +24,7 @@ type Config struct {
 	Swapper            string `json:"swapper"`
 	swapperAddress     common.Address
 	HexKey             string `json:"hexKey"`
-	privateKey         *ecdsa.PrivateKey
+	prvKey             *ecdsa.PrivateKey
 	Providers          []string `json:"providers"`
 	providers          []*types.EthProvider
 	Message            string `json:"message"`

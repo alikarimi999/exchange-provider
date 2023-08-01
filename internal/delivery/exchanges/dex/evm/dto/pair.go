@@ -20,27 +20,28 @@ type Pair struct {
 }
 
 func (p *Pair) String() string {
-	return fmt.Sprintf("%s/%s", p.T1.Name, p.T2.Name)
+	return fmt.Sprintf("%s/%s", p.T1.Symbol, p.T2.Symbol)
 }
 
 func (t *EToken) toEntity(standard, network string) (*entity.Token, error) {
 	if err := t.Token.Check(); err != nil {
 		return nil, err
 	}
-	if t.ET == nil {
-		return nil, fmt.Errorf("exchangeToken cannot be nil")
-	}
-
-	if err := t.ET.StableToken.Check(); err != nil {
+	if err := t.Et.StableToken.Check(); err != nil {
 		return nil, err
 	}
+
 	if t.Min == 0 {
-		return nil, fmt.Errorf("min cannot be zero")
+		return nil, fmt.Errorf("min cannot be 0")
+	}
+
+	if t.Native {
+		standard = t.Symbol
 	}
 
 	return &entity.Token{
 		Id: entity.TokenId{
-			Symbol:   t.Name,
+			Symbol:   t.Symbol,
 			Standard: standard,
 			Network:  network,
 		},
@@ -49,7 +50,7 @@ func (t *EToken) toEntity(standard, network string) (*entity.Token, error) {
 		Native:          t.Native,
 		Min:             t.Min,
 		Max:             t.Max,
-		ET:              t.ET,
+		ET:              &t.Et,
 	}, nil
 }
 

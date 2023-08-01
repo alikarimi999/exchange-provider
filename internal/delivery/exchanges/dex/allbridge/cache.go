@@ -1,99 +1,126 @@
 package allbridge
 
 import (
-	"net/http"
-	"net/url"
+	"context"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
 
-type chache struct {
-	lastId uint64
-
-	mux0  *sync.RWMutex
-	list0 map[string]time.Time
-
-	mux1  *sync.RWMutex
-	list1 map[string]item
-
-	t *time.Ticker
+type cache struct {
+	ex        *exchange
+	mux       *sync.RWMutex
+	logs      map[string]*types.TokensReceivedLog
+	lastBlock map[string]uint64
+	limitLog  uint64
 }
 
-func newCache() *chache {
-	return &chache{
-		mux0:  &sync.RWMutex{},
-		list0: make(map[string]time.Time),
-		mux1:  &sync.RWMutex{},
-		list1: make(map[string]item),
-		t:     time.NewTicker(5 * time.Second),
+func newCache(ex *exchange, fromDB bool) (*cache, error) {
+	c := &cache{
+		ex:        ex,
+		mux:       &sync.RWMutex{},
+		logs:      make(map[string]*types.TokensReceivedLog),
+		lastBlock: make(map[string]uint64),
+		limitLog:  50000,
 	}
+	if fromDB {
+		if err := c.downloadPreviousLogs(); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
 }
 
-func (c *chache) run(ex *allBridge, stopCh <-chan struct{}) {
-	agent := ex.agent("chache.run")
+func (c *cache) downloadPreviousLogs() error {
+
+	wg := &sync.WaitGroup{}
+	var err0 error
+	for id, n := range c.ex.ns {
+		wg.Add(1)
+		go func(id string, n types.Network) {
+			defer wg.Done()
+			lb, err := c.ex.cfg.Networks.network(id).client.BlockNumber(context.Background())
+			if err != nil {
+				err0 = err
+				return
+			}
+			c.lastBlock[id] = lb
+			for i := 1; i <= 2; i++ {
+				fromBlock := lb - (c.limitLog * uint64(i))
+				toBlock := lb - (c.limitLog * uint64(i-1))
+				ls, _, err := n.DownloadLogs(fromBlock, toBlock)
+				if err != nil {
+					err0 = err
+					return
+				}
+				c.mux.Lock()
+				for _, l := range ls {
+					lId := logId(id, l.Nonce.String())
+					if _, ok := c.logs[lId]; ok {
+						continue
+					}
+					c.logs[lId] = l
+				}
+				c.mux.Unlock()
+			}
+		}(id, n)
+	}
+	wg.Wait()
+	return err0
+}
+
+func (c *cache) run(stopCh <-chan struct{}) {
+	agent := c.ex.agent("cache.run")
+	t := time.NewTicker(3 * time.Second)
+	dt := time.NewTicker(30 * time.Hour)
 	for {
 		select {
-		case <-c.t.C:
-			url, _ := url.Parse(ex.cfg.Url)
-			v := url.Query()
-			v.Set("page", "1")
-			v.Set("limit", "20")
-			url.RawQuery = v.Encode()
+		case <-t.C:
+			for id, n := range c.ex.ns {
+				ls, lb, err := n.DownloadLogs(c.lastBlock[id], 0)
+				if err == nil {
+					for _, l := range ls {
+						lId := logId(id, l.Nonce.String())
+						if _, ok := c.logs[lId]; ok {
+							continue
+						}
 
-			if c.lastId == 0 {
-				func() {
-					req, _ := http.NewRequest(http.MethodGet, url.String(), nil)
-					res, err := http.DefaultClient.Do(req)
-					if err != nil {
-						ex.l.Debug(agent, err.Error())
-						return
+						c.logs[lId] = l
 					}
-					defer res.Body.Close()
-
-				}()
+					if lb > 0 {
+						c.lastBlock[id] = lb + 1
+					}
+				} else {
+					if !strings.Contains(err.Error(), "Gateway Time") {
+						c.ex.l.Debug(agent, fmt.Sprintf("%s: %s", id, err.Error()))
+					}
+				}
 			}
+
+		case <-dt.C:
+			c.mux.Lock()
+			threshold := time.Now().Add(-3 * time.Hour)
+			for i, l := range c.logs {
+				if l.DownloadAt.After(threshold) {
+					delete(c.logs, i)
+				}
+			}
+			c.mux.Unlock()
 
 		case <-stopCh:
 			return
 		}
 	}
 }
-
-type transfers struct {
-	Items []item `json:"items"`
-	Meta  Meta   `json:"meta"`
-}
-type item struct {
-	ID               string `json:"id"`
-	Status           string `json:"status"`
-	Timestamp        int64  `json:"timestamp"`
-	FromChainSymbol  string `json:"fromChainSymbol"`
-	ToChainSymbol    string `json:"toChainSymbol"`
-	FromAmount       string `json:"fromAmount"`
-	ToAmount         string `json:"toAmount"`
-	FromTokenAddress string `json:"fromTokenAddress"`
-	ToTokenAddress   string `json:"toTokenAddress"`
-	FromAddress      string `json:"fromAddress"`
-	ToAddress        string `json:"toAddress"`
-	MessagingType    string `json:"messagingType"`
-	downloadedAt     time.Time
+func logId(network, nonce string) string {
+	return network + "-" + nonce
 }
 
-type transferD struct {
-	item
-	Transactions []transactions `json:"transactions"`
-}
-type transactions struct {
-	BlockTime   int64  `json:"blockTime"`
-	ChainSymbol string `json:"chainSymbol"`
-	TxID        string `json:"txId"`
-	Type        string `json:"type"`
-}
-
-type Meta struct {
-	ItemCount    int `json:"itemCount"`
-	TotalItems   int `json:"totalItems"`
-	ItemsPerPage int `json:"itemsPerPage"`
-	TotalPages   int `json:"totalPages"`
-	CurrentPage  int `json:"currentPage"`
+func (c *cache) getRecievedLog(network, nonce string) (*types.TokensReceivedLog, bool) {
+	c.mux.RLock()
+	defer c.mux.RUnlock()
+	l, ok := c.logs[logId(network, nonce)]
+	return l, ok
 }
