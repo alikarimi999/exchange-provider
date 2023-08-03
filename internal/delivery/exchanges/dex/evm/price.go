@@ -24,7 +24,6 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 		return nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage("pair is not enable right now"))
 	}
-
 	opt := &EstimateOpts{
 		RevertEstimate: true,
 	}
@@ -38,23 +37,26 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 	)
 
 	if p.T1.String() == in.String() {
-		min := p.T1.Min
-		max := p.T1.Max
-
-		if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
-			return ess, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
+		if !opt.CustomizeFee {
+			min := p.T1.Min
+			max := p.T1.Max
+			if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
+				return ess, errors.Wrap(errors.ErrBadRequest,
+					errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
+			}
 		}
 		In = types.TokenFromEntity(p.T1)
 		Out = types.TokenFromEntity(p.T2)
 		es0.FeeRate = p.FeeRate1
 	} else {
-		min := p.T2.Min
-		max := p.T2.Max
-		if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
-			return ess, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
+		if !opt.CustomizeFee {
+			min := p.T2.Min
+			max := p.T2.Max
+			if (min != 0 && amountIn < min) || (max != 0 && amountIn > max) {
+				return ess, errors.Wrap(errors.ErrBadRequest,
+					errors.NewMesssage(fmt.Sprintf("min is %f and max is %f", min, max)))
 
+			}
 		}
 		In = types.TokenFromEntity(p.T2)
 		Out = types.TokenFromEntity(p.T1)
@@ -88,11 +90,13 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 	amount = amount - es0.FeeAmount
 
 	if amount <= 0 {
-		if err := d.minAndMax(p); err != nil {
-			return nil, errors.Wrap(errors.ErrInternal)
-		}
-		if err := d.pairs.Update(d.Id(), p); err != nil {
-			return nil, errors.Wrap(errors.ErrInternal)
+		if !opt.CustomizeFee {
+			if err := d.minAndMax(p); err != nil {
+				return nil, errors.Wrap(errors.ErrInternal)
+			}
+			if err := d.pairs.Update(d.Id(), p); err != nil {
+				return nil, errors.Wrap(errors.ErrInternal)
+			}
 		}
 
 		if p.T1.String() == in.String() {
@@ -108,6 +112,7 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 	if err != nil {
 		return nil, err
 	}
+
 	es0.AmountOut = amountOut
 
 	if opt.RevertEstimate {
@@ -132,7 +137,7 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 		}
 		ess = append(ess, es1)
 	}
-	return ess, err
+	return ess, nil
 }
 
 func (d *exchange) ExchangeFeeAmount(in entity.TokenId, p *entity.Pair,

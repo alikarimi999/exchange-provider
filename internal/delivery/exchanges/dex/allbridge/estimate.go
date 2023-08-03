@@ -54,12 +54,10 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId, amountIn float64, l
 	if err == nil {
 		ls = len(ss1) - 1
 		amIn := ss1[ls][len(ss1[ls])-1].amountOut
-
 		amIn = (amountIn * es0.AmountOut) / amIn
 		amInPlusFee := (amIn / (1 - es1.FeeRate))
 		feeAmount := amInPlusFee - amIn
 		amIn = amInPlusFee + es1.ExchangeFeeAmount
-
 		es1.AmountIn = amIn
 		es1.AmountOut = amountIn
 		es1.FeeAmount = feeAmount
@@ -69,7 +67,7 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId, amountIn float64, l
 		d.l.Debug(d.agent("EstimateAmountOut"), err.Error())
 	}
 
-	return ess, err
+	return ess, nil
 }
 
 type route struct {
@@ -102,7 +100,7 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 		return ss, nil
 
 	} else if !a.tl.isTokenExists(in) && a.tl.isTokenExists(out) {
-		r0, err := a.externalEstimate(in, entity.TokenId{}, amount, lvl, true)
+		r0, err := a.externalEstimate(in, entity.TokenId{}, amount, a.cfg.ExchangeFee, a.cfg.FeeRate, lvl, true)
 		if err != nil {
 			return nil, err
 		}
@@ -145,7 +143,7 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 				errors.NewMesssage("unable to estimate this pair"))
 		}
 
-		r1, err := a.externalEstimate(ss[0][0].out, out, ss[0][0].amountOut, lvl, false)
+		r1, err := a.externalEstimate(ss[0][0].out, out, ss[0][0].amountOut, 0, 0, lvl, false)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +152,7 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 		return ss, nil
 
 	} else {
-		r0, err := a.externalEstimate(in, in, amount, lvl, true)
+		r0, err := a.externalEstimate(in, in, amount, a.cfg.ExchangeFee, a.cfg.FeeRate, lvl, true)
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +183,7 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 				errors.NewMesssage("unable to estimate this pair"))
 		}
 
-		r2, err := a.externalEstimate(ss[0][1].out, out, ss[0][1].amountOut, lvl, false)
+		r2, err := a.externalEstimate(ss[0][1].out, out, ss[0][1].amountOut, a.cfg.ExchangeFee, a.cfg.FeeRate, lvl, false)
 		if err != nil {
 			return nil, err
 		}
@@ -196,15 +194,16 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 	}
 }
 
-func (a *exchange) externalEstimate(in, out entity.TokenId, amount float64, lvl uint, In bool) (*route, error) {
+func (a *exchange) externalEstimate(in, out entity.TokenId, amount,
+	exchangeFee, feeRate float64, lvl uint, In bool) (*route, error) {
 	ts, err := a.tl.tokensInNetwork(in.Network)
 	if err != nil {
 		return nil, err
 	}
 	opts := &evm.EstimateOpts{
 		CustomizeFee: true,
-		ExchangeFee:  a.cfg.ExchangeFee,
-		FeeRate:      a.cfg.FeeRate,
+		ExchangeFee:  exchangeFee,
+		FeeRate:      feeRate,
 	}
 
 	if In {
@@ -228,6 +227,7 @@ func (a *exchange) externalEstimate(in, out entity.TokenId, amount float64, lvl 
 								EstimateAmount: es[0],
 							})
 						}
+
 					}
 				}
 			}

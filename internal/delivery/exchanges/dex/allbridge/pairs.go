@@ -199,6 +199,9 @@ func (ex *exchange) createPairs() error {
 
 	ps2 := []*entity.Pair{}
 	for _, p := range ps {
+		p.T1.Min *= 2
+		p.T2.Min *= 2
+
 		if p.T1.Id.Network != p.T2.Id.Network {
 			ps2 = append(ps2, p)
 			p.ExchangeFee = ex.cfg.ExchangeFee
