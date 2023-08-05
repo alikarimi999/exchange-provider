@@ -1,41 +1,37 @@
-package kucoin
+package binance
 
 import (
-	"exchange-provider/internal/delivery/exchanges/cex/kucoin/dto"
-	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
+	"exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/adshao/go-binance/v2"
 )
 
 var (
 	maxGoroutines = 10
 )
 
-func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
+func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 	duration := time.Until(lastUpdate.Add(-time.Hour))
-
-	if err := k.da.aggregateAll(duration); err != nil {
-		return err
-	}
-
-	ws, err := k.wa.aggregateAll(duration, true)
+	ws, err := ex.wa.aggregateAll(duration, true)
 	if err != nil {
 		return err
 	}
 
 	pairs := make(map[string]*entity.Pair)
 
-	os0, err := k.getOrders(types.ODepositTxIdSetted)
+	os0, err := ex.getOrders(types.ODepositTxIdSetted)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os0 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -46,7 +42,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		f, _, err := ex.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -54,14 +50,14 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 		pairs[o.ID().String()] = p
 	}
 
-	os1, err := k.getOrders(types.ODepositeConfimred)
+	os1, err := ex.getOrders(types.ODepositeConfimred)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os1 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -72,7 +68,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		f, _, err := ex.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -80,14 +76,14 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 		pairs[o.ID().String()] = p
 	}
 
-	os2, err := k.getOrders(types.OFirstSwapTracking)
+	os2, err := ex.getOrders(types.OFirstSwapCompleted)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os2 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -98,7 +94,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		f, _, err := ex.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -106,13 +102,13 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 		pairs[o.ID().String()] = p
 	}
 
-	os3, err := k.getOrders(types.OSecondSwapTracking)
+	os3, err := ex.getOrders(types.OSecondSwapCompleted)
 	if err != nil {
 		return err
 	}
 	for _, o := range os3 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -123,7 +119,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		f, _, err := ex.exchangeFeeAmount(out, p)
 		if err != nil {
 			return err
 		}
@@ -131,75 +127,26 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 		pairs[o.ID().String()] = p
 	}
 
-	os4, err := k.getOrders(types.OFirstSwapCompleted)
-	if err != nil {
-		return err
-	}
-
-	for _, o := range os4 {
-		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
-		if err != nil {
-			return err
-		}
-		var out *entity.Token
-		if p.T1.String() == to.Out.String() {
-			out = p.T1
-		} else {
-			out = p.T2
-		}
-
-		f, _, err := k.exchangeFeeAmount(out, p)
-		if err != nil {
-			return err
-		}
-		to.ExchangeFeeAmount = f
-		pairs[o.ID().String()] = p
-	}
-
-	os5, err := k.getOrders(types.OSecondSwapCompleted)
-	if err != nil {
-		return err
-	}
-	for _, o := range os5 {
-		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
-		if err != nil {
-			return err
-		}
-		var out *entity.Token
-		if p.T1.String() == to.Out.String() {
-			out = p.T1
-		} else {
-			out = p.T2
-		}
-
-		f, _, err := k.exchangeFeeAmount(out, p)
-		if err != nil {
-			return err
-		}
-		to.ExchangeFeeAmount = f
-		pairs[o.ID().String()] = p
-	}
-
-	for i := 0; i < len(os4); i++ {
-		if len(os4[i].(*types.Order).Swaps) == 1 {
-			os5 = append(os5, os4[i])
-			os4 = append(os4[:i], os4[i+1:]...)
+	for i := 0; i < len(os2); i++ {
+		if len(os2[i].(*types.Order).Swaps) == 1 {
+			os3 = append(os3, os2[i])
+			os2 = append(os2[:i], os2[i+1:]...)
 			i--
 		}
 	}
 
-	k.orderCheckAndFixWithdraw(os5, ws, pairs)
+	ex.orderCheckAndFixWithdraw(os3, ws, pairs)
 
 	os := []entity.Order{}
 	os = append(os, os1...)
 	os = append(os, os2...)
-	os = append(os, os3...)
-	os = append(os, os4...)
+
+	for _, p := range pairs {
+		ex.setOrderFeeRate(p)
+	}
 
 	for _, o := range os {
-		k.orderCheckAndFixSwaps(o.(*types.Order), pairs[o.ID().String()])
+		ex.orderCheckAndFixSwaps(o.(*types.Order), pairs[o.ID().String()])
 	}
 
 	wg := &sync.WaitGroup{}
@@ -212,7 +159,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 				wg.Done()
 				<-ch
 			}()
-			k.handleOrder(to, p)
+			ex.handleOrder(to, p)
 		}(o.(*types.Order), pairs[o.ID().String()])
 	}
 	wg.Wait()
@@ -222,31 +169,32 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 // for orders that sends withdrawal requests to kucoin but
 // the server restarts before update on the database
 // Status: "OFirstSwapCompleted" and "OSecondSwapCompleted"
-func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.Withdrawal,
+func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*binance.Withdraw,
 	ps map[string]*entity.Pair) {
 	for _, o := range os {
 		co := o.(*types.Order)
 		id := co.ID().String()
 		for _, w := range ws {
-			if id == w.Remark {
+			if id == w.WithdrawOrderID {
 				switch w.Status {
-				case "SUCCESS":
-					co.Withdrawal.KucoinFee, _ = strconv.ParseFloat(w.Fee, 64)
-					co.Withdrawal.TxId = w.FixTxId()
+				case completed:
+					co.Withdrawal.Amount, _ = strconv.ParseFloat(w.Amount, 64)
+					co.Withdrawal.BinanceFee, _ = strconv.ParseFloat(w.TransactionFee, 64)
+					co.Withdrawal.TxId = w.TxID
 					co.Status = types.OWithdrawalConfirmed
-				case "FAILURE":
+				case failure:
 					co.Status = types.OWithdrawalFailed
-					co.FailedDesc = "failed by kucoin"
+					co.FailedDesc = "failed by binance"
 				default:
-					co.Withdrawal.Id = w.Id
 					co.Status = types.OWithdrawalTracking
 				}
+
 				if err := k.repo.Update(o); err != nil {
 					k.l.Debug(k.agent("orderCheckAndFixWithdraw"), err.Error())
 					continue
 				}
-				if w.Status == "SUCCESS" || w.Status == "FAILURE" {
-					k.wa.addToProccessedList(w.Id)
+				if w.Status == completed || w.Status == failure {
+					k.wa.addToProccessedList(w.ID)
 				}
 			}
 		}
@@ -256,25 +204,20 @@ func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.Withdra
 		if (len(co.Swaps) == 1 && co.Status == types.OFirstSwapCompleted) ||
 			co.Status == types.OSecondSwapCompleted {
 
-			_, _, wc := getBcQcWcFeeRate(co, ps[o.ID().String()],
+			_, _, wc, _ := getBcQcWcFeeRate(co, ps[o.ID().String()],
 				len(co.Swaps)-1)
-			k.withdrawal(co, wc, ps[o.ID().String()], true)
+			k.withdrawal(co, wc, ps[o.ID().String()])
 			k.repo.Update(o)
 		}
 	}
 }
 
 func (k *exchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
-	var (
-		bc, qc *Token
-	)
 	for i := range o.Swaps {
-		bc, qc, _ = getBcQcWcFeeRate(o, p, i)
+		bc, qc, _, feeRate := getBcQcWcFeeRate(o, p, i)
 		if (i == 0 && o.Status == types.ODepositeConfimred) ||
-			(i == 0 && o.Status == types.OFirstSwapTracking) ||
-			(i == 1 && o.Status == types.OFirstSwapCompleted) ||
-			(i == 1 && o.Status == types.OSecondSwapTracking) {
-			if err := k.trackSwap(o, bc, qc, i); err != nil {
+			(i == 1 && o.Status == types.OFirstSwapCompleted) {
+			if err := k.trackSwap(o, bc, qc, feeRate, i); err != nil {
 				if errors.ErrorCode(err) == errors.ErrNotFound {
 					// createOrder request didn't send before sever down
 					k.handleOrder(o, p)

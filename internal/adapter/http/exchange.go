@@ -9,6 +9,7 @@ import (
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func (s *Server) AddExchange(ctx Context) {
@@ -26,7 +27,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := kucoin.NewExchange(cfg, s.pairs, s.l, false, s.repo, s.fee, s.spread)
+		ex, err := kucoin.NewExchange(cfg, s.pairs, s.l, false, time.Now(), s.repo, s.fee, s.spread)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
@@ -51,7 +52,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := binance.NewExchange(cfg, s.repo, s.pairs, s.spread, s.l, false)
+		ex, err := binance.NewExchange(cfg, s.repo, s.pairs, s.spread, s.l, time.Now(), false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

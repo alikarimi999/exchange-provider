@@ -8,6 +8,7 @@ import (
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -49,7 +50,7 @@ func (a *exchangeRepo) add(ex entity.Exchange) error {
 	return err
 }
 
-func (a *exchangeRepo) getAll() ([]entity.Exchange, error) {
+func (a *exchangeRepo) getAll(lastUpdate time.Time) ([]entity.Exchange, error) {
 	agent := "ExchangeRepo.GetAll"
 
 	var exs []entity.Exchange
@@ -69,7 +70,7 @@ func (a *exchangeRepo) getAll() ([]entity.Exchange, error) {
 		wg.Add(1)
 		go func(ex *Exchange) {
 			defer wg.Done()
-			exc, err := a.decrypt(ex)
+			exc, err := a.decrypt(ex, lastUpdate)
 			if err != nil {
 				a.pairs.RemoveAll(ex.Id, false)
 				a.l.Error(agent, err.Error())
@@ -82,7 +83,7 @@ func (a *exchangeRepo) getAll() ([]entity.Exchange, error) {
 	wg.Wait()
 
 	if allbridge != nil {
-		exc, err := a.decrypt(allbridge)
+		exc, err := a.decrypt(allbridge, lastUpdate)
 		if err != nil {
 			a.pairs.RemoveAll(allbridge.Id, false)
 			a.l.Error(agent, err.Error())

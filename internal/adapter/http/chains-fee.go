@@ -35,12 +35,6 @@ func (c *chainsFee) update(chains map[string]float64) {
 	}
 }
 
-func (c *chainsFee) lowerEq(c1, c2 string) bool {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	return c.chain[c1] <= c.chain[c2]
-}
-
 func (s *Server) UpdateChainsFee(ctx *gin.Context) {
 	c := struct {
 		Chains map[string]float64

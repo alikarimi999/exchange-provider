@@ -9,11 +9,12 @@ import (
 	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/utils"
 	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *exchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
+func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Exchange, error) {
 	dec, err := utils.RSA_OAEP_Decrypt(ex.Configs, *r.prv)
 	if err != nil {
 		return nil, err
@@ -28,14 +29,14 @@ func (r *exchangeRepo) decrypt(ex *Exchange) (entity.Exchange, error) {
 				return nil, err
 			}
 			cfg.Enable = ex.Enable
-			return kucoin.NewExchange(cfg, r.pairs, r.l, true, r.repo, r.fee, r.spread)
+			return kucoin.NewExchange(cfg, r.pairs, r.l, true, lastUpdate, r.repo, r.fee, r.spread)
 		case "binance":
 			cfg := &binance.Configs{}
 			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
 				return nil, err
 			}
 			cfg.Enable = ex.Enable
-			return binance.NewExchange(cfg, r.repo, r.pairs, r.spread, r.l, true)
+			return binance.NewExchange(cfg, r.repo, r.pairs, r.spread, r.l, lastUpdate, true)
 
 			// case "swapspace":
 			// 	cfg := &swapspace.Config{}

@@ -27,7 +27,7 @@ type exchange struct {
 }
 
 func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
-	st entity.SpreadTable, l logger.Logger, fromDB bool) (entity.Cex, error) {
+	st entity.SpreadTable, l logger.Logger, lastUpdate time.Time, fromDB bool) (entity.Cex, error) {
 	ex := &exchange{
 		cfg:    cfg,
 		st:     st,
@@ -72,6 +72,9 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 				ex.pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
 				continue
 			}
+		}
+		if err := ex.retreiveOrders(lastUpdate); err != nil {
+			return nil, err
 		}
 	}
 

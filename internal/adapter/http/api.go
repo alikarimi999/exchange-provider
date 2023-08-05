@@ -255,8 +255,5 @@ func isIn(s string, ss []string) bool {
 }
 func isValidIP(ip string) bool {
 	parsedIP := net.ParseIP(ip)
-	if parsedIP == nil {
-		return false
-	}
-	return true
+	return parsedIP != nil
 }

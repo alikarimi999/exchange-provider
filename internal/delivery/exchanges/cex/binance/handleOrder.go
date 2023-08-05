@@ -78,7 +78,7 @@ func (ex *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 	}
 
 	for i := range swaps {
-		bc, qc, wc = getBcQcWcFeeRate(o, p, i)
+		bc, qc, wc, _ = getBcQcWcFeeRate(o, p, i)
 		if (i == 0 && o.Status == types.OFirstSwapCompleted) ||
 			(o.Status == types.OSecondSwapCompleted) {
 			continue

@@ -8,19 +8,23 @@ import (
 )
 
 func getBcQcWcFeeRate(o *types.Order, p *entity.Pair,
-	i int) (bc, qc, wc *Token) {
+	i int) (bc, qc, wc *Token, feeRate float64) {
+
 	if i == 0 {
 		if len(o.Swaps) == 2 {
 			if o.Swaps[0].In.String() == p.T1.Id.String() {
 				bc = p.T1.ET.(*Token)
 				qc = p.EP.(*ExchangePair).IC1
+				feeRate = p.EP.(*ExchangePair).BinanceFeeRate1
 			} else {
 				bc = p.T2.ET.(*Token)
 				qc = p.EP.(*ExchangePair).IC2
+				feeRate = p.EP.(*ExchangePair).BinanceFeeRate2
 			}
 		} else {
 			bc = p.T1.ET.(*Token)
 			qc = p.T2.ET.(*Token)
+			feeRate = p.EP.(*ExchangePair).BinanceFeeRate1
 			if o.Swaps[0].Side == binance.SideTypeSell {
 				wc = qc
 			} else {
@@ -34,9 +38,11 @@ func getBcQcWcFeeRate(o *types.Order, p *entity.Pair,
 		if o.Swaps[1].Out.String() == p.T2.String() {
 			bc = p.T2.ET.(*Token)
 			qc = p.EP.(*ExchangePair).IC2
+			feeRate = p.EP.(*ExchangePair).BinanceFeeRate2
 		} else {
 			bc = p.T1.ET.(*Token)
 			qc = p.EP.(*ExchangePair).IC1
+			feeRate = p.EP.(*ExchangePair).BinanceFeeRate1
 		}
 		wc = bc
 	}

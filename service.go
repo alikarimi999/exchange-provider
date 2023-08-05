@@ -20,13 +20,14 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
-	test()
-	// production()
+	// test()
+	production()
 }
 
 func production() {
@@ -77,6 +78,17 @@ func production() {
 	db := client.Database("exchange-provider")
 	l.Debug(agent, "connected to mongo")
 
+	ss, err := getLastUpdateTime(db)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+
+	errCh := make(chan error)
+	saveCurrentTimeToMongoDB(db, errCh)
+	if <-errCh != nil {
+		l.Fatal(agent, err.Error())
+	}
+
 	repo, err := database.NewOrderRepo(db, l)
 	if err != nil {
 		l.Fatal(agent, err.Error())
@@ -102,7 +114,7 @@ func production() {
 		l.Fatal(agent, err.Error())
 	}
 
-	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv)
+	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv, ss.LastUpdateTime)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -163,6 +175,17 @@ func test() {
 	db := client.Database("exchange-provider")
 	l.Debug(agent, "connected to mongo")
 
+	ss, err := getLastUpdateTime(db)
+	if err != nil {
+		l.Fatal(agent, err.Error())
+	}
+
+	errCh := make(chan error)
+	saveCurrentTimeToMongoDB(db, errCh)
+	if <-errCh != nil {
+		l.Fatal(agent, err.Error())
+	}
+
 	repo, err := database.NewOrderRepo(db, l)
 	if err != nil {
 		l.Fatal(agent, err.Error())
@@ -188,7 +211,7 @@ func test() {
 		l.Fatal(agent, err.Error())
 	}
 
-	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv)
+	exStore, err := store.NewExchangeStore(db, ws, pairs, repo, f, s, l, prv, ss.LastUpdateTime)
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -233,4 +256,43 @@ func getPrivateKey(v *viper.Viper) (*rsa.PrivateKey, error) {
 	}
 
 	return privateKey, nil
+}
+
+type ServiceStatus struct {
+	Id             uint      `bson:"_id"`
+	LastUpdateTime time.Time `bson:"last_update_time"`
+}
+
+func getLastUpdateTime(db *mongo.Database) (*ServiceStatus, error) {
+	s := &ServiceStatus{}
+	res := db.Collection("service-status").FindOne(context.Background(), bson.M{"_id": 0})
+	if res.Err() != nil {
+		if res.Err() == mongo.ErrNoDocuments {
+			s.LastUpdateTime = time.Now()
+			return s, nil
+		}
+		return nil, res.Err()
+	}
+
+	if err := res.Decode(s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func saveCurrentTimeToMongoDB(db *mongo.Database, errCh chan error) {
+	t := time.NewTicker(1 * time.Minute)
+	c := db.Collection("service-status")
+	_, err := c.InsertOne(context.Background(), ServiceStatus{Id: 0, LastUpdateTime: time.Now()})
+	if mongo.IsDuplicateKeyError(err) {
+		errCh <- nil
+	} else {
+		errCh <- err
+	}
+	for ct := range t.C {
+		_, err := c.ReplaceOne(context.Background(), bson.M{"_id": 0}, ServiceStatus{LastUpdateTime: ct})
+		if err != nil {
+			continue
+		}
+	}
 }

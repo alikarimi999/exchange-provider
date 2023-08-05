@@ -33,7 +33,7 @@ type exchange struct {
 	stopedAt time.Time
 }
 
-func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, fromDB bool,
+func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, fromDB bool, lastUpdate time.Time,
 	repo entity.OrderRepo, fee entity.FeeTable, st entity.SpreadTable) (entity.Cex, error) {
 
 	cfg, err := validateConfigs(cfgi)
@@ -96,7 +96,7 @@ func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, from
 				}
 			}
 
-			if err := k.retreiveOrders(); err != nil {
+			if err := k.retreiveOrders(lastUpdate); err != nil {
 				return nil, err
 			}
 		}

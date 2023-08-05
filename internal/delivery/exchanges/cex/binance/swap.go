@@ -3,6 +3,7 @@ package binance
 import (
 	"context"
 	"exchange-provider/internal/delivery/exchanges/cex/binance/types"
+	"exchange-provider/pkg/errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -28,8 +29,12 @@ func (ex *exchange) swap(o *types.Order, bc, qc *Token, index int) error {
 			return err
 		}
 
-		o.Swaps[index].OutAmount, _ = strconv.ParseFloat(res.CummulativeQuoteQuantity, 64)
-		o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(res.ExecutedQuantity, 64)
+		if res.Status == binance.OrderStatusTypeFilled {
+			o.Swaps[index].OutAmount, _ = strconv.ParseFloat(res.CummulativeQuoteQuantity, 64)
+			o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(res.ExecutedQuantity, 64)
+		} else {
+			return fmt.Errorf("order status in binance is '%s'", res.Status)
+		}
 	} else {
 		amount = trim(big.NewFloat(o.Swaps[index].InAmountRequested).Text('f', 18), qc.OrderPrecision)
 		res, err = sendOrderRequest(ex.c.NewCreateOrderService().Type("MARKET").Side(side).
@@ -37,9 +42,12 @@ func (ex *exchange) swap(o *types.Order, bc, qc *Token, index int) error {
 		if err != nil {
 			return err
 		}
-
-		o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(res.CummulativeQuoteQuantity, 64)
-		o.Swaps[index].OutAmount, _ = strconv.ParseFloat(res.ExecutedQuantity, 64)
+		if res.Status == binance.OrderStatusTypeFilled {
+			o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(res.CummulativeQuoteQuantity, 64)
+			o.Swaps[index].OutAmount, _ = strconv.ParseFloat(res.ExecutedQuantity, 64)
+		} else {
+			return fmt.Errorf("order status in binance is '%s'", res.Status)
+		}
 	}
 
 	o.Swaps[index].InAmountRequested, _ = strconv.ParseFloat(amount, 64)
@@ -64,6 +72,31 @@ func (ex *exchange) swap(o *types.Order, bc, qc *Token, index int) error {
 			o.Swaps[index].OutAmount -= bf.Amount
 		}
 	}
+	return nil
+}
+
+func (ex *exchange) trackSwap(o *types.Order, bc, qc *Token, feeRate float64, index int) error {
+	bo, err := ex.c.NewGetOrderService().Symbol(bc.Coin + qc.Coin).
+		OrigClientOrderID(fmt.Sprintf("%s-%d", o.ID().String(), index)).Do(context.Background())
+	if err != nil {
+		if strings.Contains(err.Error(), "code=-2013") {
+			return errors.Wrap(errors.ErrNotFound)
+		}
+		return err
+	}
+	if bo.Status == binance.OrderStatusTypeFilled {
+		if bo.Side == binance.SideTypeSell {
+			o.Swaps[index].OutAmount, _ = strconv.ParseFloat(bo.CummulativeQuoteQuantity, 64)
+			o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(bo.ExecutedQuantity, 64)
+		} else {
+			o.Swaps[index].InAmountExecuted, _ = strconv.ParseFloat(bo.CummulativeQuoteQuantity, 64)
+			o.Swaps[index].OutAmount, _ = strconv.ParseFloat(bo.ExecutedQuantity, 64)
+		}
+	} else {
+		return fmt.Errorf("order status in binance is '%s'", bo.Status)
+	}
+	amOut := o.Swaps[index].OutAmount
+	o.Swaps[index].OutAmount = amOut - (amOut * feeRate)
 	return nil
 }
 

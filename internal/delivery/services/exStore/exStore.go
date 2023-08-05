@@ -8,6 +8,7 @@ import (
 	"exchange-provider/pkg/logger"
 	"fmt"
 	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -21,7 +22,7 @@ type exStore struct {
 
 func NewExchangeStore(db *mongo.Database, ws app.WalletStore, pairs entity.PairsRepo,
 	repo entity.OrderRepo, fee entity.FeeTable, spread entity.SpreadTable,
-	l logger.Logger, prvKey *rsa.PrivateKey) (entity.ExchangeStore, error) {
+	l logger.Logger, prvKey *rsa.PrivateKey, lastUpdate time.Time) (entity.ExchangeStore, error) {
 
 	s := &exStore{
 		repo:      newExchangeRepo(db, ws, pairs, repo, fee, spread, l, prvKey),
@@ -30,7 +31,7 @@ func NewExchangeStore(db *mongo.Database, ws app.WalletStore, pairs entity.Pairs
 		l:         l,
 	}
 	s.repo.exs = s
-	exs, err := s.repo.getAll()
+	exs, err := s.repo.getAll(lastUpdate)
 	if err != nil {
 		return nil, err
 	}
