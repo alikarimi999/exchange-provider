@@ -78,7 +78,7 @@ func newServerInfos(ex *exchange) (*serverInfos, error) {
 		tMux:      &sync.RWMutex{},
 		tradeFees: tradeFees,
 
-		t: time.NewTicker(45 * time.Second),
+		t: time.NewTicker(25 * time.Second),
 	}, nil
 }
 

@@ -73,7 +73,7 @@ func newServerInfos(ex *exchange, api *kucoin.ApiService) (*serverInfos, error) 
 		fMux:     &sync.RWMutex{},
 		feeRates: feeRates,
 
-		t: time.NewTicker(45 * time.Second),
+		t: time.NewTicker(25 * time.Second),
 	}, nil
 
 }
