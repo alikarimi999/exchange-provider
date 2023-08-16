@@ -54,7 +54,19 @@ func getBcQcWcFeeRate(o *types.Order, p *entity.Pair,
 	}
 	return
 }
-
+func (ex *exchange) tokensEfa(t *entity.Token, p *entity.Pair,
+	tokensEfa map[string]float64) (float64, error) {
+	efa, ok := tokensEfa[t.Id.String()]
+	if ok {
+		return efa, nil
+	}
+	efa, _, err := ex.exchangeFeeAmount(t, p)
+	if err != nil {
+		return 0, err
+	}
+	tokensEfa[t.Id.String()] = efa
+	return efa, nil
+}
 func (k *exchange) exchangeFeeAmount(out *entity.Token, p *entity.Pair) (float64, float64, error) {
 	var (
 		qcDollar float64

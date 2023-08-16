@@ -24,14 +24,14 @@ func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Excha
 	case entity.CEX:
 		switch ex.Name {
 		case "kucoin":
-			cfg := &kucoin.Configs{}
+			cfg := &kucoin.Config{}
 			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
 				return nil, err
 			}
 			cfg.Enable = ex.Enable
 			return kucoin.NewExchange(cfg, r.pairs, r.l, true, lastUpdate, r.repo, r.fee, r.spread)
 		case "binance":
-			cfg := &binance.Configs{}
+			cfg := &binance.Config{}
 			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
 				return nil, err
 			}

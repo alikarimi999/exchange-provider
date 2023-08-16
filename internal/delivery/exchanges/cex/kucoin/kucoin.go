@@ -12,7 +12,7 @@ import (
 )
 
 type exchange struct {
-	cfg *Configs
+	cfg *Config
 
 	readApi  *kucoin.ApiService
 	writeApi *kucoin.ApiService
@@ -33,10 +33,10 @@ type exchange struct {
 	stopedAt time.Time
 }
 
-func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, fromDB bool, lastUpdate time.Time,
+func NewExchange(cfg *Config, pairs entity.PairsRepo, l logger.Logger, fromDB bool, lastUpdate time.Time,
 	repo entity.OrderRepo, fee entity.FeeTable, st entity.SpreadTable) (entity.Cex, error) {
 
-	cfg, err := validateConfigs(cfgi)
+	cfg, err := cfg.validate()
 	if err != nil {
 		return nil, errors.Wrap("NewKucoinExchange", err)
 	}
@@ -67,7 +67,11 @@ func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, from
 		stopCh: make(chan struct{}),
 	}
 
-	if err := k.ping(); err != nil {
+	if err := ping(k.readApi); err != nil {
+		return nil, err
+	}
+
+	if err := ping(k.writeApi); err != nil {
 		return nil, err
 	}
 
@@ -90,7 +94,7 @@ func NewExchange(cfgi interface{}, pairs entity.PairsRepo, l logger.Logger, from
 					k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
 					continue
 				}
-				if err := k.pairs.Update(k.Id(), p); err != nil {
+				if err := k.pairs.Update(k.Id(), p, false); err != nil {
 					k.pairs.Remove(k.cfg.Id, p.T1.String(), p.T2.String(), false)
 					continue
 				}
@@ -139,11 +143,7 @@ func (ex *exchange) NID() string {
 }
 func (ex *exchange) UpdateStatus(eo entity.Order) error { return nil }
 
-func (ex *exchange) ping() error {
-	resp, err := ex.readApi.Accounts("", "")
-	if err = handleSDKErr(err, resp); err != nil {
-		return errors.Wrap(ex.agent("ping"), errors.NewMesssage(err.Error()))
-	}
-
-	return nil
+func ping(api *kucoin.ApiService) error {
+	resp, err := api.Accounts("", "")
+	return handleSDKErr(err, resp)
 }

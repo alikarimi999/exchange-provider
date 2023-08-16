@@ -230,9 +230,8 @@ func toPointer(n float64) *float64 { return &n }
 func findLowestMinAndHighestMax(ps []*entity.Pair) *entity.Pair {
 
 	var min1, min2, max1, max2 *float64
-
 	for _, p := range ps {
-		if min1 == nil || p.T2.Min < *min1 {
+		if min1 == nil || p.T1.Min < *min1 {
 			min1 = toPointer(p.T1.Min)
 		}
 
@@ -247,6 +246,7 @@ func findLowestMinAndHighestMax(ps []*entity.Pair) *entity.Pair {
 		if max2 == nil || (p.T2.Max == 0 || p.T2.Max > *max2) {
 			max2 = toPointer(p.T2.Max)
 		}
+
 	}
 
 	return &entity.Pair{

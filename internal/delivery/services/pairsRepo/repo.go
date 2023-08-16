@@ -52,7 +52,6 @@ func (pr *pairsRepo) AddExchanges(exs []entity.Exchange) {
 
 func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 	agent := pr.agent("Add")
-
 	pr.mux.Lock()
 	defer pr.mux.Unlock()
 	ep, ok := pr.eps[ex.NID()]
@@ -76,11 +75,6 @@ func (pr *pairsRepo) Add(ex entity.Exchange, ps ...*entity.Pair) error {
 		pr.eps[ex.NID()] = ep
 		pr.sortEps()
 		ep.add(ps...)
-		// for _, p := range ps {
-		// 	pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'",
-		// 		pairId(p.T1.String(), p.T2.String()), ex.NID()))
-
-		// }
 	} else {
 		ps2 := []*entity.Pair{}
 		psi := []interface{}{}
@@ -137,26 +131,25 @@ func (pr *pairsRepo) Exists(exId uint, t1, t2 string) bool {
 	return false
 }
 
-func (pr *pairsRepo) Update(exId uint, p *entity.Pair) error {
-	// agent := pr.agent("Update")
+func (pr *pairsRepo) Update(exId uint, p *entity.Pair, updateDB bool) error {
 	pr.mux.RLock()
 	defer pr.mux.RUnlock()
 	for _, ep := range pr.eps {
 		if ep.exId == exId {
-			update := bson.M{"$set": bson.M{"pairs.$[elem]": pFromEntity(p)}}
-			arrayFilter := options.Update().SetArrayFilters(options.ArrayFilters{
-				Filters: []interface{}{bson.M{"elem.id": p.String()}},
-			})
-			res, err := pr.c.UpdateByID(context.Background(), ep.exNID, update, arrayFilter)
-			if err != nil {
-				return err
-			}
-			if res.MatchedCount == 0 {
-				return fmt.Errorf("mongo response MatchedCount is 0")
+			if updateDB {
+				update := bson.M{"$set": bson.M{"pairs.$[elem]": pFromEntity(p)}}
+				arrayFilter := options.Update().SetArrayFilters(options.ArrayFilters{
+					Filters: []interface{}{bson.M{"elem.id": p.String()}},
+				})
+				res, err := pr.c.UpdateByID(context.Background(), ep.exNID, update, arrayFilter)
+				if err != nil {
+					return err
+				}
+				if res.MatchedCount == 0 {
+					return fmt.Errorf("mongo response MatchedCount is 0")
+				}
 			}
 			ep.update(p)
-			// pr.l.Debug(agent, fmt.Sprintf("pair '%s' updated in exchange '%s'",
-			// 	p.String(), ep.exNID))
 			return nil
 		}
 	}
@@ -241,17 +234,13 @@ func (pr *pairsRepo) RemoveAll(exId uint, hard bool) error {
 	for nid, ep := range pr.eps {
 		if ep.exId == exId {
 			if hard {
-				_, err := pr.c.DeleteOne(context.Background(), bson.D{{"_id", ep.exNID}})
+				_, err := pr.c.DeleteOne(context.Background(), bson.M{"_id": ep.exNID})
 				if err != nil {
 					return err
 				}
 				delete(pr.eps, nid)
-				// if res.DeletedCount == 1 {
-				// 	pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory and database", nid))
-				// }
 			} else {
 				delete(pr.eps, nid)
-				// pr.l.Debug(agent, fmt.Sprintf("all pairs of exchange '%s' removed from memory", nid))
 			}
 
 		}

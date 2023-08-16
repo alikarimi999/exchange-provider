@@ -31,7 +31,9 @@ func (t *Token) Check() error {
 }
 
 type EToken struct {
-	TransferTime map[string]TransferTime
+	ExtraExchange string
+	OtherToken    string
+	TransferTime  map[string]TransferTime
 }
 
 func (t *EToken) Snapshot() entity.ExchangeToken {
@@ -44,5 +46,5 @@ func (t *EToken) Snapshot() entity.ExchangeToken {
 			}
 		}
 	}
-	return &EToken{TransferTime: tt}
+	return &EToken{ExtraExchange: t.ExtraExchange, OtherToken: t.OtherToken, TransferTime: tt}
 }

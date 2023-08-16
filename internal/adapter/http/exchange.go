@@ -6,6 +6,7 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge"
 	"exchange-provider/internal/delivery/exchanges/dex/evm"
+	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
 	"fmt"
 	"strconv"
@@ -17,13 +18,13 @@ func (s *Server) AddExchange(ctx Context) {
 
 	switch name {
 	case "kucoin":
-		cfg := &kucoin.Configs{}
+		cfg := &kucoin.Config{}
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
 		if s.app.ExchangeExists(cfg.Id) {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, fmt.Errorf("exchange already exists")))
 			return
 		}
 
@@ -42,13 +43,13 @@ func (s *Server) AddExchange(ctx Context) {
 		return
 
 	case "binance":
-		cfg := &binance.Configs{}
+		cfg := &binance.Config{}
 		if err := ctx.Bind(cfg); err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
 		if s.app.ExchangeExists(cfg.Id) {
-			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
+			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, fmt.Errorf("exchange already exists")))
 			return
 		}
 
@@ -66,32 +67,6 @@ func (s *Server) AddExchange(ctx Context) {
 		ctx.JSON(cfg, nil)
 		return
 
-	// case "swapspace":
-	// 	cfg := &swapspace.Config{}
-	// 	if err := ctx.Bind(cfg); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	if s.app.ExchangeExists(cfg.Id) {
-	// 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("exchange already exists")))
-	// 		return
-	// 	}
-
-	// 	ex, err := swapspace.SwapSpace(cfg, s.repo, s.pairs, s.l)
-	// 	if err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-
-	// 	if err := s.app.AddExchange(ex); err != nil {
-	// 		ctx.JSON(nil, err)
-	// 		return
-	// 	}
-	// 	cfg.Message = "done"
-	// 	ctx.JSON(cfg, nil)
-	// 	return
-
 	case "evmdex":
 		cfg := &evm.Config{}
 		if err := ctx.Bind(cfg); err != nil {
@@ -101,7 +76,7 @@ func (s *Server) AddExchange(ctx Context) {
 
 		if s.app.ExchangeExists(cfg.Id) {
 			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage("exchange already exists")))
+				fmt.Errorf("exchange already exists")))
 			return
 		}
 
@@ -129,7 +104,7 @@ func (s *Server) AddExchange(ctx Context) {
 
 		if s.app.ExchangeExists(cfg.Id) {
 			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage("exchange already exists")))
+				fmt.Errorf("exchange already exists")))
 			return
 		}
 
@@ -148,8 +123,8 @@ func (s *Server) AddExchange(ctx Context) {
 		ctx.JSON(cfg, nil)
 		return
 	default:
-		err := errors.Wrap(errors.ErrNotFound,
-			errors.NewMesssage(fmt.Sprintf("exchange %s not exists", name)))
+		err := errors.Wrap(errors.ErrBadRequest,
+			fmt.Errorf(fmt.Sprintf("exchange %s not supported", name)))
 		ctx.JSON(nil, err)
 		return
 	}
@@ -166,7 +141,7 @@ func (s *Server) GetExchangeList(ctx Context) {
 		id, err = strconv.Atoi(sid)
 		if err != nil || id == 0 {
 			ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage("id must be a number greater than zero")))
+				fmt.Errorf("id must be a number greater than zero")))
 			return
 		}
 	}
@@ -235,6 +210,32 @@ func (s *Server) CommandExchanges(ctx Context) {
 		enable = true
 	case "disable":
 		enable = false
+	case "updatePairList":
+		if len(req.Lps) > 0 {
+			ex, err := s.exs.Get(req.Lps[0])
+			if err != nil {
+				ctx.JSON(nil, err)
+				return
+			}
+			if ex.Type() != entity.CrossDex {
+				ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
+					fmt.Errorf("this command only supported for crossdex exchanges")))
+				return
+			}
+			ps, err := ex.(entity.CrossDEX).UpdatePairs()
+			if err != nil {
+				ctx.JSON(nil, err)
+				return
+			}
+			ctx.JSON(struct {
+				NewPairs []string "json:\"newPairs\""
+				Msg      string   "json:\"msg\""
+			}{
+				NewPairs: ps,
+				Msg:      "done",
+			}, nil)
+			return
+		}
 	default:
 		ctx.JSON(nil, errors.Wrap(errors.ErrBadRequest,
 			fmt.Errorf("cmd '%s' is not supported", req.Cmd)))

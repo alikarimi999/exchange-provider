@@ -6,7 +6,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV2"
 	"exchange-provider/internal/delivery/exchanges/dex/evm/uniswapV3"
 	"exchange-provider/internal/entity"
-	"exchange-provider/pkg/errors"
 	"exchange-provider/pkg/logger"
 	"fmt"
 
@@ -43,7 +42,7 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 		return nil, err
 	}
 
-	if err := cfg.Validate(); err != nil {
+	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
 
@@ -65,9 +64,13 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 	ex.cfg.swapperAddress = common.HexToAddress(ex.cfg.Swapper)
 	ex.cfg.WrappedNativeToken = fmt.Sprintf("W%s", ex.cfg.NativeToken)
 
-	if err := ex.checkProviders(); err != nil {
+	ps, chainId, err := checkProviders(cfg.Providers)
+	if err != nil {
 		return nil, err
 	}
+
+	ex.cfg.providers = ps
+	ex.cfg.ChainId = chainId.Int64()
 
 	switch cfg.Version {
 	case 3:
@@ -78,8 +81,8 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 		d, err = uniswapV2.NewUniswapV2Dex(ex.NID(), ex.cfg.Network, ex.cfg.NativeToken, ex.cfg.Swapper,
 			ex.cfg.PriceProvider, ex.cfg.Contract, ex.cfg.ChainId, ex.cfg.prvKey, ex.cfg.providers, l)
 	default:
-		err = errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("only support version '2' and '3'"))
-		return nil, err
+		return nil, fmt.Errorf("only support version '2' and '3'")
+
 	}
 
 	if err != nil {

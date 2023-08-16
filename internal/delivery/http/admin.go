@@ -90,8 +90,12 @@ func (r *Router) adminRoutes() {
 			es.POST("/cmd", func(ctx *gin.Context) {
 				r.srv.CommandExchanges(newContext(ctx, true))
 			})
-
-			es.POST("/add/:name", func(ctx *gin.Context) { r.srv.AddExchange(newContext(ctx, true)) })
+			es.POST("update-config/:id", func(ctx *gin.Context) {
+				r.srv.UpdateConfig(newContext(ctx, true))
+			})
+			es.POST("/add/:name", func(ctx *gin.Context) {
+				r.srv.AddExchange(newContext(ctx, true))
+			})
 		}
 
 		api := a.Group("/api")

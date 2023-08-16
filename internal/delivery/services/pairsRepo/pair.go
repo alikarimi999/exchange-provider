@@ -120,7 +120,6 @@ func (pr *pairsRepo) retrievePairs() error {
 
 		for _, p := range ep.Pairs {
 			pr.eps[ep.NID].pairs[p.Id] = p.toEntity(ep.ExType, ep.NID, ep.ExId)
-			// pr.l.Debug(agent, fmt.Sprintf("pair '%s' added to exchange '%s'", p.Id, ep.NID))
 		}
 	}
 	return nil

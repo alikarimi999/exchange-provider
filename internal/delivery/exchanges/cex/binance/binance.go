@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"context"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/logger"
 	"fmt"
@@ -10,7 +11,7 @@ import (
 )
 
 type exchange struct {
-	cfg *Configs
+	cfg *Config
 
 	c     *binance.Client
 	pairs entity.PairsRepo
@@ -26,8 +27,13 @@ type exchange struct {
 	stopCh   chan struct{}
 }
 
-func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
+func NewExchange(cfgi *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 	st entity.SpreadTable, l logger.Logger, lastUpdate time.Time, fromDB bool) (entity.Cex, error) {
+
+	cfg, err := cfgi.validate()
+	if err != nil {
+		return nil, err
+	}
 	ex := &exchange{
 		cfg:    cfg,
 		st:     st,
@@ -36,6 +42,10 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 		c:      binance.NewClient(cfg.Api.ApiKey, cfg.Api.ApiSecret),
 		l:      l,
 		stopCh: make(chan struct{}),
+	}
+
+	if err := ping(ex.c); err != nil {
+		return nil, err
 	}
 
 	si, err := newServerInfos(ex)
@@ -68,7 +78,7 @@ func NewExchange(cfg *Configs, repo entity.OrderRepo, pairs entity.PairsRepo,
 				pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
 				continue
 			}
-			if err := ex.pairs.Update(ex.Id(), p); err != nil {
+			if err := ex.pairs.Update(ex.Id(), p, false); err != nil {
 				ex.pairs.Remove(ex.cfg.Id, p.T1.String(), p.T2.String(), false)
 				continue
 			}
@@ -112,4 +122,9 @@ func (ex *exchange) Remove() {
 	close(ex.stopCh)
 	ex.stopedAt = time.Now()
 	ex.l.Debug(string(op), "stopped")
+}
+
+func ping(c *binance.Client) error {
+	_, err := c.NewGetUserAsset().Do(context.Background())
+	return err
 }

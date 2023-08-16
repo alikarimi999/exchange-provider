@@ -42,7 +42,7 @@ func newExchangeRepo(db *mongo.Database, ws app.WalletStore, pairs entity.PairsR
 }
 
 func (a *exchangeRepo) add(ex entity.Exchange) error {
-	e, err := a.encryptConfigs(ex)
+	e, err := a.encryptConfigs(ex, ex.Configs())
 	if err != nil {
 		return err
 	}
@@ -50,14 +50,23 @@ func (a *exchangeRepo) add(ex entity.Exchange) error {
 	return err
 }
 
-func (a *exchangeRepo) getAll(lastUpdate time.Time) ([]entity.Exchange, error) {
+func (a *exchangeRepo) update(ex entity.Exchange, cfg interface{}) error {
+	e, err := a.encryptConfigs(ex, cfg)
+	if err != nil {
+		return err
+	}
+	_, err = a.db.ReplaceOne(context.Background(), bson.M{"_id": ex.Id()}, e)
+	return err
+}
+
+func (a *exchangeRepo) readAll(store map[string]entity.Exchange, lastUpdate time.Time) error {
 	agent := "ExchangeRepo.GetAll"
 
 	var exs []entity.Exchange
 	var exchanges []*Exchange
 	cur, err := a.db.Find(context.Background(), bson.D{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	cur.All(context.Background(), &exchanges)
 	wg := &sync.WaitGroup{}
@@ -82,17 +91,21 @@ func (a *exchangeRepo) getAll(lastUpdate time.Time) ([]entity.Exchange, error) {
 	}
 	wg.Wait()
 
+	for _, ex := range exs {
+		store[ex.NID()] = ex
+	}
+
 	if allbridge != nil {
 		exc, err := a.decrypt(allbridge, lastUpdate)
 		if err != nil {
 			a.pairs.RemoveAll(allbridge.Id, false)
 			a.l.Error(agent, err.Error())
 		} else {
-			exs = append(exs, exc)
+			store[exc.NID()] = exc
 		}
 	}
 
-	return exs, nil
+	return nil
 }
 
 func (a *exchangeRepo) enableDisable(exId uint, enable bool) error {

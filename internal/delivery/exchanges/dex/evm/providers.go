@@ -11,32 +11,33 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func (u *exchange) checkProviders() error {
+func checkProviders(providers []string) ([]*types.EthProvider, *big.Int, error) {
 	var chainId *big.Int
 	ps := []*types.EthProvider{}
-	for i, p := range u.cfg.Providers {
+	for i, p := range providers {
 		c, err := ethclient.Dial(p)
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 		cId, err := c.ChainID(context.Background())
 		if err != nil {
-			return err
+			return nil, nil, err
 		}
 
 		if i == 0 {
 			chainId = cId
 		} else {
 			if cId.Uint64() != chainId.Uint64() {
-				return fmt.Errorf("providers mismatch for chain Id")
+				return nil, nil, fmt.Errorf("providers mismatch for chain Id")
 			}
 		}
 		ps = append(ps, &types.EthProvider{URL: p, Client: c})
 	}
 
-	u.cfg.ChainId = chainId.Int64()
-	u.cfg.providers = ps
-	return nil
+	if len(ps) > 0 {
+		return ps, chainId, nil
+	}
+	return nil, nil, fmt.Errorf("no providers")
 }
 
 func (d *exchange) provider() *types.EthProvider {

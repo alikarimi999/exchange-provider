@@ -4,6 +4,7 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/binance/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +17,8 @@ var (
 )
 
 func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
+	agent := ex.agent("retreiveOrders")
+	ex.l.Debug(agent, "processing unfinished orders...")
 	duration := time.Until(lastUpdate.Add(-time.Hour))
 	ws, err := ex.wa.aggregateAll(duration, true)
 	if err != nil {
@@ -29,6 +32,7 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 		return err
 	}
 
+	tokensEFA := make(map[string]float64)
 	for _, o := range os0 {
 		to := o.(*types.Order)
 		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
@@ -42,11 +46,11 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := ex.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEFA)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.ExchangeFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
@@ -68,11 +72,11 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := ex.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEFA)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.ExchangeFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
@@ -94,11 +98,11 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := ex.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEFA)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.ExchangeFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
@@ -119,11 +123,11 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := ex.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEFA)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.ExchangeFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
@@ -134,6 +138,8 @@ func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
 			i--
 		}
 	}
+	ex.l.Debug(agent, fmt.Sprintf("there are %d unfinished orders to process",
+		len(os0)+len(os1)+len(os2)+len(os3)))
 
 	ex.orderCheckAndFixWithdraw(os3, ws, pairs)
 
@@ -232,6 +238,7 @@ func (k *exchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
 				k.repo.Update(o)
 				return
 			}
+
 			if i == 0 {
 				o.Status = types.OFirstSwapCompleted
 			} else {

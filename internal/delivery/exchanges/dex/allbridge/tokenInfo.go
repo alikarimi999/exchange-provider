@@ -47,7 +47,7 @@ func (tl tokenList) tokensInNetwork(n string) ([]*types.TokenInfo, error) {
 		errors.NewMesssage(fmt.Sprintf("network %s not found", n)))
 }
 
-func (ex *exchange) getTokenInfo() (map[string]types.Chain, error) {
+func getTokenInfo(ns mapCfgNetwork) (map[string]types.Chain, error) {
 	url := "https://core.api.allbridgecoreapi.net/token-info"
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	res, err := http.DefaultClient.Do(req)
@@ -64,7 +64,7 @@ func (ex *exchange) getTokenInfo() (map[string]types.Chain, error) {
 	chains := make(map[string]types.Chain)
 
 	for id, c := range tokens {
-		if s, ok := ex.cfg.Networks[id]; ok {
+		if s, ok := ns[id]; ok {
 			for _, t := range c.Tokens {
 				t.Chain = id
 				t.Network = s.Network
@@ -72,7 +72,7 @@ func (ex *exchange) getTokenInfo() (map[string]types.Chain, error) {
 				t.ChainId = c.ChainID
 				t.TransferTime = make(map[string]types.TransferTime)
 			}
-			for nid, n := range ex.cfg.Networks {
+			for nid, n := range ns {
 				for _, t := range c.Tokens {
 					tt, ok := c.TransferTime[nid]
 					if ok {

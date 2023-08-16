@@ -31,14 +31,11 @@ func NewExchangeStore(db *mongo.Database, ws app.WalletStore, pairs entity.Pairs
 		l:         l,
 	}
 	s.repo.exs = s
-	exs, err := s.repo.getAll(lastUpdate)
-	if err != nil {
+	if err := s.repo.readAll(s.exchanges, lastUpdate); err != nil {
 		return nil, err
 	}
-	for _, ex := range exs {
-		s.exchanges[ex.NID()] = ex
-		l.Debug("exStore.add", fmt.Sprintf("lp '%d' added", ex.Id()))
-
+	for id := range s.exchanges {
+		l.Debug("exStore.NewExchangeStore", fmt.Sprintf("exchange '%s' added", id))
 	}
 	return s, nil
 }
@@ -51,9 +48,8 @@ func (a *exStore) Get(id uint) (entity.Exchange, error) {
 			return ex, nil
 		}
 	}
-	err := fmt.Errorf("lp '%d' not found", id)
-	return nil, errors.Wrap(errors.ErrNotFound, err,
-		errors.NewMesssage(err.Error()))
+	return nil, fmt.Errorf("lp '%d' not found", id)
+
 }
 
 func (a *exStore) GetByNID(name string) (entity.Exchange, error) {
@@ -61,23 +57,30 @@ func (a *exStore) GetByNID(name string) (entity.Exchange, error) {
 	defer a.mux.RUnlock()
 	ex, ok := a.exchanges[name]
 	if !ok {
-		err := fmt.Errorf("lp '%s' not found", ex.NID())
-		return nil, errors.Wrap(errors.ErrNotFound, err,
-			errors.NewMesssage(err.Error()))
+		return nil, fmt.Errorf("lp '%s' not found", name)
 	}
 	return ex, nil
 }
 
 func (a *exStore) AddExchange(ex entity.Exchange) error {
-	a.mux.Lock()
-	defer a.mux.Unlock()
 
 	if err := a.repo.add(ex); err != nil {
 		return err
 	}
 
+	a.mux.Lock()
 	a.exchanges[ex.NID()] = ex
+	a.mux.Unlock()
+
 	a.l.Debug("exStore.addExchange", fmt.Sprintf("lp '%d' added", ex.Id()))
+	return nil
+}
+
+func (a *exStore) UpdateConfigs(ex entity.Exchange, cfg interface{}) error {
+	if err := a.repo.update(ex, cfg); err != nil {
+		return err
+	}
+	a.l.Debug("exStore.UpdateConfigs", fmt.Sprintf("lp '%d' updated", ex.Id()))
 	return nil
 }
 

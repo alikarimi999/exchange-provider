@@ -52,7 +52,7 @@ func NewExchange(cfg *Config, exs entity.ExchangeStore, repo entity.OrderRepo,
 
 	calculate.Allbridge_Precision = 3
 
-	tl, err := ex.getTokenInfo()
+	tl, err := getTokenInfo(ex.cfg.Networks)
 	if err != nil {
 		return nil, err
 	}
@@ -79,31 +79,17 @@ func NewExchange(cfg *Config, exs entity.ExchangeStore, repo entity.OrderRepo,
 	}
 	ex.c = c
 
-	if err := ex.createPairs(); err != nil {
+	ps, err := ex.createPairs(ex.cfg.ExchangeFee, ex.cfg.FeeRate, ex.tl, true)
+	if err != nil {
 		return nil, err
 	}
-
-	go ex.run(ex.stopCh)
-	if fromDB {
-		go func() {
-			var count int
-			t10 := time.NewTicker(30 * time.Second)
-			for range t10.C {
-				count++
-				if len(ex.exs.GetAll()) > 1 {
-					if err := ex.createPairs(); err != nil {
-						ex.l.Debug(ex.agent("NewExchange"), err.Error())
-						continue
-					}
-					return
-				}
-				if count == 360 {
-					return
-				}
-			}
-		}()
+	if len(ps) > 0 {
+		err := ex.pairs.Add(ex, ps...)
+		if err != nil {
+			return nil, err
+		}
 	}
-
+	go ex.run(ex.stopCh)
 	return ex, nil
 }
 
@@ -124,6 +110,23 @@ func (ex *exchange) Type() entity.ExType       { return entity.CrossDex }
 func (ex *exchange) Configs() interface{}      { return ex.cfg }
 func (ex *exchange) Remove()                   { close(ex.stopCh) }
 
+func (ex *exchange) UpdatePairs() ([]string, error) {
+	ps, err := ex.createPairs(ex.cfg.ExchangeFee, ex.cfg.FeeRate, ex.tl, false)
+	if err != nil {
+		return nil, err
+	}
+	pss := []string{}
+	if len(ps) > 0 {
+		err := ex.pairs.Add(ex, ps...)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range ps {
+			pss = append(pss, p.String())
+		}
+	}
+	return pss, nil
+}
 func (ex *exchange) run(stopCh <-chan struct{}) {
 	agent := ex.agent("run")
 	go ex.c.run(stopCh)
@@ -131,10 +134,16 @@ func (ex *exchange) run(stopCh <-chan struct{}) {
 	for {
 		select {
 		case <-t.C:
-			if err := ex.createPairs(); err != nil {
+			ps, err := ex.createPairs(ex.cfg.ExchangeFee, ex.cfg.FeeRate, ex.tl, false)
+			if err != nil {
 				ex.l.Debug(agent, err.Error())
 			}
-
+			if len(ps) > 0 {
+				err := ex.pairs.Add(ex, ps...)
+				if err != nil {
+					ex.l.Debug(agent, err.Error())
+				}
+			}
 		case <-stopCh:
 			return
 		}

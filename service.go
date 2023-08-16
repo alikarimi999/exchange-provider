@@ -26,8 +26,8 @@ import (
 )
 
 func main() {
-	// test()
-	production()
+	test()
+	// production()
 }
 
 func production() {
@@ -84,7 +84,7 @@ func production() {
 	}
 
 	errCh := make(chan error)
-	saveCurrentTimeToMongoDB(db, errCh)
+	go saveCurrentTimeToMongoDB(db, errCh)
 	if <-errCh != nil {
 		l.Fatal(agent, err.Error())
 	}
@@ -118,7 +118,6 @@ func production() {
 	if err != nil {
 		l.Fatal(agent, err.Error())
 	}
-
 	pairs.AddExchanges(exStore.GetAll())
 	ou := app.NewOrderUseCase(repo, exStore, ws, f, l)
 	go ou.Run()
@@ -181,11 +180,10 @@ func test() {
 	}
 
 	errCh := make(chan error)
-	saveCurrentTimeToMongoDB(db, errCh)
+	go saveCurrentTimeToMongoDB(db, errCh)
 	if <-errCh != nil {
 		l.Fatal(agent, err.Error())
 	}
-
 	repo, err := database.NewOrderRepo(db, l)
 	if err != nil {
 		l.Fatal(agent, err.Error())
@@ -289,6 +287,7 @@ func saveCurrentTimeToMongoDB(db *mongo.Database, errCh chan error) {
 	} else {
 		errCh <- err
 	}
+	close(errCh)
 	for ct := range t.C {
 		_, err := c.ReplaceOne(context.Background(), bson.M{"_id": 0}, ServiceStatus{LastUpdateTime: ct})
 		if err != nil {

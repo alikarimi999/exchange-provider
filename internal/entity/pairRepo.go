@@ -5,7 +5,7 @@ type PairsRepo interface {
 	Get(exId uint, t1, t2 string) (*Pair, error)
 	GetAll(exId uint) []*Pair
 	UpdateAll(cmd string) error
-	Update(exId uint, p *Pair) error
+	Update(exId uint, p *Pair, updateDB bool) error
 	Exists(exId uint, t1, t2 string) bool
 	Remove(exId uint, t1, t2 string, hard bool) error
 	RemoveAll(exId uint, hard bool) error

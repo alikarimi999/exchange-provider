@@ -5,6 +5,7 @@ import (
 	"exchange-provider/internal/delivery/exchanges/cex/kucoin/types"
 	"exchange-provider/internal/entity"
 	"exchange-provider/pkg/errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -14,28 +15,31 @@ var (
 	maxGoroutines = 10
 )
 
-func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
-	duration := time.Until(lastUpdate.Add(-time.Hour))
+func (ex *exchange) retreiveOrders(lastUpdate time.Time) error {
+	agent := ex.agent("retreiveOrders")
+	ex.l.Debug(agent, "processing unfinished orders...")
 
-	if err := k.da.aggregateAll(duration); err != nil {
+	duration := time.Until(lastUpdate.Add(-time.Hour))
+	if err := ex.da.aggregateAll(duration); err != nil {
 		return err
 	}
 
-	ws, err := k.wa.aggregateAll(duration, true)
+	ws, err := ex.wa.aggregateAll(duration, true)
 	if err != nil {
 		return err
 	}
 
 	pairs := make(map[string]*entity.Pair)
 
-	os0, err := k.getOrders(types.ODepositTxIdSetted)
+	os0, err := ex.getOrders(types.ODepositTxIdSetted)
 	if err != nil {
 		return err
 	}
 
+	tokensEfa := make(map[string]float64)
 	for _, o := range os0 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -46,22 +50,22 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
-	os1, err := k.getOrders(types.ODepositeConfimred)
+	os1, err := ex.getOrders(types.ODepositeConfimred)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os1 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -72,22 +76,22 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
-	os2, err := k.getOrders(types.OFirstSwapTracking)
+	os2, err := ex.getOrders(types.OFirstSwapTracking)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os2 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -98,21 +102,21 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
-	os3, err := k.getOrders(types.OSecondSwapTracking)
+	os3, err := ex.getOrders(types.OSecondSwapTracking)
 	if err != nil {
 		return err
 	}
 	for _, o := range os3 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -123,22 +127,22 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
-	os4, err := k.getOrders(types.OFirstSwapCompleted)
+	os4, err := ex.getOrders(types.OFirstSwapCompleted)
 	if err != nil {
 		return err
 	}
 
 	for _, o := range os4 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -149,21 +153,21 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
-	os5, err := k.getOrders(types.OSecondSwapCompleted)
+	os5, err := ex.getOrders(types.OSecondSwapCompleted)
 	if err != nil {
 		return err
 	}
 	for _, o := range os5 {
 		to := o.(*types.Order)
-		p, err := k.pairs.Get(k.Id(), to.In.String(), to.Out.String())
+		p, err := ex.pairs.Get(ex.Id(), to.In.String(), to.Out.String())
 		if err != nil {
 			return err
 		}
@@ -174,11 +178,11 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			out = p.T2
 		}
 
-		f, _, err := k.exchangeFeeAmount(out, p)
+		efa, err := ex.tokensEfa(out, p, tokensEfa)
 		if err != nil {
 			return err
 		}
-		to.ExchangeFeeAmount = f
+		to.EstimateFeeAmount = efa
 		pairs[o.ID().String()] = p
 	}
 
@@ -189,8 +193,10 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 			i--
 		}
 	}
+	ex.l.Debug(agent, fmt.Sprintf("there are %d unfinished orders to process",
+		len(os0)+len(os1)+len(os2)+len(os3)+len(os4)+len(os5)))
 
-	k.orderCheckAndFixWithdraw(os5, ws, pairs)
+	ex.orderCheckAndFixWithdraw(os5, ws, pairs)
 
 	os := []entity.Order{}
 	os = append(os, os1...)
@@ -199,7 +205,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 	os = append(os, os4...)
 
 	for _, o := range os {
-		k.orderCheckAndFixSwaps(o.(*types.Order), pairs[o.ID().String()])
+		ex.orderCheckAndFixSwaps(o.(*types.Order), pairs[o.ID().String()])
 	}
 
 	wg := &sync.WaitGroup{}
@@ -212,7 +218,7 @@ func (k *exchange) retreiveOrders(lastUpdate time.Time) error {
 				wg.Done()
 				<-ch
 			}()
-			k.handleOrder(to, p)
+			ex.handleOrder(to, p)
 		}(o.(*types.Order), pairs[o.ID().String()])
 	}
 	wg.Wait()

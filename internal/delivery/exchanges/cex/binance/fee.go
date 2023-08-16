@@ -82,6 +82,19 @@ func (ex *exchange) setOrderFeeRate(p *entity.Pair) error {
 	return err
 }
 
+func (ex *exchange) tokensEfa(t *entity.Token, p *entity.Pair,
+	tokensEfa map[string]float64) (float64, error) {
+	efa, ok := tokensEfa[t.Id.String()]
+	if ok {
+		return efa, nil
+	}
+	efa, _, err := ex.exchangeFeeAmount(t, p)
+	if err != nil {
+		return 0, err
+	}
+	tokensEfa[t.Id.String()] = efa
+	return efa, nil
+}
 func (ex *exchange) exchangeFeeAmount(t *entity.Token, p *entity.Pair) (float64, float64, error) {
 	var (
 		qcDollar float64

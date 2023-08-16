@@ -15,7 +15,7 @@ type Exchange struct {
 	Configs string        `bson:"configs"`
 }
 
-func (r *exchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
+func (r *exchangeRepo) encryptConfigs(ex entity.Exchange, cfg interface{}) (*Exchange, error) {
 	pub := r.prv.PublicKey
 
 	e := &Exchange{
@@ -25,7 +25,7 @@ func (r *exchangeRepo) encryptConfigs(ex entity.Exchange) (*Exchange, error) {
 		Name:   ex.Name(),
 	}
 
-	b, err := bson.Marshal(ex.Configs())
+	b, err := bson.Marshal(cfg)
 	if err != nil {
 		return nil, err
 	}

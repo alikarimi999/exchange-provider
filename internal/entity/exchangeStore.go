@@ -5,6 +5,7 @@ type ExchangeStore interface {
 	GetByNID(name string) (Exchange, error)
 	Exists(id uint) bool
 	AddExchange(ex Exchange) error
+	UpdateConfigs(ex Exchange, cfg interface{}) error
 	GetAll() []Exchange
 	GetAllMap() map[string]Exchange
 	EnableDisable(exId uint, enable bool) error

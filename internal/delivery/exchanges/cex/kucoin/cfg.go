@@ -1,7 +1,10 @@
 package kucoin
 
 import (
-	"exchange-provider/pkg/errors"
+	"exchange-provider/internal/entity"
+	"fmt"
+
+	"github.com/Kucoin/kucoin-go-sdk"
 )
 
 type API struct {
@@ -10,7 +13,7 @@ type API struct {
 	ApiPassphrase string `json:"apiPassphrase"`
 }
 
-type Configs struct {
+type Config struct {
 	Id       uint `json:"id"`
 	Enable   bool `json:"enable"`
 	ReadApi  *API `json:"readApi,omitempty"`
@@ -27,37 +30,74 @@ func (k *exchange) Configs() interface{} {
 	return k.cfg
 }
 
-func validateConfigs(cfgi interface{}) (*Configs, error) {
-	if cfgi == nil {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("configs is nil"))
+func (k *exchange) UpdateConfigs(cfgi interface{}, store entity.ExchangeStore) error {
+	cfg, ok := cfgi.(*Config)
+	if !ok {
+		return fmt.Errorf("invalid configs")
+	}
+	cfg, err := cfg.validate()
+	if err != nil {
+		return err
+	}
+	cfg.Enable = k.cfg.Enable
+	if cfg.Id != k.Id() {
+		return fmt.Errorf("the id field is not mutable")
 	}
 
-	cfg, ok := cfgi.(*Configs)
-	if !ok {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("invalid configs"))
+	readApi := kucoin.NewApiService(
+		kucoin.ApiBaseURIOption(cfg.ApiUrl),
+		kucoin.ApiKeyOption(cfg.ReadApi.ApiKey),
+		kucoin.ApiSecretOption(cfg.ReadApi.ApiSecret),
+		kucoin.ApiPassPhraseOption(cfg.ReadApi.ApiPassphrase),
+		kucoin.ApiKeyVersionOption(cfg.ApiVersion))
+
+	writeApi := kucoin.NewApiService(
+		kucoin.ApiBaseURIOption(cfg.ApiUrl),
+		kucoin.ApiKeyOption(cfg.WriteApi.ApiKey),
+		kucoin.ApiSecretOption(cfg.WriteApi.ApiSecret),
+		kucoin.ApiPassPhraseOption(cfg.WriteApi.ApiPassphrase),
+		kucoin.ApiKeyVersionOption(cfg.ApiVersion))
+
+	if err := ping(readApi); err != nil {
+		return err
 	}
+	if err := ping(writeApi); err != nil {
+		return err
+	}
+	if err := store.UpdateConfigs(k, cfg); err != nil {
+		return err
+	}
+
+	k.readApi = readApi
+	k.writeApi = writeApi
+	k.cfg = cfg
+
+	return nil
+}
+
+func (cfg *Config) validate() (*Config, error) {
 
 	if cfg.Id == 0 {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("id is required"))
+		return nil, fmt.Errorf("id is required")
 	}
 	if cfg.ReadApi.ApiKey == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiKey is required"))
+		return nil, fmt.Errorf("readApi.apiKey is required")
 	}
 	if cfg.ReadApi.ApiSecret == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiSecret is required"))
+		return nil, fmt.Errorf("readApi.apiSecret is required")
 	}
 	if cfg.ReadApi.ApiPassphrase == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("readApi.apiPassphrase is required"))
+		return nil, fmt.Errorf("readApi.apiPassphrase is required")
 	}
 
 	if cfg.WriteApi.ApiKey == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiKey is required"))
+		return nil, fmt.Errorf("writeApi.apiKey is required")
 	}
 	if cfg.WriteApi.ApiSecret == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiSecret is required"))
+		return nil, fmt.Errorf("writeApi.apiSecret is required")
 	}
 	if cfg.WriteApi.ApiPassphrase == "" {
-		return nil, errors.Wrap(errors.ErrBadRequest, errors.NewMesssage("writeApi.apiPassphrase is required"))
+		return nil, fmt.Errorf("writeApi.apiPassphrase is required")
 	}
 
 	if cfg.ApiVersion == "" {

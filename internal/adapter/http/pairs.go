@@ -65,7 +65,6 @@ func (s *Server) GetPairs(ctx Context) {
 		ctx.JSON(nil, err)
 		return
 	}
-
 	var totalPage int64
 	if pa.Page != 0 && pa.PerPage != 0 {
 		totalPage = pa.Total / pa.PerPage
@@ -133,7 +132,7 @@ func (s *Server) UpdatePairs(ctx Context) {
 			continue
 		}
 		p.Update(dp, ex.Name(), req.AcceptZero)
-		if err := s.pairs.Update(ex.Id(), dp); err != nil {
+		if err := s.pairs.Update(ex.Id(), dp, true); err != nil {
 			resp.Msg = err.Error()
 			res.PairsRes = append(res.PairsRes, resp)
 			continue
@@ -205,7 +204,7 @@ func (s *Server) CommandPairs(ctx Context) {
 				break
 			}
 			ep.Enable = true
-			s.pairs.Update(ex.Id(), ep)
+			s.pairs.Update(ex.Id(), ep, true)
 			resp.Msg = "done"
 		case dto.DisableCmd:
 			ep, err := s.pairs.Get(ex.Id(), p.T1.String(), p.T2.String())
@@ -218,7 +217,7 @@ func (s *Server) CommandPairs(ctx Context) {
 				break
 			}
 			ep.Enable = false
-			s.pairs.Update(ex.Id(), ep)
+			s.pairs.Update(ex.Id(), ep, true)
 			resp.Msg = "done"
 		}
 		res.PairsRes = append(res.PairsRes, resp)

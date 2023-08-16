@@ -96,7 +96,12 @@ func (ex *exchange) trackSwap(o *types.Order, bc, qc *Token, feeRate float64, in
 		return fmt.Errorf("order status in binance is '%s'", bo.Status)
 	}
 	amOut := o.Swaps[index].OutAmount
-	o.Swaps[index].OutAmount = amOut - (amOut * feeRate)
+	feeAmount := amOut * feeRate
+	o.Swaps[index].OutAmount = amOut - feeAmount
+	o.Swaps[index].BinanceFees = append(o.Swaps[index].BinanceFees, types.BinanceFee{
+		Coin:   qc.Coin,
+		Amount: feeAmount,
+	})
 	return nil
 }
 

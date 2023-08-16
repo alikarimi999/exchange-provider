@@ -63,10 +63,7 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId, amountIn float64, l
 		es1.FeeAmount = feeAmount
 		ess = append(ess, es1)
 
-	} else {
-		d.l.Debug(d.agent("EstimateAmountOut"), err.Error())
 	}
-
 	return ess, nil
 }
 
@@ -178,6 +175,7 @@ func (a *exchange) estimate(in, out entity.TokenId, amount float64,
 				break
 			}
 		}
+
 		if len(ss[0]) != 2 {
 			return nil, errors.Wrap(errors.ErrInternal,
 				errors.NewMesssage("unable to estimate this pair"))
@@ -227,7 +225,6 @@ func (a *exchange) externalEstimate(in, out entity.TokenId, amount,
 								EstimateAmount: es[0],
 							})
 						}
-
 					}
 				}
 			}

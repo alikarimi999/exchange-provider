@@ -37,6 +37,7 @@ type Exchange interface {
 	AddPairs(data interface{}) (*AddPairsResult, error)
 	RemovePair(t1, t2 TokenId) error
 	Configs() interface{}
+	UpdateConfigs(cfgi interface{}, store ExchangeStore) error
 	Remove()
 	UpdateStatus(Order) error
 }

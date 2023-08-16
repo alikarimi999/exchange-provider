@@ -115,7 +115,7 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		if err := ex.minAndMax(p); err != nil {
 			return nil, errors.Wrap(errors.ErrInternal)
 		}
-		if err := ex.pairs.Update(ex.Id(), p); err != nil {
+		if err := ex.pairs.Update(ex.Id(), p, false); err != nil {
 			return nil, errors.Wrap(errors.ErrInternal)
 		}
 

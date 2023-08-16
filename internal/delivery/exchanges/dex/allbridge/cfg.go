@@ -3,7 +3,10 @@ package allbridge
 import (
 	"context"
 	"crypto/ecdsa"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge/networks/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
+	"exchange-provider/internal/entity"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -35,8 +38,6 @@ func (m mapCfgNetwork) network(network string) *cfgNetwork {
 
 type Config struct {
 	Id          uint          `json:"id"`
-	Url         string        `json:"url"`
-	Name        string        `json:"name"`
 	Enable      bool          `json:"enable"`
 	FeeRate     float64       `json:"feeRate"`
 	ExchangeFee float64       `json:"exchangeFee"`
@@ -44,7 +45,60 @@ type Config struct {
 	Message     string        `json:"message"`
 }
 
+func (ex *exchange) UpdateConfigs(cfgi interface{}, store entity.ExchangeStore) error {
+	cfg, ok := cfgi.(*Config)
+	if !ok {
+		return fmt.Errorf("invalid config")
+	}
+	if err := cfg.validate(); err != nil {
+		return nil
+	}
+	cfg.Enable = ex.cfg.Enable
+	tl, err := getTokenInfo(cfg.Networks)
+	if err != nil {
+		return err
+	}
+
+	ns := make(map[string]types.Network)
+	for _, n := range cfg.Networks {
+		switch n.Type {
+		case types.EvmNetwork:
+			net, err := evm.NewEvmNetwork(ex.NID(), n.Network, n.AllbridgeContract,
+				tl[n.Network].BridgeAddress, n.MainContract, n.client, n.prvKey)
+			if err != nil {
+				return err
+			}
+			ns[n.Network] = net
+
+		default:
+			return fmt.Errorf("type %s not supported", n.Type)
+		}
+	}
+
+	c, err := newCache(ex, false)
+	if err != nil {
+		return err
+	}
+
+	ps, err := ex.createPairs(cfg.ExchangeFee, cfg.FeeRate, tl, true)
+	if err != nil {
+		return err
+	}
+	if len(ps) > 0 {
+		err := ex.pairs.Add(ex, ps...)
+		if err != nil {
+			return err
+		}
+	}
+
+	ex.tl = tl
+	ex.ns = ns
+	ex.c = c
+	return nil
+}
+
 func (c *Config) validate() error {
+
 	for _, n := range c.Networks {
 		c, err := ethclient.Dial(n.Provider)
 		if err != nil {

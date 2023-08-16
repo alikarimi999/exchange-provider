@@ -61,12 +61,10 @@ func (ex *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 		}
 		ex.trackDeposit(o, dc)
 		ex.repo.Update(o)
-
 		if o.Status != types.ODepositeConfimred {
 			return
 		}
 	}
-
 	var (
 		bc, qc, wc *Token
 		swaps      []uint
@@ -94,7 +92,6 @@ func (ex *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 			ex.repo.Update(o)
 			return
 		}
-
 		if i == 0 {
 			o.Status = types.OFirstSwapCompleted
 		} else {

@@ -94,7 +94,7 @@ func (d *exchange) EstimateAmountOut(in, out entity.TokenId,
 			if err := d.minAndMax(p); err != nil {
 				return nil, errors.Wrap(errors.ErrInternal)
 			}
-			if err := d.pairs.Update(d.Id(), p); err != nil {
+			if err := d.pairs.Update(d.Id(), p, false); err != nil {
 				return nil, errors.Wrap(errors.ErrInternal)
 			}
 		}

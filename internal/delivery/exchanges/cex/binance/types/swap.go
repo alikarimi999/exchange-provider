@@ -19,5 +19,4 @@ type Swap struct {
 	InAmountExecuted  float64
 	OutAmount         float64
 	BinanceFees       []BinanceFee
-	FeeCurrency       string
 }
