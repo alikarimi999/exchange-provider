@@ -10,7 +10,7 @@ type EVMDex interface {
 	Exchange
 	Network() string
 	Standard() string
-	CreateTx(Order) (Tx, error)
+	CreateTx(Order) ([]Tx, error)
 	CreateSwapBytes(in, out TokenId, tokenOwner, sender, receiver,
 		mainContract common.Address, amount, feeAmount float64,
 		prvKey *ecdsa.PrivateKey) ([]byte, error)

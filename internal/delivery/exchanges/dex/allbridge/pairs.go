@@ -48,6 +48,9 @@ func (ex *exchange) createPairs(exchangeFee, feeRate float64,
 		for _, p := range eps {
 			updated := ex.updateMinAndMax(p, tl, exchangeFee, feeRate, tokenEfa)
 			if updated {
+				p.ExchangeFee = exchangeFee
+				p.FeeRate1 = feeRate
+				p.FeeRate2 = feeRate
 				if err := ex.pairs.Update(ex.Id(), p, false); err != nil {
 					ex.l.Debug(agent, err.Error())
 				}

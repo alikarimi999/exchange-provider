@@ -84,7 +84,15 @@ func (ex *exchange) UpdateConfigs(cfgi interface{}, store entity.ExchangeStore) 
 	if err != nil {
 		return err
 	}
+
+	if err := ex.store.UpdateConfigs(ex, cfg); err != nil {
+		return err
+	}
+
 	if len(ps) > 0 {
+		for _, p := range ps {
+			fmt.Println(p, p.ExchangeFee)
+		}
 		err := ex.pairs.Add(ex, ps...)
 		if err != nil {
 			return err
@@ -94,6 +102,7 @@ func (ex *exchange) UpdateConfigs(cfgi interface{}, store entity.ExchangeStore) 
 	ex.tl = tl
 	ex.ns = ns
 	ex.c = c
+	ex.cfg = cfg
 	return nil
 }
 

@@ -5,7 +5,7 @@ import (
 	"exchange-provider/pkg/errors"
 )
 
-func (u OrderUseCase) GetMultiStep(o entity.Order, step uint) (entity.Tx, error) {
+func (u OrderUseCase) GetMultiStep(o entity.Order, step uint) ([]entity.Tx, error) {
 	ex, err := u.exs.GetByNID(o.ExchangeNid())
 	if err != nil {
 		return nil, err
@@ -16,6 +16,9 @@ func (u OrderUseCase) GetMultiStep(o entity.Order, step uint) (entity.Tx, error)
 
 	switch ex.Type() {
 	case entity.EvmDEX:
+		if step != 1 {
+			return nil, errors.Wrap(errors.ErrBadRequest, "step is out of range")
+		}
 		return ex.(entity.EVMDex).CreateTx(o)
 	case entity.CrossDex:
 		return ex.(entity.CrossDEX).CreateTx(o, int(step))

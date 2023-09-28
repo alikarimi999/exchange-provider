@@ -1,6 +1,6 @@
 package entity
 
-import "github.com/ethereum/go-ethereum/core/types"
+import "math/big"
 
 type TxType string
 
@@ -18,17 +18,18 @@ type Developer struct {
 type Tx interface {
 	Type() TxType
 	Step() uint
-	From() string
 }
 
 type EvmTx struct {
-	Tx          *types.Transaction
+	Network     string
+	TxData      []byte
 	IsApproveTx bool
 	CurrentStep uint
-	Sender      string
+	From        string
+	To          string
+	Value       *big.Int
 	Developer   *Developer
 }
 
 func (e *EvmTx) Type() TxType { return Evm }
 func (e *EvmTx) Step() uint   { return e.CurrentStep }
-func (e *EvmTx) From() string { return e.Sender }

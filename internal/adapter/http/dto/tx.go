@@ -7,30 +7,23 @@ import (
 )
 
 type evmTX struct {
-	Type        uint8  `json:"type"`
-	IsApproveTx bool   `json:"isApproveTx"`
-	From        string `json:"from"`
-	To          string `json:"to"`
-	Data        string `json:"data"`
-	Value       string `json:"value"`
-	Gas         string `json:"gas"`
-	GasPrice    string `json:"gasPrice"`
-	GasFeeCap   string `json:"gasFeeCap"`
-	GasTipCap   string `json:"gasTipCap"`
+	Network     string            `json:"network"`
+	IsApproveTx bool              `json:"isApproveTx"`
+	From        string            `json:"from"`
+	To          string            `json:"to"`
+	Data        string            `json:"data"`
+	Value       string            `json:"value"`
+	Developer   *entity.Developer `json:"developer"`
 }
 
-func evmTx(et *entity.EvmTx) *evmTX {
-	tx := et.Tx
+func evmTx(tx *entity.EvmTx) *evmTX {
 	return &evmTX{
-		Type:        tx.Type(),
-		IsApproveTx: et.IsApproveTx,
-		From:        et.From(),
-		To:          tx.To().Hex(),
-		Data:        hexutil.Encode(tx.Data()),
-		Value:       hexutil.EncodeBig(tx.Value()),
-		Gas:         hexutil.EncodeUint64(tx.Gas()),
-		GasPrice:    hexutil.EncodeBig(tx.GasPrice()),
-		GasFeeCap:   hexutil.EncodeBig(tx.GasFeeCap()),
-		GasTipCap:   hexutil.EncodeBig(tx.GasTipCap()),
+		Network:     tx.Network,
+		IsApproveTx: tx.IsApproveTx,
+		From:        tx.From,
+		To:          tx.To,
+		Data:        hexutil.Encode(tx.TxData),
+		Value:       hexutil.EncodeBig(tx.Value),
+		Developer:   tx.Developer,
 	}
 }

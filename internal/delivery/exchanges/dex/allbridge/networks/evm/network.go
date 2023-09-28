@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/contracts"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge/contracts/erc20"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -23,12 +24,18 @@ type net struct {
 	prvKey   *ecdsa.PrivateKey
 	chainId  int64
 	abi      *abi.ABI
+	erc20    *abi.ABI
 }
 
 func NewEvmNetwork(nid, network, ourAllbridge, allbridge, mainContract string, c *ethclient.Client,
 	prvKey *ecdsa.PrivateKey) (types.Network, error) {
 
 	abi, err := contracts.ContractsMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
+	erc20, err := erc20.ContractsMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +53,7 @@ func NewEvmNetwork(nid, network, ourAllbridge, allbridge, mainContract string, c
 		provider:             c,
 		prvKey:               prvKey,
 		abi:                  abi,
+		erc20:                erc20,
 		chainId:              i.Int64(),
 	}, nil
 }

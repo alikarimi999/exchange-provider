@@ -108,7 +108,7 @@ func (s *Server) AddExchange(ctx Context) {
 			return
 		}
 
-		ex, err := allbridge.NewExchange(cfg, s.exs, s.repo, s.pairs, s.l, false)
+		ex, err := allbridge.NewExchange(cfg, s.exs, s.repo, s.exs, s.pairs, s.l, false)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return

@@ -37,6 +37,7 @@ func (n *net) DownloadLogs(fromBlock, toBlock uint64) ([]*types.TokensReceivedLo
 		Addresses: []common.Address{n.allbridgeContract},
 		Topics:    [][]common.Hash{{common.HexToHash("0xe9d840d27ab4032a839c20760fb995af8e3ad1980b9428980ca1c7e072acd87a")}},
 	}
+
 	ls, err := n.provider.FilterLogs(context.Background(), f)
 	if err != nil {
 		return nil, 0, err

@@ -35,13 +35,13 @@ func (s *Server) NewOrder(ctx Context) {
 		ctx.JSON(dto.SingleStepResponse(o))
 		return
 	case entity.EVMOrder:
-		tx, err := s.app.GetMultiStep(o, 1)
+		txs, err := s.app.GetMultiStep(o, 1)
 		if err != nil {
 			ctx.JSON(nil, err)
 			return
 		}
 
-		ctx.JSON(dto.MultiStep(o, tx), nil)
+		ctx.JSON(dto.MultiStep(o, txs), nil)
 		return
 	}
 }

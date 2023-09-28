@@ -53,7 +53,7 @@ func (r *Router) CheckAccess(write bool) gin.HandlerFunc {
 
 		if write && !at.Write {
 			ctx.JSON(nil, errors.Wrap(errors.ErrForbidden,
-				errors.NewMesssage(fmt.Sprintf("X-API-Key doesn't have write access", token))))
+				errors.NewMesssage("X-API-Key doesn't have write access")))
 			context.Abort()
 			return
 		}

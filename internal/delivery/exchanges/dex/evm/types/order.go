@@ -21,7 +21,6 @@ type Order struct {
 	Level  uint
 
 	NeedApprove bool
-	Approved    bool
 	Sender      common.Address
 	Receiver    common.Address
 

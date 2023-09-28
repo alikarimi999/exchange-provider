@@ -20,14 +20,15 @@ func (d *exchange) SetTxId(eo entity.Order, txId string) error {
 	return d.repo.Update(o)
 }
 
-func (d *exchange) CreateTx(ord entity.Order) (entity.Tx, error) {
+func (d *exchange) CreateTx(ord entity.Order) ([]entity.Tx, error) {
 	o := ord.(*types.Order)
 	p, err := d.pairs.Get(d.Id(), o.In.String(), o.Out.String())
 	if err != nil {
 		return nil, err
 	}
 
-	etx := &entity.EvmTx{CurrentStep: 1, Sender: o.Sender.Hex()}
+	txs := []entity.Tx{}
+
 	var in, out *entity.Token
 	if p.T1.Id.String() == o.In.String() {
 		in = p.T1
@@ -37,47 +38,45 @@ func (d *exchange) CreateTx(ord entity.Order) (entity.Tx, error) {
 		out = p.T1
 	}
 
-	if o.NeedApprove && !o.Approved {
-		need, err := d.needApproval(in, o.Sender, o.AmountIn)
+	toTx := d.cfg.contractAddress.String()
+	if o.NeedApprove {
+		etx := &entity.EvmTx{CurrentStep: 1, From: o.Sender.Hex(), To: toTx, Value: common.Big0}
+		txData, err := d.approveTx(in)
 		if err != nil {
 			return nil, err
 		}
-		if need {
-			tx, err := d.approveTx(in)
-			etx.IsApproveTx = true
-			etx.Tx = tx
-			d := &entity.Developer{
-				Function:   "approve(address spender, uint256 value) external returns (bool);",
-				Contract:   in.ContractAddress,
-				Parameters: []string{d.cfg.contractAddress.Hex(), em.MaxBig256.String()},
-				Value:      common.Big0.String(),
-			}
-			etx.Developer = d
-			return etx, err
-		} else {
-			o.Approved = true
-			d.repo.Update(o)
+
+		etx.IsApproveTx = true
+		etx.Network = in.Id.Network
+		etx.TxData = txData
+		d := &entity.Developer{
+			Function:   "approve(address spender, uint256 value) external returns (bool);",
+			Contract:   in.ContractAddress,
+			Parameters: []string{d.cfg.contractAddress.Hex(), em.MaxBig256.String()},
+			Value:      etx.Value.String(),
 		}
+		etx.Developer = d
+		txs = append(txs, etx)
 	}
 
-	tx, bs, err := d.createTx(in, out, o.Sender, o.Sender, o.Receiver,
+	txData, bs, val, err := d.createTx(in, out, o.Sender, o.Sender, o.Receiver,
 		d.cfg.contractAddress, o.AmountIn, o.FeeAmount+o.ExchangeFeeAmount, d.cfg.prvKey)
 	if err != nil {
 		return nil, err
 	}
 
-	etx.IsApproveTx = false
-	etx.Tx = tx
-
+	etx := &entity.EvmTx{Network: in.Id.Network, CurrentStep: 1, From: o.Sender.Hex(), To: toTx, Value: val}
+	etx.TxData = txData
 	dev := &entity.Developer{
 		Function: "multicall(bytes[] calldata data) external payable returns (bytes[] memory results);",
 		Contract: d.cfg.contractAddress.Hex(),
-		Value:    tx.Value().String(),
+		Value:    val.String(),
 	}
 
 	for _, b := range bs {
 		dev.Parameters = append(dev.Parameters, hexutil.Encode(b))
 	}
 	etx.Developer = dev
-	return etx, nil
+	txs = append(txs, etx)
+	return txs, nil
 }

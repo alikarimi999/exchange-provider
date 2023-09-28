@@ -2,6 +2,7 @@ package allbridge
 
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/calculate"
+	"exchange-provider/internal/delivery/exchanges/dex/allbridge/contracts"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/contracts/erc20"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/networks/evm"
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
@@ -21,7 +22,9 @@ type exchange struct {
 	pairs entity.PairsRepo
 	repo  entity.OrderRepo
 	ns    map[string]types.Network
+	store entity.ExchangeStore
 
+	abi   *abi.ABI
 	erc20 *abi.ABI
 
 	tl     tokenList
@@ -29,22 +32,31 @@ type exchange struct {
 	stopCh chan struct{}
 }
 
-func NewExchange(cfg *Config, exs entity.ExchangeStore, repo entity.OrderRepo,
+func NewExchange(cfg *Config, exs entity.ExchangeStore, repo entity.OrderRepo, es entity.ExchangeStore,
 	p entity.PairsRepo, l logger.Logger, fromDB bool) (entity.CrossDEX, error) {
 
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
+
+	abi, err := contracts.ContractsMetaData.GetAbi()
+	if err != nil {
+		return nil, err
+	}
+
 	erc20, err := erc20.ContractsMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
+
 	ex := &exchange{
 		cfg:    cfg,
 		exs:    exs,
 		pairs:  p,
 		repo:   repo,
+		store:  es,
 		ns:     make(map[string]types.Network),
+		abi:    abi,
 		erc20:  erc20,
 		l:      l,
 		stopCh: make(chan struct{}),

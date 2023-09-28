@@ -34,6 +34,7 @@ func NewRouter(app *app.OrderUseCase, repo entity.OrderRepo, pairs entity.PairsR
 
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
+	engine.Use(corsMiddleware())
 
 	router := &Router{
 		gin: engine,

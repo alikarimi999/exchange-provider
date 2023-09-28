@@ -4,8 +4,6 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/contracts/erc20"
 	"exchange-provider/internal/entity"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-
 	"math/big"
 
 	em "github.com/ethereum/go-ethereum/common/math"
@@ -36,24 +34,11 @@ func (n *net) needApproval(in *entity.Token, owner common.Address, minAmount flo
 	return amount.Cmp(mAmount) == -1, nil
 }
 
-func (n *net) ApproveTx(in *entity.Token, ownder string, step int) (entity.Tx, error) {
-
-	c, err := erc20.NewContracts(common.HexToAddress(in.ContractAddress), n.provider)
+func (n *net) ApproveTx(in *entity.Token, owner string, step int) (entity.Tx, error) {
+	data, err := n.erc20.Pack("approve", n.mainContract, em.MaxBig256)
 	if err != nil {
 		return nil, err
 	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(n.prvKey, big.NewInt(n.chainId))
-	if err != nil {
-		return nil, err
-	}
-	opts.NoSend = true
-
-	tx, err := c.Approve(opts, n.mainContract, em.MaxBig256)
-	if err != nil {
-		return nil, err
-	}
-
 	d := &entity.Developer{
 		Function:   "approve(address spender, uint256 value) external returns (bool);",
 		Contract:   in.ContractAddress,
@@ -62,9 +47,12 @@ func (n *net) ApproveTx(in *entity.Token, ownder string, step int) (entity.Tx, e
 	}
 
 	return &entity.EvmTx{
-		Tx:          tx,
+		Network:     n.network,
+		TxData:      data,
 		IsApproveTx: true,
-		Sender:      ownder,
+		From:        owner,
+		To:          in.ContractAddress,
+		Value:       common.Big0,
 		CurrentStep: uint(step),
 		Developer:   d,
 	}, nil

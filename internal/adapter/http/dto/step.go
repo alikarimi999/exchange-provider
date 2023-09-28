@@ -97,20 +97,18 @@ type multiStep struct {
 	EstimateExchangeFeeAmount Number         `json:"estimateExchangeFeeAmount"`
 	FeeCurrency               entity.TokenId `json:"feeCurrency"`
 
-	Transaction interface{}       `json:"transaction"`
-	Developer   *entity.Developer `json:"developer"`
-	CreatedAt   int64             `json:"createdAt"`
-	UpdatedAt   int64             `json:"updatedAt"`
-	ExpireAt    int64             `json:"expireAt"`
+	Transactions []interface{} `json:"transactions"`
+	CreatedAt    int64         `json:"createdAt"`
+	UpdatedAt    int64         `json:"updatedAt"`
+	ExpireAt     int64         `json:"expireAt"`
 }
 
-func MultiStep(o entity.Order, tx entity.Tx) *multiStep {
+func MultiStep(o entity.Order, txs []entity.Tx) *multiStep {
 	ms := &multiStep{
-		OrderStep: &OrderStep{OrderId: o.ID().String(), CurrentStep: int(tx.Step())},
+		OrderStep: &OrderStep{OrderId: o.ID().String(), CurrentStep: int(txs[0].Step())},
 	}
-	switch tx.Type() {
+	switch txs[0].Type() {
 	case entity.Evm:
-		etx := tx.(*entity.EvmTx)
 		switch strings.Split(o.ExchangeNid(), "-")[0] {
 		case "allbridge":
 			ao := o.(*at.Order)
@@ -122,13 +120,11 @@ func MultiStep(o entity.Order, tx entity.Tx) *multiStep {
 			ms.ExchangeFee = Number(ao.ExchangeFee)
 			ms.EstimateExchangeFeeAmount = Number(ao.ExchangeFeeAmount)
 			ms.FeeCurrency = ao.FeeCurrency
-			ms.Type = string(tx.Type())
-			ms.Transaction = evmTx(etx)
+			ms.Type = string(txs[0].Type())
 			ms.CreatedAt = ao.CreatedAT
 			ms.UpdatedAt = ao.UpdatedAt
 			ms.ExpireAt = ao.ExpireAt
 			ms.OrderStep.TotalSteps = int(ao.StepsCount())
-			ms.Developer = etx.Developer
 		default:
 			eo := o.(*et.Order)
 			ms.AmountIn = Number(eo.AmountIn)
@@ -138,13 +134,17 @@ func MultiStep(o entity.Order, tx entity.Tx) *multiStep {
 			ms.ExchangeFee = Number(eo.ExchangeFee)
 			ms.EstimateExchangeFeeAmount = Number(eo.ExchangeFeeAmount)
 			ms.FeeCurrency = eo.FeeCurrency
-			ms.Type = string(tx.Type())
-			ms.Transaction = evmTx(etx)
+			ms.Type = string(txs[0].Type())
 			ms.CreatedAt = eo.CreatedAT
 			ms.UpdatedAt = eo.UpdatedAt
 			ms.ExpireAt = eo.ExpireAt
 			ms.OrderStep.TotalSteps = int(eo.StepsCount())
-			ms.Developer = etx.Developer
+
+		}
+		if txs[0].Type() == entity.Evm {
+			for _, tx := range txs {
+				ms.Transactions = append(ms.Transactions, evmTx(tx.(*entity.EvmTx)))
+			}
 		}
 	}
 	return ms

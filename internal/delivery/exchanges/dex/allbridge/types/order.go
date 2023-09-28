@@ -15,21 +15,17 @@ type Route struct {
 	EstimateAmountOut float64
 	ExchangeNid       string
 	NeedApprove       bool
-	Approved          bool
 }
 
 type Step struct {
-	Status        string
-	Receiver      string
-	SrcTxId       string
-	DstTxId       string
-	AmountIn      float64
-	AmountOut     float64
-	Routes        map[int]*Route
-	TxData        [][]byte
-	TxValue       []byte
-	GeneratedTime int64
-	FailedDesc    string
+	Status     string
+	Receiver   string
+	SrcTxId    string
+	DstTxId    string
+	AmountIn   float64
+	AmountOut  float64
+	Routes     map[int]*Route
+	FailedDesc string
 }
 
 type Order struct {

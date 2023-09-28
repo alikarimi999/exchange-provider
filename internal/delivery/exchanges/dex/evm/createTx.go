@@ -6,12 +6,9 @@ import (
 	"exchange-provider/internal/delivery/exchanges/dex/evm/types"
 	"exchange-provider/internal/entity"
 	"math/big"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common/math"
-	ts "github.com/ethereum/go-ethereum/core/types"
 
-	"exchange-provider/pkg/bind"
 	"exchange-provider/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -44,11 +41,10 @@ var (
 
 func (d *exchange) createTx(in, out *entity.Token, tokenOwner, sender, receiver,
 	contractAddress common.Address, amount, feeAmount float64,
-	prvKey *ecdsa.PrivateKey) (*ts.Transaction, [][]byte, error) {
+	prvKey *ecdsa.PrivateKey) ([]byte, [][]byte, *big.Int, error) {
 
 	agent := d.agent("createTx")
 	var (
-		tx  *ts.Transaction
 		err error
 	)
 
@@ -59,7 +55,7 @@ func (d *exchange) createTx(in, out *entity.Token, tokenOwner, sender, receiver,
 	if d.cfg.Version == 3 {
 		_, feeTier, err = d.dex.EstimateAmountOut(inT, outT, amount)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 	decF := big.NewFloat(0).SetInt(math.BigPow(10, int64(in.Decimals)))
@@ -73,23 +69,8 @@ func (d *exchange) createTx(in, out *entity.Token, tokenOwner, sender, receiver,
 	input, err := d.dex.TxData(inT, outT, receiver, swapAmountI, int64(feeTier))
 	if err != nil {
 		d.l.Debug(agent, err.Error())
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-
-	c, err := contracts.NewContracts(contractAddress, d.provider().Client)
-	if err != nil {
-		d.l.Debug(agent, err.Error())
-		return nil, nil, err
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(prvKey, big.NewInt(d.cfg.ChainId))
-	if err != nil {
-		d.l.Debug(agent, err.Error())
-		return nil, nil, err
-	}
-	opts.NoSend = true
-	opts.From = sender
-	opts.Sign = false
 
 	data := contracts.IExchangeAggregatorswapInput{
 		TokenIn:      common.HexToAddress(in.ContractAddress),
@@ -107,30 +88,21 @@ func (d *exchange) createTx(in, out *entity.Token, tokenOwner, sender, receiver,
 
 	sig, err := d.sign(data, d.cfg.prvKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
+	val := big.NewInt(0)
+
 	if in.Native {
-		opts.Value = totalAmountI
+		val = totalAmountI
 	}
 
 	b, err := d.abi.Pack("Swap", data, sig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	bs := [][]byte{b}
-	tx, err = c.Multicall(opts, bs)
-	if err != nil {
-		if err.Error() == errSTF().Error() {
-			return nil, nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage("insufficient funds or the previous step was unsuccessful"))
-		}
-		if strings.Contains(err.Error(), "insufficient funds") {
-			return nil, nil, errors.Wrap(errors.ErrBadRequest,
-				errors.NewMesssage(err.Error()))
-		}
-		return nil, nil, err
-	}
-	return tx, bs, nil
+	b, err = d.abi.Pack("multicall", bs)
+	return b, bs, val, err
 }

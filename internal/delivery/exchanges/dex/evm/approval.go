@@ -5,26 +5,12 @@ import (
 	"exchange-provider/internal/entity"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	em "github.com/ethereum/go-ethereum/common/math"
-	ts "github.com/ethereum/go-ethereum/core/types"
 )
 
-func (d *exchange) approveTx(in *entity.Token) (*ts.Transaction, error) {
-
-	c, err := erc20.NewContracts(common.HexToAddress(in.ContractAddress), d.provider())
-	if err != nil {
-		return nil, err
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(d.cfg.prvKey, big.NewInt(d.cfg.ChainId))
-	if err != nil {
-		return nil, err
-	}
-	opts.NoSend = true
-
-	return c.Approve(opts, d.cfg.contractAddress, em.MaxBig256)
+func (d *exchange) approveTx(in *entity.Token) ([]byte, error) {
+	return d.erc20.Pack("approve", d.cfg.contractAddress, em.MaxBig256)
 }
 
 func (d *exchange) needApproval(in *entity.Token, owner common.Address, minAmount float64) (bool, error) {

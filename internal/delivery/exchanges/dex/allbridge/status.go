@@ -3,6 +3,7 @@ package allbridge
 import (
 	"exchange-provider/internal/delivery/exchanges/dex/allbridge/types"
 	"exchange-provider/internal/entity"
+	"exchange-provider/pkg/errors"
 	"math"
 	"math/big"
 	"strconv"
@@ -26,10 +27,10 @@ func (ex *exchange) UpdateStatus(eo entity.Order) error {
 					if err != nil {
 						return err
 					}
-
 					l, ok := ex.c.getRecievedLog(lr.Out.Network, o.Nonce)
 					if !ok {
-						return nil
+						return errors.Wrap(errors.ErrForbidden,
+							errors.NewMesssage("the previous step has not completed yet"))
 					}
 					s.AmountOut, _ = new(big.Float).Quo(new(big.Float).SetInt(l.Amount),
 						big.NewFloat(math.Pow10(out.Decimals))).Float64()

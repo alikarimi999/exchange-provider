@@ -37,14 +37,6 @@ func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Excha
 			}
 			cfg.Enable = ex.Enable
 			return binance.NewExchange(cfg, r.repo, r.pairs, r.spread, r.l, lastUpdate, true)
-
-			// case "swapspace":
-			// 	cfg := &swapspace.Config{}
-			// 	if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
-			// 		return nil, err
-			// 	}
-			// 	return swapspace.SwapSpace(cfg, r.repo, r.pairs, r.l)
-
 		}
 	case entity.EvmDEX:
 		cfg := &evm.Config{}
@@ -61,7 +53,7 @@ func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Excha
 				return nil, err
 			}
 			cfg.Enable = ex.Enable
-			return allbridge.NewExchange(cfg, r.exs, r.repo, r.pairs, r.l, true)
+			return allbridge.NewExchange(cfg, r.exs, r.repo, r.exs, r.pairs, r.l, true)
 		}
 	}
 	return nil, errors.Wrap(errors.New(fmt.Sprintf("unkown exchange `%d`", ex.Id)))

@@ -23,7 +23,7 @@ func newCache(ex *exchange, fromDB bool) (*cache, error) {
 		mux:       &sync.RWMutex{},
 		logs:      make(map[string]*types.TokensReceivedLog),
 		lastBlock: make(map[string]uint64),
-		limitLog:  50000,
+		limitLog:  1000,
 	}
 	if fromDB {
 		if err := c.downloadPreviousLogs(); err != nil {
@@ -47,7 +47,7 @@ func (c *cache) downloadPreviousLogs() error {
 				return
 			}
 			c.lastBlock[id] = lb
-			for i := 1; i <= 2; i++ {
+			for i := 1; i <= 10; i++ {
 				fromBlock := lb - (c.limitLog * uint64(i))
 				toBlock := lb - (c.limitLog * uint64(i-1))
 				ls, _, err := n.DownloadLogs(fromBlock, toBlock)
