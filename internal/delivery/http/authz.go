@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (r *Router) CheckAccess(write bool) gin.HandlerFunc {
+func (r *Router) checkAccess(write bool) gin.HandlerFunc {
 	const agent = "CheckAccess"
 	return func(context *gin.Context) {
 		ctx := newContext(context, false)

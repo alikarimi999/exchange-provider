@@ -44,6 +44,9 @@ func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Excha
 			return nil, err
 		}
 		cfg.Enable = ex.Enable
+		for _, p := range ex.Providers {
+			cfg.Providers = p
+		}
 		return evm.NewEvmDex(cfg, r.repo, r.pairs, r.l)
 
 	case entity.CrossDex:
@@ -52,6 +55,11 @@ func (r *exchangeRepo) decrypt(ex *Exchange, lastUpdate time.Time) (entity.Excha
 			if err := bson.Unmarshal([]byte(dec), cfg); err != nil {
 				return nil, err
 			}
+
+			for n, ps := range ex.Providers {
+				cfg.Networks[n].Provider = ps[0]
+			}
+
 			cfg.Enable = ex.Enable
 			return allbridge.NewExchange(cfg, r.exs, r.repo, r.exs, r.pairs, r.l, true)
 		}

@@ -70,6 +70,11 @@ func (d *exchange) AddPairs(data interface{}) (*entity.AddPairsResult, error) {
 	wg.Wait()
 
 	if len(add) > 0 {
+		for _, p := range add {
+			d.tl.add(p.T1)
+			d.tl.add(p.T2)
+		}
+
 		if err := d.pairs.Add(d, add...); err != nil {
 			return nil, err
 		}

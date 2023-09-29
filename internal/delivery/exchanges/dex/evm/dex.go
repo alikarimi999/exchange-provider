@@ -15,10 +15,13 @@ import (
 )
 
 type exchange struct {
-	cfg   *Config
-	dex   IDex
+	cfg *Config
+	dex IDex
+
+	tl    *tokensList
 	pairs entity.PairsRepo
 	repo  entity.OrderRepo
+
 	abi   *abi.ABI
 	erc20 *abi.ABI
 
@@ -48,6 +51,7 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 
 	ex := &exchange{
 		cfg:   cfg,
+		tl:    newTokenList(),
 		pairs: pairs,
 		repo:  repo,
 		abi:   abi,
@@ -88,6 +92,12 @@ func NewEvmDex(cfg *Config, repo entity.OrderRepo, pairs entity.PairsRepo,
 	if err != nil {
 		return nil, err
 	}
+
+	for _, p := range pairs.GetAll(ex.Id()) {
+		ex.tl.add(p.T1)
+		ex.tl.add(p.T2)
+	}
+
 	ex.dex = d
 	return ex, nil
 }
