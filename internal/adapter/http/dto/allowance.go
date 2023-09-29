@@ -9,13 +9,15 @@ type AllowanceReq struct {
 	Owner string         `json:"owner"`
 }
 
+type AToken struct {
+	entity.TokenId
+	Address  string `json:"address"`
+	Decimals uint64 `json:"decimals"`
+}
+
 type AllowanceRes struct {
-	Token struct {
-		entity.TokenId
-		Address  string `json:"address"`
-		Decimals uint64 `json:"decimals"`
-	}
+	Token   AToken `json:"token"`
 	Owner   string `json:"owner"`
 	Spender string `json:"spender"`
-	Amount  string `jsnon:"amount"`
+	Amount  string `json:"amount"`
 }
