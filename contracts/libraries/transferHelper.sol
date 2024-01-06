@@ -13,7 +13,7 @@ library TransferHelper {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
         require(
             success && (data.length == 0 || abi.decode(data, (bool))),
-            "ExchangeAggregator::TransferHelper:safeApprove"
+            "TransferHelper:safeApprove"
         );
     }
 
@@ -26,7 +26,7 @@ library TransferHelper {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
         require(
             success && (data.length == 0 || abi.decode(data, (bool))),
-            "ExchangeAggregator::TransferHelper:safeTransfer"
+            "TransferHelper:safeTransfer"
         );
     }
 
@@ -40,12 +40,12 @@ library TransferHelper {
         (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
         require(
             success && (data.length == 0 || abi.decode(data, (bool))),
-            "ExchangeAggregator::TransferHelper:safeTransferFrom"
+            "TransferHelper:safeTransferFrom"
         );
     }
 
     function safeTransferETH(address to, uint256 value) internal {
         (bool success, ) = to.call{value: value}(new bytes(0));
-        require(success, "ExchangeAggregator::TransferHelper:safeTransferETH");
+        require(success, "TransferHelper:safeTransferETH");
     }
 }

@@ -1,23 +1,12 @@
 {
 	"compiler": {
-		"version": "0.8.17+commit.8df45f5f"
+		"version": "0.8.18+commit.87f61d96"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [
 			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "_WETH",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "_PriceProvider",
-						"type": "address"
-					}
-				],
+				"inputs": [],
 				"stateMutability": "nonpayable",
 				"type": "constructor"
 			},
@@ -41,34 +30,14 @@
 				"type": "event"
 			},
 			{
-				"inputs": [],
-				"name": "PriceProvider",
-				"outputs": [
+				"inputs": [
 					{
 						"internalType": "address",
-						"name": "",
+						"name": "token",
 						"type": "address"
 					}
 				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "WETH",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "balanceETH",
+				"name": "Balance",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -77,6 +46,167 @@
 					}
 				],
 				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "BalanceETH",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "bridge",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "tokenIn",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "bridgeFee",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "afterSwap",
+								"type": "bool"
+							},
+							{
+								"internalType": "uint256",
+								"name": "amountIn",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bytes",
+								"name": "bridgeData",
+								"type": "bytes"
+							}
+						],
+						"internalType": "struct IBridgeAggregator.bridgeInput",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "Bridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_feeReciever",
+						"type": "address"
+					}
+				],
+				"name": "ChangeFeeReciever",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "tokenIn",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "tokenOut",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "totalAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "amountIn",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "fromContract",
+								"type": "bool"
+							},
+							{
+								"internalType": "address",
+								"name": "swapper",
+								"type": "address"
+							},
+							{
+								"internalType": "bytes",
+								"name": "swapperData",
+								"type": "bytes"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "receiver",
+								"type": "address"
+							},
+							{
+								"internalType": "bool",
+								"name": "native",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct IExchangeAggregator.swapInput",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "Swap",
+				"outputs": [],
+				"stateMutability": "payable",
 				"type": "function"
 			},
 			{
@@ -85,34 +215,48 @@
 						"internalType": "address",
 						"name": "token",
 						"type": "address"
-					}
-				],
-				"name": "balanceToken",
-				"outputs": [
+					},
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
 					{
 						"internalType": "uint256",
-						"name": "",
+						"name": "amount",
 						"type": "uint256"
 					}
 				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "_PriceProvider",
-						"type": "address"
-					}
-				],
-				"name": "changePriceProvider",
+				"name": "Withdraw",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
 			},
 			{
 				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "WithdrawETH",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "priceProvider",
+						"type": "address"
+					},
 					{
 						"internalType": "address",
 						"name": "provider",
@@ -157,6 +301,38 @@
 			},
 			{
 				"inputs": [],
+				"name": "feeReciever",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "data",
+						"type": "bytes[]"
+					}
+				],
+				"name": "multicall",
+				"outputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "results",
+						"type": "bytes[]"
+					}
+				],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
 				"name": "owner",
 				"outputs": [
 					{
@@ -176,103 +352,16 @@
 				"type": "function"
 			},
 			{
-				"inputs": [
+				"inputs": [],
+				"name": "swapAmountOut",
+				"outputs": [
 					{
-						"components": [
-							{
-								"internalType": "address",
-								"name": "input",
-								"type": "address"
-							},
-							{
-								"internalType": "uint256",
-								"name": "totalAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "feeAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "swapper",
-								"type": "address"
-							},
-							{
-								"internalType": "bytes",
-								"name": "data",
-								"type": "bytes"
-							},
-							{
-								"internalType": "address",
-								"name": "sender",
-								"type": "address"
-							}
-						],
-						"internalType": "struct IExchangeAggregator.swapData",
-						"name": "data",
-						"type": "tuple"
-					},
-					{
-						"internalType": "bytes",
-						"name": "sig",
-						"type": "bytes"
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					}
 				],
-				"name": "swap",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"components": [
-							{
-								"internalType": "address",
-								"name": "input",
-								"type": "address"
-							},
-							{
-								"internalType": "uint256",
-								"name": "totalAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "feeAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "swapper",
-								"type": "address"
-							},
-							{
-								"internalType": "bytes",
-								"name": "data",
-								"type": "bytes"
-							},
-							{
-								"internalType": "address",
-								"name": "sender",
-								"type": "address"
-							}
-						],
-						"internalType": "struct IExchangeAggregator.swapData",
-						"name": "data",
-						"type": "tuple"
-					},
-					{
-						"internalType": "bytes",
-						"name": "sig",
-						"type": "bytes"
-					}
-				],
-				"name": "swapNativeIn",
-				"outputs": [],
-				"stateMutability": "payable",
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -289,45 +378,8 @@
 				"type": "function"
 			},
 			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "to",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "amount",
-						"type": "uint256"
-					}
-				],
-				"name": "withdrawETH",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "token",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "to",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "amount",
-						"type": "uint256"
-					}
-				],
-				"name": "withdrawToken",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
+				"stateMutability": "payable",
+				"type": "receive"
 			}
 		],
 		"devdoc": {
@@ -355,7 +407,7 @@
 		"compilationTarget": {
 			"contracts/ExchangeAggregator.sol": "ExchangeAggregator"
 		},
-		"evmVersion": "london",
+		"evmVersion": "paris",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -408,11 +460,35 @@
 			]
 		},
 		"contracts/ExchangeAggregator.sol": {
-			"keccak256": "0xd141713bc777c8cdd030da74b451cebd5434f6d6cb9c87835e5b7a8bd9914215",
+			"keccak256": "0x49f72a4e759635aa60511034cf3f798d2ddf44bf9e44c3d7c01b6884e1cf4532",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://7fd08dadc2d746156571ba1a46d5cdbd69cea91e627c7833795863fc383b63c1",
-				"dweb:/ipfs/QmcuMpodJcZQAnPUwWhVMkP2qqDtRHBiTe9VHFZvhBd6pK"
+				"bzz-raw://b2e5e2799f85bd5a70290d9ff2ce519303cf090d07634b8dc8e24c64ffa74d11",
+				"dweb:/ipfs/QmeE1Y2pfCfnyvYoG2V9fcG4rqpoVbm5Hs3rzDZzffwr8c"
+			]
+		},
+		"contracts/Multicall.sol": {
+			"keccak256": "0xf18f65c864400e394ca86ffa1d2336ab956fdd99c83b8949adb0bee24cee71e8",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ab48a518727f935ff342f5d508e0978240cd49176eae10ac921c29866166e201",
+				"dweb:/ipfs/QmXifv5a6CNU2cASB74vuMcsX9FQ1Hxh9xaq24t1NqUEYZ"
+			]
+		},
+		"contracts/interfaces/IBridge.sol": {
+			"keccak256": "0xaa09f42d1aa0a6bc9d9b3fcd7a5edffeae644c9c9962f777c74efbc02440ab1a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c09ccd67ae0936907c92ad6d49fcc9fe3407c1b5abf8b7286a589e3094c49660",
+				"dweb:/ipfs/QmXNv5AndtoffyLVbCx5awpzjReC6zrSKRthCnzziignRB"
+			]
+		},
+		"contracts/interfaces/IBridgeAggregator.sol": {
+			"keccak256": "0x2892fd49643fcfd86dc7d9d1d58d48d7b15761171fa19bdb8391aea4ffcbc987",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://beba1393229c95819f15c808285be261b49f11e60ebe2540dfebed914f4c14a5",
+				"dweb:/ipfs/QmSdhLDecMwD9UDhPFD3pYqLjRwzHpLzYoSuUAh1WQK4y2"
 			]
 		},
 		"contracts/interfaces/IERC20.sol": {
@@ -424,11 +500,11 @@
 			]
 		},
 		"contracts/interfaces/IExchangeAggregator.sol": {
-			"keccak256": "0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680",
+			"keccak256": "0xa9f071dea29a73a2fe461d58d761d434f2673595edf8e205b7aa5514e94ca62f",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9",
-				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
+				"bzz-raw://9051d0d54713b5b2bf27bbcb6bb52c9fb3cd883d48b6cb69203aeb0b07d2296c",
+				"dweb:/ipfs/QmSPenvbCPwBRBQX7bg334RTM64zgjq8HD74AhNYhe2sDo"
 			]
 		},
 		"contracts/interfaces/IPriceProvider.sol": {
@@ -456,19 +532,19 @@
 			]
 		},
 		"contracts/libraries/transferHelper.sol": {
-			"keccak256": "0x00b9228224b990628599b5ed3af4b99304ccb144468b64d4e272f0b16cfb0f8b",
+			"keccak256": "0x1357eba41300b045aeef248f9060cdaebf1dae319fad1c4adddffa295793a1dd",
 			"license": "GPL-3.0-or-later",
 			"urls": [
-				"bzz-raw://af149dace2650a68bec6a95eac6dfa2a9acf985893903e75d86bfc22adeda710",
-				"dweb:/ipfs/QmY8hThNeTnrM8mFVL4P1RwTBYmhbiyXfghBrP5YshSC2u"
+				"bzz-raw://395e14440064ad4c3c402b458144ffbbb42f4cbdf81e21671713c809c1adf197",
+				"dweb:/ipfs/Qmf7rQdfU6bLLUYc1cMsCJr3Kd8zUNXHHijUHjEowciwZN"
 			]
 		},
 		"contracts/libraries/utils.sol": {
-			"keccak256": "0x4b2c957e6b6f776435b67e42e079eecd89e92366a92e80e4bb57cc5574d3d38c",
+			"keccak256": "0x3dd3e4ca97b11674c426a2c9e0b9e0513019c16cd827e2acbea4b34cc3d128c7",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://f1371c716580a6c4f35d6930974bc4d81c1c48cb626e6c521d37d0b9c5ea922f",
-				"dweb:/ipfs/QmUnTmwpVKrUL1ufznoTbZemagRh2D4XjoX4kQ8CpfudNR"
+				"bzz-raw://7676285fb314bbc66fdae93d8050a08f6a23ea1be80e69f8f509248d30e8974e",
+				"dweb:/ipfs/QmWogAz4RLpgHs12tD39y5YvdPf1kABmAgRKJNgxfEyrKo"
 			]
 		}
 	},

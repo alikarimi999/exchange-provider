@@ -1,0 +1,105 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"swapAndBridge(bytes32,uint256,bytes32,uint256,bytes32,uint256,uint8,uint256)": "4cd480bd"
+		}
+	},
+	"abi": [
+		{
+			"inputs": [
+				{
+					"internalType": "bytes32",
+					"name": "token",
+					"type": "bytes32"
+				},
+				{
+					"internalType": "uint256",
+					"name": "amount",
+					"type": "uint256"
+				},
+				{
+					"internalType": "bytes32",
+					"name": "recipient",
+					"type": "bytes32"
+				},
+				{
+					"internalType": "uint256",
+					"name": "destinationChainId",
+					"type": "uint256"
+				},
+				{
+					"internalType": "bytes32",
+					"name": "receiveToken",
+					"type": "bytes32"
+				},
+				{
+					"internalType": "uint256",
+					"name": "nonce",
+					"type": "uint256"
+				},
+				{
+					"internalType": "enum IAllBridge.MessengerProtocol",
+					"name": "messenger",
+					"type": "uint8"
+				},
+				{
+					"internalType": "uint256",
+					"name": "feeTokenAmount",
+					"type": "uint256"
+				}
+			],
+			"name": "swapAndBridge",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function"
+		}
+	]
+}

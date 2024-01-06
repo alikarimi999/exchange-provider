@@ -43,79 +43,6 @@
 				],
 				"stateMutability": "view",
 				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "factory",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t0",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t1",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "min0",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "min1",
-						"type": "uint256"
-					}
-				],
-				"name": "PoolExists",
-				"outputs": [
-					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "factory",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t0",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t1",
-						"type": "address"
-					}
-				],
-				"name": "Price",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "price",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint24",
-						"name": "fee",
-						"type": "uint24"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
 			}
 		],
 		"devdoc": {
@@ -242,11 +169,11 @@
 			]
 		},
 		"contracts/libraries/UniswapV3.sol": {
-			"keccak256": "0xa53c1a29ac5fb459643b01e91e26d2652d02e6bccf58c461bdd0b4d739658a23",
+			"keccak256": "0x1aa4b24f446e11c489e03a36b749d86969129306c802039ada6dc25307fd50fa",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://b0bb59a244ee383481516b2b3fbe44ba8aaf01774c96ea168626a3639909574d",
-				"dweb:/ipfs/QmShBmmJERR8T68xcnsx3kVvec6m64XJVahg6TQ51NJbS8"
+				"bzz-raw://5f2d35a12a36da2a8c7a07ba70d81cea72ebb534743bf91a64418bc4edf437b4",
+				"dweb:/ipfs/QmWYXti2ucFDdsWAqKQxpVQseHf6Q3FEopLnoJqNXh6VHn"
 			]
 		}
 	},

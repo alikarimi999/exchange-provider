@@ -179,11 +179,11 @@
 			]
 		},
 		"contracts/PriceProviders.sol": {
-			"keccak256": "0x81e91cbac6db90441a20c0060a8807a99589726abbbc247da22a005268d397e0",
+			"keccak256": "0x8770e50ca9d1a62fd6f672742dbc9da4acef7ce77d663fd549af56f7dd5c0809",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1adeae23a7313919e6e769566ed985aeb17d42fca11fc10b1f204ce55e5e004d",
-				"dweb:/ipfs/QmRpnfvrSY1gA9YSTFAgNnvctHvm1uruDD8FhzfauKw7La"
+				"bzz-raw://b3cf9c4bd5dd35187a28c986ea21af7f5e8a85673e6d8a4155fcca63cd60bb13",
+				"dweb:/ipfs/QmbvsJyiWEmmarMjRetHg9S9aUZfhFNrdpT58RgzxdebXa"
 			]
 		},
 		"contracts/interfaces/IERC20.sol": {

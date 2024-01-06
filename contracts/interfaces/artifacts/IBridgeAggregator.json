@@ -1,0 +1,117 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"Bridge((address,address,address,uint256,bool,uint256,uint256,bytes),bytes)": "5cedfda0"
+		}
+	},
+	"abi": [
+		{
+			"inputs": [
+				{
+					"components": [
+						{
+							"internalType": "address",
+							"name": "bridge",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "tokenIn",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "sender",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256",
+							"name": "bridgeFee",
+							"type": "uint256"
+						},
+						{
+							"internalType": "bool",
+							"name": "afterSwap",
+							"type": "bool"
+						},
+						{
+							"internalType": "uint256",
+							"name": "amountIn",
+							"type": "uint256"
+						},
+						{
+							"internalType": "uint256",
+							"name": "feeAmount",
+							"type": "uint256"
+						},
+						{
+							"internalType": "bytes",
+							"name": "bridgeData",
+							"type": "bytes"
+						}
+					],
+					"internalType": "struct IBridgeAggregator.bridgeInput",
+					"name": "data",
+					"type": "tuple"
+				},
+				{
+					"internalType": "bytes",
+					"name": "sig",
+					"type": "bytes"
+				}
+			],
+			"name": "Bridge",
+			"outputs": [],
+			"stateMutability": "payable",
+			"type": "function"
+		}
+	]
+}

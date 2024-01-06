@@ -1,0 +1,64 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					}
+				],
+				"name": "Bridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IBridge.sol": "IBridge"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IBridge.sol": {
+			"keccak256": "0xaa09f42d1aa0a6bc9d9b3fcd7a5edffeae644c9c9962f777c74efbc02440ab1a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c09ccd67ae0936907c92ad6d49fcc9fe3407c1b5abf8b7286a589e3094c49660",
+				"dweb:/ipfs/QmXNv5AndtoffyLVbCx5awpzjReC6zrSKRthCnzziignRB"
+			]
+		}
+	},
+	"version": 1
+}

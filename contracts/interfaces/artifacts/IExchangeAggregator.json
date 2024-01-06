@@ -49,8 +49,7 @@
 		},
 		"gasEstimates": null,
 		"methodIdentifiers": {
-			"swap((address,uint256,uint256,address,bytes,address),bytes)": "2906799b",
-			"swapNativeIn((address,uint256,uint256,address,bytes,address),bytes)": "5d86acf1"
+			"Swap((address,address,uint256,uint256,uint256,bool,address,bytes,address,address,bool),bytes)": "3f464ff5"
 		}
 	},
 	"abi": [
@@ -60,7 +59,12 @@
 					"components": [
 						{
 							"internalType": "address",
-							"name": "input",
+							"name": "tokenIn",
+							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "tokenOut",
 							"type": "address"
 						},
 						{
@@ -74,22 +78,42 @@
 							"type": "uint256"
 						},
 						{
+							"internalType": "uint256",
+							"name": "amountIn",
+							"type": "uint256"
+						},
+						{
+							"internalType": "bool",
+							"name": "fromContract",
+							"type": "bool"
+						},
+						{
 							"internalType": "address",
 							"name": "swapper",
 							"type": "address"
 						},
 						{
 							"internalType": "bytes",
-							"name": "data",
+							"name": "swapperData",
 							"type": "bytes"
 						},
 						{
 							"internalType": "address",
 							"name": "sender",
 							"type": "address"
+						},
+						{
+							"internalType": "address",
+							"name": "receiver",
+							"type": "address"
+						},
+						{
+							"internalType": "bool",
+							"name": "native",
+							"type": "bool"
 						}
 					],
-					"internalType": "struct IExchangeAggregator.swapData",
+					"internalType": "struct IExchangeAggregator.swapInput",
 					"name": "data",
 					"type": "tuple"
 				},
@@ -99,57 +123,7 @@
 					"type": "bytes"
 				}
 			],
-			"name": "swap",
-			"outputs": [],
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
-					"components": [
-						{
-							"internalType": "address",
-							"name": "input",
-							"type": "address"
-						},
-						{
-							"internalType": "uint256",
-							"name": "totalAmount",
-							"type": "uint256"
-						},
-						{
-							"internalType": "uint256",
-							"name": "feeAmount",
-							"type": "uint256"
-						},
-						{
-							"internalType": "address",
-							"name": "swapper",
-							"type": "address"
-						},
-						{
-							"internalType": "bytes",
-							"name": "data",
-							"type": "bytes"
-						},
-						{
-							"internalType": "address",
-							"name": "sender",
-							"type": "address"
-						}
-					],
-					"internalType": "struct IExchangeAggregator.swapData",
-					"name": "data",
-					"type": "tuple"
-				},
-				{
-					"internalType": "bytes",
-					"name": "sig",
-					"type": "bytes"
-				}
-			],
-			"name": "swapNativeIn",
+			"name": "Swap",
 			"outputs": [],
 			"stateMutability": "payable",
 			"type": "function"

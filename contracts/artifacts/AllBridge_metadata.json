@@ -1,0 +1,157 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amountIn",
+						"type": "uint256"
+					}
+				],
+				"name": "Bridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "bridge",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					}
+				],
+				"name": "decode",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "totalAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "tokenAddress",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "recipient",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint8",
+								"name": "destinationChainId",
+								"type": "uint8"
+							},
+							{
+								"internalType": "bytes32",
+								"name": "receiveTokenAddress",
+								"type": "bytes32"
+							},
+							{
+								"internalType": "uint256",
+								"name": "nonce",
+								"type": "uint256"
+							},
+							{
+								"internalType": "enum IAllBridge.MessengerProtocol",
+								"name": "messenger",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct AllBridge.allBridgeInput",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/bridge.sol": "AllBridge"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/bridge.sol": {
+			"keccak256": "0x322f7f7142e238be7ddf39ce45a36fd0b646298ba999fd95c9137513f495c7e3",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8bcb36d41d79f9d47ed04462208d594241f9218214a7fdf35539222939bf990a",
+				"dweb:/ipfs/QmV7orAPavBtmZe3L7PUmcgGHoFZYuqmtJqpDKbc52NcJy"
+			]
+		},
+		"contracts/interfaces/IBridge.sol": {
+			"keccak256": "0xaa09f42d1aa0a6bc9d9b3fcd7a5edffeae644c9c9962f777c74efbc02440ab1a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c09ccd67ae0936907c92ad6d49fcc9fe3407c1b5abf8b7286a589e3094c49660",
+				"dweb:/ipfs/QmXNv5AndtoffyLVbCx5awpzjReC6zrSKRthCnzziignRB"
+			]
+		},
+		"contracts/libraries/safeCaller.sol": {
+			"keccak256": "0x34515481fb168f22bb2eb11198251ce23448dd3e04a9680829803e07a2f42a98",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8e18be1d579c0ba509f6791a20aa4051980b9858d18fdbd9b39d58344a75e333",
+				"dweb:/ipfs/QmWoK1L9w5fjAvVGeLSpwweDN5f1vJGScudAVDZC3pTzqX"
+			]
+		},
+		"contracts/libraries/transferHelper.sol": {
+			"keccak256": "0x00b9228224b990628599b5ed3af4b99304ccb144468b64d4e272f0b16cfb0f8b",
+			"license": "GPL-3.0-or-later",
+			"urls": [
+				"bzz-raw://af149dace2650a68bec6a95eac6dfa2a9acf985893903e75d86bfc22adeda710",
+				"dweb:/ipfs/QmY8hThNeTnrM8mFVL4P1RwTBYmhbiyXfghBrP5YshSC2u"
+			]
+		}
+	},
+	"version": 1
+}

@@ -38,74 +38,6 @@
 				],
 				"stateMutability": "view",
 				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "factory",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t0",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t1",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "min0",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "min1",
-						"type": "uint256"
-					}
-				],
-				"name": "PoolExists",
-				"outputs": [
-					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "router",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t0",
-						"type": "address"
-					},
-					{
-						"internalType": "address",
-						"name": "t1",
-						"type": "address"
-					}
-				],
-				"name": "Price",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
 			}
 		],
 		"devdoc": {
@@ -165,11 +97,11 @@
 			]
 		},
 		"contracts/libraries/UniswapV2.sol": {
-			"keccak256": "0x20c122c32f799086c7bd4f2612823c16311c775e5f80dc530ca818558c81ffbd",
+			"keccak256": "0x76c9c359ee8fb8a2337914e17bb3a6a83dce18bce210d2f996542994a4fb3b38",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://bdc8bafae4fafd8edba5aa7be0832fd834a1d20179769b2856dfca4cfd54f22b",
-				"dweb:/ipfs/QmXsFn9cDuH8JzUeGx9VEASiS5BLuzmk6t95icuo21t2Nq"
+				"bzz-raw://a7ee9cd03d05ab9325948e737718e00769ace981415be74cbc490396c06a11c5",
+				"dweb:/ipfs/QmWqDwkYgkFoL86TbKpe9UfospCiRJ95pb9G9dhdHYUUsQ"
 			]
 		}
 	},

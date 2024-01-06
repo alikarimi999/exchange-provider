@@ -17,7 +17,7 @@ const (
 )
 
 func (k *exchange) trackDeposit(o *types.Order, dc *Token) {
-	t := dc.BlockTime * time.Duration(dc.ConfirmBlocks)
+	t := dc.BlockTime * time.Duration(dc.UnLockConfirm)
 	if t < time.Minute {
 		time.Sleep(time.Minute)
 		t *= 2

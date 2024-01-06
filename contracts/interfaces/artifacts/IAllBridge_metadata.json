@@ -1,0 +1,89 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "tokenAddress",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "recipient",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint8",
+						"name": "destinationChainId",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "receiveTokenAddress",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nonce",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum IAllBridge.MessengerProtocol",
+						"name": "messenger",
+						"type": "uint8"
+					}
+				],
+				"name": "swapAndBridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IBridges.sol": "IAllBridge"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IBridges.sol": {
+			"keccak256": "0xf4289b8918a058d5a31849dcf619694b25add684d8412a6cee5b2800f279c5f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7175b23536bbdbd1bb952a68d3fc8be611f41de73f5bf0c709c46110f3021a22",
+				"dweb:/ipfs/QmSkZeGYyqXDEMAWS1RVbqQPdQPasKV5GZPJ1fc9v24uhD"
+			]
+		}
+	},
+	"version": 1
+}

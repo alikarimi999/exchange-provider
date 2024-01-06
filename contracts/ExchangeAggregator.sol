@@ -9,56 +9,109 @@ import './libraries/transferHelper.sol';
 import './libraries/safeCaller.sol';
 import './libraries/utils.sol';
 import './interfaces/IExchangeAggregator.sol';
+import './interfaces/IBridgeAggregator.sol';
+import './interfaces/IBridge.sol';
+import './Multicall.sol';
 
 
-contract ExchangeAggregator is IExchangeAggregator,Ownable,IPriceProvider {
-    address public WETH;
-    address public PriceProvider;
+
+contract ExchangeAggregator is 
+    IExchangeAggregator,
+    IBridgeAggregator,
+    Ownable,
+    Multicall {
+
+    address public feeReciever;
     
-    constructor(address _WETH,address _PriceProvider){
-        WETH = _WETH;
-        PriceProvider = _PriceProvider;
+    mapping(bytes => bool) private processedSignatures; // Mapping to track processed signatures
+      modifier signatureNotProcessed(bytes calldata sig) {
+        require(!processedSignatures[sig], "this txData already processed");
+        _;
+        processedSignatures[sig] = true;
     }
 
-
-    function estimateAmountOut(address provider,address tA,address tB,uint256 amountIn,uint8 version) external view returns (uint256 amountOut,uint24 fee){
-        return IPriceProvider(PriceProvider).estimateAmountOut(provider,tA,tB,amountIn,version);
+       constructor(){
+        feeReciever = msg.sender;
     }
 
-    function swap(swapData calldata data,bytes calldata sig) public {
-        require(data.sender == msg.sender,"invaled sender");
+    receive() external payable {}
+
+    function estimateAmountOut(address priceProvider, address provider,address tA,address tB,uint256 amountIn,uint8 version) external view returns (uint256 amountOut,uint24 fee){
+        return IPriceProvider(priceProvider).estimateAmountOut(provider,tA,tB,amountIn,version);
+    }
+
+    uint256 public swapAmountOut;
+    function Swap(swapInput calldata data,bytes calldata sig) public payable signatureNotProcessed(sig) {
+        require(data.sender == msg.sender,"invalid sender");
         utils.checkSig(owner(),abi.encode(data), sig);
-        TransferHelper.safeTransferFrom(data.input,msg.sender,address(this),data.totalAmount);
-        TransferHelper.safeApprove(data.input,data.swapper,data.totalAmount-data.feeAmount);
-        SafeCaller.safeCall(data.swapper,0,data.data);
+        uint value;
+        if (!data.native) {
+            if (!data.fromContract) {
+                TransferHelper.safeTransferFrom(data.tokenIn,msg.sender,address(this),data.totalAmount);
+            }
+            if (data.feeAmount > 0){
+                TransferHelper.safeTransfer(data.tokenIn,feeReciever,data.feeAmount);
+            }
+            TransferHelper.safeApprove(data.tokenIn,data.swapper,data.amountIn);
+        }else {
+            require(msg.value >= data.totalAmount,"insufficient value");
+            TransferHelper.safeTransferETH(feeReciever,data.feeAmount);
+            value = data.amountIn;
+        }
+
+        uint256 balance0 = IERC20(data.tokenOut).balanceOf(address(this));
+        SafeCaller.safeCall(data.swapper,value,data.swapperData);
+        uint256 balance1 = IERC20(data.tokenOut).balanceOf(address(this));
+        
+        if (balance1 > balance0){      
+        swapAmountOut = balance1 - balance0;
+        }else {
+            swapAmountOut = 0;
+        }
+        processedSignatures[sig] = true;
     }
 
-    function swapNativeIn(swapData calldata data,bytes calldata sig) public payable {
-        require(data.sender == msg.sender,"invaled sender");
+
+    function Bridge(bridgeInput calldata data,bytes calldata sig) public payable signatureNotProcessed(sig) {
+        require(data.sender == msg.sender,"invalid sender");
+        require(msg.value >= data.bridgeFee,"insufficient value");
         utils.checkSig(owner(),abi.encode(data), sig);
-        require(msg.value >= data.totalAmount,"insufficient input amount");
-        uint amount = msg.value - data.feeAmount;  
-        SafeCaller.safeCall(data.swapper,amount,data.data);
+        uint amountIn;
+        if (data.afterSwap) {
+            amountIn = swapAmountOut;
+            swapAmountOut = 0;
+           
+        }else {
+            TransferHelper.safeTransferFrom(data.tokenIn,msg.sender,address(this),data.amountIn+data.feeAmount);
+            if (data.feeAmount > 0) {
+                    TransferHelper.safeTransfer(data.tokenIn,feeReciever,data.feeAmount);
+            }
+            amountIn = data.amountIn;
+        }
+
+
+        TransferHelper.safeApprove(data.tokenIn,data.bridge,amountIn);
+        IBridge(data.bridge).Bridge{value:data.bridgeFee}(data.bridgeData,amountIn);
     }
 
-    function balanceToken(address token) public view returns(uint){
-       return IERC20(token).balanceOf(address(this));
+    function ChangeFeeReciever(address _feeReciever) public onlyOwner {
+        feeReciever = _feeReciever;
     }
 
-    function balanceETH() public view returns(uint){
+    function Balance(address token) public view returns(uint256) {
+        return IERC20(token).balanceOf(address(this));
+    }
+
+    function BalanceETH() public view returns(uint256){
         return address(this).balance;
     }
 
-    function withdrawETH(address to,uint amount) public onlyOwner {
-        TransferHelper.safeTransferETH(to,amount);
-    }
-
-    function withdrawToken(address token,address to,uint amount) public onlyOwner {
+    function Withdraw(address token,address to,uint256 amount) public onlyOwner {
         TransferHelper.safeTransfer(token,to,amount);
     }
 
-    function changePriceProvider(address _PriceProvider) public onlyOwner {
-        PriceProvider = _PriceProvider;
-    }
+    function WithdrawETH(address to,uint256 amount) public payable onlyOwner {
+        TransferHelper.safeTransferETH(to,amount); 
+   }
 
 }

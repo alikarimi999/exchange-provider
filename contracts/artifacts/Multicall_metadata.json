@@ -1,0 +1,65 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "data",
+						"type": "bytes[]"
+					}
+				],
+				"name": "multicall",
+				"outputs": [
+					{
+						"internalType": "bytes[]",
+						"name": "results",
+						"type": "bytes[]"
+					}
+				],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Multicall.sol": "Multicall"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Multicall.sol": {
+			"keccak256": "0xf18f65c864400e394ca86ffa1d2336ab956fdd99c83b8949adb0bee24cee71e8",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ab48a518727f935ff342f5d508e0978240cd49176eae10ac921c29866166e201",
+				"dweb:/ipfs/QmXifv5a6CNU2cASB74vuMcsX9FQ1Hxh9xaq24t1NqUEYZ"
+			]
+		}
+	},
+	"version": 1
+}

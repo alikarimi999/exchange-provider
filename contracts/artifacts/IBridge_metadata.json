@@ -1,0 +1,83 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "",
+						"type": "bytes"
+					}
+				],
+				"name": "Bridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/bridge.sol": "IBridge"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/bridge.sol": {
+			"keccak256": "0x93601050649c3a5ff0c90af2b1f75028e7cd93587dfd47d3eba3fb718fe1f27e",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://dcdfe00ae50a8624f0ab04dbbbda848a389fec2d38e55ccf3c75e14efd0e45a1",
+				"dweb:/ipfs/QmawpUAZHY2b72mc5dRU5dFt7Q5w6ekC1pVNrcSRPRhmMV"
+			]
+		},
+		"contracts/interfaces/IBridges.sol": {
+			"keccak256": "0xf4289b8918a058d5a31849dcf619694b25add684d8412a6cee5b2800f279c5f1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://7175b23536bbdbd1bb952a68d3fc8be611f41de73f5bf0c709c46110f3021a22",
+				"dweb:/ipfs/QmSkZeGYyqXDEMAWS1RVbqQPdQPasKV5GZPJ1fc9v24uhD"
+			]
+		},
+		"contracts/libraries/safeCaller.sol": {
+			"keccak256": "0x34515481fb168f22bb2eb11198251ce23448dd3e04a9680829803e07a2f42a98",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8e18be1d579c0ba509f6791a20aa4051980b9858d18fdbd9b39d58344a75e333",
+				"dweb:/ipfs/QmWoK1L9w5fjAvVGeLSpwweDN5f1vJGScudAVDZC3pTzqX"
+			]
+		},
+		"contracts/libraries/transferHelper.sol": {
+			"keccak256": "0x00b9228224b990628599b5ed3af4b99304ccb144468b64d4e272f0b16cfb0f8b",
+			"license": "GPL-3.0-or-later",
+			"urls": [
+				"bzz-raw://af149dace2650a68bec6a95eac6dfa2a9acf985893903e75d86bfc22adeda710",
+				"dweb:/ipfs/QmY8hThNeTnrM8mFVL4P1RwTBYmhbiyXfghBrP5YshSC2u"
+			]
+		}
+	},
+	"version": 1
+}

@@ -1,0 +1,67 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "factory",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/test.sol": "test"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/libraries/transferHelper.sol": {
+			"keccak256": "0x1357eba41300b045aeef248f9060cdaebf1dae319fad1c4adddffa295793a1dd",
+			"license": "GPL-3.0-or-later",
+			"urls": [
+				"bzz-raw://395e14440064ad4c3c402b458144ffbbb42f4cbdf81e21671713c809c1adf197",
+				"dweb:/ipfs/Qmf7rQdfU6bLLUYc1cMsCJr3Kd8zUNXHHijUHjEowciwZN"
+			]
+		},
+		"contracts/test.sol": {
+			"keccak256": "0xe174309e56a6ba0c0cfecafc3950bb3e11ba366970546f5a3cfcc5a560285a43",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://00a571752495e30dc6614c30ac03c94256a74b46c7990e73934a492cc2a42cff",
+				"dweb:/ipfs/QmSePgVmijvNrfV6zMvcJjWaaYcLcQb1BRGD3TXk1ASbup"
+			]
+		}
+	},
+	"version": 1
+}

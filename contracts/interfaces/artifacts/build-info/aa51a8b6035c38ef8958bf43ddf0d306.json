@@ -1,0 +1,522 @@
+{
+	"id": "aa51a8b6035c38ef8958bf43ddf0d306",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.18",
+	"solcLongVersion": "0.8.18+commit.87f61d96",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IBridgeAggregator.sol": {
+				"content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.18;\n\ninterface IBridgeAggregator {\n    struct bridgeInput {\n        address bridge;\n        address tokenIn;\n        address sender;\n        uint bridgeFee;\n        bool afterSwap;\n        uint amountIn;\n        uint feeAmount;\n        bytes bridgeData;\n    }\n\n    function Bridge(bridgeInput calldata data,bytes calldata sig) external payable;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": false,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			}
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IBridgeAggregator.sol": {
+				"IBridgeAggregator": {
+					"abi": [
+						{
+							"inputs": [
+								{
+									"components": [
+										{
+											"internalType": "address",
+											"name": "bridge",
+											"type": "address"
+										},
+										{
+											"internalType": "address",
+											"name": "tokenIn",
+											"type": "address"
+										},
+										{
+											"internalType": "address",
+											"name": "sender",
+											"type": "address"
+										},
+										{
+											"internalType": "uint256",
+											"name": "bridgeFee",
+											"type": "uint256"
+										},
+										{
+											"internalType": "bool",
+											"name": "afterSwap",
+											"type": "bool"
+										},
+										{
+											"internalType": "uint256",
+											"name": "amountIn",
+											"type": "uint256"
+										},
+										{
+											"internalType": "uint256",
+											"name": "feeAmount",
+											"type": "uint256"
+										},
+										{
+											"internalType": "bytes",
+											"name": "bridgeData",
+											"type": "bytes"
+										}
+									],
+									"internalType": "struct IBridgeAggregator.bridgeInput",
+									"name": "data",
+									"type": "tuple"
+								},
+								{
+									"internalType": "bytes",
+									"name": "sig",
+									"type": "bytes"
+								}
+							],
+							"name": "Bridge",
+							"outputs": [],
+							"stateMutability": "payable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"kind": "dev",
+						"methods": {},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"Bridge((address,address,address,uint256,bool,uint256,uint256,bytes),bytes)": "5cedfda0"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.18+commit.87f61d96\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenIn\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"bridgeFee\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"afterSwap\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"amountIn\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"feeAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"bridgeData\",\"type\":\"bytes\"}],\"internalType\":\"struct IBridgeAggregator.bridgeInput\",\"name\":\"data\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"sig\",\"type\":\"bytes\"}],\"name\":\"Bridge\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IBridgeAggregator.sol\":\"IBridgeAggregator\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IBridgeAggregator.sol\":{\"keccak256\":\"0x2892fd49643fcfd86dc7d9d1d58d48d7b15761171fa19bdb8391aea4ffcbc987\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://beba1393229c95819f15c808285be261b49f11e60ebe2540dfebed914f4c14a5\",\"dweb:/ipfs/QmSdhLDecMwD9UDhPFD3pYqLjRwzHpLzYoSuUAh1WQK4y2\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IBridgeAggregator.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IBridgeAggregator.sol",
+					"exportedSymbols": {
+						"IBridgeAggregator": [
+							27
+						]
+					},
+					"id": 28,
+					"license": "MIT",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"0.8",
+								".18"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "32:23:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IBridgeAggregator",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 27,
+							"linearizedBaseContracts": [
+								27
+							],
+							"name": "IBridgeAggregator",
+							"nameLocation": "67:17:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"canonicalName": "IBridgeAggregator.bridgeInput",
+									"id": 18,
+									"members": [
+										{
+											"constant": false,
+											"id": 3,
+											"mutability": "mutable",
+											"name": "bridge",
+											"nameLocation": "128:6:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "120:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 2,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "120:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 5,
+											"mutability": "mutable",
+											"name": "tokenIn",
+											"nameLocation": "152:7:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "144:15:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 4,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "144:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 7,
+											"mutability": "mutable",
+											"name": "sender",
+											"nameLocation": "177:6:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "169:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_address",
+												"typeString": "address"
+											},
+											"typeName": {
+												"id": 6,
+												"name": "address",
+												"nodeType": "ElementaryTypeName",
+												"src": "169:7:0",
+												"stateMutability": "nonpayable",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 9,
+											"mutability": "mutable",
+											"name": "bridgeFee",
+											"nameLocation": "198:9:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "193:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_uint256",
+												"typeString": "uint256"
+											},
+											"typeName": {
+												"id": 8,
+												"name": "uint",
+												"nodeType": "ElementaryTypeName",
+												"src": "193:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 11,
+											"mutability": "mutable",
+											"name": "afterSwap",
+											"nameLocation": "222:9:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "217:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_bool",
+												"typeString": "bool"
+											},
+											"typeName": {
+												"id": 10,
+												"name": "bool",
+												"nodeType": "ElementaryTypeName",
+												"src": "217:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bool",
+													"typeString": "bool"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 13,
+											"mutability": "mutable",
+											"name": "amountIn",
+											"nameLocation": "246:8:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "241:13:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_uint256",
+												"typeString": "uint256"
+											},
+											"typeName": {
+												"id": 12,
+												"name": "uint",
+												"nodeType": "ElementaryTypeName",
+												"src": "241:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 15,
+											"mutability": "mutable",
+											"name": "feeAmount",
+											"nameLocation": "269:9:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "264:14:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_uint256",
+												"typeString": "uint256"
+											},
+											"typeName": {
+												"id": 14,
+												"name": "uint",
+												"nodeType": "ElementaryTypeName",
+												"src": "264:4:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												}
+											},
+											"visibility": "internal"
+										},
+										{
+											"constant": false,
+											"id": 17,
+											"mutability": "mutable",
+											"name": "bridgeData",
+											"nameLocation": "294:10:0",
+											"nodeType": "VariableDeclaration",
+											"scope": 18,
+											"src": "288:16:0",
+											"stateVariable": false,
+											"storageLocation": "default",
+											"typeDescriptions": {
+												"typeIdentifier": "t_bytes_storage_ptr",
+												"typeString": "bytes"
+											},
+											"typeName": {
+												"id": 16,
+												"name": "bytes",
+												"nodeType": "ElementaryTypeName",
+												"src": "288:5:0",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_storage_ptr",
+													"typeString": "bytes"
+												}
+											},
+											"visibility": "internal"
+										}
+									],
+									"name": "bridgeInput",
+									"nameLocation": "98:11:0",
+									"nodeType": "StructDefinition",
+									"scope": 27,
+									"src": "91:220:0",
+									"visibility": "public"
+								},
+								{
+									"functionSelector": "5cedfda0",
+									"id": 26,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "Bridge",
+									"nameLocation": "326:6:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 24,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 21,
+												"mutability": "mutable",
+												"name": "data",
+												"nameLocation": "354:4:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 26,
+												"src": "333:25:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_struct$_bridgeInput_$18_calldata_ptr",
+													"typeString": "struct IBridgeAggregator.bridgeInput"
+												},
+												"typeName": {
+													"id": 20,
+													"nodeType": "UserDefinedTypeName",
+													"pathNode": {
+														"id": 19,
+														"name": "bridgeInput",
+														"nameLocations": [
+															"333:11:0"
+														],
+														"nodeType": "IdentifierPath",
+														"referencedDeclaration": 18,
+														"src": "333:11:0"
+													},
+													"referencedDeclaration": 18,
+													"src": "333:11:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_struct$_bridgeInput_$18_storage_ptr",
+														"typeString": "struct IBridgeAggregator.bridgeInput"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 23,
+												"mutability": "mutable",
+												"name": "sig",
+												"nameLocation": "374:3:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 26,
+												"src": "359:18:0",
+												"stateVariable": false,
+												"storageLocation": "calldata",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes_calldata_ptr",
+													"typeString": "bytes"
+												},
+												"typeName": {
+													"id": 22,
+													"name": "bytes",
+													"nodeType": "ElementaryTypeName",
+													"src": "359:5:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes_storage_ptr",
+														"typeString": "bytes"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "332:46:0"
+									},
+									"returnParameters": {
+										"id": 25,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "395:0:0"
+									},
+									"scope": 27,
+									"src": "317:79:0",
+									"stateMutability": "payable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 28,
+							"src": "57:341:0",
+							"usedErrors": []
+						}
+					],
+					"src": "32:366:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

@@ -1,0 +1,447 @@
+{
+	"id": "65bab85f71832f4cbf46930bd1ceb777",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.18",
+	"solcLongVersion": "0.8.18+commit.87f61d96",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IBridges.sol": {
+				"content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.18;\n\ninterface IAllBridge {\n    enum MessengerProtocol {\n        None,\n        Allbridge,\n        Wormhole,\n        LayerZero\n        }\n\n    function swapAndBridge(\n        bytes32 tokenAddress,\n        uint256 amount,\n        bytes32 recipient,\n        uint8 destinationChainId,\n        bytes32 receiveTokenAddress,\n        uint256 nonce,\n        MessengerProtocol messenger) external payable;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": false,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			}
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IBridges.sol": {
+				"IAllBridge": {
+					"abi": [
+						{
+							"inputs": [
+								{
+									"internalType": "bytes32",
+									"name": "tokenAddress",
+									"type": "bytes32"
+								},
+								{
+									"internalType": "uint256",
+									"name": "amount",
+									"type": "uint256"
+								},
+								{
+									"internalType": "bytes32",
+									"name": "recipient",
+									"type": "bytes32"
+								},
+								{
+									"internalType": "uint8",
+									"name": "destinationChainId",
+									"type": "uint8"
+								},
+								{
+									"internalType": "bytes32",
+									"name": "receiveTokenAddress",
+									"type": "bytes32"
+								},
+								{
+									"internalType": "uint256",
+									"name": "nonce",
+									"type": "uint256"
+								},
+								{
+									"internalType": "enum IAllBridge.MessengerProtocol",
+									"name": "messenger",
+									"type": "uint8"
+								}
+							],
+							"name": "swapAndBridge",
+							"outputs": [],
+							"stateMutability": "payable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"kind": "dev",
+						"methods": {},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"swapAndBridge(bytes32,uint256,bytes32,uint8,bytes32,uint256,uint8)": "f35e37d3"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.18+commit.87f61d96\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"tokenAddress\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"recipient\",\"type\":\"bytes32\"},{\"internalType\":\"uint8\",\"name\":\"destinationChainId\",\"type\":\"uint8\"},{\"internalType\":\"bytes32\",\"name\":\"receiveTokenAddress\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"enum IAllBridge.MessengerProtocol\",\"name\":\"messenger\",\"type\":\"uint8\"}],\"name\":\"swapAndBridge\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IBridges.sol\":\"IAllBridge\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IBridges.sol\":{\"keccak256\":\"0xf4289b8918a058d5a31849dcf619694b25add684d8412a6cee5b2800f279c5f1\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://7175b23536bbdbd1bb952a68d3fc8be611f41de73f5bf0c709c46110f3021a22\",\"dweb:/ipfs/QmSkZeGYyqXDEMAWS1RVbqQPdQPasKV5GZPJ1fc9v24uhD\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IBridges.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IBridges.sol",
+					"exportedSymbols": {
+						"IAllBridge": [
+							25
+						]
+					},
+					"id": 26,
+					"license": "MIT",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"0.8",
+								".18"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "32:23:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IAllBridge",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 25,
+							"linearizedBaseContracts": [
+								25
+							],
+							"name": "IAllBridge",
+							"nameLocation": "67:10:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"canonicalName": "IAllBridge.MessengerProtocol",
+									"id": 6,
+									"members": [
+										{
+											"id": 2,
+											"name": "None",
+											"nameLocation": "117:4:0",
+											"nodeType": "EnumValue",
+											"src": "117:4:0"
+										},
+										{
+											"id": 3,
+											"name": "Allbridge",
+											"nameLocation": "131:9:0",
+											"nodeType": "EnumValue",
+											"src": "131:9:0"
+										},
+										{
+											"id": 4,
+											"name": "Wormhole",
+											"nameLocation": "150:8:0",
+											"nodeType": "EnumValue",
+											"src": "150:8:0"
+										},
+										{
+											"id": 5,
+											"name": "LayerZero",
+											"nameLocation": "168:9:0",
+											"nodeType": "EnumValue",
+											"src": "168:9:0"
+										}
+									],
+									"name": "MessengerProtocol",
+									"nameLocation": "89:17:0",
+									"nodeType": "EnumDefinition",
+									"src": "84:103:0"
+								},
+								{
+									"functionSelector": "f35e37d3",
+									"id": 24,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "swapAndBridge",
+									"nameLocation": "202:13:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 22,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 8,
+												"mutability": "mutable",
+												"name": "tokenAddress",
+												"nameLocation": "233:12:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "225:20:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes32",
+													"typeString": "bytes32"
+												},
+												"typeName": {
+													"id": 7,
+													"name": "bytes32",
+													"nodeType": "ElementaryTypeName",
+													"src": "225:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes32",
+														"typeString": "bytes32"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 10,
+												"mutability": "mutable",
+												"name": "amount",
+												"nameLocation": "263:6:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "255:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 9,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "255:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 12,
+												"mutability": "mutable",
+												"name": "recipient",
+												"nameLocation": "287:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "279:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes32",
+													"typeString": "bytes32"
+												},
+												"typeName": {
+													"id": 11,
+													"name": "bytes32",
+													"nodeType": "ElementaryTypeName",
+													"src": "279:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes32",
+														"typeString": "bytes32"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 14,
+												"mutability": "mutable",
+												"name": "destinationChainId",
+												"nameLocation": "312:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "306:24:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint8",
+													"typeString": "uint8"
+												},
+												"typeName": {
+													"id": 13,
+													"name": "uint8",
+													"nodeType": "ElementaryTypeName",
+													"src": "306:5:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint8",
+														"typeString": "uint8"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 16,
+												"mutability": "mutable",
+												"name": "receiveTokenAddress",
+												"nameLocation": "348:19:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "340:27:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bytes32",
+													"typeString": "bytes32"
+												},
+												"typeName": {
+													"id": 15,
+													"name": "bytes32",
+													"nodeType": "ElementaryTypeName",
+													"src": "340:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bytes32",
+														"typeString": "bytes32"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 18,
+												"mutability": "mutable",
+												"name": "nonce",
+												"nameLocation": "385:5:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "377:13:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 17,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "377:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 21,
+												"mutability": "mutable",
+												"name": "messenger",
+												"nameLocation": "418:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 24,
+												"src": "400:27:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_enum$_MessengerProtocol_$6",
+													"typeString": "enum IAllBridge.MessengerProtocol"
+												},
+												"typeName": {
+													"id": 20,
+													"nodeType": "UserDefinedTypeName",
+													"pathNode": {
+														"id": 19,
+														"name": "MessengerProtocol",
+														"nameLocations": [
+															"400:17:0"
+														],
+														"nodeType": "IdentifierPath",
+														"referencedDeclaration": 6,
+														"src": "400:17:0"
+													},
+													"referencedDeclaration": 6,
+													"src": "400:17:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_enum$_MessengerProtocol_$6",
+														"typeString": "enum IAllBridge.MessengerProtocol"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "215:213:0"
+									},
+									"returnParameters": {
+										"id": 23,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "445:0:0"
+									},
+									"scope": 25,
+									"src": "193:253:0",
+									"stateMutability": "payable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 26,
+							"src": "57:391:0",
+							"usedErrors": []
+						}
+					],
+					"src": "32:416:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

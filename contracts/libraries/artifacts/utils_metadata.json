@@ -1,67 +1,10 @@
 {
 	"compiler": {
-		"version": "0.8.17+commit.8df45f5f"
+		"version": "0.8.18+commit.87f61d96"
 	},
 	"language": "Solidity",
 	"output": {
-		"abi": [
-			{
-				"inputs": [
-					{
-						"components": [
-							{
-								"internalType": "address",
-								"name": "input",
-								"type": "address"
-							},
-							{
-								"internalType": "uint256",
-								"name": "totalAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "feeAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "swapper",
-								"type": "address"
-							},
-							{
-								"internalType": "bytes",
-								"name": "data",
-								"type": "bytes"
-							},
-							{
-								"internalType": "address",
-								"name": "sender",
-								"type": "address"
-							}
-						],
-						"internalType": "struct IExchangeAggregator.swapData",
-						"name": "data",
-						"type": "tuple"
-					},
-					{
-						"internalType": "bytes",
-						"name": "sig",
-						"type": "bytes"
-					}
-				],
-				"name": "signer",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "pure",
-				"type": "function"
-			}
-		],
+		"abi": [],
 		"devdoc": {
 			"kind": "dev",
 			"methods": {},
@@ -77,7 +20,7 @@
 		"compilationTarget": {
 			"contracts/libraries/utils.sol": "utils"
 		},
-		"evmVersion": "london",
+		"evmVersion": "paris",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -114,19 +57,19 @@
 			]
 		},
 		"contracts/interfaces/IExchangeAggregator.sol": {
-			"keccak256": "0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680",
+			"keccak256": "0x71fab7d0a14a0aa4fe56d37258a4420f5d41b3aab961cc11538728d3ba049f00",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9",
-				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
+				"bzz-raw://5cf78240c4aef9788f34ff815849f98b7cc47f3ac724a121057b2bc14fd4dd09",
+				"dweb:/ipfs/QmeCDedvWhgpWdNyqW8T2eyBufR6xWoR5TXyLfEeXHaWKk"
 			]
 		},
 		"contracts/libraries/utils.sol": {
-			"keccak256": "0x4b2c957e6b6f776435b67e42e079eecd89e92366a92e80e4bb57cc5574d3d38c",
+			"keccak256": "0x3dd3e4ca97b11674c426a2c9e0b9e0513019c16cd827e2acbea4b34cc3d128c7",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://f1371c716580a6c4f35d6930974bc4d81c1c48cb626e6c521d37d0b9c5ea922f",
-				"dweb:/ipfs/QmUnTmwpVKrUL1ufznoTbZemagRh2D4XjoX4kQ8CpfudNR"
+				"bzz-raw://7676285fb314bbc66fdae93d8050a08f6a23ea1be80e69f8f509248d30e8974e",
+				"dweb:/ipfs/QmWogAz4RLpgHs12tD39y5YvdPf1kABmAgRKJNgxfEyrKo"
 			]
 		}
 	},

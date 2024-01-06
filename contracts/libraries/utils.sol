@@ -14,10 +14,6 @@ library utils {
         require(hash(data).recover(sig) == owner,"data tampered");
     }
 
-    function signer(IExchangeAggregator.swapData calldata data, bytes memory sig) public pure returns(address){
-        return hash(abi.encode(data)).recover(sig);
-    }
-
     function hash(bytes memory data) private pure returns (bytes32) {
         return keccak256(data);
     }

@@ -5,7 +5,6 @@ import './interfaces/IPriceProvider.sol';
 import './libraries/UniswapV2.sol';
 import './libraries/UniswapV3.sol';
 
-
 contract PriceProvider is IPriceProvider {
         function estimateAmountOut(address provider,address tA,address tB,uint256 amountIn,uint8 version) external override view returns (uint256 amountOut,uint24 fee){
         if (version == 2) {

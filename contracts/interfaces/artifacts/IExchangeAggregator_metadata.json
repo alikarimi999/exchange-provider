@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.17+commit.8df45f5f"
+		"version": "0.8.18+commit.87f61d96"
 	},
 	"language": "Solidity",
 	"output": {
@@ -11,7 +11,12 @@
 						"components": [
 							{
 								"internalType": "address",
-								"name": "input",
+								"name": "tokenIn",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "tokenOut",
 								"type": "address"
 							},
 							{
@@ -25,22 +30,42 @@
 								"type": "uint256"
 							},
 							{
+								"internalType": "uint256",
+								"name": "amountIn",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "fromContract",
+								"type": "bool"
+							},
+							{
 								"internalType": "address",
 								"name": "swapper",
 								"type": "address"
 							},
 							{
 								"internalType": "bytes",
-								"name": "data",
+								"name": "swapperData",
 								"type": "bytes"
 							},
 							{
 								"internalType": "address",
 								"name": "sender",
 								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "receiver",
+								"type": "address"
+							},
+							{
+								"internalType": "bool",
+								"name": "native",
+								"type": "bool"
 							}
 						],
-						"internalType": "struct IExchangeAggregator.swapData",
+						"internalType": "struct IExchangeAggregator.swapInput",
 						"name": "data",
 						"type": "tuple"
 					},
@@ -50,57 +75,7 @@
 						"type": "bytes"
 					}
 				],
-				"name": "swap",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"components": [
-							{
-								"internalType": "address",
-								"name": "input",
-								"type": "address"
-							},
-							{
-								"internalType": "uint256",
-								"name": "totalAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "uint256",
-								"name": "feeAmount",
-								"type": "uint256"
-							},
-							{
-								"internalType": "address",
-								"name": "swapper",
-								"type": "address"
-							},
-							{
-								"internalType": "bytes",
-								"name": "data",
-								"type": "bytes"
-							},
-							{
-								"internalType": "address",
-								"name": "sender",
-								"type": "address"
-							}
-						],
-						"internalType": "struct IExchangeAggregator.swapData",
-						"name": "data",
-						"type": "tuple"
-					},
-					{
-						"internalType": "bytes",
-						"name": "sig",
-						"type": "bytes"
-					}
-				],
-				"name": "swapNativeIn",
+				"name": "Swap",
 				"outputs": [],
 				"stateMutability": "payable",
 				"type": "function"
@@ -119,9 +94,9 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contracts/interfaces/IE.sol": "IExchangeAggregator"
+			"contracts/interfaces/IExchangeAggregator.sol": "IExchangeAggregator"
 		},
-		"evmVersion": "london",
+		"evmVersion": "paris",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -133,12 +108,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"contracts/interfaces/IE.sol": {
-			"keccak256": "0x18cf8828c63885315ed8cf8f05172f2877997c335b3fac1cf883bc89defe5680",
+		"contracts/interfaces/IExchangeAggregator.sol": {
+			"keccak256": "0xa9f071dea29a73a2fe461d58d761d434f2673595edf8e205b7aa5514e94ca62f",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://4554ae11997b92961c54bf6b8c6973c871924c273e935cb4060653c322b2dcb9",
-				"dweb:/ipfs/QmeU2QxxJtiiCCec8PpQmUAKwntSJg3dJRaeuxKVJxWgXX"
+				"bzz-raw://9051d0d54713b5b2bf27bbcb6bb52c9fb3cd883d48b6cb69203aeb0b07d2296c",
+				"dweb:/ipfs/QmSPenvbCPwBRBQX7bg334RTM64zgjq8HD74AhNYhe2sDo"
 			]
 		}
 	},

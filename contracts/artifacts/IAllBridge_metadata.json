@@ -1,0 +1,142 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "bytes32",
+						"name": "token",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "recipient",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "destinationChainId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "receiveToken",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint256",
+						"name": "nonce",
+						"type": "uint256"
+					},
+					{
+						"internalType": "enum IAllBridge.MessengerProtocol",
+						"name": "messenger",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "feeTokenAmount",
+						"type": "uint256"
+					}
+				],
+				"name": "swapAndBridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/AllBridge.sol": "IAllBridge"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@openzeppelin/contracts/access/Ownable.sol": {
+			"keccak256": "0xa94b34880e3c1b0b931662cb1c09e5dfa6662f31cba80e07c5ee71cd135c9673",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://40fb1b5102468f783961d0af743f91b9980cf66b50d1d12009f6bb1869cea4d2",
+				"dweb:/ipfs/QmYqEbJML4jB1GHbzD4cUZDtJg5wVwNm3vDJq1GbyDus8y"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0xe2e337e6dde9ef6b680e07338c493ebea1b5fd09b43424112868e9cc1706bca7",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6df0ddf21ce9f58271bdfaa85cde98b200ef242a05a3f85c2bc10a8294800a92",
+				"dweb:/ipfs/QmRK2Y5Yc6BK7tGKkgsgn3aJEQGi5aakeSPZvS65PV8Xp3"
+			]
+		},
+		"contracts/AllBridge.sol": {
+			"keccak256": "0x4ee877de16207bc659f48e8def80db1d2f8dd527c4cde7a7f8534535ed84047c",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://b5d3c52d9da151fb6448f57cb3fb86816e6454dc8bb3a9b57d4e338ed93d65e9",
+				"dweb:/ipfs/QmPk4GvjnbFceu8qiKNAKu31rmLTW6TRC4DKpHYEKSGcbq"
+			]
+		},
+		"contracts/interfaces/IBridge.sol": {
+			"keccak256": "0xaa09f42d1aa0a6bc9d9b3fcd7a5edffeae644c9c9962f777c74efbc02440ab1a",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c09ccd67ae0936907c92ad6d49fcc9fe3407c1b5abf8b7286a589e3094c49660",
+				"dweb:/ipfs/QmXNv5AndtoffyLVbCx5awpzjReC6zrSKRthCnzziignRB"
+			]
+		},
+		"contracts/interfaces/IERC20.sol": {
+			"keccak256": "0x7df9d93243a890a6dc175905d65495ae5726330faa50409ab8460c4c00c672e1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://3ff91fe9d915b97343e152f1a15a46e5ff9477e90e90a4431dca38f79eb2cdba",
+				"dweb:/ipfs/QmcHUAJs2MfcdbAFTzdQE1eGevxCGHNDXECiuGLDaUs34S"
+			]
+		},
+		"contracts/libraries/safeCaller.sol": {
+			"keccak256": "0x34515481fb168f22bb2eb11198251ce23448dd3e04a9680829803e07a2f42a98",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://8e18be1d579c0ba509f6791a20aa4051980b9858d18fdbd9b39d58344a75e333",
+				"dweb:/ipfs/QmWoK1L9w5fjAvVGeLSpwweDN5f1vJGScudAVDZC3pTzqX"
+			]
+		},
+		"contracts/libraries/transferHelper.sol": {
+			"keccak256": "0x1357eba41300b045aeef248f9060cdaebf1dae319fad1c4adddffa295793a1dd",
+			"license": "GPL-3.0-or-later",
+			"urls": [
+				"bzz-raw://395e14440064ad4c3c402b458144ffbbb42f4cbdf81e21671713c809c1adf197",
+				"dweb:/ipfs/Qmf7rQdfU6bLLUYc1cMsCJr3Kd8zUNXHHijUHjEowciwZN"
+			]
+		}
+	},
+	"version": 1
+}

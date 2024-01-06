@@ -1,0 +1,106 @@
+{
+	"compiler": {
+		"version": "0.8.18+commit.87f61d96"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "bridge",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "tokenIn",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "sender",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "bridgeFee",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "afterSwap",
+								"type": "bool"
+							},
+							{
+								"internalType": "uint256",
+								"name": "amountIn",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "feeAmount",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bytes",
+								"name": "bridgeData",
+								"type": "bytes"
+							}
+						],
+						"internalType": "struct IBridgeAggregator.bridgeInput",
+						"name": "data",
+						"type": "tuple"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "Bridge",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IBridgeAggregator.sol": "IBridgeAggregator"
+		},
+		"evmVersion": "paris",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IBridgeAggregator.sol": {
+			"keccak256": "0x2892fd49643fcfd86dc7d9d1d58d48d7b15761171fa19bdb8391aea4ffcbc987",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://beba1393229c95819f15c808285be261b49f11e60ebe2540dfebed914f4c14a5",
+				"dweb:/ipfs/QmSdhLDecMwD9UDhPFD3pYqLjRwzHpLzYoSuUAh1WQK4y2"
+			]
+		}
+	},
+	"version": 1
+}
