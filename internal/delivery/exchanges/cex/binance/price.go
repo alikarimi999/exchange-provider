@@ -5,6 +5,9 @@ import (
 )
 
 func (ex *exchange) calcPrice(p0, p1 float64, in, out entity.TokenId, p *entity.Pair) float64 {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return 1
+	}
 	if p.EP.(*ExchangePair).HasIntermediaryCoin {
 		if p.T1.String() == in.String() {
 			return applyFee((applyFee(p0, p.EP.(*ExchangePair).BinanceFeeRate1) /
@@ -22,7 +25,9 @@ func (ex *exchange) calcPrice(p0, p1 float64, in, out entity.TokenId, p *entity.
 }
 
 func (ex *exchange) price(p *entity.Pair) (float64, float64, error) {
-
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return 1, 1, nil
+	}
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 

@@ -50,6 +50,9 @@ func getBcQcWcFeeRate(o *types.Order, p *entity.Pair,
 }
 
 func (ex *exchange) setOrderFeeRate(p *entity.Pair) error {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return nil
+	}
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 

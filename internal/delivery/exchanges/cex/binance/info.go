@@ -163,14 +163,21 @@ func (ex *exchange) downloadCoins() ([]*binance.CoinInfo, error) {
 }
 
 func (ex *exchange) infos(p *entity.Pair) error {
+	var (
+		s0, s1 binance.Symbol
+		p0, p1 float64
+		err    error
+	)
 
-	s0, s1, err := ex.getPairSymbols(p)
-	if err != nil {
-		return err
-	}
+	if p.T1.Id.Symbol != p.T2.Id.Symbol {
+		s0, s1, err = ex.getPairSymbols(p)
+		if err != nil {
+			return err
+		}
 
-	if err := setPairsInfos(p, s0, s1); err != nil {
-		return err
+		if err := setPairsInfos(p, s0, s1); err != nil {
+			return err
+		}
 	}
 
 	bEFA, _, err := ex.exchangeFeeAmount(p.T1, p)
@@ -183,9 +190,14 @@ func (ex *exchange) infos(p *entity.Pair) error {
 		return err
 	}
 
-	p0, p1, err := ex.price(p)
-	if err != nil {
-		return err
+	if p.T1.Id.Symbol != p.T2.Id.Symbol {
+		p0, p1, err = ex.price(p)
+		if err != nil {
+			return err
+		}
+	} else {
+		p0 = 1
+		p1 = 1
 	}
 
 	return ex.minAndMax(p, p0, p1, bEFA, qEFA, s0, s1)

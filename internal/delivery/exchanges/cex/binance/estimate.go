@@ -21,7 +21,6 @@ func (ex *exchange) EstimateAmountOut(in, out entity.TokenId,
 		return nil, errors.Wrap(errors.ErrNotFound,
 			errors.NewMesssage("pair is not enable right now"))
 	}
-
 	return ex.estimateAmountOut(p, in, out, amount, lvl)
 }
 
@@ -81,13 +80,15 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		return nil, errors.Wrap(errors.ErrInternal)
 	}
 
-	s0, s1, err = ex.getPairSymbols(p)
-	if err != nil {
-		return nil, err
-	}
+	if p.T1.Id.Symbol != p.T2.Id.Symbol {
+		s0, s1, err = ex.getPairSymbols(p)
+		if err != nil {
+			return nil, err
+		}
 
-	if !isPairEnable(p, s0, s1) {
-		return nil, fmt.Errorf("pair is disable right now")
+		if !isPairEnable(p, s0, s1) {
+			return nil, fmt.Errorf("pair is disable right now")
+		}
 	}
 
 	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 10), In.OrderPrecision), 64)

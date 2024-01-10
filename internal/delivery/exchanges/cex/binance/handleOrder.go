@@ -81,23 +81,24 @@ func (ex *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 			(o.Status == types.OSecondSwapCompleted) {
 			continue
 		}
-
-		if err := ex.swap(o, bc, qc, i); err != nil {
-			if i == 0 {
-				o.Status = types.OFirstSwapFailed
-			} else {
-				o.Status = types.OSecondSwapFailed
+		if p.T1.Id.Symbol != p.T2.Id.Symbol {
+			if err := ex.swap(o, bc, qc, i); err != nil {
+				if i == 0 {
+					o.Status = types.OFirstSwapFailed
+				} else {
+					o.Status = types.OSecondSwapFailed
+				}
+				o.FailedDesc = err.Error()
+				ex.repo.Update(o)
+				return
 			}
-			o.FailedDesc = err.Error()
+			if i == 0 {
+				o.Status = types.OFirstSwapCompleted
+			} else {
+				o.Status = types.OSecondSwapCompleted
+			}
 			ex.repo.Update(o)
-			return
 		}
-		if i == 0 {
-			o.Status = types.OFirstSwapCompleted
-		} else {
-			o.Status = types.OSecondSwapCompleted
-		}
-		ex.repo.Update(o)
 	}
 
 	ex.withdrawal(o, wc, p)

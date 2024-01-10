@@ -100,5 +100,6 @@ func (ex *exchange) NewOrder(data interface{}, api *entity.APIToken) (entity.Ord
 			Out:  d.Out,
 		}
 	}
+
 	return o, nil
 }
