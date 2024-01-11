@@ -271,6 +271,10 @@ func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*dto.Withdra
 }
 
 func (k *exchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		k.handleOrder(o, p)
+		return
+	}
 	var (
 		bc, qc *Token
 	)

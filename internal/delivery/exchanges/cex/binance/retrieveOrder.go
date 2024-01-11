@@ -219,6 +219,10 @@ func (k *exchange) orderCheckAndFixWithdraw(os []entity.Order, ws []*binance.Wit
 }
 
 func (k *exchange) orderCheckAndFixSwaps(o *types.Order, p *entity.Pair) {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		k.handleOrder(o, p)
+		return
+	}
 	for i := range o.Swaps {
 		bc, qc, _, feeRate := getBcQcWcFeeRate(o, p, i)
 		if (i == 0 && o.Status == types.ODepositeConfimred) ||

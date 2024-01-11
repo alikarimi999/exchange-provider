@@ -5,6 +5,9 @@ import (
 )
 
 func (k *exchange) spread(lvl uint, p *entity.Pair, price float64) (float64, error) {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return 0, nil
+	}
 	var s float64
 	t1 := p.T1.ET.(*Token)
 	t2 := p.T2.ET.(*Token)

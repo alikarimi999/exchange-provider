@@ -55,6 +55,7 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 		eIn = p.T2
 		eOut = p.T1
 	}
+
 	amount, _ = strconv.ParseFloat(trim(big.NewFloat(amount).Text('f', 12), In.OrderPrecision), 64)
 	depositEnable0, withdrawEnable0, err := ex.isDipositAndWithdrawEnable(In)
 	if err != nil {
@@ -69,10 +70,10 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 	if err != nil {
 		return nil, err
 	}
+
 	if !depositEnable1 || !withdrawEnable1 {
 		return nil, fmt.Errorf("pair is not enable")
 	}
-
 	if !ex.isPairEnabled(p) {
 		return nil, fmt.Errorf("pair is not enable")
 	}
@@ -85,6 +86,7 @@ func (ex *exchange) estimateAmountOut(p *entity.Pair, in, out entity.TokenId,
 	if err != nil {
 		return nil, err
 	}
+
 	spread, err := ex.spread(lvl, p, price)
 	if err != nil {
 		return nil, err
@@ -190,6 +192,10 @@ func (ex *exchange) estimateAmountIn(p *entity.Pair, in, out entity.TokenId, Out
 }
 
 func (ex *exchange) price(p *entity.Pair) (float64, error) {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return 1, nil
+	}
+
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 

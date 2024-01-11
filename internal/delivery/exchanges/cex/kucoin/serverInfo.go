@@ -224,6 +224,10 @@ func (ex *exchange) downloadPrices() ([]*kucoin.TickerModel, error) {
 }
 
 func (ex *exchange) isPairEnabled(p *entity.Pair) bool {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return true
+	}
+
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 		bc := p.T1.ET.(*Token).Currency

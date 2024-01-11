@@ -13,28 +13,38 @@ import (
 func (k *exchange) withdrawal(o *types.Order, wc *Token, p *entity.Pair,
 	withdrawalfromMain bool) {
 
-	s := o.Swaps[len(o.Swaps)-1]
-	// amountOut := applyFee(s.OutAmount, feeRate)
-	amountIn := o.Swaps[0].InAmountExecuted
-	amountOut := s.OutAmount
-	var price float64
-	if wc.Currency == p.T2.ET.(*Token).Currency {
-		o.SpreadAmount = (amountOut * o.SpreadRate)
-		amountOut = amountOut - o.SpreadAmount
-		price = s.OutAmount / amountIn
+	var amountOut float64
+	if p.T1.Id.Symbol != p.T2.Id.Symbol {
+		s := o.Swaps[len(o.Swaps)-1]
+		amountIn := o.Swaps[0].InAmountExecuted
+		amountOut = s.OutAmount
+		var price float64
+		if wc.Currency == p.T2.ET.(*Token).Currency {
+			o.SpreadAmount = (amountOut * o.SpreadRate)
+			amountOut = amountOut - o.SpreadAmount
+			price = s.OutAmount / amountIn
+		} else {
+			price = amountIn / s.OutAmount
+			o.SpreadAmount = amountOut - (amountIn / (price + (price * o.SpreadRate)))
+			amountOut = amountOut - o.SpreadAmount
+
+		}
+
+		amountOut = amountOut - o.ExchangeFeeAmount
+		o.FeeAmount = amountOut * o.FeeRate
+		amountOut = amountOut - o.FeeAmount
+		o.Withdrawal.Amount = amountOut - wc.MinWithdrawalFee
+		o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
+		o.ExecutedPrice = price
 	} else {
-		price = amountIn / s.OutAmount
-		o.SpreadAmount = amountOut - (amountIn / (price + (price * o.SpreadRate)))
-		amountOut = amountOut - o.SpreadAmount
-
+		amountOut = o.Deposit.Amount
+		amountOut = amountOut - o.ExchangeFeeAmount
+		o.FeeAmount = amountOut * o.FeeRate
+		amountOut = amountOut - o.FeeAmount
+		o.Withdrawal.Amount = amountOut - wc.MinWithdrawalFee
+		o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
+		o.ExecutedPrice = 1
 	}
-
-	amountOut = amountOut - o.ExchangeFeeAmount
-	o.FeeAmount = amountOut * o.FeeRate
-	amountOut = amountOut - o.FeeAmount
-	o.Withdrawal.Amount = amountOut - wc.MinWithdrawalFee
-	o.Withdrawal.KucoinFee = wc.MinWithdrawalFee
-	o.ExecutedPrice = price
 
 	opts := make(map[string]string)
 	opts["chain"] = wc.Chain

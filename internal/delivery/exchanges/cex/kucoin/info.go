@@ -7,6 +7,10 @@ import (
 )
 
 func (k *exchange) setOrderFeeRate(p *entity.Pair) error {
+	if p.T1.Id.Symbol == p.T2.Id.Symbol {
+		return nil
+	}
+
 	ep := p.EP.(*ExchangePair)
 	if ep.HasIntermediaryCoin {
 		bc := p.T1.ET.(*Token)
@@ -84,8 +88,10 @@ func (ex *exchange) checkStable(p *entity.Pair) error {
 }
 
 func (k *exchange) setInfos(p *entity.Pair) error {
-	if err := k.setPairInfos(p); err != nil {
-		return err
+	if p.T1.Id.Symbol != p.T2.Id.Symbol {
+		if err := k.setPairInfos(p); err != nil {
+			return err
+		}
 	}
 
 	if err := k.checkStable(p); err != nil {

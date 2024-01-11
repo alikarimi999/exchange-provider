@@ -85,40 +85,42 @@ func (k *exchange) handleOrder(o *types.Order, p *entity.Pair) {
 			continue
 		}
 
-		if err := k.swap(o, bc, qc, i); err != nil {
-			if i == 0 {
-				o.Status = types.OFirstSwapFailed
-			} else {
-				o.Status = types.OSecondSwapFailed
+		if p.T1.Id.Symbol != p.T2.Id.Symbol {
+			if err := k.swap(o, bc, qc, i); err != nil {
+				if i == 0 {
+					o.Status = types.OFirstSwapFailed
+				} else {
+					o.Status = types.OSecondSwapFailed
+				}
+				o.FailedDesc = err.Error()
+				k.repo.Update(o)
+				return
 			}
-			o.FailedDesc = err.Error()
-			k.repo.Update(o)
-			return
-		}
 
-		if i == 0 {
-			o.Status = types.OFirstSwapTracking
-		} else {
-			o.Status = types.OSecondSwapTracking
-		}
-		k.repo.Update(o)
-
-		if err := k.trackSwap(o, bc, qc, i); err != nil {
 			if i == 0 {
-				o.Status = types.OFirstSwapFailed
+				o.Status = types.OFirstSwapTracking
 			} else {
-				o.Status = types.OSecondSwapFailed
+				o.Status = types.OSecondSwapTracking
 			}
-			o.FailedDesc = err.Error()
 			k.repo.Update(o)
-			return
+
+			if err := k.trackSwap(o, bc, qc, i); err != nil {
+				if i == 0 {
+					o.Status = types.OFirstSwapFailed
+				} else {
+					o.Status = types.OSecondSwapFailed
+				}
+				o.FailedDesc = err.Error()
+				k.repo.Update(o)
+				return
+			}
+			if i == 0 {
+				o.Status = types.OFirstSwapCompleted
+			} else {
+				o.Status = types.OSecondSwapCompleted
+			}
+			k.repo.Update(o)
 		}
-		if i == 0 {
-			o.Status = types.OFirstSwapCompleted
-		} else {
-			o.Status = types.OSecondSwapCompleted
-		}
-		k.repo.Update(o)
 	}
 
 	k.withdrawal(o, wc, p, false)
